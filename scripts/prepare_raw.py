@@ -217,6 +217,18 @@ for (col, tech), (val, why) in FILL.items():
     if to.loc[m, col].isna().any():
         to.loc[m, col] = val
         log(f"D3 결측 주입: {tech}.{col} = {val} — {why}")
+# v2.1 정합 보정: 수소를 외부 조달로 전환했으므로 전해조 전력을 원단위에서 제거한다.
+# Vogl 2018의 3.48 MWh/tLS는 수전해(51kg x ~51kWh/kg ≈ 2.6MWh)를 포함한 총 SEC이므로,
+# 외부 조달 시 그대로 두면 수소 대금과 전해조 전력을 이중 계상한다. 잔여 = 샤프트+EAF+부대.
+H2_EXTERNAL_ELEC = {"steel_h2dri": 0.85, "steel_hyrex": 0.85}
+for tid, v in H2_EXTERNAL_ELEC.items():
+    m = to.tech_id == tid
+    if m.any():
+        old = float(to.loc[m, "elec_intensity"].iloc[0])
+        to.loc[m, "elec_intensity"] = v
+        log(f"D3 {tid} elec_intensity {old:.2f} → {v:.2f} MWh/t — 수소 외부조달(v2.1)에 맞춰 "
+            f"전해조 전력({51*51/1000:.1f}MWh/t 상당) 제거, 이중계상 방지 (VOGL_2018 총 SEC 분해)")
+
 to["opex_fixed"] = to.opex_fixed.fillna(0.0)
 to["opex_var"] = to.opex_var.fillna(0.0)
 log("D3: opex 잔여 결측 0 처리 (증분 비용 기준 — 공통 유지비 상쇄 가정)")

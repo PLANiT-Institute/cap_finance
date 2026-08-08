@@ -31,6 +31,18 @@ milp:
   # product) dwarf the ~70천원/t margin and full closure becomes the "optimum".
   retire_max_share: 0.2
 
+# 탄소비용에 실제 부과되는 배출 비율(유상할당). 전량 부과하면 탄소비용이 제품 마진의
+# 10배가 되어 "전 설비 폐쇄"가 최적해가 된다 — 무상할당이 존재하는 현실과 어긋남.
+# 앵커: K-ETS 4차 계획기간 발전외(철강·석화) 유상할당 15% (2026–2030, KETS_P4_CONFIRM_2025).
+# 2030년 이후는 ESTIMATE(강화 추세 가정). 배출량 자체는 예산 제약에 전량 계상된다.
+carbon_auction_share:
+  2025: 0.10
+  2030: 0.15
+  2035: 0.30
+  2040: 0.50
+  2045: 0.75
+  2050: 1.00
+
 contracts:
   ppa_premium_pct: 0.08      # PPA price premium over central elec price
   epc_premium_pct: 0.10      # fixed-price EPC premium over central capex

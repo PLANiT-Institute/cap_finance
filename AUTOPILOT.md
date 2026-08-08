@@ -37,12 +37,12 @@
 ## 3. 백로그 (우선순위순 — 완료 시 [x], 새 항목은 하단 추가)
 
 ### A. FIN 미완 (긴급)
-- [ ] A1. **retire 퇴행 해소**: 현재 비용최소 = "20% 폐쇄+현행 유지+예산 슬랙"(capex 0, 경계 1점). 원인: NZ15 탄소가에서 슬랙 페널티·마진 대비 전환 CAPEX가 여전히 불리하게 계상. 조치 후보: ① 예산 슬랙 상한(연 배출의 5%) 추가 ② retire를 탄소 회피 편익에서 제외(baseline 대비 증분이라 폐쇄분 탄소 회피가 과대) 검토 — 증분 정의 재점검 ③ 결과가 "수소환원+부분 리트로핏+소량 폐쇄" 혼합으로 나오는지 확인. 완료 기준: 철강 비용최소 계획에 CAPEX>0, 경계 ≥4점, ② 150~400천원/t 대역.
-- [ ] A2. A1 후 전체 재실행(20000) → `scripts/build_report.py web/index.html` (doctype/body 래핑 포함) → 커밋·푸쉬 → Vercel 연결 확인(사용자가 Vercel 프로젝트 연결 필요 시 README에 절차 기록).
+- [x] A1. **retire 퇴행 해소**: 현재 비용최소 = "20% 폐쇄+현행 유지+예산 슬랙"(capex 0, 경계 1점). 원인: NZ15 탄소가에서 슬랙 페널티·마진 대비 전환 CAPEX가 여전히 불리하게 계상. 조치 후보: ① 예산 슬랙 상한(연 배출의 5%) 추가 ② retire를 탄소 회피 편익에서 제외(baseline 대비 증분이라 폐쇄분 탄소 회피가 과대) 검토 — 증분 정의 재점검 ③ 결과가 "수소환원+부분 리트로핏+소량 폐쇄" 혼합으로 나오는지 확인. 완료 기준: 철강 비용최소 계획에 CAPEX>0, 경계 ≥4점, ② 150~400천원/t 대역.
+- [x] A2. A1 후 전체 재실행(20000) → `scripts/build_report.py web/index.html` (doctype/body 래핑 포함) → 커밋·푸쉬 → Vercel 연결 확인(사용자가 Vercel 프로젝트 연결 필요 시 README에 절차 기록).
 - [ ] A3. 회귀 테스트에 retire·이원화 케이스 추가(샘플 데이터에 re_price/h2_price/margin 행 보강).
 
 ### B. EFF 기반 정비
-- [ ] B1. 첫 커밋 + `gh repo create PLANiT-Institute/cap-efficient --private --source=. --push` 시도. 실패 시 로컬 커밋 유지, 로그에 기록.
+- [x] B1. 첫 커밋 + `gh repo create PLANiT-Institute/cap-efficient --private --source=. --push` 시도. 실패 시 로컬 커밋 유지, 로그에 기록.
 - [ ] B2. `outputs/` 재생성 확인(`run --paths 1000 --seed 42`) + 대시보드 2종 렌더 확인.
 - [ ] B3. FIN의 월별 SMP·재생 PPA·수소가·마진 시계열(FIN `data/raw/price_history.csv`의 2026-08-07 추가분)을 EFF `data/` 증거 체계로 이식(출처 필드 보존).
 

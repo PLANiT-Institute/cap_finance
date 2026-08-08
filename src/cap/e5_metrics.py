@@ -29,14 +29,16 @@ from .e1_constraints import COMPANY_REGION
 from .e2_milp import _prep_company
 from .e3_prices import load_shocks
 from .e4_revalue import _central_px
-from .plancost import SCALE, build_profile, simulate_cost, support_params
+from .plancost import SCALE, auction_share, build_profile, simulate_cost, support_params
 from .schemas import load_input
 
 
-def _carbon_npv(prof, px, disc) -> float:
+def _carbon_npv(prof, px, disc, auc) -> float:
     """Deterministic NPV of carbon expenditure (bn KRW) — carbon price is a
-    scenario path, not a simulated factor, so this is a per-plan constant."""
-    return float((prof.emissions * px["co2"] / 1000.0 * disc).sum() * SCALE)
+    scenario path, not a simulated factor, so this is a per-plan constant.
+    Must mirror simulate_cost's auction-share treatment or the resource-basis
+    subtraction leaves a residue."""
+    return float((prof.emissions * px["co2"] * auc / 1000.0 * disc).sum() * SCALE)
 
 
 def _empty_plan(company):
@@ -100,6 +102,7 @@ def run(cfg: C.Config):
     shocks = load_shocks(cfg)
     years = np.arange(cfg.years.start, cfg.years.end + 1)
     disc_v = (1 + cfg.discount_rate) ** -(years - years[0])
+    auc_v = auction_share(years, cfg)
 
     frontier_rows, gap_rows, decomp_rows, metric_rows, path_rows, dist_rows, lam_rows = \
         [], [], [], [], [], [], []
@@ -125,7 +128,7 @@ def run(cfg: C.Config):
         if g.empty:
             print(f"[e5] warning: no plans for {company} {scen} — skipped")
             continue
-        carb_base = _carbon_npv(base_prof, px, disc_v)
+        carb_base = _carbon_npv(base_prof, px, disc_v, auc_v)
 
         # unique tech schedules (disclosed kept as-is with its own contracts)
         scheds, disc_entry = {}, None
@@ -160,7 +163,7 @@ def run(cfg: C.Config):
             p50_tot, p90_tot = float(np.median(inc)), float(np.percentile(inc, 90))
             # RESOURCE-cost basis: strip the deterministic carbon-expenditure delta
             # (carbon avoidance otherwise dominates; TCaR unaffected — 설계서 §4)
-            dcarb = _carbon_npv(prof, px, disc_v) - carb_base
+            dcarb = _carbon_npv(prof, px, disc_v, auc_v) - carb_base
             p50, p90 = p50_tot - dcarb, p90_tot - dcarb
             inc_store[vid] = inc - dcarb
             prof_store[vid] = prof
@@ -263,12 +266,12 @@ def run(cfg: C.Config):
             px = _central_px(prices, region, scen, years, cfg, cal)
             base_prof = build_profile(_empty_plan(company), fac, d3, px, years, cfg)
             base_sims = simulate_cost(base_prof, px, shocks, sp0, cfg)
-            carb_base = _carbon_npv(base_prof, px, disc_v)
+            carb_base = _carbon_npv(base_prof, px, disc_v, auc_v)
             for vid, sched_df, ppa_v, epc_v in ref:
                 prof = replace(build_profile(sched_df, fac, d3, px, years, cfg),
                                ppa=ppa_v, epc=epc_v, ccfd=0)
                 sims = simulate_cost(prof, px, shocks, sp0, cfg)
-                inc = sims - base_sims - (_carbon_npv(prof, px, disc_v) - carb_base)
+                inc = sims - base_sims - (_carbon_npv(prof, px, disc_v, auc_v) - carb_base)
                 p50w, p90w = float(np.median(inc)), float(np.percentile(inc, 90))
                 wedge_rows.append([company, vid, scen, round(p50w, 1), round(p90w - p50w, 1)])
     pd.DataFrame(wedge_rows, columns=["company_id", "plan_id", "scen_eval", "p50", "tcar"]

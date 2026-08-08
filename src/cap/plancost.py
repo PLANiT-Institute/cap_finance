@@ -18,6 +18,17 @@ GJ_PER_T_COAL = 28.0
 GJ_PER_T_GAS = 54.0
 
 
+def auction_share(years: np.ndarray, cfg) -> np.ndarray:
+    """Share of emissions actually facing the carbon price (유상할당), interpolated
+    from cfg.carbon_auction_share. Free allocation is why an emitting plant stays
+    solvent at a carbon price many times its product margin; charging 100% makes
+    'close everything' the optimum. Emissions still count fully toward the budget."""
+    tbl = cfg.get("carbon_auction_share") or {2025: 1.0}
+    ky = np.array(sorted(int(k) for k in tbl))
+    kv = np.array([float(tbl[int(k)]) for k in ky])
+    return np.interp(np.asarray(years, dtype=float), ky, kv)
+
+
 def stranded_cost_k(fr, ta: int, cfg) -> float:
     """Remaining depreciated book value (KRW thousands) of the incumbent campaign
     asset written off by converting at ta. Straight-line over the reinvestment
@@ -182,7 +193,7 @@ def simulate_cost(p: PlanProfile, px: dict[str, np.ndarray], shocks: dict[str, n
     else:
         capex_cost = capex_eff[None, :] * shocks["capex"]
 
-    carbon_price = px["co2"].copy()                                    # scenario path, KRW/tCO2
+    carbon_price = px["co2"] * auction_share(years, cfg)               # 유상할당 반영, KRW/tCO2
     strike_t = support.get("ccfd_strike")                              # (T,) with inf outside window
     if p.ccfd and strike_t is not None:
         capped = np.minimum(carbon_price, strike_t)

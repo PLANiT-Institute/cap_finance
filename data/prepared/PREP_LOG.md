@@ -18,6 +18,8 @@
 - D3: CCUS 옵션 제외 (사용자 결정 2026-08-06 — 저장 용량·비용 데이터 확보 전까지 수단에서 제외)
 - D3 결측 주입: steel_eff.capex_unit = 120.0 — BAT 리트로핏 저CAPEX 추정
 - D3 결측 주입: petchem_eff.capex_unit = 60.0 — 운전최적화 저CAPEX 추정
+- D3 steel_h2dri elec_intensity 1.16 → 0.85 MWh/t — 수소 외부조달(v2.1)에 맞춰 전해조 전력(2.6MWh/t 상당) 제거, 이중계상 방지 (VOGL_2018 총 SEC 분해)
+- D3 steel_hyrex elec_intensity 3.48 → 0.85 MWh/t — 수소 외부조달(v2.1)에 맞춰 전해조 전력(2.6MWh/t 상당) 제거, 이중계상 방지 (VOGL_2018 총 SEC 분해)
 - D3: opex 잔여 결측 0 처리 (증분 비용 기준 — 공통 유지비 상쇄 가정)
 - D3 applies_to_unit 정규화: 석화→NCC, 철강 BF→수소환원+부분감축 리트로핏(수소취입·스크랩·HBI·효율), FINEX→HyREX(2035). steel_eaf는 신설 경로라 제거. 2차 수집 수단 반영: 감축률 기준으로 당사 시설 EF에 재스케일, 부분 적용 상한(스크랩 15%p·HBI 30%·바이오 10%·열펌프 15%·수소취입 20%·하이브리드 40%)은 EF에 blended
 - D3 retrofit 구분: steel_ccus, steel_eff, steel_h2inj, steel_scrap, steel_hbi, petchem_h2fuel, petchem_ccus, petchem_eff, petchem_bio, petchem_ecracker_hybrid, petchem_hp_whr — 기존 공정 에너지 유지 + 기술 원단위 가산 (하이브리드 전기로의 연료 40% 감축분은 미반영 = 보수적). 대체형(H2DRI·HyREX·e-cracker 완전)만 공정 에너지 교체

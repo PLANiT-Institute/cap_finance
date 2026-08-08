@@ -27,7 +27,7 @@ import pulp
 from . import config as C
 from .calibration import calibrate, hydrogen_price
 from .e1_constraints import COMPANY_REGION
-from .plancost import salvage_fraction, stranded_cost_k
+from .plancost import auction_share, salvage_fraction, stranded_cost_k
 from .schemas import load_input
 
 SCALE = 1e-6          # KRW thousands -> KRW billions (numerical scaling for CBC)
@@ -176,6 +176,7 @@ def _solve_company(cfg, company, scen, fac, d3, cal, prices, constraints, avail,
             m += ccfd == fixed["ccfd"]
 
     # accumulate per-year expressions
+    auc = auction_share(years, cfg)
     cost_terms, risk_terms, salvage_terms, retire_terms = [], [], [], []
     for (fid, ta), rv in rt.items():
         fr = cf.loc[fid]
@@ -222,7 +223,7 @@ def _solve_company(cfg, company, scen, fac, d3, cal, prices, constraints, avail,
             m += pulp.lpSum(cf.loc[f2].production * rv for (f2, ta), rv in rt.items() if ta <= t) \
                  <= cfg.milp.get("retire_max_share", 0.2) * cf.production.sum()
 
-        carbon = px["co2"][i] / 1000.0  # 천원/tCO2
+        carbon = px["co2"][i] * auc[i] / 1000.0  # 천원/tCO2, 유상할당 반영
         viol = max(2.0 * carbon, cfg.milp.get("budget_violation_floor_thkrw", 300))
         cost_terms.append(disc[i] * SCALE * (
             pulp.lpSum(var_t)
