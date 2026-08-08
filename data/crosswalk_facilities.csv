@@ -1,0 +1,34 @@
+fin_facility_id,eff_facility_id,fin_company_id,eff_company_id,unit_type,site,fin_capacity_mtpa,eff_block_capacity_mtpa,in_fin_model,mapping_confidence,note
+POSCO_POH_BF2,POS-POH-N,POSCO,POSCO_KR,BF,포항,2.329,8.2,yes,site,
+POSCO_POH_BF3,POS-POH-N,POSCO,POSCO_KR,BF,포항,5.115,8.2,yes,site,
+POSCO_POH_BF4,POS-POH-S,POSCO,POSCO_KR,BF,포항,5.115,7.4,yes,site,
+POSCO_GWY_BF1,POS-GWY-W,POSCO,POSCO_KR,BF,광양,5.48,10.3,yes,site,
+POSCO_GWY_BF3,POS-GWY-W,POSCO,POSCO_KR,BF,광양,5.023,10.3,yes,site,
+POSCO_GWY_BF4,POS-GWY-E,POSCO,POSCO_KR,BF,광양,5.023,10.3,yes,site,
+POSCO_GWY_BF5,POS-GWY-E,POSCO,POSCO_KR,BF,광양,5.023,10.3,yes,site,
+POSCO_GWY_EAF1,POS-GWY-EAF,POSCO,POSCO_KR,EAF,광양,2.5,1.2,yes,site,
+POSCO_POH_FINEX2,,POSCO,,,,,,no,none,EFF 블록 없음 (FINEX/室蘭 — EFF 모델 범위 밖)
+POSCO_POH_FINEX3,,POSCO,,FINEX,포항,2.0,,yes,none,EFF 블록 없음 (FINEX/室蘭 — EFF 모델 범위 밖)
+NSC_KAS_BF1,NS-EAST,NSC,NIPPON_STEEL_JP,BF,鹿島,4.905,8.1,yes,site,
+NSC_KIM_BF2,NS-EAST,NSC,NIPPON_STEEL_JP,BF,君津,4.11,8.1,yes,site,
+NSC_KIM_BF4,NS-EAST,NSC,NIPPON_STEEL_JP,BF,君津,5.074,8.1,yes,site,
+NSC_NGO_BF1,NS-NAGOYA,NSC,NIPPON_STEEL_JP,BF,名古屋,4.971,7.0,yes,site,
+NSC_NGO_BF3,NS-NAGOYA,NSC,NIPPON_STEEL_JP,BF,名古屋,4.042,7.0,yes,site,
+NSC_WAK_BF2,NS-KANSAI,NSC,NIPPON_STEEL_JP,BF,和歌山,3.379,6.3,yes,site,
+NSC_TOB_BF4,NS-KYUSHU,NSC,NIPPON_STEEL_JP,BF,八幡,4.567,10.0,yes,site,
+NSC_OIT_BF1,NS-KYUSHU,NSC,NIPPON_STEEL_JP,BF,大分,5.274,10.0,yes,site,
+NSC_OIT_BF2,NS-KYUSHU,NSC,NIPPON_STEEL_JP,BF,大分,5.274,10.0,yes,site,
+NSC_YAW_EAF1,NS-KYUSHU,NSC,NIPPON_STEEL_JP,,규슈,,10.0,no,site,FIN 모형 제외 설비 (신설·능력 미상)
+NSC_HIR_EAF2,NS-SETOUCHI,NSC,NIPPON_STEEL_JP,,세토우치,,7.5,no,site,FIN 모형 제외 설비 (신설·능력 미상)
+NSC_MUR_BF2,,NSC,,BF,室蘭,2.753,,yes,none,EFF 블록 없음 (FINEX/室蘭 — EFF 모델 범위 밖)
+,JFE-KURA,,JFE_STEEL_JP,,구라시키,,7.4,no,none,FIN 모델 범위 밖 (JFE·Kobe 등 EFF 전용 기업)
+,JFE-FUKU,,JFE_STEEL_JP,,후쿠야마,,9.8,no,none,FIN 모델 범위 밖 (JFE·Kobe 등 EFF 전용 기업)
+,JFE-CHIBA,,JFE_STEEL_JP,,치바,,6.0,no,none,FIN 모델 범위 밖 (JFE·Kobe 등 EFF 전용 기업)
+,JFE-SENDAI,,JFE_STEEL_JP,,센다이,,0.8,no,none,FIN 모델 범위 밖 (JFE·Kobe 등 EFF 전용 기업)
+,KOB-BF1,,KOBE_STEEL_JP,,가코가와,,3.15,no,none,FIN 모델 범위 밖 (JFE·Kobe 등 EFF 전용 기업)
+,KOB-BF3,,KOBE_STEEL_JP,,가코가와,,3.05,no,none,FIN 모델 범위 밖 (JFE·Kobe 등 EFF 전용 기업)
+,KOB-TAKA,,KOBE_STEEL_JP,,다카사고,,0.14,no,none,FIN 모델 범위 밖 (JFE·Kobe 등 EFF 전용 기업)
+LOTTE_YEO_NCC,,LOTTE,,NCC,여수,1.23,,yes,none,EFF 모델 범위 밖 (석유화학 — FIN 전용)
+LOTTE_DAE_NCC,,LOTTE,,NCC,대산,1.1,,yes,none,EFF 모델 범위 밖 (석유화학 — FIN 전용)
+MCI_ICH_CR,,MCI,,NCC,市原,0.553,,yes,none,EFF 모델 범위 밖 (석유화학 — FIN 전용)
+MCI_OSK_CR,,MCI,,NCC,大阪,0.455,,yes,none,EFF 모델 범위 밖 (석유화학 — FIN 전용)

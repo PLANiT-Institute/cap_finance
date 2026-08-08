@@ -43,12 +43,12 @@
 
 ### B. EFF 기반 정비
 - [x] B1. 첫 커밋 + `gh repo create PLANiT-Institute/cap-efficient --private --source=. --push` 시도. 실패 시 로컬 커밋 유지, 로그에 기록.
-- [ ] B2. `outputs/` 재생성 확인(`run --paths 1000 --seed 42`) + 대시보드 2종 렌더 확인.
+- [x] B2. `outputs/` 재생성 확인(`run --paths 1000 --seed 42`) + 대시보드 2종 렌더 확인.
 - [ ] B3. FIN의 월별 SMP·재생 PPA·수소가·마진 시계열(FIN `data/raw/price_history.csv`의 2026-08-07 추가분)을 EFF `data/` 증거 체계로 이식(출처 필드 보존).
 
 ### C. 데이터 연계
-- [ ] C1. crosswalk_facilities.csv 작성(철강 겹침: POSCO·NSC. EFF의 JFE·Kobe는 FIN에 없음 → note에 `fin:none`).
-- [ ] C2. 기술 비용 대조표: EFF `technology_cost_evidence.csv` ↔ FIN `tech_options` — 항목별 채택값·차이·사유 1페이지(`docs/tech_cost_reconciliation.md`, 양쪽 커밋).
+- [x] C1. crosswalk_facilities.csv 작성(철강 겹침: POSCO·NSC. EFF의 JFE·Kobe는 FIN에 없음 → note에 `fin:none`).
+- [x] C2. 기술 비용 대조표: EFF `technology_cost_evidence.csv` ↔ FIN `tech_options` — 항목별 채택값·차이·사유 1페이지(`docs/tech_cost_reconciliation.md`, 양쪽 커밋).
 - [ ] C3. 시나리오 정의 대조: EFF `scenario_definitions.csv` ↔ FIN D2 — 탄소가·예산 앵커 차이 표. FIN의 단조성 보정 규칙을 EFF에도 적용 여부 점검.
 - [ ] C4. 크로스체크 리포트: POSCO·NSC의 P50·TCaR 양 모형 비교표(`docs/cross_model_check.md`) — 차이 요인 분해(경계 정의·마진·탄소 처리).
 
