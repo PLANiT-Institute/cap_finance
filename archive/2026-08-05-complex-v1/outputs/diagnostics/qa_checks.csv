@@ -1,0 +1,30 @@
+check_id,status,detail
+required_files,PASS,All declared MVP inputs and eight canonical tables exist.
+isolated_table_regeneration,PASS,Eight tables rebuilt in a temporary directory match canonical outputs byte-for-byte.
+isolated_figure_regeneration,PASS,All four investor figures regenerated from rebuilt tables and passed minimum file-size checks.
+screening_grain,PASS,Screening outputs contain 25 facilities x 3 cases and four companies x 3 cases.
+screening_unique_keys,PASS,Facility/case and company/case keys are unique.
+screening_reconciliation,PASS,Six CAPEX and operational-emissions measures reconcile exactly from facilities to companies.
+screening_sensitivity_order,PASS,Company CAPEX and operational abatement are monotonic across low/base/high cases.
+support_grain,PASS,Support outputs contain 25 facilities x 3 assumptions x 4 mechanisms and four companies at the same cases.
+support_unique_keys,PASS,Facility and company support keys are unique.
+support_reconciliation,PASS,"Six capital, support and abatement measures reconcile exactly from facilities to companies."
+abatement_status_trace,PASS,Every positive additional operational-abatement row names a facility status change.
+support_sensitivity_order,PASS,Support totals rise and residual common exposure falls monotonically across low/base/high mechanism assumptions.
+cost_gap_grain,PASS,Cost-gap outputs contain 87 facility-variant-case rows and 15 company-variant-case rows.
+cost_gap_unique_keys,PASS,Facility and company cost-gap keys are unique.
+cost_gap_reconciliation,PASS,"Six CAPEX, abatement, annual resource-gap and support-stress measures reconcile exactly from facilities to companies."
+cross_output_company_set,PASS,"Screening, support, cost and production tables all contain the fixed four-company sample."
+production_coverage_policy,PASS,Nippon publishes 100% production coverage within the 2% tolerance; the other three companies remain NA and none is zero-filled.
+physical_constraint_reconciliation,PASS,"Gwangyang capacity coverage, full-route multiple and implied scrap demand reproduce from the disclosed capacity and allocated activity."
+boundary_guardrails,PASS,System abatement remains not modelled and legacy pathway/support tables do not silently backfill production coverage.
+assumption_metadata,PASS,"All mechanism assumptions retain estimate label, range, unit, price-year treatment, formula, rationale and quality D."
+source_referential_integrity,PASS,All external source IDs in processed inputs resolve to the source register.
+non_mitsui_cost_support_boundaries,PASS,"POSCO, Nippon and LOTTE primary cost/support emissions boundaries align within 0.1%."
+mitsui_support_boundary,WARN,"Mitsui primary cost coverage is 97.46% versus 85.00% in the legacy support experiment, a 12.46 percentage-point difference; exact combined support/cost claims are gated."
+production_coverage_completeness,WARN,"Production coverage is publishable for 1/4 companies; POSCO, LOTTE and Mitsui remain NA rather than zero."
+production_coverage_integration,WARN,"Nippon's new 100% production coverage is not yet propagated into the capital-allocation and support tables, which retain the older NA field."
+gwangyang_full_route_capacity,WARN,The completed Gwangyang EAF covers only 13.15% of allocated base works activity; full-route project-backed CAPEX and abatement are gated.
+verified_net_gap_availability,WARN,"Verified incentive-adjusted cost gaps remain NA for all company cost rows; support amounts are sensitivities, not realised cash."
+system_abatement_availability,WARN,System abatement remains unavailable because leakage and replacement production are not modelled.
+version_control_coverage,WARN,13 top-level status entries are untracked; reproducible files exist but are not yet protected by version history.

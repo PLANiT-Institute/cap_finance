@@ -1,0 +1,48 @@
+# CAP v2 pipeline configuration — REDESIGN_SPEC.md §6 확정값
+data_dir: data/raw          # real CSVs from Excel; tests use data/sample
+out_dir: out
+seed: 20260806
+
+years: {start: 2025, end: 2050}
+scenarios: [NZ15, B20]
+support_scenarios: [none, current]   # none = gross
+
+discount_rate: 0.05          # real, KRW 2025 base
+discount_rate_sensitivity: [0.035, 0.065]
+
+simulation:
+  n_sims: 5000
+  n_sims_flex: 300           # re-optimization subsample for flexibility value (⑤)
+  convergence_check_n: 2000  # P50/TCaR must match full run within 1%
+
+milp:
+  frontier_points: 12        # epsilon-constraint grid size
+  solver_time_limit_s: 600
+  # early conversion writes off the incumbent campaign asset's remaining
+  # straight-line book value (D1a incumbent_capex_unit); halfwidth = grace years
+  # before a relining anchor that count as on-window
+  reinvest_window_halfwidth: 1
+  # soft carbon-budget violation price floor (천원/tCO2): without a floor the
+  # penalty (2x carbon price) undercuts deep-abatement tech in early years and
+  # the optimizer buys violations instead of transitions
+  budget_violation_floor_thkrw: 300
+  # early-closure cap: at most this share of company production may be retired —
+  # demand/market-position proxy. Without it, NZ15 carbon prices (~520천원/t of
+  # product) dwarf the ~70천원/t margin and full closure becomes the "optimum".
+  retire_max_share: 0.2
+
+contracts:
+  ppa_premium_pct: 0.08      # PPA price premium over central elec price
+  epc_premium_pct: 0.10      # fixed-price EPC premium over central capex
+  ccfd_fee_pct: 0.03         # CCfD fee as share of covered carbon cost
+
+hydrogen:
+  # h2 price = elec_price * kwh_per_kg / 1000 + electrolyzer_capex amortization
+  kwh_per_kg: 52
+  electrolyzer_capex_amort: 0.12   # annualization factor on capex per kg-capacity
+  electrolyzer_kg_per_kw_yr: 150   # kg H2 per kW electrolyzer per year
+
+# company carbon budget = base emissions x sector budget ratio from GCAM.
+# NOT facility-level allocation (that is the MILP's job); this only scales the
+# sector pathway to the company boundary. Documented in REDESIGN_SPEC §3 E1.
+budget_scaling: intensity_ratio

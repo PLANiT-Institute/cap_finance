@@ -1,0 +1,24 @@
+facility_id,company_id,sector,site,unit_type,unit_name,capacity,capacity_unit,commissioning_year,last_reline_year,reinvest_cycle_yr,next_reinvest_year,incumbent_capex_unit,margin_kthou_t,status,source_id
+POSCO_POH_BF2,POSCO,steel,포항,BF,"포항 2고로 (2,550m³)",2329000.0,t용선/yr (내용적 추정),1976.0,2015.0,15.0,2030.0,200.0,70.0,가동,POSCO_NEWSROOM_BF2
+POSCO_POH_BF3,POSCO,steel,포항,BF,"포항 3고로 (5,600m³)",5114666.666666667,t용선/yr (내용적 추정),1978.0,2017.0,15.0,2032.0,200.0,70.0,가동,POSCO_BF_MEDIA
+POSCO_POH_BF4,POSCO,steel,포항,BF,"포항 4고로 (5,600m³)",5114666.666666667,t용선/yr (내용적 추정),1981.0,2024.0,15.0,2039.0,200.0,70.0,가동,POSCO_BF_MEDIA
+POSCO_GWY_BF1,POSCO,steel,광양,BF,"광양 1고로 (6,000m³)",5480000.0,t용선/yr,1987.0,2013.0,15.0,2028.0,200.0,70.0,가동,POSCO_BF_MEDIA
+POSCO_GWY_BF3,POSCO,steel,광양,BF,"광양 3고로 (5,500m³)",5023333.333333334,t용선/yr (내용적 추정),1990.0,2020.0,15.0,2035.0,200.0,70.0,가동,POSCO_BF_MEDIA
+POSCO_GWY_BF4,POSCO,steel,광양,BF,"광양 4고로 (5,500m³)",5023333.333333334,t용선/yr (내용적 추정),1992.0,2022.0,15.0,2037.0,200.0,70.0,가동,POSCO_BF_MEDIA
+POSCO_GWY_BF5,POSCO,steel,광양,BF,"광양 5고로 (5,500m³)",5023333.333333334,t용선/yr (내용적 추정),2000.0,2016.0,15.0,2031.0,200.0,70.0,가동,POSCO_BF_MEDIA
+POSCO_POH_FINEX3,POSCO,steel,포항,FINEX,파이넥스 3공장,2000000.0,t용선/yr,2014.0,2014.0,20.0,2034.0,300.0,70.0,가동,POSCO_BF_MEDIA
+POSCO_GWY_EAF1,POSCO,steel,광양,EAF,광양 전기로,2500000.0,t조강/yr,2026.0,2026.0,20.0,2046.0,250.0,70.0,가동,POSCO_GY_EAF
+NSC_MUR_BF2,NSC,steel,室蘭,BF,"室蘭 第2高炉 (3,014m³)",2752786.666666667,t용선/yr (내용적 추정),,2020.0,20.0,2040.0,200.0,70.0,가동,NSC_DATABOOK_2025
+NSC_KAS_BF1,NSC,steel,鹿島,BF,"鹿島 第1高炉 (5,370m³)",4904600.0,t용선/yr (내용적 추정),,2004.0,20.0,2027.0,200.0,70.0,가동,NSC_DATABOOK_2025
+NSC_KIM_BF2,NSC,steel,君津,BF,"君津 第2高炉 (4,500m³, 수소취입 실증)",4110000.0,t용선/yr (내용적 추정),,2012.0,20.0,2032.0,200.0,70.0,가동,NSC_DATABOOK_2025
+NSC_KIM_BF4,NSC,steel,君津,BF,"君津 第4高炉 (5,555m³)",5073566.666666667,t용선/yr (내용적 추정),,2003.0,20.0,2027.0,200.0,70.0,가동,NSC_DATABOOK_2025
+NSC_NGO_BF1,NSC,steel,名古屋,BF,"名古屋 第1高炉 (5,443m³)",4971273.333333334,t용선/yr (내용적 추정),,2007.0,20.0,2027.0,200.0,70.0,가동,NSC_DATABOOK_2025
+NSC_NGO_BF3,NSC,steel,名古屋,BF,"名古屋 第3高炉 (4,425m³)",4041500.0,t용선/yr (내용적 추정),,2022.0,20.0,2042.0,200.0,70.0,가동,NSC_DATABOOK_2025
+NSC_WAK_BF2,NSC,steel,和歌山,BF,"和歌山 第2高炉 (3,700m³)",3379333.3333333335,t용선/yr (내용적 추정),2019.0,2019.0,20.0,2039.0,200.0,70.0,가동,NSC_DATABOOK_2025
+NSC_TOB_BF4,NSC,steel,八幡,BF,"戸畑 第4高炉 (5,000m³)",4566666.666666667,t용선/yr (내용적 추정),,2014.0,20.0,2029.0,200.0,70.0,휴지예정(전기로 전환),NSC_PR_20250530
+NSC_OIT_BF1,NSC,steel,大分,BF,"大分 第1高炉 (5,775m³)",5274500.0,t용선/yr (내용적 추정),,2009.0,20.0,2029.0,200.0,70.0,가동,NSC_DATABOOK_2025
+NSC_OIT_BF2,NSC,steel,大分,BF,"大分 第2高炉 (5,775m³)",5274500.0,t용선/yr (내용적 추정),,2004.0,20.0,2027.0,200.0,70.0,가동,NSC_DATABOOK_2025
+LOTTE_YEO_NCC,LOTTE,petchem,여수,NCC,여수 NC공장,1230000.0,t에틸렌/yr,1992.0,2026.0,4.0,2030.0,150.0,290.0,가동(여천NCC 통합법인 이관 예정),LOTTE_MEDIA_2026
+LOTTE_DAE_NCC,LOTTE,petchem,대산,NCC,대산 NC공장,1100000.0,t에틸렌/yr,1991.0,2025.0,4.0,2026.0,150.0,290.0,가동중단 계획(롯데대산석화 재편),LOTTE_MEDIA_2026
+MCI_ICH_CR,MCI,petchem,市原,NCC,市原 에틸렌 플랜트 2UPC,553000.0,t에틸렌/yr,1978.0,1978.0,4.0,2027.0,150.0,290.0,가동(2027.7 지바 집약 거점),MCI_RELEASES
+MCI_OSK_CR,MCI,petchem,大阪,NCC,大阪石油化学 에틸렌 플랜트,455000.0,t에틸렌/yr,1970.0,2024.0,4.0,2028.0,150.0,290.0,가동(2030년도 서일본 집약 거점),MCI_RELEASES

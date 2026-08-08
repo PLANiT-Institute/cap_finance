@@ -1,0 +1,223 @@
+"""Deterministic per-plan quantity profiles + vectorized simulated costing.
+
+Single source of truth for "what does this plan buy each year" — used by E4
+(simulation) and E5 (metrics). Mirrors the cost structure of the E2 objective;
+E4 writes the wedge between central-path cost and the E2 surrogate objective to
+summary.csv (they differ by the slack penalty and contract linearization — spec §3 E4).
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import numpy as np
+import pandas as pd
+
+SCALE = 1e-6  # KRW thousands -> billions
+GJ_PER_T_COAL = 28.0
+GJ_PER_T_GAS = 54.0
+
+
+def stranded_cost_k(fr, ta: int, cfg) -> float:
+    """Remaining depreciated book value (KRW thousands) of the incumbent campaign
+    asset written off by converting at ta. Straight-line over the reinvestment
+    cycle; campaign anchors at last_reline + k*cycle, so converting right at an
+    anchor (relining due) writes off nothing and converting just after a reline
+    writes off nearly the full campaign asset. Grace window: halfwidth years
+    before the anchor count as on-window."""
+    cycle = float(fr.reinvest_cycle_yr)
+    inc = float(fr.get("incumbent_capex_unit", 200.0) if hasattr(fr, "get")
+                else getattr(fr, "incumbent_capex_unit", 200.0))
+    if pd.isna(inc):
+        inc = 200.0
+    k = max(1, int(np.ceil((ta - fr.last_reline_year) / cycle)))
+    anchor = fr.last_reline_year + k * cycle
+    remaining = max(0.0, anchor - ta - cfg.milp.reinvest_window_halfwidth) / cycle
+    return remaining * inc * fr.capacity
+
+
+def salvage_fraction(tk, op_year: int, end_year: int) -> float:
+    """Straight-line book value fraction of the NEW asset remaining at horizon end
+    — credited back so late adoptions aren't charged full capex for partial use."""
+    used = end_year - op_year + 1
+    return max(0.0, 1.0 - used / float(tk.lifetime))
+
+
+@dataclass
+class PlanProfile:
+    grid_mwh: np.ndarray      # (T,) incumbent-process electricity (grid tariff/SMP)
+    re_mwh: np.ndarray        # transition-tech electricity (renewable procurement)
+    h2_kg: np.ndarray         # externally procured hydrogen
+    other_cost_k: np.ndarray  # coal+gas+opex+margin-loss+write-offs, KRW thousands (deterministic)
+    capex_k: np.ndarray       # KRW thousands spent per year, incl. stranded penalty
+    capex_by_tech: dict[str, np.ndarray]
+    emissions: np.ndarray     # tCO2 scope1
+    ppa: float
+    epc: int
+    ccfd: int
+
+
+RETIRE = "retire"  # pseudo-tech: early closure — no D3 row, handled structurally
+
+
+def build_profile(plan_df: pd.DataFrame, fac: pd.DataFrame, techs: pd.DataFrame,
+                  px_central: dict[str, np.ndarray], years: np.ndarray, cfg) -> PlanProfile:
+    """v2.1: grid electricity (incumbent process) and renewable-procured electricity
+    (transition techs) are separate channels; hydrogen is externally procured.
+    'retire' rows close the facility at adopt_year: emissions/energy stop, the
+    campaign asset's book value is written off, and future margin is forfeit."""
+    T = len(years)
+    grid = np.zeros(T)
+    re = np.zeros(T)
+    h2 = np.zeros(T)
+    other = np.zeros(T)
+    capex = np.zeros(T)
+    capex_by_tech: dict[str, np.ndarray] = {}
+    emis = np.zeros(T)
+    tk_idx = techs.set_index("tech_id")
+    adopt = {r.facility_id: r for r in plan_df.itertuples() if pd.notna(r.tech_id)}
+
+    company = plan_df.company_id.iloc[0]
+    for fid, fr in fac[fac.company_id == company].iterrows():
+        a = adopt.get(fid)
+        op_year = int(a.op_year) if a is not None else 10**9
+        is_retire = a is not None and a.tech_id == RETIRE
+        margin = float(fr.get("margin_kthou_t", 0) or 0)
+        if pd.isna(margin):
+            margin = 0.0
+        for i, t in enumerate(years):
+            if is_retire and t >= op_year:
+                # forfeited operating margin. Margin (영업이익/t) is already net of
+                # energy costs, so the model's own energy-cost savings must be
+                # neutralized (added back deterministically) to avoid double
+                # counting — closure's genuine benefits are carbon avoidance and
+                # the removal of price-risk exposure, not a second energy saving.
+                other[i] += (margin * fr.production
+                             + fr.elec_int_inc * fr.production * px_central["elec"][i] / 1000.0
+                             + fr.coal_int_inc * fr.production * px_central["coal"][i] / 1000.0
+                             + fr.gas_int_inc * fr.production * px_central["gas"][i] / 1000.0)
+                continue
+            incumbent_energy = t < op_year
+            if not incumbent_energy:
+                tk = tk_idx.loc[a.tech_id]
+                incumbent_energy = bool(int(tk.get("retrofit", 0) or 0))  # retrofit keeps process energy
+                re[i] += tk.elec_intensity * fr.production   # transition power = renewable procurement
+                h2[i] += tk.h2_intensity * fr.production
+                emis[i] += tk.emission_factor * fr.production
+                # opex_var per tonne produced; opex_fixed per tonne CAPACITY (spec D3)
+                other[i] += tk.opex_var * fr.production + tk.opex_fixed * fr.capacity
+            else:
+                emis[i] += fr.ef_inc * fr.production if t < op_year else 0.0
+            if incumbent_energy:
+                grid[i] += fr.elec_int_inc * fr.production
+                other[i] += (fr.coal_int_inc * fr.production * px_central["coal"][i] / 1000.0
+                             + fr.gas_int_inc * fr.production * px_central["gas"][i] / 1000.0)
+        if a is not None:
+            ta = int(a.adopt_year)
+            if years[0] <= ta <= years[-1]:
+                i = int(ta - years[0])
+                if is_retire:
+                    # book write-off is deterministic — no market capex shock applies
+                    other[i] += stranded_cost_k(fr, ta, cfg)
+                else:
+                    tk = tk_idx.loc[a.tech_id]
+                    base = tk.capex_unit * fr.capacity
+                    amt = base + stranded_cost_k(fr, ta, cfg)
+                    capex[i] += amt
+                    capex_by_tech.setdefault(a.tech_id, np.zeros(T))[i] += amt
+                    # horizon-end salvage of the new asset (deterministic credit;
+                    # capex shocks not applied to salvage — second-order)
+                    other[T - 1] -= base * salvage_fraction(tk, int(a.op_year), int(years[-1]))
+
+    for name, arr in [("grid", grid), ("re", re), ("h2", h2), ("other", other),
+                      ("capex", capex), ("emissions", emis)]:
+        if not np.isfinite(arr).all():
+            raise RuntimeError(f"plan {plan_df.plan_id.iloc[0] if 'plan_id' in plan_df else '?'}: "
+                               f"NaN in {name} profile — facility data gap (D1a/D1b)")
+
+    def _num(v, cast):
+        return cast(0) if pd.isna(v) else cast(v)
+
+    return PlanProfile(grid, re, h2, other, capex, capex_by_tech, emis,
+                       _num(plan_df.ppa_share.iloc[0], float),
+                       _num(plan_df.epc.iloc[0], int), _num(plan_df.ccfd.iloc[0], int))
+
+
+def simulate_cost(p: PlanProfile, px: dict[str, np.ndarray], shocks: dict[str, np.ndarray],
+                  support: dict, cfg, freeze: str | None = None) -> np.ndarray:
+    """NPV cost per sim (KRW billions). shocks arrays are (N,T); pass mult=1 arrays for central.
+
+    v2.1 channels: grid electricity (incumbent, elec shock), renewable-procured
+    electricity (transition techs — PPA share fixed at re_price+premium, rest
+    floats with the elec shock), externally procured hydrogen (own shock, no
+    power hedge). freeze pins ONE cost channel at central for decomposition (③):
+    'elec' = both power channels, 'h2', 'capex'."""
+    years = np.arange(cfg.years.start, cfg.years.end + 1)
+    disc = (1 + cfg.discount_rate) ** -(years - years[0])
+    N = shocks["elec"].shape[0]
+
+    e_shock = np.ones_like(shocks["elec"]) if freeze == "elec" else shocks["elec"]
+    h_shock = np.ones_like(shocks["h2"]) if freeze == "h2" else shocks["h2"]
+
+    grid_sim = px["elec"][None, :] * e_shock                            # (N,T) KRW/MWh
+    re_sim = px["re"][None, :] * e_shock                                # uncontracted 재생 조달은 시장 연동
+    h2_sim = px["h2"][None, :] * h_shock                                # KRW/kg, 외부 조달
+
+    ppa_grid = px["elec"] * (1 + cfg.contracts.ppa_premium_pct)         # fixed contract prices
+    ppa_re = px["re"] * (1 + cfg.contracts.ppa_premium_pct)
+
+    elec_cost = (p.grid_mwh[None, :] * ((1 - p.ppa) * grid_sim + p.ppa * ppa_grid[None, :])
+                 + p.re_mwh[None, :] * ((1 - p.ppa) * re_sim + p.ppa * ppa_re[None, :])) / 1000.0
+    h2_cost = (p.h2_kg[None, :] * h2_sim) / 1000.0                      # no power hedge on H2
+
+    # capex: per-year subsidy (valid_from/valid_to windows) by tech, then EPC fix or shock
+    capex_eff = np.zeros_like(p.capex_k)
+    for tech_id, arr in p.capex_by_tech.items():
+        sub_t = support["subsidy"].get(tech_id, support["subsidy"].get("all"))
+        capex_eff += arr * (1 - sub_t) if sub_t is not None else arr
+    if p.epc:
+        capex_cost = np.tile(capex_eff * (1 + cfg.contracts.epc_premium_pct), (N, 1))
+    elif freeze == "capex":
+        capex_cost = np.tile(capex_eff, (N, 1))
+    else:
+        capex_cost = capex_eff[None, :] * shocks["capex"]
+
+    carbon_price = px["co2"].copy()                                    # scenario path, KRW/tCO2
+    strike_t = support.get("ccfd_strike")                              # (T,) with inf outside window
+    if p.ccfd and strike_t is not None:
+        capped = np.minimum(carbon_price, strike_t)
+        fee = cfg.contracts.ccfd_fee_pct * np.isfinite(strike_t)       # fee only in covered years
+        carbon_cost = p.emissions[None, :] * (capped * (1 + fee))[None, :] / 1000.0
+    else:
+        carbon_cost = p.emissions[None, :] * carbon_price[None, :] / 1000.0
+
+    total_k = elec_cost + h2_cost + capex_cost + carbon_cost + p.other_cost_k[None, :]
+    return (total_k * disc[None, :]).sum(axis=1) * SCALE
+
+
+def support_params(d5: pd.DataFrame, support_scenario: str, years: np.ndarray) -> dict:
+    """Per-year support arrays honouring valid_from/valid_to windows.
+
+    subsidy: {tech_id: (T,) rate array, 0 outside window}
+    ccfd_strike: (T,) strike array, +inf outside window; None if no CCfD row.
+    """
+    if support_scenario == "none":
+        return {"subsidy": {}, "ccfd_strike": None}
+    g = d5[d5.support_scenario == support_scenario]
+
+    def window(r):
+        lo = years[0] if pd.isna(r.valid_from) else r.valid_from
+        hi = years[-1] if pd.isna(r.valid_to) else r.valid_to
+        return (years >= lo) & (years <= hi)
+
+    subsidy: dict[str, np.ndarray] = {}
+    for r in g[g.instrument == "subsidy_capex"].itertuples():
+        arr = subsidy.setdefault(r.tech_id, np.zeros(len(years)))
+        np.maximum(arr, np.where(window(r), r.value / 100.0, 0.0), out=arr)
+
+    strike = None
+    for r in g[g.instrument == "ccfd"].itertuples():
+        if strike is None:
+            strike = np.full(len(years), np.inf)
+        strike = np.where(window(r), np.minimum(strike, r.value), strike)
+    return {"subsidy": subsidy, "ccfd_strike": strike}

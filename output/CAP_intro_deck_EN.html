@@ -1,0 +1,664 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>PLANiT — CAP: Capital Allocation Pathway</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#001F3F;--blue:#0097A7;--yellow:#8BC34A;--cream:#E4F3EF;
+--grey:#8D8D8D;--lgrey:#CFD8D6;--panel:#F1F6F6;--orange:#EC8305;}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;background:#06152e;font-family:'Roboto',Arial,sans-serif;overflow:hidden;}
+#stage-wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
+#stage{width:1280px;height:720px;position:relative;background:#fff;box-shadow:0 20px 80px rgba(0,0,0,.5);overflow:hidden;}
+.slide{position:absolute;inset:0;padding:46px 72px 64px;display:flex;flex-direction:column;
+  opacity:0;visibility:hidden;transform:translateX(40px);
+  transition:opacity .45s ease,transform .45s ease,visibility .45s;}
+.slide.active{opacity:1;visibility:visible;transform:translateX(0);}
+.slide.navy{background:var(--navy);color:#fff;}
+.slide.white{background:#fff;color:#111;}
+.kicker{font-family:'Roboto Condensed';font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  font-size:13px;color:var(--blue);margin-bottom:6px;}
+.navy .kicker{color:var(--yellow);}
+h1.title{font-family:Georgia,'Times New Roman',serif;font-size:30px;font-weight:700;color:var(--navy);
+  line-height:1.2;margin-bottom:18px;max-width:1120px;}
+.navy h1.title{color:#fff;}
+.body-area{flex:1;display:flex;flex-direction:column;min-height:0;}
+.chap{position:absolute;top:48px;right:72px;font-family:'Roboto Condensed';font-size:12px;
+  letter-spacing:.14em;color:var(--grey);text-transform:uppercase;}
+.navy .chap{color:rgba(255,255,255,.5);}
+.foot{position:absolute;left:72px;right:72px;bottom:18px;display:flex;justify-content:space-between;
+  align-items:center;font-size:11px;color:var(--grey);border-top:1px solid var(--lgrey);padding-top:7px;}
+.navy .foot{border-top:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.65);}
+.foot .wm{font-family:'Roboto Condensed';font-weight:700;font-size:13px;color:var(--navy);letter-spacing:.04em;}
+.navy .foot .wm{color:#fff;}
+#progress{position:absolute;top:0;left:0;height:4px;background:var(--yellow);width:0;z-index:60;transition:width .35s ease;}
+#counter{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);font-family:'Roboto Condensed';
+  font-size:12px;color:var(--grey);z-index:50;}
+.navctl{position:absolute;bottom:16px;right:24px;display:flex;gap:8px;z-index:50;}
+.navctl button{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--lgrey);background:#fff;
+  color:var(--navy);font-size:16px;cursor:pointer;line-height:1;}
+.navctl button:hover{border-color:var(--blue);color:var(--blue);}
+@keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.mp{display:flex;gap:11px;align-items:flex-start;}
+.mpn{flex:none;font-family:'Roboto Condensed';font-weight:700;color:var(--blue);font-size:38px;line-height:1;}
+.mp .mt{font-size:14.5px;color:#333;line-height:1.45;}
+.card{background:transparent;border-left:3px solid var(--lgrey);padding:8px 20px 8px 22px;
+  display:flex;flex-direction:column;justify-content:center;transition:transform .2s,border-color .2s;}
+.card:hover{transform:translateX(6px);border-left-color:var(--blue);}
+.tb-blue{border-left-color:var(--blue)!important;}
+.tb-yellow{border-left-color:var(--yellow)!important;}
+.tb-navy{border-left-color:var(--navy)!important;}
+.tb-orange{border-left-color:var(--orange)!important;}
+.chip{display:inline-block;background:#fff;border:1px solid var(--lgrey);border-radius:999px;
+  padding:3px 12px;font-size:11.5px;color:var(--navy);margin:3px 5px 0 0;font-family:'Roboto Condensed';}
+.takeaway{margin-top:14px;background:var(--cream);border-left:6px solid var(--yellow);border-radius:8px;
+  padding:12px 22px;font-size:15px;color:#222;flex:none;line-height:1.5;}
+.takeaway b{color:var(--navy);}
+.flow{display:flex;align-items:stretch;flex:none;}
+.flow .fbox{flex:1;background:var(--panel);border:2px solid var(--navy);border-radius:12px;
+  padding:11px 9px;text-align:center;display:flex;flex-direction:column;justify-content:center;}
+.flow .fbox h4{font-family:'Roboto Condensed';font-size:16px;color:var(--navy);letter-spacing:.04em;}
+.flow .fbox p{font-size:11.5px;color:#555;margin-top:4px;line-height:1.3;}
+.flow .arr{width:28px;display:flex;align-items:center;justify-content:center;font-size:19px;color:var(--blue);font-weight:700;flex:none;}
+.flow .fbox.hl{background:var(--navy);border-color:var(--navy);}
+.flow .fbox.hl h4{color:var(--yellow);}
+.flow .fbox.hl p{color:#d7e4f5;}
+.scnbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+.scnbtn{font-family:'Roboto Condensed';font-weight:700;font-size:12.5px;padding:5px 13px;border-radius:16px;
+  border:1.5px solid var(--lgrey);background:#fff;color:#555;cursor:pointer;transition:all .15s;}
+.scnbtn:hover{border-color:var(--blue);color:var(--blue);}
+.scnbtn.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+.scnbtn.warn.active{background:var(--orange);border-color:var(--orange);}
+.scnbtn.dual.active{background:var(--navy);border-color:var(--navy);}
+.scn-desc{font-family:'Roboto Condensed';font-size:12px;color:var(--grey);margin-top:5px;min-height:15px;}
+.chart-wrap{display:flex;flex-direction:column;min-height:0;}
+.chart-wrap h3{font-size:15px;color:var(--navy);margin-bottom:2px;}
+.chart-wrap .sub{font-size:11.5px;color:var(--grey);margin-bottom:7px;}
+.pillar{display:flex;flex-direction:column;border-left:3px solid var(--blue);padding:4px 16px 6px 18px;min-height:0;}
+.pillar .pn{font-family:'Roboto Condensed';font-weight:700;color:var(--blue);font-size:30px;line-height:1;}
+.pillar .yr{font-family:'Roboto Condensed';font-weight:700;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--grey);margin-top:5px;}
+.pillar h3{font-size:17px;margin:5px 0 6px;color:var(--navy);}
+.pillar p{font-size:13px;line-height:1.48;color:#333;}
+.pillar .gr{margin-top:auto;padding-top:8px;}
+.pillar .gr .lab{font-family:'Roboto Condensed';font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);font-weight:700;margin-bottom:4px;}
+.metric-mini{background:var(--panel);border-radius:12px;padding:13px 14px 12px;display:flex;flex-direction:column;justify-content:flex-start;transition:transform .2s;}
+.metric-mini:hover{transform:translateY(-4px);}
+.metric-mini .cat{font-family:'Roboto Condensed';font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--grey);margin-bottom:7px;}
+.metric-mini .mn{font-family:'Roboto Condensed';font-weight:700;font-size:22px;color:var(--blue);line-height:1;margin-bottom:7px;}
+.metric-mini .nm{font-size:13px;font-weight:700;color:var(--navy);line-height:1.3;margin-bottom:5px;}
+.metric-mini .qq{font-size:11.5px;font-style:italic;color:#555;line-height:1.4;}
+.metric-mini .see{margin-top:auto;padding-top:9px;font-family:'Roboto Condensed';font-weight:700;font-size:10.5px;color:var(--blue);border-top:1px solid var(--lgrey);}
+.spec{font-family:'Roboto Condensed';font-size:12px;color:var(--navy);background:var(--panel);
+  border-radius:999px;padding:5px 13px;display:inline-block;margin:0 6px 6px 0;}
+.spec b{color:var(--blue);}
+.vm{display:grid;grid-template-columns:1fr 1fr;gap:26px;flex:1;min-height:0;}
+.vm .vbox{border-radius:16px;padding:26px 30px;display:flex;flex-direction:column;justify-content:flex-start;transition:transform .25s;}
+.vm .vbox:hover{transform:translateY(-4px);}
+.vm h2{font-family:'Roboto Condensed';font-size:14px;letter-spacing:.2em;margin-bottom:6px;text-transform:uppercase;}
+.vm .who{font-size:18px;font-weight:700;margin-bottom:12px;}
+.vm p{font-size:14.5px;line-height:1.55;}
+.vm .vbox.vcream{background:var(--panel);}
+.vm .vbox.vcream h2{color:var(--grey);}
+.vm .vbox.vcream .who{color:var(--navy);}
+.vm .vbox.vcream p{color:#333;}
+.vm .vbox.vnavy{background:var(--navy);}
+.vm .vbox.vnavy h2{color:var(--yellow);}
+.vm .vbox.vnavy .who{color:#fff;}
+.vm .vbox.vnavy p{color:#dbe6f5;}
+.vm .vbox.vnavy p b{color:#fff;}
+.notx{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;flex:none;}
+.notx .nx{background:#fff;border:1px solid var(--lgrey);border-radius:10px;padding:10px 15px;}
+.notx .nx b{display:block;font-family:'Roboto Condensed';font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--orange);margin-bottom:3px;}
+.notx .nx span{font-size:12.5px;color:#333;line-height:1.4;display:block;}
+.srcline{flex:none;font-size:11px;font-style:italic;color:var(--grey);margin-top:9px;}
+.stat3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;flex:none;}
+.stat3 .st{background:var(--panel);border-radius:12px;padding:11px 16px;text-align:center;}
+.stat3 .st b{display:block;font-family:'Roboto Condensed';font-size:22px;color:var(--navy);line-height:1.1;}
+.stat3 .st span{font-size:12px;color:#555;line-height:1.35;display:block;margin-top:3px;}
+</style></head><body>
+<div id="stage-wrap"><div id="stage"><div id="progress"></div>
+
+<!-- 1 · COVER -->
+<section class="slide navy" id="cover" style="justify-content:center;">
+  <div style="font-family:'Roboto Condensed';font-weight:700;font-size:34px;letter-spacing:.06em;margin-bottom:26px;">PLAN<span style="color:var(--yellow)">i</span>T</div>
+  <div style="width:84px;height:6px;background:var(--yellow);border-radius:3px;margin:0 0 24px;"></div>
+  <h1 style="font-family:Georgia,serif;font-size:47px;font-weight:700;line-height:1.12;">CAP — Capital Allocation Pathway</h1>
+  <div style="font-size:20px;font-weight:300;color:#cfe0e3;margin-top:15px;max-width:920px;line-height:1.5;">Measuring the financial efficiency of corporate net-zero capital — its cost, its risk, and <b style="font-weight:700;color:#fff;">the price of delay</b>.</div>
+  <div style="display:flex;gap:52px;margin-top:42px;">
+    <div><b style="display:block;font-family:'Roboto Condensed';font-size:38px;color:var(--yellow);line-height:1;">4</b><span style="font-size:12.5px;color:rgba(255,255,255,.75);">companies · steel &amp; petrochemicals</span></div>
+    <div><b style="display:block;font-family:'Roboto Condensed';font-size:38px;color:var(--yellow);line-height:1;">2</b><span style="font-size:12.5px;color:rgba(255,255,255,.75);">countries · Korea &amp; Japan</span></div>
+    <div><b style="display:block;font-family:'Roboto Condensed';font-size:38px;color:var(--yellow);line-height:1;">5,000</b><span style="font-size:12.5px;color:rgba(255,255,255,.75);">price paths per plan</span></div>
+    <div><b style="display:block;font-family:'Roboto Condensed';font-size:38px;color:var(--yellow);line-height:1;">5</b><span style="font-size:12.5px;color:rgba(255,255,255,.75);">published metrics per company</span></div>
+  </div>
+  <div style="position:absolute;bottom:22px;left:72px;font-size:13px;color:rgba(255,255,255,.6);">PLANiT Institute · Research briefing · August 2026</div>
+</section>
+
+<!-- 2 · WHY NOW -->
+<section class="slide white" id="whynow">
+  <div class="chap">01 · Why now</div>
+  <div class="kicker">Where CAP comes from</div>
+  <h1 class="title">We have measured the cost of transition for years. What has been missing is the cost of waiting.</h1>
+  <div class="body-area">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;flex:1;min-height:0;">
+      <div class="card tb-blue">
+        <div style="font-family:'Roboto Condensed';font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-bottom:8px;">What we have built</div>
+        <p style="font-size:14.5px;line-height:1.55;color:#333;">Years of industrial-decarbonisation research: abatement-cost analysis, technology-transition assessment, a dedicated steel-sector study, and asset-level financial-risk models.</p>
+      </div>
+      <div class="card tb-yellow">
+        <div style="font-family:'Roboto Condensed';font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--yellow);filter:brightness(.8);margin-bottom:8px;">What we learned</div>
+        <p style="font-size:14.5px;line-height:1.55;color:#333;">Companies already know the cost is enormous. <b>Another, larger estimate changes no decision</b> — by itself, the cost of transition is an argument for hesitation.</p>
+      </div>
+      <div class="card tb-navy">
+        <div style="font-family:'Roboto Condensed';font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--navy);margin-bottom:8px;">What follows</div>
+        <p style="font-size:14.5px;line-height:1.55;color:#333;">The number that changes decisions is the <b>price of delay</b> — what is lost when a decision slips past the investment window. CAP measures exactly that.</p>
+      </div>
+    </div>
+    <div style="flex:none;margin-top:16px;background:var(--cream);border-left:6px solid var(--yellow);border-radius:8px;padding:14px 22px;display:flex;align-items:center;gap:26px;">
+      <div style="flex:none;font-family:'Roboto Condensed';font-weight:700;font-size:40px;color:var(--navy);line-height:1;">15–20<span style="font-size:18px;"> yrs</span></div>
+      <div style="font-size:14.5px;line-height:1.5;color:#222;"><b style="color:var(--navy);">One relining cycle — one decision window.</b> The blast-furnace windows of the early 2030s are the last before 2050. Miss one and there is no low-cost path back: either a generation of emissions is locked in, or policy forces <b>early closure and the remaining asset value is written off</b>.</div>
+    </div>
+  </div>
+  <div class="foot"><span>PLANiT · Capital Allocation Pathway</span><span class="wm">PLAN<span style="color:var(--yellow)">i</span>T</span></div>
+</section>
+
+<!-- 3 · IN CONTEXT -->
+<section class="slide white" id="context">
+  <div class="chap">02 · In context</div>
+  <div class="kicker">With GCAM-KAIST · One scenario backbone</div>
+  <h1 class="title">From screening to decision: where CAP sits in the chain</h1>
+  <div class="body-area">
+    <div class="vm" style="flex:none;">
+      <div class="vbox vcream">
+        <h2>The macro lens · breadth</h2>
+        <div class="who">GCAM-KAIST — Prof. Jiyong Eom, KAIST</div>
+        <p>Integrated-assessment scenarios for Korea and Japan, and a planned transition-risk assessment of top listed companies. It answers: <b>which firms carry the exposure.</b></p>
+      </div>
+      <div class="vbox vnavy">
+        <h2>The decision lens · depth</h2>
+        <div class="who">CAP — PLANiT Institute</div>
+        <p>Takes the <b>same scenarios</b> as constraints and turns them into facility-level capital plans. It answers: <b>what should this firm do, what does it cost, and why now.</b></p>
+      </div>
+    </div>
+    <div class="flow" style="margin-top:20px;">
+      <div class="fbox"><h4>GCAM scenarios</h4><p>budgets · prices</p></div>
+      <div class="arr">&rarr;</div>
+      <div class="fbox"><h4>Screening</h4><p>who is exposed</p></div>
+      <div class="arr">&rarr;</div>
+      <div class="fbox hl"><h4>CAP diagnosis</h4><p>what to do · what delay costs</p></div>
+      <div class="arr">&rarr;</div>
+      <div class="fbox"><h4>Investor action</h4><p>screening · engagement</p></div>
+    </div>
+    <div class="takeaway"><b>Division of labour, not duplication:</b> the macro assessment finds the risk; CAP is where it lands — specific enough for a board agenda.</div>
+  </div>
+  <div class="foot"><span>PLANiT · Capital Allocation Pathway</span><span class="wm">PLAN<span style="color:var(--yellow)">i</span>T</span></div>
+</section>
+
+<!-- 4 · THE TOOL -->
+<section class="slide white" id="deliver">
+  <div class="chap">03 · The tool</div>
+  <div class="kicker">What CAP delivers</div>
+  <h1 class="title">The instrument: five numbers that turn waiting into a measurable choice</h1>
+  <div class="body-area">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;flex:none;margin-bottom:16px;">
+      <div class="mp"><div class="mpn" style="color:var(--grey);">Q</div><div class="mt">A single &ldquo;transition cost&rdquo; swings by tens of percent on one assumption — and says nothing about what the company can do about it.</div></div>
+      <div class="mp"><div class="mpn">A</div><div class="mt">CAP answers: what will alignment cost, <b>how far the cost can overrun</b> and why, what each lever would save — and what waiting costs.</div></div>
+    </div>
+    <div style="font-family:'Roboto Condensed';font-weight:700;font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-bottom:8px;flex:none;">Five published metrics per company · read left to right</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:13px;flex:1;min-height:0;">
+      <div class="metric-mini"><div class="cat">Scale</div><div class="mn">&#9312;</div><div class="nm">Aligned CAPEX</div><div class="qq">How much capital, in which years</div><div class="see">&rarr; Output 2 · pathway</div></div>
+      <div class="metric-mini"><div class="cat">Level</div><div class="mn">&#9313;</div><div class="nm">Expected cost</div><div class="qq">The distribution's midpoint (P50)</div><div class="see">&rarr; Output 3 · distribution</div></div>
+      <div class="metric-mini"><div class="cat">Risk</div><div class="mn">&#9314;</div><div class="nm">Cost-at-risk (TCaR)</div><div class="qq">How far costs can overrun — and what drives it</div><div class="see">&rarr; Outputs 1 &amp; 3</div></div>
+      <div class="metric-mini"><div class="cat">Sensitivity</div><div class="mn">&#9315;</div><div class="nm">Policy exposure</div><div class="qq">The 1.5°C&minus;2.0°C wedge</div><div class="see">&rarr; Output 1 · wedge view</div></div>
+      <div class="metric-mini"><div class="cat">Option value</div><div class="mn">&#9316;</div><div class="nm">Value of flexibility</div><div class="qq">What room to manoeuvre is worth</div><div class="see">&rarr; Output 3 · support toggle</div></div>
+    </div>
+    <div class="takeaway"><b>Together they form one diagnosis — the frontier gap:</b> how far the announced plan sits from the firm's own best (cost, risk) trade-offs. The next three slides show each exhibit. Pilot: POSCO &amp; Nippon Steel · LOTTE Chemical &amp; Mitsui Chemicals.</div>
+  </div>
+  <div class="foot"><span>PLANiT · Capital Allocation Pathway</span><span class="wm">PLAN<span style="color:var(--yellow)">i</span>T</span></div>
+</section>
+
+<!-- 5 · OUTPUT 1: FRONTIER -->
+<section class="slide white" id="frontier">
+  <div class="chap">04 · Expected outputs</div>
+  <div class="kicker">Output 1 · The core exhibit</div>
+  <h1 class="title">The frontier, the gap — and what five years of delay does to both</h1>
+  <div class="body-area">
+    <div style="display:grid;grid-template-columns:0.85fr 1.15fr;gap:30px;flex:1;min-height:0;">
+      <div style="display:flex;flex-direction:column;justify-content:center;gap:12px;">
+        <p style="font-size:14.5px;line-height:1.55;color:#333;">Investors will recognise this picture: <b>a Markowitz frontier for one company's transition plans</b>. On the curve, cost and risk trade off — paying for PPAs, CCfDs and flexible technology raises expected cost and cuts the tail. <b>A plan that looks inexpensive is often simply unhedged — the risk remains, merely unpriced.</b></p>
+        <p style="font-size:14.5px;line-height:1.55;color:#333;"><b style="color:var(--orange);">The dot</b> is the announced plan; <b style="color:var(--navy);">the gap</b> reads in two directions — spending too little to align (cost gap), or spending unprotected against energy-price extremes (risk gap). That is the assessment: is this firm under-investing, or under-hedging?</p>
+        <p style="font-size:14.5px;line-height:1.55;color:#333;"><b style="color:#C0392B;">Delay</b> is not drift — it converts planned reinvestment into <b>forced early closure</b>: policy still binds, but compliance arrives as write-offs of remaining asset value instead of conversions.</p>
+        <p style="font-size:13px;line-height:1.5;color:#555;"><b style="color:var(--navy);">Wedge</b> shows both scenarios at once — the distance between the two frontiers is metric &#9315;: how much depends on policy ambition.</p>
+      </div>
+      <div class="chart-wrap">
+        <div class="scnbar"><span style="font-family:'Roboto Condensed';font-weight:700;font-size:12.5px;color:#333;margin-right:2px;">Case</span>
+          <button class="scnbtn" data-s="NZ15" onclick="selFr('NZ15')">1.5°C</button>
+          <button class="scnbtn" data-s="B20" onclick="selFr('B20')">2.0°C</button>
+          <button class="scnbtn warn" data-s="NZ15D" onclick="selFr('NZ15D')">1.5°C · delayed 5 yrs</button>
+          <button class="scnbtn dual" data-s="WEDGE" onclick="selFr('WEDGE')">Both · policy wedge</button>
+        </div>
+        <div class="scn-desc" id="frDesc"></div>
+        <div style="flex:1;min-height:0;margin-top:2px;">
+          <svg id="svgF" viewBox="0 0 560 330" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;">
+            <line x1="62" y1="290" x2="540" y2="290" stroke="#001F3F" stroke-width="1.5"/>
+            <line x1="62" y1="290" x2="62" y2="18" stroke="#001F3F" stroke-width="1.5"/>
+            <g id="frGrid"></g>
+            <g id="frDyn"></g>
+            <text x="300" y="322" font-size="11.5" fill="#555" text-anchor="middle" style="font-family:'Roboto Condensed'">Cost overrun risk · TCaR = P90 &#8722; P50 (bn KRW)</text>
+            <text x="16" y="160" font-size="11.5" fill="#555" text-anchor="middle" transform="rotate(-90 16 160)" style="font-family:'Roboto Condensed'">Expected transition cost P50 (bn KRW)</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <div class="srcline">Illustrative synthetic data — pipeline verification output, not company results.</div>
+  </div>
+  <div class="foot"><span>PLANiT · Capital Allocation Pathway</span><span class="wm">PLAN<span style="color:var(--yellow)">i</span>T</span></div>
+</section>
+
+<!-- 6 · OUTPUT 2: EMISSIONS PATHWAY & BUDGET -->
+<section class="slide white" id="pathway">
+  <div class="chap">04 · Expected outputs</div>
+  <div class="kicker">Output 2 · Capital becomes carbon</div>
+  <h1 class="title">One frontier, many pathways: each plan is a different sequence of dated decisions</h1>
+  <div class="body-area">
+    <div class="chart-wrap" style="flex:1;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex:none;">
+        <div>
+          <div class="scnbar"><span style="font-family:'Roboto Condensed';font-weight:700;font-size:12.5px;color:#333;margin-right:2px;">Plan</span>
+            <button class="scnbtn" data-p="P1" onclick="selEm('P1')">P1 · min-cost</button>
+            <button class="scnbtn" data-p="P4" onclick="selEm('P4')">P4 · balanced</button>
+            <button class="scnbtn" data-p="P7" onclick="selEm('P7')">P7 · min-risk</button>
+          </div>
+          <div class="scn-desc" id="emDesc"></div>
+        </div>
+        <div style="text-align:right;flex:none;"><span style="font-family:'Roboto Condensed';font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--grey);">Cumulative avoided · 2026–40&nbsp;</span><span id="emCum" style="font-family:Georgia,serif;font-size:22px;font-weight:700;color:var(--navy);">— MtCO&#8322;</span></div>
+      </div>
+      <div style="flex:1;min-height:0;">
+        <svg viewBox="0 0 980 330" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;">
+          <g id="emGrid"></g><g id="emDyn"></g>
+          <text x="30" y="160" font-size="11.5" fill="#555" text-anchor="middle" transform="rotate(-90 30 160)" style="font-family:'Roboto Condensed'">MtCO&#8322; / yr</text>
+        </svg>
+      </div>
+      <div style="display:flex;gap:26px;flex:none;font-size:11.5px;color:#555;font-family:'Roboto Condensed';align-items:center;">
+        <span><span style="display:inline-block;width:22px;height:3px;background:var(--navy);vertical-align:middle;margin-right:6px;"></span>Plan emissions</span>
+        <span><span style="display:inline-block;width:22px;height:0;border-top:2.5px dashed var(--orange);vertical-align:middle;margin-right:6px;"></span>Scenario carbon budget</span>
+        <span><span style="display:inline-block;width:16px;height:11px;background:#E4F3EF;vertical-align:middle;margin-right:6px;border:1px solid #cfe4dd;"></span>Avoided emissions</span>
+      </div>
+    </div>
+    <div class="stat3" style="margin-top:12px;">
+      <div class="st"><b>Each marker is a board decision</b><span>facility, technology and year — not a smooth curve</span></div>
+      <div class="st"><b>Financial choice = physical pathway</b><span>moving along the frontier reschedules real conversions</span></div>
+      <div class="st"><b>Budget met in every year</b><span>every plan shown stays inside the scenario's carbon budget</span></div>
+    </div>
+    <div class="srcline">Illustrative synthetic data (steel company, 1.5°C case).</div>
+  </div>
+  <div class="foot"><span>PLANiT · Capital Allocation Pathway</span><span class="wm">PLAN<span style="color:var(--yellow)">i</span>T</span></div>
+</section>
+
+<!-- 7 · OUTPUT 3: ANATOMY -->
+<section class="slide white" id="anatomy">
+  <div class="chap">04 · Expected outputs</div>
+  <div class="kicker">Output 3 · The anatomy of risk</div>
+  <h1 class="title">One distribution yields the level, the risk, and its drivers</h1>
+  <div class="body-area">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;flex:1;min-height:0;">
+      <div class="chart-wrap">
+        <h3>Cost distribution — 5,000 price paths</h3>
+        <div class="sub">P50 = expected cost (&#9313;) · P90&minus;P50 = cost-at-risk (&#9314;)</div>
+        <div style="flex:1;min-height:0;"><svg viewBox="0 0 520 260" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;">
+          <line x1="40" y1="230" x2="505" y2="230" stroke="#001F3F" stroke-width="1.5"/>
+          <g id="histBars"></g>
+          <line id="p50l" x1="0" y1="30" x2="0" y2="230" stroke="#001F3F" stroke-width="1.6" stroke-dasharray="6 4"/>
+          <line id="p90l" x1="0" y1="30" x2="0" y2="230" stroke="#EC8305" stroke-width="1.6" stroke-dasharray="6 4"/>
+          <text id="p50t" x="0" y="22" font-size="11.5" fill="#001F3F" text-anchor="middle" style="font-family:'Roboto Condensed';font-weight:700">P50</text>
+          <text id="p90t" x="0" y="22" font-size="11.5" fill="#EC8305" text-anchor="middle" style="font-family:'Roboto Condensed';font-weight:700">P90</text>
+          <text x="272" y="252" font-size="11" fill="#555" text-anchor="middle" style="font-family:'Roboto Condensed'">Total transition cost, NPV (bn KRW)</text>
+        </svg></div>
+      </div>
+      <div class="chart-wrap">
+        <h3>Cost-at-risk, decomposed — and what support buys</h3>
+        <div class="sub">Variance contribution by factor, bn KRW</div>
+        <div class="scnbar" style="margin-bottom:3px;">
+          <span style="font-family:'Roboto Condensed';font-weight:700;font-size:12.5px;color:#333;margin-right:2px;">Support</span>
+          <button class="scnbtn" data-d="gross" onclick="selDe('gross')">Gross</button>
+          <button class="scnbtn" data-d="net" onclick="selDe('net')">Net of support</button>
+        </div>
+        <div class="scn-desc" id="deDesc" style="margin-top:1px;"></div>
+        <div style="flex:1;min-height:0;"><svg viewBox="0 0 520 200" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;">
+          <g id="deDyn"></g>
+        </svg></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:none;">
+          <div style="background:var(--panel);border-radius:10px;padding:9px 12px;text-align:center;">
+            <div style="font-family:'Roboto Condensed';font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--grey);">Cost-at-risk (&#9314;)</div>
+            <div id="deTcar" style="font-family:Georgia,serif;font-size:27px;font-weight:700;color:var(--navy);line-height:1.15;">205<span style="font-size:14px;"> bn KRW</span></div>
+          </div>
+          <div style="background:var(--panel);border-radius:10px;padding:9px 12px;text-align:center;">
+            <div style="font-family:'Roboto Condensed';font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--grey);">Value of flexibility (&#9316;)</div>
+            <div id="deFlex" style="font-family:Georgia,serif;font-size:27px;font-weight:700;color:var(--blue);line-height:1.15;">48<span style="font-size:14px;"> bn KRW</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="srcline">Illustrative synthetic data. How to read it: which risks are contractible — PPA (power), CCfD (carbon), fixed-price EPC (CAPEX) — and what the residual exposure is worth.</div>
+  </div>
+  <div class="foot"><span>PLANiT · Capital Allocation Pathway</span><span class="wm">PLAN<span style="color:var(--yellow)">i</span>T</span></div>
+</section>
+
+<!-- 8 · WHY IT MATTERS -->
+<section class="slide white" id="matters">
+  <div class="chap">05 · Why it matters</div>
+  <div class="kicker">One diagnosis, three readers</div>
+  <h1 class="title">A common language for the efficiency of net-zero capital</h1>
+  <div class="body-area">
+    <div style="display:flex;flex-direction:column;gap:12px;flex:1;min-height:0;justify-content:flex-start;">
+      <div class="card tb-yellow" style="flex:none;padding:11px 20px;">
+        <p style="font-size:14.5px;line-height:1.5;"><b style="color:var(--navy);">For the company&nbsp;&nbsp;</b>The gap prices, in won, what each board-approvable lever would recover — the rebuild window, the PPA, the CCfD, the fixed-price EPC.</p>
+      </div>
+      <div class="card tb-blue" style="flex:none;padding:11px 20px;">
+        <p style="font-size:14.5px;line-height:1.5;"><b style="color:var(--navy);">For the investor&nbsp;&nbsp;</b>Transition risk becomes measured exposure, and the delay case turns &ldquo;engage now&rdquo; into arithmetic — with a time series to hold plans accountable.</p>
+      </div>
+      <div class="card tb-navy" style="flex:none;padding:11px 20px;">
+        <p style="font-size:14.5px;line-height:1.5;"><b style="color:var(--navy);">For the policymaker&nbsp;&nbsp;</b>Gross-vs-net accounting shows which instrument reduces which firm's risk, and by how much.</p>
+      </div>
+      <div class="notx" style="margin-top:4px;">
+        <div class="nx"><b>Not a MACC</b><span>adds capital timing, deliverability and residual risk to the cost curve</span></div>
+        <div class="nx"><b>Not a score</b><span>no composite index, no rankings — dimensions stay visible</span></div>
+        <div class="nx"><b>Not an invented premium</b><span>exposures now; pricing waits for market evidence</span></div>
+      </div>
+    </div>
+    <div class="takeaway" style="background:var(--navy);border-left-color:var(--yellow);"><b style="color:var(--yellow);">The thesis:</b><span style="color:#eaf4fc;"> capital should flow to the most efficient (cost, risk) combination available — <b style="color:#fff;">while the windows are open</b>.</span></div>
+  </div>
+  <div class="foot"><span>PLANiT · Capital Allocation Pathway</span><span class="wm">PLAN<span style="color:var(--yellow)">i</span>T</span></div>
+</section>
+
+<!-- 9 · METHOD -->
+<section class="slide white" id="method">
+  <div class="chap">06 · Method</div>
+  <div class="kicker">Method in one slide</div>
+  <h1 class="title">How it works, in three steps</h1>
+  <div class="body-area">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;flex:none;margin-bottom:18px;">
+      <div class="mp"><div class="mpn">1</div><div class="mt"><b>Scenarios set the rules, not the answers.</b> They provide only the sector's carbon budget and prices; an optimisation over the firm's actual facilities decides which plant converts, to what, and when — and charges off-window conversion as early closure, writing off remaining asset value.</div></div>
+      <div class="mp"><div class="mpn" style="color:var(--yellow);">2</div><div class="mt"><b>Every plan is stress-tested against 5,000 joint price paths</b> for power, hydrogen and construction costs, calibrated to more than ten years of market data.</div></div>
+      <div class="mp"><div class="mpn" style="color:var(--navy);">3</div><div class="mt"><b>The firm is compared with itself.</b> The best achievable trade-offs form the frontier; the announced plan's distance from it is the gap; re-running the optimisation with missed windows prices the delay.</div></div>
+    </div>
+    <div class="flow">
+      <div class="fbox" style="background:#fff;border-color:var(--lgrey);"><h4>Evidence base</h4><p>facilities · prices ·<br>policies · plans</p></div>
+      <div class="arr">&rarr;</div>
+      <div class="fbox"><h4>E1</h4><p>constraints</p></div>
+      <div class="arr">&rarr;</div>
+      <div class="fbox hl"><h4>E2</h4><p>facility optimisation<br>+ frontier</p></div>
+      <div class="arr">&rarr;</div>
+      <div class="fbox"><h4>E3</h4><p>price paths</p></div>
+      <div class="arr">&rarr;</div>
+      <div class="fbox"><h4>E4</h4><p>revaluation</p></div>
+      <div class="arr">&rarr;</div>
+      <div class="fbox"><h4>E5</h4><p>metrics · gap</p></div>
+    </div>
+    <div style="flex:none;margin-top:14px;">
+      <span class="spec"><b>Discount</b> 5.0% real (3.5 / 6.5)</span>
+      <span class="spec"><b>Simulations</b> N=5,000, convergence-checked</span>
+      <span class="spec"><b>Solver</b> HiGHS, open-source</span>
+      <span class="spec"><b>Seed</b> fixed — reproducible</span>
+      <span class="spec"><b>Emissions</b> registry-grade (GIR/NGMS · EEGS)</span>
+      <span class="spec"><b>Currency</b> real 2025 KRW</span>
+    </div>
+    <div class="srcline">Every stage is CSV-in / CSV-out and independently auditable. Every value carries its source and evidence class; blanks are allowed, invented values never. Facility-level detail stays confidential; company aggregates are public.</div>
+  </div>
+  <div class="foot"><span>PLANiT · Capital Allocation Pathway</span><span class="wm">PLAN<span style="color:var(--yellow)">i</span>T</span></div>
+</section>
+
+<!-- 10 · ROADMAP + TRACTION -->
+<section class="slide white" id="roadmap">
+  <div class="chap">07 · Roadmap</div>
+  <div class="kicker">The next three years</div>
+  <h1 class="title">Diagnostic &rarr; platform &rarr; price: 2026 to 2029</h1>
+  <div class="body-area">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;flex:1;min-height:0;">
+      <div class="pillar" style="border-left-color:var(--blue);">
+        <div class="pn">Y1</div><div class="yr">2026 H2 – 2027 · Prove it</div>
+        <h3>Four companies, complete and public</h3>
+        <p>Evidence base complete; metrics &#9312;–&#9316; with frontier-gap and delay exhibits published for all four companies; methodology and code released open-source.</p>
+        <div class="gr"><div class="lab">Milestones</div><span class="chip">First public release</span><span class="chip">Open-source methods</span></div>
+      </div>
+      <div class="pillar" style="border-left-color:var(--yellow);">
+        <div class="pn" style="color:var(--yellow);">Y2</div><div class="yr">2027 – 2028 · Scale it</div>
+        <h3>From study to platform</h3>
+        <p>Cement and refining next; the facility layer becomes a standing engagement product; <b>annual gap tracking</b> begins — a public record of whether plans improve.</p>
+        <div class="gr"><div class="lab">Milestones</div><span class="chip">+2 sectors</span><span class="chip">Annual gap tracking</span></div>
+      </div>
+      <div class="pillar" style="border-left-color:var(--navy);">
+        <div class="pn" style="color:var(--navy);">Y3</div><div class="yr">2028 – 2029 · Price it</div>
+        <h3>From exposure to premium</h3>
+        <p>With market evidence assembled, estimate the priced transition-risk premium (&Sigma;&nbsp;&beta;<sub>k</sub>&times;&lambda;<sub>k</sub>) and advance TCaR into disclosure frameworks and investment mandates.</p>
+        <div class="gr"><div class="lab">Milestones</div><span class="chip">Priced premium</span><span class="chip">Disclosure uptake</span></div>
+      </div>
+    </div>
+    <div style="flex:none;margin-top:14px;background:var(--cream);border-left:6px solid var(--yellow);border-radius:8px;padding:11px 20px;font-size:13.5px;color:#222;line-height:1.5;">
+      <b style="color:var(--navy);">Already in motion:</b> scenario collaboration with GCAM-KAIST · meetings being coordinated with the <b>Korea Petrochemical Industry Association</b> and <b>POSCO Research Institute (POSRI)</b> · pipeline verified end-to-end (the synthetic output shown throughout this deck).
+    </div>
+  </div>
+  <div class="foot"><span>PLANiT · Capital Allocation Pathway</span><span class="wm">PLAN<span style="color:var(--yellow)">i</span>T</span></div>
+</section>
+
+<!-- 11 · OPEN BY DESIGN + ARC -->
+<section class="slide white" id="arc">
+  <div class="chap">08 · Open by design</div>
+  <div class="kicker">Open source · Embedded in Transition Arc</div>
+  <h1 class="title">Open by design: the optimal strategy, available to everyone</h1>
+  <div class="body-area">
+    <div style="display:grid;grid-template-columns:1fr 1.25fr;gap:26px;flex:1;min-height:0;">
+      <div style="display:flex;flex-direction:column;gap:12px;justify-content:center;">
+        <div class="card tb-blue" style="padding:10px 18px;"><p style="font-size:13.5px;line-height:1.5;"><b style="color:var(--navy);">Open engine.</b> Code and methodology public — any company can compute its own frontier; any investor can verify every number to its source.</p></div>
+        <div class="card tb-yellow" style="padding:10px 18px;"><p style="font-size:13.5px;line-height:1.5;"><b style="color:var(--navy);">Shared with industry.</b> Engagement through industry bodies and corporate research arms — the tool improves as the people it measures use it.</p></div>
+        <div class="card tb-navy" style="padding:10px 18px;"><p style="font-size:13.5px;line-height:1.5;"><b style="color:var(--navy);">A standard by adoption.</b> The more it is used, the more the frontier gap becomes a common language between companies and capital.</p></div>
+      </div>
+      <div style="background:var(--panel);border-radius:14px;padding:18px 24px;display:flex;flex-direction:column;justify-content:center;gap:10px;">
+        <div style="font-family:'Roboto Condensed';font-weight:700;font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);">Embedded in Transition Arc</div>
+        <p style="font-size:13.5px;line-height:1.5;color:#333;"><b style="color:var(--navy);">Engagement briefs</b> — a two-page pack per company: frontier chart, delay number, three specific asks.</p>
+        <p style="font-size:13.5px;line-height:1.5;color:#333;"><b style="color:var(--navy);">Plan assessment</b> — the five metrics as quantitative evidence inside transition-plan credibility frameworks.</p>
+        <p style="font-size:13.5px;line-height:1.5;color:#333;"><b style="color:var(--navy);">Prioritisation</b> — macro screening finds who is exposed; the gap shows where a conversation moves the most capital.</p>
+        <p style="font-size:13.5px;line-height:1.5;color:#333;"><b style="color:var(--navy);">The &ldquo;act now&rdquo; case</b> — the delay exhibit converts climate urgency into financial urgency for investor audiences.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>PLANiT · Capital Allocation Pathway</span><span class="wm">PLAN<span style="color:var(--yellow)">i</span>T</span></div>
+</section>
+
+<!-- 12 · CLOSING -->
+<section class="slide navy" id="closing" style="justify-content:center;align-items:flex-start;">
+  <div style="font-family:'Roboto Condensed';font-weight:700;font-size:30px;letter-spacing:.06em;margin-bottom:24px;">PLAN<span style="color:var(--yellow)">i</span>T</div>
+  <div style="width:84px;height:6px;background:var(--yellow);border-radius:3px;margin:0 0 22px;"></div>
+  <h1 style="font-family:Georgia,serif;font-size:42px;font-weight:700;line-height:1.15;max-width:960px;">Measure the pathway. Move the capital.<br>While the windows are open.</h1>
+  <div style="font-size:17px;font-weight:300;color:#cfe0e3;margin-top:22px;max-width:820px;line-height:1.65;">We are seeking a partner to complete the four-company pilot and carry its outputs into investor workflows. The method is open, the sources are registered, and the first reinvestment windows close within the decade.</div>
+  <div style="margin-top:32px;display:grid;grid-template-columns:auto auto;gap:12px 60px;font-size:15px;">
+    <div><span style="color:var(--yellow);font-family:'Roboto Condensed';letter-spacing:.12em;font-size:12px;display:block;margin-bottom:2px;">WEB</span>www.planit.institute</div>
+    <div><span style="color:var(--yellow);font-family:'Roboto Condensed';letter-spacing:.12em;font-size:12px;display:block;margin-bottom:2px;">CONTACT</span>contact@planit.institute</div>
+  </div>
+</section>
+
+<div id="counter">1 / 12</div>
+<div class="navctl"><button id="pv">&#8249;</button><button id="nx">&#8250;</button></div>
+</div></div>
+<script>
+var __slides=[...document.querySelectorAll('.slide')],__cur=0;
+function __go(n){__cur=Math.max(0,Math.min(__slides.length-1,n));
+  __slides.forEach((s,i)=>s.classList.toggle('active',i===__cur));
+  var c=document.getElementById('counter');if(c)c.textContent=(__cur+1)+' / '+__slides.length;
+  var p=document.getElementById('progress');if(p)p.style.width=((__cur+1)/__slides.length*100)+'%';}
+document.getElementById('nx').onclick=()=>__go(__cur+1);
+document.getElementById('pv').onclick=()=>__go(__cur-1);
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key===' ')__go(__cur+1);
+  else if(e.key==='ArrowLeft')__go(__cur-1);else if(e.key==='Home')__go(0);
+  else if(e.key==='End')__go(__slides.length-1);});
+var __q=new URLSearchParams(location.search).get('s');
+__go(__q?(+__q-1):0);
+function fit(){document.getElementById('stage').style.transform=
+  `scale(${Math.min(window.innerWidth/1280,window.innerHeight/720)})`;}
+window.addEventListener('resize',fit);fit();
+
+/* ---------- Frontier incl. delay & wedge (illustrative synthetic data) ---------- */
+var FR={
+  NZ15:{desc:"NZ15 · Net Zero 2050, decisions inside rebuild windows — the reference frontier",
+    fr:[[260,2300],[205,2380],[160,2480],[125,2610],[100,2780],[82,2990],[70,3240]],
+    dom:[[235,2560],[188,2650],[150,2840],[118,2960],[95,3150]],
+    dp:[210,2860]},
+  B20:{desc:"B20 · Below 2°C — a looser budget shifts the whole frontier down and left",
+    fr:[[150,1450],[115,1510],[88,1590],[68,1690],[54,1820],[44,1980],[38,2170]],
+    dom:[[132,1660],[105,1740],[80,1890],[60,2010],[48,2160]],
+    dp:[120,1840]},
+  NZ15D:{desc:"NZ15, deferred ~5 yrs — windows missed: conversions become early closures with asset write-offs; every option worsens",
+    fr:[[295,2550],[235,2640],[185,2760],[148,2900],[120,3060],[100,3230],[86,3380]],
+    dom:[[268,2830],[215,2930],[172,3120],[138,3240],[112,3350]],
+    dp:[255,3160]}
+};
+var fx=v=>62+v/300*(540-62), fy=v=>290-(v-1200)/(3500-1200)*(290-18);
+(function(){var g='';
+  for(var c=1400;c<=3400;c+=400){g+='<line x1="62" y1="'+fy(c).toFixed(1)+'" x2="540" y2="'+fy(c).toFixed(1)+'" stroke="#EEF1F4"/>'
+    +'<text x="56" y="'+(fy(c)+3.5).toFixed(1)+'" font-size="10" fill="#9aa" text-anchor="end" style="font-family:Roboto Condensed">'+c+'</text>';}
+  for(var t=50;t<=300;t+=50){g+='<line x1="'+fx(t).toFixed(1)+'" y1="290" x2="'+fx(t).toFixed(1)+'" y2="18" stroke="#F6F8FA"/>'
+    +'<text x="'+fx(t).toFixed(1)+'" y="304" font-size="10" fill="#9aa" text-anchor="middle" style="font-family:Roboto Condensed">'+t+'</text>';}
+  document.getElementById('frGrid').innerHTML=g;})();
+var frCur=null,frRaf=null;
+function poly(pts){return pts.map(p=>fx(p[0]).toFixed(1)+','+fy(p[1]).toFixed(1)).join(' ');}
+function frRender(d,delay){var s='';
+  var lineCol=delay?'#C0392B':'#0097A7';
+  if(delay){
+    s+='<polyline points="'+poly(FR.NZ15.fr)+'" fill="none" stroke="#CFD8D6" stroke-width="2" stroke-dasharray="7 5"/>';
+    s+='<text x="'+(fx(FR.NZ15.fr[6][0])+10).toFixed(1)+'" y="'+(fy(FR.NZ15.fr[6][1])+4).toFixed(1)+'" font-size="10.5" fill="#8D8D8D" style="font-family:Roboto Condensed">on-window frontier</text>';
+  }
+  s+='<polyline points="'+poly(d.fr)+'" fill="none" stroke="'+lineCol+'" stroke-width="3" stroke-linejoin="round"/>';
+  d.fr.forEach(p=>{s+='<circle cx="'+fx(p[0]).toFixed(1)+'" cy="'+fy(p[1]).toFixed(1)+'" r="4.2" fill="'+lineCol+'"><title>Efficient plan · TCaR '+Math.round(p[0])+' · P50 '+Math.round(p[1])+'</title></circle>';});
+  d.dom.forEach(p=>{s+='<circle cx="'+fx(p[0]).toFixed(1)+'" cy="'+fy(p[1]).toFixed(1)+'" r="3.4" fill="#CFD8D6"><title>Dominated plan</title></circle>';});
+  var dx=fx(d.dp[0]),dy=fy(d.dp[1]);
+  var frC=frInterp(d.fr,d.dp[0]);var gy=fy(frC);
+  s+='<line x1="'+dx.toFixed(1)+'" y1="'+dy.toFixed(1)+'" x2="'+dx.toFixed(1)+'" y2="'+gy.toFixed(1)+'" stroke="#001F3F" stroke-width="1.4" stroke-dasharray="5 4"/>';
+  s+='<text x="'+(dx-8).toFixed(1)+'" y="'+((dy+gy)/2+4).toFixed(1)+'" font-size="11.5" fill="#001F3F" text-anchor="end" style="font-family:Roboto Condensed;font-weight:700">gap &#8776; '+Math.round(d.dp[1]-frC)+' bn</text>';
+  s+='<circle cx="'+dx.toFixed(1)+'" cy="'+dy.toFixed(1)+'" r="7" fill="#EC8305" stroke="#fff" stroke-width="2"><title>Disclosed plan</title></circle>';
+  s+='<text x="'+(dx+11).toFixed(1)+'" y="'+(dy-8).toFixed(1)+'" font-size="11.5" fill="#EC8305" style="font-family:Roboto Condensed;font-weight:700">'+(delay?'plan, delayed':'disclosed plan')+'</text>';
+  document.getElementById('frDyn').innerHTML=s;}
+function frRenderWedge(){var s='';
+  /* connectors between corresponding frontier points */
+  for(var i=0;i<FR.NZ15.fr.length;i++){
+    var a=FR.NZ15.fr[i],b=FR.B20.fr[i];
+    s+='<line x1="'+fx(a[0]).toFixed(1)+'" y1="'+fy(a[1]).toFixed(1)+'" x2="'+fx(b[0]).toFixed(1)+'" y2="'+fy(b[1]).toFixed(1)+'" stroke="#CFD8D6" stroke-width="1.2" stroke-dasharray="4 4"/>';
+  }
+  s+='<polyline points="'+poly(FR.NZ15.fr)+'" fill="none" stroke="#001F3F" stroke-width="3" stroke-linejoin="round"/>';
+  FR.NZ15.fr.forEach(p=>{s+='<circle cx="'+fx(p[0]).toFixed(1)+'" cy="'+fy(p[1]).toFixed(1)+'" r="4.2" fill="#001F3F"><title>1.5°C frontier</title></circle>';});
+  s+='<polyline points="'+poly(FR.B20.fr)+'" fill="none" stroke="#0097A7" stroke-width="3" stroke-linejoin="round"/>';
+  FR.B20.fr.forEach(p=>{s+='<rect x="'+(fx(p[0])-4).toFixed(1)+'" y="'+(fy(p[1])-4).toFixed(1)+'" width="8" height="8" fill="#0097A7"><title>2.0°C frontier</title></rect>';});
+  s+='<text x="'+(fx(FR.NZ15.fr[0][0])+8).toFixed(1)+'" y="'+(fy(FR.NZ15.fr[0][1])-10).toFixed(1)+'" font-size="11.5" fill="#001F3F" style="font-family:Roboto Condensed;font-weight:700">1.5°C frontier</text>';
+  s+='<text x="'+(fx(FR.B20.fr[0][0])+8).toFixed(1)+'" y="'+(fy(FR.B20.fr[0][1])+18).toFixed(1)+'" font-size="11.5" fill="#0097A7" style="font-family:Roboto Condensed;font-weight:700">2.0°C frontier</text>';
+  s+='<text x="'+fx(200).toFixed(1)+'" y="'+fy(2050).toFixed(1)+'" font-size="11.5" fill="#8D8D8D" style="font-family:Roboto Condensed;font-weight:700">policy stringency wedge = metric &#9315;</text>';
+  document.getElementById('frDyn').innerHTML=s;}
+function frInterp(fr,t){for(var i=0;i<fr.length-1;i++){var a=fr[i],b=fr[i+1];
+    if((t<=a[0]&&t>=b[0])||(t>=a[0]&&t<=b[0])){var f=(t-a[0])/(b[0]-a[0]);return a[1]+(b[1]-a[1])*f;}}
+  return fr[0][1];}
+var frEase=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+function frTween(tgt,delay){var from=frCur||tgt;var t0=performance.now(),dur=600;
+  cancelAnimationFrame(frRaf);
+  function lp(a,b,f){return a+(b-a)*f;}
+  function step(now){var f=Math.min(1,(now-t0)/dur),e=frEase(f);
+    var d={fr:tgt.fr.map((p,i)=>[lp(from.fr[i][0],p[0],e),lp(from.fr[i][1],p[1],e)]),
+      dom:tgt.dom.map((p,i)=>[lp(from.dom[i][0],p[0],e),lp(from.dom[i][1],p[1],e)]),
+      dp:[lp(from.dp[0],tgt.dp[0],e),lp(from.dp[1],tgt.dp[1],e)]};
+    frRender(d,delay);
+    if(f<1)frRaf=requestAnimationFrame(step);else frCur=JSON.parse(JSON.stringify(tgt));}
+  frRaf=requestAnimationFrame(step);}
+function selFr(k){
+  document.querySelectorAll('#frontier .scnbtn').forEach(b=>b.classList.toggle('active',b.dataset.s===k));
+  if(k==='WEDGE'){cancelAnimationFrame(frRaf);
+    document.getElementById('frDesc').textContent="Both frontiers · the wedge between them is metric ④ — sensitivity to policy stringency, not a probability";
+    frRenderWedge();return;}
+  document.getElementById('frDesc').textContent=FR[k].desc;
+  frTween(FR[k],k==='NZ15D');}
+selFr('NZ15');
+
+/* ---------- Emissions pathway & budget · plan selector (illustrative synthetic data) ---------- */
+var EMY=[];for(var _y=2026;_y<=2040;_y++)EMY.push(_y);
+var EMB=[70,70,70,70,63,63,63,63,40,40,40,40,40,30,20]; /* budget, annual */
+var EM={
+  P1:{desc:"P1 · lowest expected cost — conversions as late as the budget allows; little headroom, high exposure",
+    v:[70,70,66,66,63,55,54.5,54.5,38,38,19,19,19,19,19],
+    marks:[[2028,66,"2028 · Pohang — BF#2 → EAF"],[2031,55,"2031 · Pohang — H₂-DRI"],[2032,54.5,"2032 · Gwangyang — EAF"],[2034,38,"2034 · Gwangyang — H₂-DRI"],[2036,19,"2036 · Gwangyang — BF#4 → H₂-DRI"]]},
+  P4:{desc:"P4 · balanced — each conversion inside its rebuild window; cost and risk both moderate",
+    v:[70,57,57,57,46,45.5,46,28,28,10,10,10,10,10,10],
+    marks:[[2027,57,"2027 · Pohang — BF#2 → EAF"],[2030,46,"2030 · Pohang — H₂-DRI"],[2031,45.5,"2031 · Gwangyang — EAF"],[2033,28,"2033 · Gwangyang — H₂-DRI"],[2035,10,"2035 · Gwangyang — BF#4 → H₂-DRI"]]},
+  P7:{desc:"P7 · lowest risk — early, front-loaded conversion buys headroom against the budget and price extremes",
+    v:[70,52,52,40,40,24,24,8,8,8,8,8,8,8,8],
+    marks:[[2027,52,"2027 · Pohang — BF#2 → EAF"],[2029,40,"2029 · Pohang — H₂-DRI"],[2031,24,"2031 · Gwangyang — EAF + H₂-DRI"],[2033,8,"2033 · Gwangyang — BF#4 → H₂-DRI"]]}
+};
+var ex=yr=>70+(yr-2026)/14*880, ey=v=>280-v/75*250;
+(function(){var g='';
+  for(var v=0;v<=75;v+=15){g+='<line x1="70" y1="'+ey(v).toFixed(1)+'" x2="950" y2="'+ey(v).toFixed(1)+'" stroke="#EEF1F4"/>'
+    +'<text x="62" y="'+(ey(v)+3.5).toFixed(1)+'" font-size="10.5" fill="#9aa" text-anchor="end" style="font-family:Roboto Condensed">'+v+'</text>';}
+  for(var y=2026;y<=2040;y+=2){g+='<text x="'+ex(y).toFixed(1)+'" y="300" font-size="10.5" fill="#9aa" text-anchor="middle" style="font-family:Roboto Condensed">'+y+'</text>';}
+  document.getElementById('emGrid').innerHTML=g;})();
+function emPts(vals){return vals.map((v,i)=>ex(EMY[i]).toFixed(1)+','+ey(v).toFixed(1)).join(' ');}
+function emRender(vals,marks){
+  var s='';
+  var area=emPts(EMB)+' '+vals.map((v,i)=>ex(EMY[i]).toFixed(1)+','+ey(v).toFixed(1)).reverse().join(' ');
+  s+='<polygon points="'+area+'" fill="#E4F3EF" fill-opacity="0.85"/>';
+  s+='<polyline points="'+emPts(EMB)+'" fill="none" stroke="#EC8305" stroke-width="2.5" stroke-dasharray="8 5"/>';
+  s+='<polyline points="'+emPts(vals)+'" fill="none" stroke="#001F3F" stroke-width="3.5" stroke-linejoin="round"/>';
+  marks.forEach(function(m,i){var x=ex(m[0]),y=ey(m[1]);
+    s+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="7" fill="#fff" stroke="#0097A7" stroke-width="3"><title>'+m[2]+'</title></circle>';
+    var ly=y-14-(i%2)*15;
+    s+='<text x="'+(x+12).toFixed(1)+'" y="'+ly.toFixed(1)+'" font-size="11" fill="#33566e" style="font-family:Roboto Condensed;font-weight:700">'+m[2]+'</text>';});
+  s+='<text x="'+(ex(2038)).toFixed(1)+'" y="'+(ey(30)).toFixed(1)+'" font-size="12" fill="#4a8a7b" text-anchor="middle" style="font-family:Roboto Condensed;font-weight:700">avoided emissions</text>';
+  document.getElementById('emDyn').innerHTML=s;}
+var emCurV=null,emRaf=null;
+function selEm(k){
+  document.querySelectorAll('#pathway .scnbtn').forEach(b=>b.classList.toggle('active',b.dataset.p===k));
+  document.getElementById('emDesc').textContent=EM[k].desc;
+  var tgt=EM[k].v, marks=EM[k].marks;
+  var cum=0;for(var i=0;i<tgt.length;i++)cum+=Math.max(0,EMB[i]-tgt[i]);
+  document.getElementById('emCum').innerHTML=Math.round(cum)+' MtCO&#8322;';
+  var from=emCurV||tgt, t0=performance.now(), dur=600;
+  cancelAnimationFrame(emRaf);
+  function step(now){var f=Math.min(1,(now-t0)/dur),e=frEase(f);
+    emRender(tgt.map((v,i)=>from[i]+(v-from[i])*e), f<1?[]:marks);
+    if(f<1)emRaf=requestAnimationFrame(step);else emCurV=tgt.slice();}
+  emRaf=requestAnimationFrame(step);}
+selEm('P4');
+
+/* ---------- Histogram + decomposition ---------- */
+(function(){
+  var freq=[2,5,11,22,38,58,74,84,80,68,52,38,27,18,12,8,5,3,2,1];
+  var x0=48,x1=500,bw=(x1-x0)/freq.length,max=84,s='';
+  for(var i=0;i<freq.length;i++){var h=freq[i]/max*185,x=x0+i*bw;
+    s+='<rect x="'+(x+1).toFixed(1)+'" y="'+(230-h).toFixed(1)+'" width="'+(bw-2).toFixed(1)+'" height="'+h.toFixed(1)+'" rx="1.5" fill="#0097A7" fill-opacity="0.82"><title>'+freq[i]+' paths</title></rect>';}
+  document.getElementById('histBars').innerHTML=s;
+  var p50x=x0+7.6*bw,p90x=x0+12.8*bw;
+  ['p50l','p90l'].forEach(function(id,j){var el=document.getElementById(id),x=j?p90x:p50x;
+    el.setAttribute('x1',x);el.setAttribute('x2',x);});
+  document.getElementById('p50t').setAttribute('x',p50x);
+  document.getElementById('p90t').setAttribute('x',p90x);
+})();
+var DE={
+  gross:{desc:"Gross — no policy support: the firm carries the full factor exposure",
+    rows:[["Hydrogen",94,"#0097A7"],["Electricity",78,"#001F3F"],["CAPEX",33,"#8BC34A"]],tcar:205,flex:48},
+  net:{desc:"Net — current support (CCfD, PPA access): contractible exposure is transferred",
+    rows:[["Hydrogen",52,"#0097A7"],["Electricity",60,"#001F3F"],["CAPEX",30,"#8BC34A"]],tcar:142,flex:36}
+};
+var deCur=null,deRaf=null;
+function deRender(d){var s='',maxV=100,x0=110,w=380;
+  d.rows.forEach(function(r,i){var y=22+i*56,bw=r[1]/maxV*w;
+    s+='<text x="'+(x0-10)+'" y="'+(y+17)+'" font-size="13" fill="#333" text-anchor="end" style="font-family:Roboto Condensed;font-weight:700">'+r[0]+'</text>';
+    s+='<rect x="'+x0+'" y="'+y+'" width="'+w+'" height="24" rx="5" fill="#F1F6F6"/>';
+    s+='<rect x="'+x0+'" y="'+y+'" width="'+bw.toFixed(1)+'" height="24" rx="5" fill="'+r[2]+'"><title>'+r[0]+' · '+Math.round(r[1])+' bn KRW</title></rect>';
+    s+='<text x="'+(x0+bw+8).toFixed(1)+'" y="'+(y+17)+'" font-size="13" fill="#001F3F" style="font-family:Roboto Condensed;font-weight:700">'+Math.round(r[1])+' bn</text>';});
+  document.getElementById('deDyn').innerHTML=s;
+  document.getElementById('deTcar').innerHTML=Math.round(d.tcar)+'<span style="font-size:14px;"> bn KRW</span>';
+  document.getElementById('deFlex').innerHTML=Math.round(d.flex)+'<span style="font-size:14px;"> bn KRW</span>';}
+function deTween(tgt){var from=deCur||tgt,t0=performance.now(),dur=550;
+  cancelAnimationFrame(deRaf);
+  function step(now){var f=Math.min(1,(now-t0)/dur),e=frEase(f);
+    var d={rows:tgt.rows.map((r,i)=>[r[0],from.rows[i][1]+(r[1]-from.rows[i][1])*e,r[2]]),
+      tcar:from.tcar+(tgt.tcar-from.tcar)*e,flex:from.flex+(tgt.flex-from.flex)*e};
+    deRender(d);
+    if(f<1)deRaf=requestAnimationFrame(step);else deCur=JSON.parse(JSON.stringify(tgt));}
+  deRaf=requestAnimationFrame(step);}
+function selDe(k){document.querySelectorAll('#anatomy .scnbtn').forEach(b=>b.classList.toggle('active',b.dataset.d===k));
+  document.getElementById('deDesc').textContent=DE[k].desc;
+  deTween(DE[k]);}
+selDe('gross');
+</script></body></html>

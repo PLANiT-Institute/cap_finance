@@ -1,0 +1,9 @@
+tech_id,sector,applies_to_unit,capex_unit,opex_fixed,opex_var,elec_intensity,h2_intensity,emission_factor,avail_year,build_years,lifetime,capex_uncertainty,source_id
+steel_eaf,steel,BF,550,30,90,0.55,0,0.35,2025,2,25,20,SAMPLE_SYNTH
+steel_h2dri,steel,BF,1250,45,120,3.5,55,0.15,2030,3,25,30,SAMPLE_SYNTH
+steel_ccus,steel,BF,700,55,140,0.35,0,0.55,2032,3,20,35,SAMPLE_SYNTH
+steel_eff,steel,BF,120,5,10,0.0,0,1.6,2025,1,15,15,SAMPLE_SYNTH
+petchem_ecracker,petchem,NCC,900,35,60,4.2,0,0.12,2030,3,25,30,SAMPLE_SYNTH
+petchem_h2fuel,petchem,NCC,400,20,45,0.3,30,0.3,2028,2,20,25,SAMPLE_SYNTH
+petchem_bio,petchem,NCC,300,15,220,0.1,0,0.45,2026,2,20,20,SAMPLE_SYNTH
+petchem_eff,petchem,NCC,90,4,8,0.0,0,0.75,2025,1,15,15,SAMPLE_SYNTH

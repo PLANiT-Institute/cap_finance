@@ -1,0 +1,12 @@
+facility_id,company_id,sector,site,unit_type,unit_name,capacity,capacity_unit,commissioning_year,last_reline_year,reinvest_cycle_yr,next_reinvest_year,status,source_id
+POSCO_POH_BF2,POSCO,steel,Pohang,BF,BF No.2,5300000,t_hot_metal/yr,1981,2015,17,2032,operating,SAMPLE_SYNTH
+POSCO_POH_BF3,POSCO,steel,Pohang,BF,BF No.3,4600000,t_hot_metal/yr,1979,2013,17,2030,operating,SAMPLE_SYNTH
+POSCO_GWY_BF1,POSCO,steel,Gwangyang,BF,BF No.1,5500000,t_hot_metal/yr,1985,2019,17,2036,operating,SAMPLE_SYNTH
+POSCO_GWY_BF4,POSCO,steel,Gwangyang,BF,BF No.4,5300000,t_hot_metal/yr,1980,2014,17,2031,operating,SAMPLE_SYNTH
+NSC_KIM_BF3,NSC,steel,Kimitsu,BF,BF No.3,4800000,t_hot_metal/yr,1980,2016,18,2034,operating,SAMPLE_SYNTH
+NSC_KIM_BF4,NSC,steel,Kimitsu,BF,BF No.4,5200000,t_hot_metal/yr,1976,2012,18,2030,operating,SAMPLE_SYNTH
+NSC_NGO_BF1,NSC,steel,Nagoya,BF,BF No.1,4500000,t_hot_metal/yr,1982,2018,18,2036,operating,SAMPLE_SYNTH
+LOTTE_YEO_NCC,LOTTE,petchem,Yeosu,NCC,NCC No.1,1200000,t_ethylene/yr,2002,2018,8,2026,operating,SAMPLE_SYNTH
+LOTTE_DAE_NCC,LOTTE,petchem,Daesan,NCC,NCC,1100000,t_ethylene/yr,2005,2021,8,2029,operating,SAMPLE_SYNTH
+MCI_ICH_NCC,MCI,petchem,Ichihara,NCC,Cracker,600000,t_ethylene/yr,2004,2020,8,2028,operating,SAMPLE_SYNTH
+MCI_OSK_NCC,MCI,petchem,Osaka,NCC,Cracker,500000,t_ethylene/yr,2001,2017,8,2025,operating,SAMPLE_SYNTH

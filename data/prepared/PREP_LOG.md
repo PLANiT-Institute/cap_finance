@@ -1,0 +1,26 @@
+# 데이터 준비 로그 (scripts/prepare_raw.py 자동 생성)
+
+- company_id MITSUI → MCI 통일 (엔진 지역 매핑 키)
+- 고로 능력 결측 16기: 내용적 x 913 t/m³/yr로 추정 (광양1고로 6,000m³=5.48Mt 단일 캘리브레이션 — 시설 절대값은 구간 정보)
+- 모형 제외 5기: POSCO_GWY_BF2(개수중), POSCO_POH_FINEX2(폐쇄예정(2025말)), NSC_YAW_EAF1(건설중(2029년도 下期)), NSC_HIR_EAF2(건설중(2029년도 下期)), LOTTE_ULS_AROM(부분 가동중단(PIA 1·3라인))
+- 재투자 창 결측 2기(신설 EAF/FINEX): commissioning+20년으로 설정
+- D1a incumbent_capex_unit 주입: BF 200천원/t, FINEX 300천원/t, EAF 250천원/t, NCC 150천원/t — 개수·대정비 재조달가 기준(포항4고로 개수비 앵커), 조기 전환 좌초비용=캠페인 정액상각 잔존가
+- D1a margin_kthou_t 주입: 철강 70·석화 290천원/t (D4 마진 시계열 평균 — 조기폐쇄의 상실 마진, 석화는 스프레드라 상한 성격)
+- 에너지 원단위 전면 결측 → 루트 표준값 주입: BF: EF 2.15, 전력 0.08MWh/t, 원료탄 13.5GJ/t, 가스 0.4GJ/t; FINEX: EF 2.05, 전력 0.1MWh/t, 원료탄 13.0GJ/t, 가스 0.4GJ/t; EAF: EF 0.45, 전력 0.55MWh/t, 원료탄 0.0GJ/t, 가스 1.0GJ/t; NCC: EF 0.95, 전력 0.35MWh/t, 원료탄 0.0GJ/t, 가스 8.0GJ/t
+- MCI: 상향식 추정 (능력x0.9xEF). 회사 보고 Scope1 대비 커버리지 25% — 비분해로 설비는 모형 밖
+- NSC: 회사 실측 합계(생산·Scope1)를 능력x루트EF 가중으로 10기 배분 (연도 [2022, 2023, 2024])
+- POSCO: 회사 실측 합계(생산·Scope1)를 능력x루트EF 가중으로 9기 배분 (연도 [2022, 2023, 2024])
+- D2a 단조성 보정: NZ15 > B20 역전 5개 연도-지역-섹터에서 NZ15 := min(NZ15, B20). 초반 급감형 재보간은 2차 수집(F항) 대상
+- D2b 단위 정규화: carbon_price→co2_price(x1350), 원·円/kWh→KRW/MWh, USD/t·MBtu→KRW/t (LNG 52.0MBtu/t), JPY/Nm3→KRW/kg (환율 USD 1350, JPY 9.2)
+- D2b re_price 생성: 한국 175,000·일본 198,000 KRW/MWh 실질 flat (재생 PPA 실거래 앵커) — 전환 기술 전력은 이 가격, 기존 조업은 계통(elec_price)
+- 한국 NZ15 co2_price: BOK-FSS 섀도가격(2050 USD1,700) → IEA NZE 선진국 시장가 앵커(2030 140 / 2050 250 USD)로 대체 — 탄소비용의 현금흐름 의미 통일. 섀도 경로는 raw에 보존
+- D3: *_alt 행(출처 대안 추정) 본 실행에서 제외 — 민감도 전용
+- D3: CCUS 옵션 제외 (사용자 결정 2026-08-06 — 저장 용량·비용 데이터 확보 전까지 수단에서 제외)
+- D3 결측 주입: steel_eff.capex_unit = 120.0 — BAT 리트로핏 저CAPEX 추정
+- D3 결측 주입: petchem_eff.capex_unit = 60.0 — 운전최적화 저CAPEX 추정
+- D3: opex 잔여 결측 0 처리 (증분 비용 기준 — 공통 유지비 상쇄 가정)
+- D3 applies_to_unit 정규화: 석화→NCC, 철강 BF→수소환원+부분감축 리트로핏(수소취입·스크랩·HBI·효율), FINEX→HyREX(2035). steel_eaf는 신설 경로라 제거. 2차 수집 수단 반영: 감축률 기준으로 당사 시설 EF에 재스케일, 부분 적용 상한(스크랩 15%p·HBI 30%·바이오 10%·열펌프 15%·수소취입 20%·하이브리드 40%)은 EF에 blended
+- D3 retrofit 구분: steel_ccus, steel_eff, steel_h2inj, steel_scrap, steel_hbi, petchem_h2fuel, petchem_ccus, petchem_eff, petchem_bio, petchem_ecracker_hybrid, petchem_hp_whr — 기존 공정 에너지 유지 + 기술 원단위 가산 (하이브리드 전기로의 연료 40% 감축분은 미반영 = 보수적). 대체형(H2DRI·HyREX·e-cracker 완전)만 공정 에너지 교체
+- D4 electrolyzer_capex USD→KRW x1350. 관측 2개(2022 상승 구간)뿐 → 감소율은 캘리브레이션 사전값(연 5%) 사용, 앵커는 최종 관측값
+- D5: 수집된 수단은 K-ETS 유상할당·GX-ETS 프라이스칼라 — CAPEX 보조·CCfD 아님 → 엔진 미적용(instrument=other). 결과 해석: 확정된 직접 지원 부재로 net=gross (그 자체가 발견)
+- D7: EAF 신설 커밋(NSC_YAW_EAF1·NSC_HIR_EAF2·POSCO_GWY_EAF1)은 기존 시설의 '전환'이 아니라 신설 경로 — BF→EAF 전환 불허 규칙에 따라 모형 커밋으로 미해석(경고로 드롭). NSC 공시 좌표는 KIM_BF2 수소환원 실증 커밋으로 측정

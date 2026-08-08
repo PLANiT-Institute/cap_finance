@@ -1,0 +1,100 @@
+date,series_id,value,unit,source_id
+2022,electrolyzer_capex,2214000.0,KRW/kW,IEA_GHR2023_ANNEX
+2023,electrolyzer_capex,2916000.0,KRW/kW,IEA_GHR2024_ANNEX
+2015,smp_krw_mwh,101.54,"원/kWh (육지, 연평균)",KPX_SMP_YEARLY
+2016,smp_krw_mwh,76.91,"원/kWh (육지, 연평균)",KPX_SMP_YEARLY
+2017,smp_krw_mwh,81.39,"원/kWh (육지, 연평균)",KPX_SMP_YEARLY
+2018,smp_krw_mwh,94.64,"원/kWh (육지, 연평균)",KPX_SMP_YEARLY
+2019,smp_krw_mwh,90.09,"원/kWh (육지, 연평균)",KPX_SMP_YEARLY
+2020,smp_krw_mwh,68.52,"원/kWh (육지, 연평균)",KPX_SMP_YEARLY
+2021,smp_krw_mwh,93.98,"원/kWh (육지, 연평균)",KPX_SMP_YEARLY
+2022,smp_krw_mwh,196.04,"원/kWh (육지, 연평균)",KPX_SMP_YEARLY
+2023,smp_krw_mwh,167.0,"원/kWh (육지, 연평균)",KPX_SMP_YEARLY
+2024,smp_krw_mwh,128.33,"원/kWh (육지, 연평균)",KPX_SMP_YEARLY
+2025,smp_krw_mwh,112.73,"원/kWh (육지, 연평균)",KPX_SMP_YEARLY
+2015,indus_tariff,107.41,"원/kWh (산업용 전체 평균판매단가, 연평균)",KEPCO_EGTIPS
+2016,indus_tariff,107.11,"원/kWh (산업용 전체 평균판매단가, 연평균)",KEPCO_EGTIPS
+2017,indus_tariff,107.41,"원/kWh (산업용 전체 평균판매단가, 연평균)",KEPCO_EGTIPS
+2018,indus_tariff,106.46,"원/kWh (산업용 전체 평균판매단가, 연평균)",KEPCO_EGTIPS
+2019,indus_tariff,106.56,"원/kWh (산업용 전체 평균판매단가, 연평균)",KEPCO_EGTIPS
+2020,indus_tariff,107.35,"원/kWh (산업용 전체 평균판매단가, 연평균)",KEPCO_EGTIPS
+2021,indus_tariff,105.48,"원/kWh (산업용 전체 평균판매단가, 연평균)",KEPCO_EGTIPS
+2022,indus_tariff,118.66,"원/kWh (산업용 전체 평균판매단가, 연평균)",KEPCO_EGTIPS
+2023,indus_tariff,153.71,"원/kWh (산업용 전체 평균판매단가, 연평균)",KEPCO_EGTIPS
+2024,indus_tariff,168.17,"원/kWh (산업용 전체 평균판매단가, 연평균)",KEPCO_EGTIPS
+2015,usdkrw,1132.1,원/USD (연평균),FX_ANNUAL_MIXED
+2016,usdkrw,1161.11,원/USD (연평균),FX_ANNUAL_MIXED
+2017,usdkrw,1130.61,원/USD (연평균),FX_ANNUAL_MIXED
+2018,usdkrw,1101.08,원/USD (연평균),FX_ANNUAL_MIXED
+2019,usdkrw,1166.72,원/USD (연평균),FX_ANNUAL_MIXED
+2020,usdkrw,1180.11,원/USD (연평균),FX_ANNUAL_MIXED
+2021,usdkrw,1144.88,원/USD (연평균),FX_ANNUAL_MIXED
+2022,usdkrw,1291.73,원/USD (연평균),FX_ANNUAL_MIXED
+2023,usdkrw,1306.69,원/USD (연평균),FX_ANNUAL_MIXED
+2024,usdkrw,1364.15,원/USD (연평균),FX_ANNUAL_MIXED
+2025,usdkrw,1421.78,원/USD (연평균),FX_ANNUAL_MIXED
+2015,kau_krw,12028.0,원/tCO2 (연평균),NABO_KETS_2024
+2016,kau_krw,17367.0,원/tCO2 (연평균),NABO_KETS_2024
+2017,kau_krw,21131.0,원/tCO2 (연평균),NABO_KETS_2024
+2018,kau_krw,22237.0,원/tCO2 (연평균),NABO_KETS_2024
+2019,kau_krw,29126.0,원/tCO2 (연평균),NABO_KETS_2024
+2020,kau_krw,29026.0,원/tCO2 (연평균),NABO_KETS_2024
+2021,kau_krw,19709.0,원/tCO2 (연평균),NABO_KETS_2024
+2022,kau_krw,20633.0,원/tCO2 (연평균),NABO_KETS_2024
+2023,kau_krw,9987.0,원/tCO2 (연평균),NABO_KETS_2024
+2020,cpi,100.0,"지수(2020=100, 연평균)",KR_STATS_SNIPPET
+2022,cpi,107.71,"지수(2020=100, 연평균)",KR_STATS_SNIPPET
+2023,cpi,111.59,"지수(2020=100, 연평균)",KR_STATS_SNIPPET
+2024,cpi,114.18,"지수(2020=100, 연평균)",KR_STATS_SNIPPET
+2022,lng_import,1078.2,"USD/t (국가평균 도입단가, 연평균)",TODAYENERGY_LNG
+2023,lng_import,817.1,"USD/t (국가평균 도입단가, 연평균)",TODAYENERGY_LNG
+2022,coal_import,348.65,USD/t (유연탄 전체 — 원료탄 아님),KR_STATS_SNIPPET
+2023,coal_import,173.32,USD/t (유연탄 전체 — 원료탄 아님),KR_STATS_SNIPPET
+2020,constr_cost_idx,100.97,"지수(2020=100, 11월값)",KR_STATS_SNIPPET
+2024,constr_cost_idx,130.12,"지수(2020=100, 연말)",KR_STATS_SNIPPET
+2025,constr_cost_idx,132.75,"지수(2020=100, 연말)",KR_STATS_SNIPPET
+2025-01,smp_monthly,117.11,원/kWh (육지 월별),KPX_SMP_MONTHLY
+2025-02,smp_monthly,116.39,원/kWh (육지 월별),KPX_SMP_MONTHLY
+2025-03,smp_monthly,113.12,원/kWh (육지 월별),KPX_SMP_MONTHLY
+2025-04,smp_monthly,124.63,원/kWh (육지 월별),KPX_SMP_MONTHLY
+2025-05,smp_monthly,125.5,원/kWh (육지 월별),KPX_SMP_MONTHLY
+2025-06,smp_monthly,118.02,원/kWh (육지 월별),KPX_SMP_MONTHLY
+2025-07,smp_monthly,120.39,원/kWh (육지 월별),KPX_SMP_MONTHLY
+2025-08,smp_monthly,117.39,원/kWh (육지 월별),KPX_SMP_MONTHLY
+2025-09,smp_monthly,112.9,원/kWh (육지 월별),KPX_SMP_MONTHLY
+2025-10,smp_monthly,101.53,원/kWh (육지 월별),KPX_SMP_MONTHLY
+2025-11,smp_monthly,94.8,원/kWh (육지 월별),KPX_SMP_MONTHLY
+2025-12,smp_monthly,90.43,원/kWh (육지 월별),KPX_SMP_MONTHLY
+2026-01,smp_monthly,103.54,원/kWh (육지 월별),KPX_SMP_MONTHLY
+2026-02,smp_monthly,108.52,원/kWh (육지 월별),KPX_SMP_MONTHLY
+2026-03,smp_monthly,110.03,원/kWh (육지 월별),KPX_SMP_MONTHLY
+2026-04,smp_monthly,118.94,원/kWh (육지 월별),KPX_SMP_MONTHLY
+2026-05,smp_monthly,121.36,원/kWh (육지 월별),KPX_SMP_MONTHLY
+2026-06,smp_monthly,114.11,원/kWh (육지 월별),KPX_SMP_MONTHLY
+2026-07,smp_monthly,133.79,원/kWh (육지 월별),KPX_SMP_MONTHLY
+2019-03,jepx_spot,7.92,JPY/kWh (FY 시스템프라이스),JEPX_BR
+2020-03,jepx_spot,11.12,JPY/kWh (FY 시스템프라이스),JEPX_BR
+2021-03,jepx_spot,13.48,JPY/kWh (FY 시스템프라이스),JEPX_BR
+2022-03,jepx_spot,20.37,JPY/kWh (FY 시스템프라이스),JEPX_BR
+2023-03,jepx_spot,10.74,JPY/kWh (FY 시스템프라이스),JEPX_BR
+2024-03,jepx_spot,12.3,JPY/kWh (FY 시스템프라이스),JEPX_BR
+2025-03,jepx_spot,11.05,JPY/kWh (FY 시스템프라이스),JEPX_BR
+2019-12,steel_margin_krw_t,68064.0,"원/t (포스코 별도 영업이익/조강톤, 추정 혼재)",POSCO_OPINC_SERIES
+2020-12,steel_margin_krw_t,31620.0,"원/t (포스코 별도 영업이익/조강톤, 추정 혼재)",POSCO_OPINC_SERIES
+2021-12,steel_margin_krw_t,173806.0,"원/t (포스코 별도 영업이익/조강톤, 추정 혼재)",POSCO_OPINC_SERIES
+2022-12,steel_margin_krw_t,67000.0,"원/t (포스코 별도 영업이익/조강톤, 추정 혼재)",POSCO_OPINC_SERIES
+2023-12,steel_margin_krw_t,58377.0,"원/t (포스코 별도 영업이익/조강톤, 추정 혼재)",POSCO_OPINC_SERIES
+2024-12,steel_margin_krw_t,42028.0,"원/t (포스코 별도 영업이익/조강톤, 추정 혼재)",POSCO_OPINC_SERIES
+2025-12,steel_margin_krw_t,51538.0,"원/t (포스코 별도 영업이익/조강톤, 추정 혼재)",POSCO_OPINC_SERIES
+2019-12,ethylene_naphtha_spread,250.0,USD/t (CFR NEA - C+F Japan; 19-21 추정),SPGLOBAL_ENA_SPREAD
+2020-12,ethylene_naphtha_spread,270.0,USD/t (CFR NEA - C+F Japan; 19-21 추정),SPGLOBAL_ENA_SPREAD
+2021-12,ethylene_naphtha_spread,320.0,USD/t (CFR NEA - C+F Japan; 19-21 추정),SPGLOBAL_ENA_SPREAD
+2022-12,ethylene_naphtha_spread,234.93,USD/t (CFR NEA - C+F Japan; 19-21 추정),SPGLOBAL_ENA_SPREAD
+2023-12,ethylene_naphtha_spread,203.22,USD/t (CFR NEA - C+F Japan; 19-21 추정),SPGLOBAL_ENA_SPREAD
+2024-12,ethylene_naphtha_spread,204.77,USD/t (CFR NEA - C+F Japan; 19-21 추정),SPGLOBAL_ENA_SPREAD
+2025-12,ethylene_naphtha_spread,219.07,USD/t (CFR NEA - C+F Japan; 19-21 추정),SPGLOBAL_ENA_SPREAD
+2026-01,re_ppa_krw_mwh,174500.0,KRW/MWh (한국 태양광 PPA 170원대 중반),KR_PPA_2026
+2026-01,re_ppa_wind_krw_mwh,185000.0,KRW/MWh (한국 육상풍력 PPA 180원 중반),KR_PPA_2026
+2024-12,re_ppa_jp_krw_mwh,197800.0,KRW/MWh (일본 물리 PPA HV 총비용 21.5JPY×9.2),REI_JP_PPA_2025
+2024-12,h2_contract_krw_kg,10000.0,KRW/kg (한국 청정수소 현 공급비 ~1만원),KR_H2_PRICE_2025
+2030-12,h2_target_krw_kg,4000.0,KRW/kg (수소 로드맵 목표),KR_H2_PRICE_2025

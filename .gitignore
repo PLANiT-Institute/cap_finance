@@ -1,0 +1,40 @@
+# macOS and editor noise
+.DS_Store
+**/.DS_Store
+.idea/
+.vscode/
+
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Raw, restricted, and generated data
+data/raw/**
+!data/raw/README.md
+data/interim/**
+!data/interim/.gitkeep
+
+# Generated analytical outputs
+outputs/tables/**
+outputs/figures/**
+outputs/diagnostics/**
+!outputs/**/.gitkeep
+
+# CAP v2 pipeline outputs — regenerable; facility layer is CONFIDENTIAL (설계서 §8-2)
+out/**
+out/render/facility_confidential/**
+tmp/
+

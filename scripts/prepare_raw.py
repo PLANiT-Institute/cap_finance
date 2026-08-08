@@ -1,0 +1,279 @@
+"""Normalize collector-delivered data/raw/*.csv into pipeline-ready data/prepared/D*.csv.
+
+Raw files are NEVER modified. Every transformation, unit conversion, and injected
+assumption is logged to data/prepared/PREP_LOG.md — the audit trail for §8-3/§8-4
+방어 (시설 단위 절대값은 구간·순서 정보로 취급).
+
+Run: .venv/bin/python scripts/prepare_raw.py
+"""
+
+from __future__ import annotations
+
+import pathlib
+import re
+
+import numpy as np
+import pandas as pd
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+RAW = ROOT / "data" / "raw"
+OUT = ROOT / "data" / "prepared"
+OUT.mkdir(parents=True, exist_ok=True)
+LOG: list[str] = ["# 데이터 준비 로그 (scripts/prepare_raw.py 자동 생성)", ""]
+
+USDKRW = 1350.0   # 2024-25 평균 근사 (D4 usdkrw 연평균 1100~1400 범위)
+JPYKRW = 9.2
+NM3_PER_KG_H2 = 11.13
+MBTU_PER_T_LNG = 52.0
+
+
+def log(msg):
+    LOG.append(f"- {msg}")
+
+
+def read(name):
+    return pd.read_csv(RAW / f"{name}.csv", encoding="utf-8-sig")
+
+
+# ---------------------------------------------------------------- D1a static
+fs = read("facility_static")
+fs["company_id"] = fs.company_id.replace({"MITSUI": "MCI"})
+log("company_id MITSUI → MCI 통일 (엔진 지역 매핑 키)")
+
+# BF capacity from inner volume: calibration point 광양1고로 6,000m3 = 5.48Mt/yr
+vol = fs.unit_name.str.extract(r"([\d,]+)\s*m³")[0].str.replace(",", "").astype(float)
+T_PER_M3 = 5_480_000 / 6_000
+est = vol * T_PER_M3
+fill = fs.capacity.isna() & est.notna()
+fs.loc[fill, "capacity"] = est[fill]
+fs.loc[fill, "capacity_unit"] = "t용선/yr (내용적 추정)"
+log(f"고로 능력 결측 {int(fill.sum())}기: 내용적 x {T_PER_M3:,.0f} t/m³/yr로 추정 "
+    "(광양1고로 6,000m³=5.48Mt 단일 캘리브레이션 — 시설 절대값은 구간 정보)")
+
+# exclusions
+drop_closed = fs.status.str.contains("폐쇄예정", na=False)
+drop_future = fs.commissioning_year > 2026
+drop_nocap = fs.capacity.isna()
+for mask, why in [(drop_closed, "폐쇄예정"), (drop_future, "2027+ 신설(미가동)"), (drop_nocap, "능력 산정 불가")]:
+    for fid in fs[mask & ~(drop_closed & drop_future)].facility_id:
+        pass
+excl = fs[drop_closed | drop_future | drop_nocap]
+log(f"모형 제외 {len(excl)}기: " + ", ".join(f"{r.facility_id}({r.status})" for r in excl.itertuples()))
+fs = fs[~(drop_closed | drop_future | drop_nocap)].copy()
+
+# reinvest fields for facilities without cycle (EAF/FINEX new builds kept)
+m = fs.next_reinvest_year.isna()
+fs.loc[m, "reinvest_cycle_yr"] = 20
+fs.loc[m, "next_reinvest_year"] = np.maximum(fs.loc[m, "commissioning_year"] + 20, 2030)
+log(f"재투자 창 결측 {int(m.sum())}기(신설 EAF/FINEX): commissioning+20년으로 설정")
+fs["last_reline_year"] = fs.last_reline_year.fillna(fs.commissioning_year)
+
+# 감가상각용 기존 설비 재조달가 (천원/t능력) — 캠페인(개수 주기) 정액상각의 원가 기준.
+# 고로 개수비 실적(포항4고로 ~1조원/5.1Mt ≈ 200천원/t) 앵커, 나머지는 상대 추정 주입.
+INC_CAPEX = {"BF": 200.0, "FINEX": 300.0, "EAF": 250.0, "NCC": 150.0}
+fs["incumbent_capex_unit"] = fs.unit_type.map(INC_CAPEX).fillna(150.0)
+log("D1a incumbent_capex_unit 주입: " + ", ".join(f"{k} {v:.0f}천원/t" for k, v in INC_CAPEX.items())
+    + " — 개수·대정비 재조달가 기준(포항4고로 개수비 앵커), 조기 전환 좌초비용=캠페인 정액상각 잔존가")
+
+# 조기폐쇄 기회비용 = 상실 마진 (천원/t). 철강 = 포스코 별도 영업이익/톤 2019-25 평균(~70원/kg→70천원/t),
+# 석화 = 에틸렌-납사 스프레드 2022-25 공표 연평균(~215 USD/t ×1350 ≈ 290천원/t, 변동비 일부 미차감 = 상한 성격).
+MARGIN = {"steel": 70.0, "petchem": 290.0}
+fs["margin_kthou_t"] = fs.sector.map(MARGIN)
+log(f"D1a margin_kthou_t 주입: 철강 {MARGIN['steel']:.0f}·석화 {MARGIN['petchem']:.0f}천원/t "
+    "(D4 마진 시계열 평균 — 조기폐쇄의 상실 마진, 석화는 스프레드라 상한 성격)")
+
+d1a = fs[["facility_id", "company_id", "sector", "site", "unit_type", "unit_name",
+          "capacity", "capacity_unit", "commissioning_year", "last_reline_year",
+          "reinvest_cycle_yr", "next_reinvest_year", "incumbent_capex_unit", "margin_kthou_t", "status", "source_id"]]
+
+# ---------------------------------------------------------------- D1b panel
+fp = read("facility_panel")
+ROUTE = {  # (EF tCO2/t, elec MWh/t, coal GJ/t, gas GJ/t) — 업계 표준 원단위, 문서화된 주입 가정
+    "BF": (2.15, 0.08, 13.5, 0.4),
+    "FINEX": (2.05, 0.10, 13.0, 0.4),
+    "EAF": (0.45, 0.55, 0.0, 1.0),
+    "NCC": (0.95, 0.35, 0.0, 8.0),
+}
+log("에너지 원단위 전면 결측 → 루트 표준값 주입: " +
+    "; ".join(f"{k}: EF {v[0]}, 전력 {v[1]}MWh/t, 원료탄 {v[2]}GJ/t, 가스 {v[3]}GJ/t" for k, v in ROUTE.items()))
+
+rows = []
+years = [2022, 2023, 2024]
+for company, grp in d1a.groupby("company_id"):
+    tot = fp[fp.facility_id == {"POSCO": "POSCO_TOTAL", "NSC": "NSC_TOTAL",
+                                "LOTTE": "LOTTE_TOTAL", "MCI": "MITSUI_TOTAL"}[company]]
+    tot = tot[tot.year.isin(years)]
+    if company in ("POSCO", "NSC"):
+        # steel: 회사 합계(생산·배출 실측)를 능력 x 루트가중으로 시설 배분
+        w_ef = grp.apply(lambda r: r.capacity * ROUTE[r.unit_type][0], axis=1)
+        w_cap = grp.capacity
+        for y in years:
+            t = tot[tot.year == y]
+            prod_t = float(t.production.iloc[0]) if len(t) and pd.notna(t.production.iloc[0]) else np.nan
+            s1_t = float(t.emissions_s1.iloc[0]) if len(t) else np.nan
+            for fid, r in grp.set_index("facility_id").iterrows():
+                prod = prod_t * r.capacity / w_cap.sum()
+                s1 = s1_t * (r.capacity * ROUTE[r.unit_type][0]) / w_ef.sum()
+                ef = ROUTE[r.unit_type]
+                rows.append([fid, y, prod, s1, 0.0, prod * ef[2], prod * ef[3], prod * ef[1], "", "PREP_ALLOC"])
+        log(f"{company}: 회사 실측 합계(생산·Scope1)를 능력x루트EF 가중으로 {len(grp)}기 배분 "
+            f"(연도 {years})")
+    else:
+        # petchem: 회사 합계에 비NCC 설비 다수 포함 → 상향식(능력 x 가동률 0.9 x 루트EF)
+        util = 0.9
+        for y in years:
+            for fid, r in grp.set_index("facility_id").iterrows():
+                prod = r.capacity * util
+                ef = ROUTE[r.unit_type]
+                rows.append([fid, y, prod, prod * ef[0], 0.0, prod * ef[2], prod * ef[3], prod * ef[1], "", "PREP_BOTTOMUP"])
+        cov = sum(r.capacity * 0.9 * ROUTE[r.unit_type][0] for _, r in grp.iterrows())
+        t24 = tot[tot.year == tot.year.max()]
+        if len(t24):
+            log(f"{company}: 상향식 추정 (능력x0.9xEF). 회사 보고 Scope1 대비 커버리지 "
+                f"{cov / float(t24.emissions_s1.iloc[0]):.0%} — 비분해로 설비는 모형 밖")
+d1b = pd.DataFrame(rows, columns=["facility_id", "year", "production", "emissions_s1", "emissions_s2",
+                                  "energy_coal", "energy_gas", "energy_elec", "energy_naphtha", "source_id"])
+
+# ---------------------------------------------------------------- D2a budget
+d2a = read("scenario_budget")
+# 단조성 보정: 1.5°C 예산이 어느 해든 2°C보다 느슨할 수 없다. 수집본은 2030-35 구간에서
+# 역전(B20 < NZ15) — NZ15 := min(NZ15, B20)로 보정. 경로 형태 재추정은 2차 수집 몫.
+piv = d2a.pivot_table(index=["region", "sector", "year"], columns="scenario", values="carbon_budget")
+if {"NZ15", "B20"} <= set(piv.columns):
+    fixed_n = int((piv.NZ15 > piv.B20).sum())
+    piv["NZ15"] = piv[["NZ15", "B20"]].min(axis=1)
+    fix_map = piv.NZ15.to_dict()
+    m = d2a.scenario == "NZ15"
+    d2a.loc[m, "carbon_budget"] = d2a[m].apply(
+        lambda r: fix_map[(r.region, r.sector, r.year)], axis=1)
+    log(f"D2a 단조성 보정: NZ15 > B20 역전 {fixed_n}개 연도-지역-섹터에서 NZ15 := min(NZ15, B20). "
+        "초반 급감형 재보간은 2차 수집(F항) 대상")
+d2a.to_csv(OUT / "D2a_scenario_budget.csv", index=False)
+
+# ---------------------------------------------------------------- D2b prices
+sp = read("scenario_prices")
+out_rows = []
+for r in sp.itertuples():
+    v, u = r.value, str(r.unit)
+    var = r.variable
+    if var == "carbon_price":
+        var, v, u = "co2_price", v * USDKRW, "KRW/tCO2"
+    elif var == "elec_price" and "원/kWh" in u:
+        v, u = v * 1000, "KRW/MWh"
+    elif var == "elec_price" and "円/kWh" in u:
+        v, u = v * 1000 * JPYKRW, "KRW/MWh"
+    elif var == "coal_price":
+        v, u = v * USDKRW, "KRW/t"
+    elif var == "gas_price":
+        v, u = v * MBTU_PER_T_LNG * USDKRW, "KRW/t"
+    elif var == "h2_price" and "JPY/Nm3" in u:
+        v, u = v * NM3_PER_KG_H2 * JPYKRW, "KRW/kg"
+    elif var == "h2_price":
+        u = "KRW/kg"
+    out_rows.append([r.scenario, r.region, var, r.year, v, u, r.source_id])
+d2b = pd.DataFrame(out_rows, columns=["scenario", "region", "variable", "year", "value", "unit", "source_id"])
+log(f"D2b 단위 정규화: carbon_price→co2_price(x{USDKRW:.0f}), 원·円/kWh→KRW/MWh, "
+    f"USD/t·MBtu→KRW/t (LNG {MBTU_PER_T_LNG}MBtu/t), JPY/Nm3→KRW/kg (환율 USD {USDKRW:.0f}, JPY {JPYKRW})")
+
+# v2.1 재생 조달가(re_price): 전환 기술의 전력은 재생 PPA 계약가 수준으로 조달.
+# 앵커 = 실거래 보도(한국 태양광 170원대 중반, 일본 물리 PPA 총비용 ~21.5 JPY/kWh),
+# 경로 = 실질 flat 가정 (계약가 성격 — 시나리오 무관). 시나리오별 전망 수령 시 교체.
+RE_ANCHOR = {"Korea": 175_000.0, "Japan": 198_000.0}  # KRW/MWh
+re_rows = []
+for scen in ["NZ15", "B20"]:
+    for region, v in RE_ANCHOR.items():
+        for year in range(2025, 2051):
+            re_rows.append([scen, region, "re_price", year, v, "KRW/MWh", "KR_PPA_2026/REI_JP_PPA_2025"])
+d2b = pd.concat([d2b, pd.DataFrame(re_rows, columns=d2b.columns)], ignore_index=True)
+log(f"D2b re_price 생성: 한국 {RE_ANCHOR['Korea']:,.0f}·일본 {RE_ANCHOR['Japan']:,.0f} KRW/MWh 실질 flat "
+    "(재생 PPA 실거래 앵커) — 전환 기술 전력은 이 가격, 기존 조업은 계통(elec_price)")
+
+# Korea NZ15 carbon: BOK-FSS 경로는 섀도가격(한계감축비용, 출처 노트 스스로 '실거래 전망 아님')
+# — 현금흐름 탄소비용으로 쓰면 일본(IEA 시장가 앵커)과 의미가 어긋나고 기준선 비용이 폭증.
+# IEA NZE 선진국 앵커로 교체해 지역 간 의미 통일. 섀도 경로는 원본에 보존.
+NZE_KR = {2025: 7.0, 2030: 140.0, 2035: 180.0, 2040: 205.0, 2045: 227.0, 2050: 250.0}
+m = (d2b.scenario == "NZ15") & (d2b.region == "Korea") & (d2b.variable == "co2_price")
+d2b.loc[m, "value"] = d2b.loc[m, "year"].map(NZE_KR) * USDKRW
+d2b.loc[m, "source_id"] = "IEA_GECM_DOC_2025 (NZE adv., PREP 대체)"
+log("한국 NZ15 co2_price: BOK-FSS 섀도가격(2050 USD1,700) → IEA NZE 선진국 시장가 앵커"
+    f"(2030 140 / 2050 250 USD)로 대체 — 탄소비용의 현금흐름 의미 통일. 섀도 경로는 raw에 보존")
+
+# ---------------------------------------------------------------- D3 tech
+to = read("tech_options")
+to = to[~to.tech_id.str.endswith("_alt")].copy()
+log("D3: *_alt 행(출처 대안 추정) 본 실행에서 제외 — 민감도 전용")
+to = to[~to.tech_id.str.contains("ccus")].copy()
+log("D3: CCUS 옵션 제외 (사용자 결정 2026-08-06 — 저장 용량·비용 데이터 확보 전까지 수단에서 제외)")
+FILL = {  # (col, tech, value, why)
+    ("capex_unit", "steel_ccus"): (550.0, "IEAGHG 고로 CCUS 리트로핏 ~400-500USD/t 환산 추정"),
+    ("capex_unit", "steel_eff"): (120.0, "BAT 리트로핏 저CAPEX 추정"),
+    ("capex_unit", "petchem_h2fuel"): (150.0, "버너 교체 경량 리트로핏 추정"),
+    ("capex_unit", "petchem_eff"): (60.0, "운전최적화 저CAPEX 추정"),
+    ("opex_var", "petchem_bio"): (2600.0, "바이오나프타 프리미엄 ~600USD/t x 3.2t나프타/t에틸렌 환산"),
+    ("h2_intensity", "petchem_h2fuel"): (100.0, "NCC 연료 20GJ/t 중 60% 수소 대체 가정 (LHV 120MJ/kg)"),
+}
+for (col, tech), (val, why) in FILL.items():
+    m = to.tech_id == tech
+    if to.loc[m, col].isna().any():
+        to.loc[m, col] = val
+        log(f"D3 결측 주입: {tech}.{col} = {val} — {why}")
+to["opex_fixed"] = to.opex_fixed.fillna(0.0)
+to["opex_var"] = to.opex_var.fillna(0.0)
+log("D3: opex 잔여 결측 0 처리 (증분 비용 기준 — 공통 유지비 상쇄 가정)")
+to["applies_to_unit"] = np.select(
+    [to.sector.eq("steel"), to.sector.eq("petchem")], ["BF", "NCC"], default=to.applies_to_unit)
+# 시설-기술 매칭 (산업 특성): BF-BOF의 '전환'은 수소환원제철만 가능. BF→EAF 전면 전환은
+# 스크랩 수급·고급강 품질 제약으로 비현실 — EAF는 신설 경로이지 기존 고로 전환 옵션이 아님.
+# CCUS·효율개선은 리트로핏(설비 유지)이라 BF에 계속 적용.
+to.loc[to.tech_id == "steel_eaf", "applies_to_unit"] = "NONE"
+to.loc[to.tech_id == "steel_hyrex", "applies_to_unit"] = "FINEX"
+log("D3 applies_to_unit 정규화: 석화→NCC, 철강 BF→수소환원+부분감축 리트로핏(수소취입·스크랩·HBI·효율), "
+    "FINEX→HyREX(2035). steel_eaf는 신설 경로라 제거. 2차 수집 수단 반영: 감축률 기준으로 당사 시설 EF에 재스케일, "
+    "부분 적용 상한(스크랩 15%p·HBI 30%·바이오 10%·열펌프 15%·수소취입 20%·하이브리드 40%)은 EF에 blended")
+RETROFIT = ["steel_ccus", "steel_eff", "steel_h2inj", "steel_scrap", "steel_hbi",
+            "petchem_h2fuel", "petchem_ccus", "petchem_eff", "petchem_bio",
+            "petchem_ecracker_hybrid", "petchem_hp_whr"]
+to["retrofit"] = to.tech_id.isin(RETROFIT).astype(int)
+log("D3 retrofit 구분: " + ", ".join(RETROFIT) + " — 기존 공정 에너지 유지 + 기술 원단위 가산 "
+    "(하이브리드 전기로의 연료 40% 감축분은 미반영 = 보수적). 대체형(H2DRI·HyREX·e-cracker 완전)만 공정 에너지 교체")
+
+# ---------------------------------------------------------------- D4 prices
+d4 = read("price_history")
+m = d4.series_id == "electrolyzer_capex"
+d4.loc[m, "value"] = d4.loc[m, "value"] * USDKRW
+d4.loc[m, "unit"] = "KRW/kW"
+log(f"D4 electrolyzer_capex USD→KRW x{USDKRW:.0f}. 관측 2개(2022 상승 구간)뿐 → "
+    "감소율은 캘리브레이션 사전값(연 5%) 사용, 앵커는 최종 관측값")
+d4.to_csv(OUT / "D4_price_history.csv", index=False)
+
+# ---------------------------------------------------------------- D5 policy
+ps = read("policy_support")
+ps2 = ps.rename(columns=str)
+ps2["instrument"] = "other"   # K-ETS 유상할당·GX-ETS 칼라 — 엔진 수단(subsidy/ccfd) 아님
+d5 = ps2[["support_scenario", "instrument", "tech_id", "param_type", "value", "unit",
+          "valid_from", "valid_to", "source_id"]]
+log("D5: 수집된 수단은 K-ETS 유상할당·GX-ETS 프라이스칼라 — CAPEX 보조·CCfD 아님 → 엔진 미적용(instrument=other). "
+    "결과 해석: 확정된 직접 지원 부재로 net=gross (그 자체가 발견)")
+
+# ---------------------------------------------------------------- D6 financials
+d6 = read("company_financials")
+d6["company_id"] = d6.company_id.replace({"MITSUI": "MCI"})
+d6.to_csv(OUT / "D6_company_financials.csv", index=False)
+
+# ---------------------------------------------------------------- D7 disclosed
+dp = read("disclosed_plan")
+dp["company_id"] = dp.company_id.replace({"MITSUI": "MCI"})
+log("D7: EAF 신설 커밋(NSC_YAW_EAF1·NSC_HIR_EAF2·POSCO_GWY_EAF1)은 기존 시설의 '전환'이 아니라 "
+    "신설 경로 — BF→EAF 전환 불허 규칙에 따라 모형 커밋으로 미해석(경고로 드롭). "
+    "NSC 공시 좌표는 KIM_BF2 수소환원 실증 커밋으로 측정")
+dp.to_csv(OUT / "D7_disclosed_plan.csv", index=False)
+
+d1a.to_csv(OUT / "D1a_facility_static.csv", index=False)
+d1b.to_csv(OUT / "D1b_facility_panel.csv", index=False)
+d2b.to_csv(OUT / "D2b_scenario_prices.csv", index=False)
+to.to_csv(OUT / "D3_tech_options.csv", index=False)
+d5.to_csv(OUT / "D5_policy_support.csv", index=False)
+
+(OUT / "PREP_LOG.md").write_text("\n".join(LOG) + "\n")
+print("\n".join(LOG))
+print(f"\nprepared {len(d1a)} facilities, {len(d1b)} panel rows -> {OUT}")

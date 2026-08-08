@@ -1,0 +1,8 @@
+company_id,item_type,facility_id,tech_id,year_stated,coverage_pct,resolution,source_id,quote
+POSCO,tech_commit,POSCO_POH_BF2,steel_h2dri,2032,,mid,SAMPLE_SYNTH,HyREX 상용화 목표 (sample)
+POSCO,tech_commit,POSCO_POH_BF3,steel_eaf,2030,,high,SAMPLE_SYNTH,전기로 전환 (sample)
+NSC,tech_commit,NSC_KIM_BF4,steel_eaf,2030,,high,SAMPLE_SYNTH,EAF 전환 결정 (sample)
+NSC,ppa,,,2030,40,mid,SAMPLE_SYNTH,재생에너지 조달 40% (sample)
+LOTTE,tech_commit,LOTTE_YEO_NCC,petchem_h2fuel,2030,,mid,SAMPLE_SYNTH,수소 연료 전환 (sample)
+LOTTE,ppa,,,2028,60,high,SAMPLE_SYNTH,PPA 60% (sample)
+MCI,tech_commit,MCI_OSK_NCC,petchem_ecracker,2032,,low,SAMPLE_SYNTH,e-cracker 검토 (sample)

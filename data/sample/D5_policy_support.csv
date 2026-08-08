@@ -1,0 +1,4 @@
+support_scenario,instrument,tech_id,param_type,value,unit,valid_from,valid_to,source_id
+current,subsidy_capex,steel_h2dri,subsidy_pct,15,%,2027,2035,SAMPLE_SYNTH
+current,subsidy_capex,petchem_ecracker,subsidy_pct,10,%,2027,2035,SAMPLE_SYNTH
+current,ccfd,all,strike_krw_tco2,60000,KRW/tCO2,2028,2040,SAMPLE_SYNTH
