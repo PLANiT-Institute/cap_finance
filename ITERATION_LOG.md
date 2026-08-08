@@ -19,3 +19,17 @@
 **검증**: 로컬 서브 index/report/dashboard 전부 200, 렌더 육안 확인. 중첩 앵커(a 안 a)로 카드 레이아웃 깨진 것 수정. web/ 12MB (대시보드 6MB×2).
 **Vercel 연결 절차**(사용자 작업): Vercel > New Project > PLANiT-Institute/cap_finance > Framework: Other, Output Directory `web` > Deploy. 시설 단위 표 포함이므로 Settings > Deployment Protection 활성화 권장.
 **다음**: C3(시나리오 정의 대조) 또는 D2(데이터 패키지).
+
+## Cycle 6 (F1 파라미터 인벤토리) — AUTOPILOT v2 체제 시작
+**한 일**: `scripts/build_parameter_inventory.py` — FIN·EFF 전 입력 파라미터 408건을 증거등급(T1~T5)·출처·사용처와 함께 단일 표로. `docs/parameter_inventory.csv` 양 저장소.
+**결과**:
+| 모형 | T1 | T2 | T3 | T4 | T5 |
+|---|---|---|---|---|---|
+| FIN | 3 | 130 | 41 | 79 | 42 |
+| EFF | 0 | 7 | 0 | 0 | 113 |
+
+**발견 2건**:
+1. **EFF 모형 입력 113건이 전부 자기선언 `model_estimate`(T5)** — README가 명시한 설계대로지만, 별도 증거 파일(`technology_cost_evidence` 실제 프로젝트 7건 = T2)이 **모형 입력에 연결돼 있지 않다**. 증거는 있는데 쓰이지 않는 구조. → 백로그 신규 항목.
+2. **T5 중 범위 미지정 139건** — FIN 26건(EST_v0 예산·가격 경로), EFF 113건. AUTOPILOT §1 규칙 위반이므로 F3에서 범위 부여 대상.
+**결론 영향**: 없음(측정만). 단 다음 사이클 F2의 작업 순서를 이 표가 결정.
+**다음**: C7 = F2 사전 민감도 스크리닝 — 어느 파라미터가 헤드라인을 좌우하는지 측정, 상위 10의 tier가 데이터 승급 순서가 됨.
