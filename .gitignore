@@ -38,3 +38,6 @@ out/**
 out/render/facility_confidential/**
 tmp/
 
+
+# test artefacts
+out_test/

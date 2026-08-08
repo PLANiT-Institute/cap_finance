@@ -18,7 +18,10 @@ from cap import config as C  # noqa: E402
 
 @pytest.fixture(scope="session")
 def cfg():
-    c = C.load(data_dir="data/sample")
+    # out_dir MUST differ from the production out/ — the test suite runs the whole
+    # pipeline on synthetic data, and sharing out/ silently overwrote real results
+    # with fabricated ones (2026-08-09: a published report carried sample numbers).
+    c = C.load(data_dir="data/sample", out_dir="out_test")
     c["simulation"] = dict(c["simulation"], n_sims=500, n_sims_flex=100)
     c["milp"] = dict(c["milp"], frontier_points=4)
     return c
@@ -148,3 +151,9 @@ def test_e3_reproducible(cfg):
     b = simulate_factors(cal, years, 50, np.random.default_rng(cfg.seed))
     for k in a:
         assert np.array_equal(a[k], b[k])
+
+
+def test_outputs_isolated_from_production(cfg):
+    """Guard the 2026-08-09 incident: the suite must never write into out/."""
+    assert cfg["out_dir"] != "out", "test out_dir collides with production outputs"
+    assert "test" in cfg["out_dir"]
