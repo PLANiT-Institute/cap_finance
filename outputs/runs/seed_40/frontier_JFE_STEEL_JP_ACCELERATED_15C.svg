@@ -16,32 +16,32 @@
 <line x1="519.0" y1="55" x2="519.0" y2="465" stroke="#e3e8ef"/>
 <text x="519.0" y="490" text-anchor="middle" font-family="Arial" font-size="12" fill="#536273">101</text>
 <line x1="90" y1="219.0" x2="805" y2="219.0" stroke="#e3e8ef"/>
-<text x="78" y="223.0" text-anchor="end" font-family="Arial" font-size="12" fill="#536273">16</text>
+<text x="78" y="223.0" text-anchor="end" font-family="Arial" font-size="12" fill="#536273">15</text>
 <line x1="662.0" y1="55" x2="662.0" y2="465" stroke="#e3e8ef"/>
 <text x="662.0" y="490" text-anchor="middle" font-family="Arial" font-size="12" fill="#536273">138</text>
 <line x1="90" y1="137.0" x2="805" y2="137.0" stroke="#e3e8ef"/>
-<text x="78" y="141.0" text-anchor="end" font-family="Arial" font-size="12" fill="#536273">21</text>
+<text x="78" y="141.0" text-anchor="end" font-family="Arial" font-size="12" fill="#536273">20</text>
 <line x1="805.0" y1="55" x2="805.0" y2="465" stroke="#e3e8ef"/>
-<text x="805.0" y="490" text-anchor="middle" font-family="Arial" font-size="12" fill="#536273">175</text>
+<text x="805.0" y="490" text-anchor="middle" font-family="Arial" font-size="12" fill="#536273">176</text>
 <line x1="90" y1="55.0" x2="805" y2="55.0" stroke="#e3e8ef"/>
 <text x="78" y="59.0" text-anchor="end" font-family="Arial" font-size="12" fill="#536273">26</text>
-<polyline points="159.2,291.1 525.3,314.7 710.0,442.1" fill="none" stroke="#173b6c" stroke-width="4"/>
-<circle cx="159.2" cy="291.1" r="7" fill="#173b6c"/>
-<text x="169.2" y="281.1" font-family="Arial" font-size="12" fill="#243447">P1</text>
-<circle cx="281.8" cy="201.6" r="7" fill="#aab4c0"/>
-<text x="291.8" y="191.6" font-family="Arial" font-size="12" fill="#243447">P2</text>
-<circle cx="471.6" cy="133.9" r="7" fill="#aab4c0"/>
-<text x="481.6" y="123.9" font-family="Arial" font-size="12" fill="#243447">P3</text>
-<circle cx="565.0" cy="198.0" r="7" fill="#aab4c0"/>
-<text x="575.0" y="188.0" font-family="Arial" font-size="12" fill="#243447">P4</text>
-<circle cx="525.3" cy="314.7" r="7" fill="#173b6c"/>
-<text x="535.3" y="304.7" font-family="Arial" font-size="12" fill="#243447">P5</text>
-<circle cx="735.8" cy="383.9" r="7" fill="#aab4c0"/>
-<text x="745.8" y="373.9" font-family="Arial" font-size="12" fill="#243447">P6</text>
-<circle cx="710.0" cy="442.1" r="7" fill="#173b6c"/>
-<text x="720.0" y="432.1" font-family="Arial" font-size="12" fill="#243447">P7</text>
-<polygon points="293.1,245.9 302.1,254.9 293.1,263.9 284.1,254.9" fill="#8b241e"/>
-<text x="303.1" y="244.9" font-family="Arial" font-size="12" fill="#243447">CURRENT</text>
+<polyline points="527.7,332.7" fill="none" stroke="#173b6c" stroke-width="4"/>
+<circle cx="159.2" cy="306.3" r="7" fill="#aab4c0"/>
+<text x="169.2" y="296.3" font-family="Arial" font-size="12" fill="#243447">P1</text>
+<circle cx="286.1" cy="235.1" r="7" fill="#aab4c0"/>
+<text x="296.1" y="225.1" font-family="Arial" font-size="12" fill="#243447">P2</text>
+<circle cx="516.5" cy="135.2" r="7" fill="#aab4c0"/>
+<text x="526.5" y="125.2" font-family="Arial" font-size="12" fill="#243447">P3</text>
+<circle cx="568.4" cy="224.0" r="7" fill="#aab4c0"/>
+<text x="578.4" y="214.0" font-family="Arial" font-size="12" fill="#243447">P4</text>
+<circle cx="527.7" cy="332.7" r="7" fill="#173b6c"/>
+<text x="537.7" y="322.7" font-family="Arial" font-size="12" fill="#243447">P5</text>
+<circle cx="735.8" cy="388.1" r="7" fill="#aab4c0"/>
+<text x="745.8" y="378.1" font-family="Arial" font-size="12" fill="#243447">P6</text>
+<circle cx="709.9" cy="443.6" r="7" fill="#aab4c0"/>
+<text x="719.9" y="433.6" font-family="Arial" font-size="12" fill="#243447">P7</text>
+<polygon points="296.1,263.6 305.1,272.6 296.1,281.6 287.1,272.6" fill="#8b241e"/>
+<text x="306.1" y="262.6" font-family="Arial" font-size="12" fill="#243447">CURRENT</text>
 <line x1="90" y1="465" x2="805" y2="465" stroke="#667788" stroke-width="1.5"/>
 <line x1="90" y1="55" x2="90" y2="465" stroke="#667788" stroke-width="1.5"/>
 <text x="447.5" y="520" text-anchor="middle" font-family="Arial" font-size="14">Expected transition cost P50 (kKRW/tCO2)</text>

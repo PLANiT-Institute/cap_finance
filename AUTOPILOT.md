@@ -53,7 +53,7 @@
 - [ ] C4. 크로스체크 리포트: POSCO·NSC의 P50·TCaR 양 모형 비교표(`docs/cross_model_check.md`) — 차이 요인 분해(경계 정의·마진·탄소 처리).
 
 ### D. 공개 툴화
-- [ ] D1. Vercel 사이트 구성: `cap_finance/web/index.html`(FIN 보고서) + `web/dashboard/` (EFF `outputs/dashboard*.html` 복사 스크립트 `scripts/sync_web.py`) + 랜딩 `web/home.html`(두 산출물 링크·프로젝트 설명·데이터 다운로드 링크). vercel.json cleanUrls.
+- [x] D1. Vercel 사이트 구성: `cap_finance/web/index.html`(FIN 보고서) + `web/dashboard/` (EFF `outputs/dashboard*.html` 복사 스크립트 `scripts/sync_web.py`) + 랜딩 `web/home.html`(두 산출물 링크·프로젝트 설명·데이터 다운로드 링크). vercel.json cleanUrls.
 - [ ] D2. 데이터 패키지: `data/package/` — 공개 가능 CSV(기업 집계 지표, frontier, wedge, λ, EFF plan_metrics 등) + `DATA_DICTIONARY`(양쪽 병합) + 출처 등록부 공개분 + LICENSE 문구(출처별 재배포 조건 반영, ICIS 등 no-redistribution 수치는 제외/구간화).
 - [ ] D3. MCP 서버: EFF에 `cap_efficient/mcp_server.py` (stdlib JSON-RPC over stdio) — tools: `list_companies`, `get_plan_metrics(company, scenario)`, `get_frontier(company)`, `get_facility_schedule(company)`(비공개 플래그 시 거부), `get_data_package_manifest`. README에 claude mcp 등록 예시. FIN 산출도 조회되도록 D2 패키지 경로를 읽게.
 - [ ] D4. 양쪽 README 재작성: 30초 스타트, 아키텍처 그림, 산출물 표, 데이터 신뢰 등급 표, 인용 방법.

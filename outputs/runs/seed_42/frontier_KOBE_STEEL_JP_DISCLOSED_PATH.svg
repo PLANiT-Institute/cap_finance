@@ -12,11 +12,11 @@
 <line x1="376.0" y1="55" x2="376.0" y2="465" stroke="#e3e8ef"/>
 <text x="376.0" y="490" text-anchor="middle" font-family="Arial" font-size="12" fill="#536273">70</text>
 <line x1="90" y1="301.0" x2="805" y2="301.0" stroke="#e3e8ef"/>
-<text x="78" y="305.0" text-anchor="end" font-family="Arial" font-size="12" fill="#536273">9</text>
+<text x="78" y="305.0" text-anchor="end" font-family="Arial" font-size="12" fill="#536273">10</text>
 <line x1="519.0" y1="55" x2="519.0" y2="465" stroke="#e3e8ef"/>
 <text x="519.0" y="490" text-anchor="middle" font-family="Arial" font-size="12" fill="#536273">108</text>
 <line x1="90" y1="219.0" x2="805" y2="219.0" stroke="#e3e8ef"/>
-<text x="78" y="223.0" text-anchor="end" font-family="Arial" font-size="12" fill="#536273">14</text>
+<text x="78" y="223.0" text-anchor="end" font-family="Arial" font-size="12" fill="#536273">15</text>
 <line x1="662.0" y1="55" x2="662.0" y2="465" stroke="#e3e8ef"/>
 <text x="662.0" y="490" text-anchor="middle" font-family="Arial" font-size="12" fill="#536273">145</text>
 <line x1="90" y1="137.0" x2="805" y2="137.0" stroke="#e3e8ef"/>
@@ -25,23 +25,23 @@
 <text x="805.0" y="490" text-anchor="middle" font-family="Arial" font-size="12" fill="#536273">183</text>
 <line x1="90" y1="55.0" x2="805" y2="55.0" stroke="#e3e8ef"/>
 <text x="78" y="59.0" text-anchor="end" font-family="Arial" font-size="12" fill="#536273">24</text>
-<polyline points="310.1,236.6" fill="none" stroke="#173b6c" stroke-width="4"/>
-<circle cx="159.2" cy="302.6" r="7" fill="#aab4c0"/>
-<text x="169.2" y="292.6" font-family="Arial" font-size="12" fill="#243447">P1</text>
-<circle cx="316.5" cy="177.2" r="7" fill="#aab4c0"/>
-<text x="326.5" y="167.2" font-family="Arial" font-size="12" fill="#243447">P2</text>
-<circle cx="310.1" cy="236.6" r="7" fill="#173b6c"/>
-<text x="320.1" y="226.6" font-family="Arial" font-size="12" fill="#243447">P3</text>
-<circle cx="638.6" cy="142.0" r="7" fill="#aab4c0"/>
-<text x="648.6" y="132.0" font-family="Arial" font-size="12" fill="#243447">P4</text>
-<circle cx="735.8" cy="240.3" r="7" fill="#aab4c0"/>
-<text x="745.8" y="230.3" font-family="Arial" font-size="12" fill="#243447">P5</text>
-<circle cx="698.9" cy="376.7" r="7" fill="#aab4c0"/>
-<text x="708.9" y="366.7" font-family="Arial" font-size="12" fill="#243447">P6</text>
-<circle cx="684.5" cy="439.1" r="7" fill="#aab4c0"/>
-<text x="694.5" y="429.1" font-family="Arial" font-size="12" fill="#243447">P7</text>
-<polygon points="330.5,166.0 339.5,175.0 330.5,184.0 321.5,175.0" fill="#8b241e"/>
-<text x="340.5" y="165.0" font-family="Arial" font-size="12" fill="#243447">CURRENT</text>
+<polyline points="309.2,222.7" fill="none" stroke="#173b6c" stroke-width="4"/>
+<circle cx="159.2" cy="299.9" r="7" fill="#aab4c0"/>
+<text x="169.2" y="289.9" font-family="Arial" font-size="12" fill="#243447">P1</text>
+<circle cx="315.6" cy="162.0" r="7" fill="#aab4c0"/>
+<text x="325.6" y="152.0" font-family="Arial" font-size="12" fill="#243447">P2</text>
+<circle cx="309.2" cy="222.7" r="7" fill="#173b6c"/>
+<text x="319.2" y="212.7" font-family="Arial" font-size="12" fill="#243447">P3</text>
+<circle cx="638.9" cy="139.4" r="7" fill="#aab4c0"/>
+<text x="648.9" y="129.4" font-family="Arial" font-size="12" fill="#243447">P4</text>
+<circle cx="735.8" cy="230.0" r="7" fill="#aab4c0"/>
+<text x="745.8" y="220.0" font-family="Arial" font-size="12" fill="#243447">P5</text>
+<circle cx="699.1" cy="369.9" r="7" fill="#aab4c0"/>
+<text x="709.1" y="359.9" font-family="Arial" font-size="12" fill="#243447">P6</text>
+<circle cx="684.4" cy="437.8" r="7" fill="#aab4c0"/>
+<text x="694.4" y="427.8" font-family="Arial" font-size="12" fill="#243447">P7</text>
+<polygon points="330.9,165.5 339.9,174.5 330.9,183.5 321.9,174.5" fill="#8b241e"/>
+<text x="340.9" y="164.5" font-family="Arial" font-size="12" fill="#243447">CURRENT</text>
 <line x1="90" y1="465" x2="805" y2="465" stroke="#667788" stroke-width="1.5"/>
 <line x1="90" y1="55" x2="90" y2="465" stroke="#667788" stroke-width="1.5"/>
 <text x="447.5" y="520" text-anchor="middle" font-family="Arial" font-size="14">Expected transition cost P50 (kKRW/tCO2)</text>

@@ -1,5 +1,5 @@
 {
-  "model_version": "0.3.0",
+  "model_version": "0.8.0",
   "definitions": [
     {
       "scenario_id": "ACCELERATED_15C",
@@ -8,10 +8,10 @@
       "climate_target_c": 1.5,
       "is_active": true,
       "model_name": "내부 스트레스 테스트",
-      "model_version": "0.3.0",
+      "model_version": "0.8.0",
       "source_url": "",
-      "source_version": "internal-v0.3.0",
-      "extraction_date": "2026-08-06",
+      "source_version": "internal-v0.8.0",
+      "extraction_date": "2026-08-07",
       "geography": "회사별 공시 경계",
       "integration_status": "active",
       "data_status": "model_estimate",
@@ -24,10 +24,10 @@
       "climate_target_c": null,
       "is_active": true,
       "model_name": "기업 공시와 내부 보간",
-      "model_version": "0.3.0",
+      "model_version": "0.8.0",
       "source_url": "",
       "source_version": "2025 disclosures",
-      "extraction_date": "2026-08-06",
+      "extraction_date": "2026-08-07",
       "geography": "회사별 공시 경계",
       "integration_status": "active",
       "data_status": "official_anchor_plus_model_interpolation",
