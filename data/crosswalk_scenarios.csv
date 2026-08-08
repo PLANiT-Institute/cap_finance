@@ -1,0 +1,3 @@
+fin_scenario_id,eff_scenario_id,note
+NZ15,ACCELERATED_15C,FIN 1.5°C 정합 ↔ EFF 내부 1.5°C 스트레스. 공식 GCAM_15C 추출 시 그쪽으로 이동
+B20,GCAM_2C,FIN 2°C ↔ EFF GCAM 2.0°C(추출 대기). 활성화 전까지 비교는 잠정
