@@ -1,0 +1,163 @@
+"""Assemble web/ for Vercel: landing + FIN diagnostics report + EFF dashboards.
+
+    .venv/bin/python scripts/build_site.py [--eff PATH_TO_cap-efficient]
+
+Copies EFF's generated dashboards (run `python3 -m cap_efficient dashboard` there
+first) and wraps the FIN report, then writes the landing page. Everything is static
+and self-contained — no build step on Vercel.
+"""
+
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import pathlib
+import shutil
+import subprocess
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+WEB = ROOT / "web"
+DOCTYPE = ('<!doctype html><html lang="ko"><head><meta charset="utf-8">'
+           '<meta name="viewport" content="width=device-width,initial-scale=1"></head><body>')
+
+
+def build_report() -> pathlib.Path:
+    tmp = ROOT / "out" / "render" / "report_body.html"
+    subprocess.run([sys.executable, str(ROOT / "scripts/build_report.py"), str(tmp)], check=True)
+    out = WEB / "report.html"
+    out.write_text(DOCTYPE + tmp.read_text() + "</body></html>")
+    return out
+
+
+def copy_dashboards(eff: pathlib.Path) -> list[str]:
+    copied = []
+    for name in ("dashboard.html", "dashboard_en.html"):
+        src = eff / "outputs" / name
+        if src.exists():
+            shutil.copy(src, WEB / name)
+            copied.append(name)
+        else:
+            print(f"[site] warning: {src} 없음 — EFF에서 `python3 -m cap_efficient dashboard` 먼저 실행")
+    return copied
+
+
+LANDING = """<title>CAP — Capital Allocation Pathway</title>
+<style>
+:root{{--surface:#FBFBF9;--panel:#fff;--ink:#191C24;--ink2:#565B66;--ink3:#8B909C;
+  --line:#E4E4DE;--accent:#2a78d6;--accent2:#1baf7a;--warn-bg:#FBF3E2;--warn-line:#E5C878}}
+@media (prefers-color-scheme:dark){{:root:where(:not([data-theme="light"])){{
+  --surface:#15171C;--panel:#1C1F26;--ink:#EDEEF0;--ink2:#A8ADB8;--ink3:#747A87;
+  --line:#2E323B;--accent:#3987e5;--accent2:#199e70;--warn-bg:#2A2517;--warn-line:#6B5A2A}}}}
+:root[data-theme="dark"]{{--surface:#15171C;--panel:#1C1F26;--ink:#EDEEF0;--ink2:#A8ADB8;
+  --ink3:#747A87;--line:#2E323B;--accent:#3987e5;--accent2:#199e70;--warn-bg:#2A2517;--warn-line:#6B5A2A}}
+*{{box-sizing:border-box}}
+body{{margin:0;background:var(--surface);color:var(--ink);line-height:1.62;font-size:15px;
+  font-family:"Apple SD Gothic Neo",Pretendard,"Noto Sans KR",system-ui,sans-serif}}
+.wrap{{max-width:940px;margin:0 auto;padding:64px 30px 90px}}
+.eyebrow{{font-size:11.5px;letter-spacing:.15em;color:var(--accent);font-weight:700;text-transform:uppercase}}
+h1{{font-size:34px;line-height:1.2;margin:10px 0 8px;font-weight:800;letter-spacing:-.02em;text-wrap:balance}}
+.lede{{color:var(--ink2);max-width:66ch;margin:0 0 6px;font-size:15.5px}}
+h2{{font-size:17px;margin:52px 0 12px;font-weight:740;letter-spacing:-.005em}}
+.cards{{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:26px}}
+.card{{display:block;text-decoration:none;color:inherit;background:var(--panel);border:1px solid var(--line);
+  border-radius:14px;padding:22px;transition:border-color .15s,transform .15s}}
+.card:hover{{border-color:var(--accent);transform:translateY(-2px)}}
+.card:focus-visible{{outline:2px solid var(--accent);outline-offset:3px}}
+.card .tag{{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}}
+.card.eff .tag{{color:var(--accent2)}}
+.card h3{{margin:6px 0 6px;font-size:18px;font-weight:750}}
+.card p{{margin:0;font-size:13.5px;color:var(--ink2)}}
+.card .meta{{margin-top:12px;font-size:12px;color:var(--ink3);font-variant-numeric:tabular-nums}}
+.card .en{{color:var(--ink3)}}
+table{{border-collapse:collapse;width:100%;font-size:13.5px;margin-top:8px}}
+th{{text-align:left;font-size:11.5px;color:var(--ink2);font-weight:650;padding:8px 10px;border-bottom:1.5px solid var(--line)}}
+td{{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}}
+code{{font-size:12.5px;background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:1px 6px}}
+pre{{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:12.5px}}
+.callout{{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:12px;padding:14px 18px;font-size:13.5px;margin-top:14px}}
+ul{{padding-left:18px}} li{{margin:4px 0;color:var(--ink2);font-size:13.5px}} li b{{color:var(--ink)}}
+.footer{{margin-top:60px;padding-top:18px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink3)}}
+a{{color:var(--accent)}}
+</style>
+<div class="wrap">
+<div class="eyebrow">PLANiT Institute</div>
+<h1>Capital Allocation Pathway</h1>
+<p class="lede">철강·석유화학 기업의 탈탄소 전환을 <b>얼마가 드는가</b>가 아니라
+<b>무엇에 얼마나 흔들리는가</b>로 측정한다. 시설 단위 최적화로 기업이 선택할 수 있는 계획 전체를 생성하고,
+가격 변동 경로 수만 개에 통과시켜 기대비용과 TCaR(P90−P50)의 효율 경계를 그린다.
+공시 계획이 그 경계에서 얼마나 떨어져 있는지가 진단 결과다.</p>
+
+<div class="cards">
+  <a class="card" href="/report">
+    <div class="tag">cap_finance · MILP</div>
+    <h3>진단 보고서</h3>
+    <p>POSCO · Nippon Steel · LOTTE Chemical · Mitsui Chemicals — 배출 경로, 시설별 전환 스케줄,
+    효율 경계와 frontier gap, TCaR 요인 분해, λ 접점, 정책강도 wedge.</p>
+    <div class="meta">{report_meta}</div>
+  </a>
+  <a class="card eff" href="/dashboard">
+    <div class="tag">cap-efficient · 증거 기반</div>
+    <h3>의사결정 대시보드</h3>
+    <p>POSCO · Nippon Steel · JFE · Kobe 4사를 같은 구조로 비교. 공시경로 대비 후보 포트폴리오,
+    강건 추천, 자원 수급(스크랩·수소·계통) 여유.</p>
+    <div class="meta">{dash_meta} · <span class="en">English 버전은 아래 링크</span></div>
+  </a>
+</div>
+<p class="lede" style="margin-top:14px;font-size:13.5px">
+  <a href="/dashboard_en">→ Decision dashboard (English)</a></p>
+<div style="display:none">
+</div>
+
+<h2>두 모형은 왜 둘인가</h2>
+<table>
+<tr><th>축</th><th>cap_finance (FIN)</th><th>cap-efficient (EFF)</th></tr>
+<tr><td>결정 구조</td><td>시설 단위 MILP + ε-constraint 경계 추적</td><td>후보 포트폴리오 생성·결정론 스크리닝·강건 선별</td></tr>
+<tr><td>범위</td><td>철강 2사 + 석유화학 2사, 개별 고로·분해로 단위</td><td>철강 4사(한1·일3), 사이트 블록 단위</td></tr>
+<tr><td>정본 역할</td><td>최적화 방법론·계약 격자·λ·정책 wedge·석유화학</td><td>데이터 증거·출처 성숙도·기술비용 실적</td></tr>
+<tr><td>구현</td><td>Python + PuLP/CBC + pandas</td><td>Python 표준 라이브러리 전용(외부 의존 0)</td></tr>
+</table>
+<p class="lede" style="margin-top:12px">같은 기업·같은 시나리오를 서로 다른 방법으로 풀어 대조한다.
+독립 산출이 수렴하면 그 값은 신뢰할 수 있고, 갈리면 그 차이 자체가 검토 대상이 된다. 실제로 수소환원제철의
+전력 원단위 오류 하나를 이 대조로 잡았다(<a href="https://github.com/PLANiT-Institute/cap-efficient/blob/main/docs/tech_cost_reconciliation.md">대조표</a>).</p>
+
+<h2>데이터와 재현</h2>
+<pre>git clone https://github.com/PLANiT-Institute/cap_finance
+cd cap_finance &amp;&amp; python3 -m venv .venv &amp;&amp; .venv/bin/pip install -e ".[dev]"
+.venv/bin/python scripts/prepare_raw.py     # 원자료 → 정규화 (가정 전수 로그)
+.venv/bin/python -m cap all --data data/prepared</pre>
+<ul>
+<li><b>시설·기업 연결</b>: <code>data/crosswalk_facilities.csv</code> — 두 모형의 설비 ID 매핑(양 저장소 동일 사본)</li>
+<li><b>가정 감사 추적</b>: <code>data/prepared/PREP_LOG.md</code> — 주입·추정·환산 전건 기록</li>
+<li><b>증거 성숙도</b>: EFF <code>data/data_gap_registry.csv</code> — 입력별 P0/P1 보강 우선순위</li>
+</ul>
+
+<div class="callout"><b>읽기 전 필수.</b> 수집 데이터의 상당 부분이 잠정 추정(EST_v0)이고 섹터 예산·가격 경로는
+공식 GCAM 추출 대기 상태다. <b>절대값은 구간, 구조·순서가 유효 정보</b>다. 시설 단위 산출은 지역·고용 문제와
+직결되므로 비공개 원칙(설계서 §8-2)을 따르며, 공개 배포본에서는 기업 집계만 인용할 것.</div>
+
+<div class="footer">PLANiT Institute · 데이터 컷오프 2026-08-07 ·
+<a href="https://github.com/PLANiT-Institute/cap_finance">cap_finance</a> ·
+<a href="https://github.com/PLANiT-Institute/cap-efficient">cap-efficient</a></div>
+</div>
+"""
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--eff", default=str(pathlib.Path.home() / "Documents/cap-efficient"))
+    a = ap.parse_args()
+    WEB.mkdir(exist_ok=True)
+
+    rep = build_report()
+    dash = copy_dashboards(pathlib.Path(a.eff))
+    today = dt.date.today().isoformat()
+    (WEB / "index.html").write_text(DOCTYPE + LANDING.format(
+        report_meta=f"갱신 {today} · {rep.stat().st_size // 1024} KB",
+        dash_meta=f"갱신 {today} · {len(dash)}개 언어" if dash else "대시보드 미생성",
+    ) + "</body></html>")
+    print(f"[site] web/ 준비 완료: index.html, report.html, {', '.join(dash) or '(대시보드 없음)'}")
+
+
+if __name__ == "__main__":
+    main()

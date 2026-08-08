@@ -1,4 +1,14 @@
 {
   "cleanUrls": true,
-  "outputDirectory": "web"
+  "trailingSlash": false,
+  "outputDirectory": "web",
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex" },
+        { "key": "Referrer-Policy", "value": "no-referrer" }
+      ]
+    }
+  ]
 }
