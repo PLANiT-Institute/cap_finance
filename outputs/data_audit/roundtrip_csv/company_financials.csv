@@ -1,0 +1,5 @@
+company_id,fiscal_year,revenue_bn_krw,ebitda_bn_krw,annual_capex_bn_krw,reporting_currency,fx_to_krw,data_status,source_note
+POSCO_KR,2025,35011,4230,2363.918,KRW,1,official,POSCO 별도 매출·EBITDA 공식 IR; CAPEX는 2025 별도 현금흐름표 유형자산 취득
+NIPPON_STEEL_JP,2024,79998.839,9829.62,5367.28,JPY,9.2,official_converted,"Nippon Steel 연결 매출 8,695.526bn JPY; EBITDA 프록시는 사업이익 683.237 + 감가상각 385.2; CAPEX 583.4. KRW 환산은 모델 FX 9.2"
+JFE_STEEL_JP,2024,44708.752,3606.4,2888.8,JPY,9.2,official_converted,"JFE Group 연결 매출 4,859.647bn JPY·EBITDA 392bn·CAPEX 314bn. KRW 환산은 모델 FX 9.2"
+KOBE_STEEL_JP,2024,23506.285,2586.672,1066.216,JPY,9.2,official_converted,"Kobelco 연결 매출 2,555.031bn JPY; EBITDA 프록시는 영업이익 158.721 + 감가상각 122.439; CAPEX 115.893. KRW 환산은 모델 FX 9.2"

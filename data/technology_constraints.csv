@@ -1,0 +1,7 @@
+technology_id,scrap_input_t_per_t,failure_probability,max_failure_delay_years,data_status,source_url,source_note
+BF_BOF,0.15,0.02,1,model_estimate,,Existing route screening proxy; not used as a transition action
+EAF_BASELINE,0.90,0.03,1,model_estimate,,Existing EAF route screening proxy
+BF_RELINE,0.15,0.04,2,model_estimate,,Execution-risk proxy pending company project evidence
+SCRAP_EAF,0.90,0.08,3,model_estimate,,Scrap charge and execution-risk proxy pending grade-specific engineering evidence
+H2_DRI_EAF,0.15,0.18,4,model_estimate,,First-of-a-kind execution-risk proxy; hydrogen and DRI constraints treated separately
+EAF_RENEWABLE,0.90,0.05,2,model_estimate,,Upgrade execution-risk proxy pending site-specific grid and PPA evidence

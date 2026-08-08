@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Project configuration for an official GCAM v9.1 target-finder run.
+     It is not a published JGCRI scenario or result. Activation is prohibited
+     until the run, temperature verification, query export, and hashes pass. -->
+<policy-target-runner name="cap_efficient_temperature_2p0">
+    <tax-name>CO2_LTG</tax-name>
+    <target-value>2.0</target-value>
+    <target-tolerance>0.01</target-tolerance>
+    <target-type>temperature</target-type>
+    <path-discount-rate>0.03</path-discount-rate>
+    <first-tax-year>2025</first-tax-year>
+    <forward-look>1</forward-look>
+    <overshoot year="2100"/>
+    <max-iterations>100</max-iterations>
+    <max-tax>9999</max-tax>
+</policy-target-runner>

@@ -1,0 +1,33 @@
+{
+  "seed": 42,
+  "default_paths": 3000,
+  "discount_rate": 0.055,
+  "recognized_carbon_cost_share": 0.45,
+  "factors": [
+    "electricity",
+    "hydrogen_input",
+    "construction_capex"
+  ],
+  "annual_volatility": {
+    "electricity": 0.22,
+    "hydrogen_input": 0.18,
+    "construction_capex": 0.14
+  },
+  "mean_reversion": {
+    "electricity": 0.35,
+    "hydrogen_input": 0.28,
+    "construction_capex": 0.22
+  },
+  "correlation": [
+    [1.00, 0.55, 0.25],
+    [0.55, 1.00, 0.35],
+    [0.25, 0.35, 1.00]
+  ],
+  "hydrogen": {
+    "electricity_kwh_per_kg": 52.0,
+    "non_electricity_krw_per_kg": 850.0,
+    "electrolyzer_component_krw_per_kg": 1350.0
+  },
+  "data_status": "illustrative_estimate",
+  "source_note": "Stylized mean-reverting log-price process for architecture testing"
+}

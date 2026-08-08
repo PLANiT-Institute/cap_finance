@@ -1,0 +1,5 @@
+scenario_id,scenario_name,scenario_family,climate_target_c,is_active,model_name,model_version,source_url,source_version,extraction_date,geography,integration_status,data_status,source_note
+DISCLOSED_PATH,기업 공시경로,corporate_disclosed,,true,기업 공시와 내부 보간,0.8.0,,2025 disclosures,2026-08-07,회사별 공시 경계,active,official_anchor_plus_model_interpolation,기업별 원문은 companies.csv에 기록; 공시 목표를 절대배출 앵커로 환산한 경로이며 GCAM 경로가 아님
+ACCELERATED_15C,내부 1.5°C 스트레스 (비-GCAM),internal_stress,1.5,true,내부 스트레스 테스트,0.8.0,,internal-v0.8.0,2026-08-07,회사별 공시 경계,active,model_estimate,내부 가정은 METHODOLOGY.md에 기록; 1.5°C는 가속 스트레스의 방향을 뜻하며 공식 GCAM 결과가 아님
+GCAM_15C,GCAM 1.5°C 공식 추출 대기,gcam_climate,1.5,false,GCAM + Hector,pending,https://jgcri.github.io/gcam-doc/hector.html,pending,,한국·일본 GCAM 지역,pending_database_export,pending_official_extract,GCAM DB 버전·구성명·query XML·추출 CSV·SHA256이 확보되기 전에는 숫자 앵커와 정책값을 활성화하지 않음
+GCAM_2C,GCAM 2.0°C 공식 추출 대기,gcam_climate,2.0,false,GCAM + Hector,pending,https://jgcri.github.io/gcam-doc/hector.html,pending,,한국·일본 GCAM 지역,pending_database_export,pending_official_extract,GCAM DB 버전·구성명·query XML·추출 CSV·SHA256이 확보되기 전에는 숫자 앵커와 정책값을 활성화하지 않음

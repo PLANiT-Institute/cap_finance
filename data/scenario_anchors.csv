@@ -1,0 +1,33 @@
+company_id,scenario_id,temperature_label,year,company_carbon_budget_mtco2,electricity_price_krw_per_kwh,carbon_price_krw_per_tco2,electrolyzer_capex_index,data_status,source_note
+POSCO_KR,DISCLOSED_PATH,기업 공시경로,2026,69.84605,112,75000,1.00,official_anchor,2025 실적에서 시작
+POSCO_KR,DISCLOSED_PATH,기업 공시경로,2030,70.920,120,105000,0.84,official_target,"2017~2019 기준 10% 감축 목표 환산"
+POSCO_KR,DISCLOSED_PATH,기업 공시경로,2035,55.160,128,140000,0.70,model_anchor,"2035 30% 감축 공시를 반영"
+POSCO_KR,DISCLOSED_PATH,기업 공시경로,2040,39.400,135,175000,0.60,official_target,"2017~2019 기준 50% 감축 목표 환산"
+POSCO_KR,ACCELERATED_15C,내부 1.5°C 스트레스 (비-GCAM),2026,69.84605,116,90000,1.00,official_anchor,2025 실적에서 시작
+POSCO_KR,ACCELERATED_15C,내부 1.5°C 스트레스 (비-GCAM),2030,63.040,128,145000,0.80,model_anchor,과거 20% 감축 지향점과 가속 전환 가정
+POSCO_KR,ACCELERATED_15C,내부 1.5°C 스트레스 (비-GCAM),2035,39.400,142,205000,0.64,model_anchor,공시 2040 목표를 5년 앞당긴 스트레스
+POSCO_KR,ACCELERATED_15C,내부 1.5°C 스트레스 (비-GCAM),2040,19.700,155,260000,0.53,model_anchor,기준 대비 75% 감축 스트레스
+NIPPON_STEEL_JP,DISCLOSED_PATH,기업 공시경로,2026,72.600,185,70000,1.00,official_anchor,FY2024 실적에서 시작
+NIPPON_STEEL_JP,DISCLOSED_PATH,기업 공시경로,2030,70.000,193,100000,0.84,model_anchor,2013 대비 30% 감축 공시의 절대량 프록시
+NIPPON_STEEL_JP,DISCLOSED_PATH,기업 공시경로,2035,52.500,200,135000,0.70,model_anchor,2050 탄소중립 선형 중간점
+NIPPON_STEEL_JP,DISCLOSED_PATH,기업 공시경로,2040,35.000,207,170000,0.60,model_anchor,2050 탄소중립 선형 중간점
+NIPPON_STEEL_JP,ACCELERATED_15C,내부 1.5°C 스트레스 (비-GCAM),2026,72.600,190,85000,1.00,official_anchor,FY2024 실적에서 시작
+NIPPON_STEEL_JP,ACCELERATED_15C,내부 1.5°C 스트레스 (비-GCAM),2030,60.000,205,140000,0.80,model_anchor,1.5°C 가속 감축 스트레스
+NIPPON_STEEL_JP,ACCELERATED_15C,내부 1.5°C 스트레스 (비-GCAM),2035,36.000,220,200000,0.64,model_anchor,1.5°C 가속 감축 스트레스
+NIPPON_STEEL_JP,ACCELERATED_15C,내부 1.5°C 스트레스 (비-GCAM),2040,18.000,235,255000,0.53,model_anchor,1.5°C 가속 감축 스트레스
+JFE_STEEL_JP,DISCLOSED_PATH,기업 공시경로,2026,45.300,185,70000,1.00,official_anchor,FY2024 실적에서 시작
+JFE_STEEL_JP,DISCLOSED_PATH,기업 공시경로,2030,40.670,193,100000,0.84,official_target,2013년 58.1Mt 대비 30% 감축 환산
+JFE_STEEL_JP,DISCLOSED_PATH,기업 공시경로,2035,30.500,200,135000,0.70,model_anchor,2050 탄소중립 중간점
+JFE_STEEL_JP,DISCLOSED_PATH,기업 공시경로,2040,20.340,207,170000,0.60,model_anchor,2050 탄소중립 중간점
+JFE_STEEL_JP,ACCELERATED_15C,내부 1.5°C 스트레스 (비-GCAM),2026,45.300,190,85000,1.00,official_anchor,FY2024 실적에서 시작
+JFE_STEEL_JP,ACCELERATED_15C,내부 1.5°C 스트레스 (비-GCAM),2030,34.860,205,140000,0.80,model_anchor,2013 대비 40% 감축 스트레스
+JFE_STEEL_JP,ACCELERATED_15C,내부 1.5°C 스트레스 (비-GCAM),2035,20.000,220,200000,0.64,model_anchor,1.5°C 가속 감축 스트레스
+JFE_STEEL_JP,ACCELERATED_15C,내부 1.5°C 스트레스 (비-GCAM),2040,10.000,235,255000,0.53,model_anchor,1.5°C 가속 감축 스트레스
+KOBE_STEEL_JP,DISCLOSED_PATH,기업 공시경로,2026,14.3001,185,70000,1.00,official_anchor,FY2024 목표경계 실적에서 시작
+KOBE_STEEL_JP,DISCLOSED_PATH,기업 공시경로,2030,11.960,193,100000,0.84,model_anchor,공시 30~40% 범위의 중간 35% 감축 환산
+KOBE_STEEL_JP,DISCLOSED_PATH,기업 공시경로,2035,8.970,200,135000,0.70,model_anchor,2050 탄소중립 중간점
+KOBE_STEEL_JP,DISCLOSED_PATH,기업 공시경로,2040,5.980,207,170000,0.60,model_anchor,2050 탄소중립 중간점
+KOBE_STEEL_JP,ACCELERATED_15C,내부 1.5°C 스트레스 (비-GCAM),2026,14.3001,190,85000,1.00,official_anchor,FY2024 목표경계 실적에서 시작
+KOBE_STEEL_JP,ACCELERATED_15C,내부 1.5°C 스트레스 (비-GCAM),2030,10.100,205,140000,0.80,model_anchor,2013 대비 45% 감축 스트레스
+KOBE_STEEL_JP,ACCELERATED_15C,내부 1.5°C 스트레스 (비-GCAM),2035,7.800,220,200000,0.64,model_anchor,1.5°C 가속 감축 스트레스
+KOBE_STEEL_JP,ACCELERATED_15C,내부 1.5°C 스트레스 (비-GCAM),2040,3.000,235,255000,0.53,model_anchor,1.5°C 가속 감축 스트레스

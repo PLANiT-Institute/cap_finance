@@ -1,0 +1,69 @@
+{
+  "model_version": "0.6.0",
+  "definitions": [
+    {
+      "scenario_id": "ACCELERATED_15C",
+      "scenario_name": "내부 1.5°C 스트레스 (비-GCAM)",
+      "scenario_family": "internal_stress",
+      "climate_target_c": 1.5,
+      "is_active": true,
+      "model_name": "내부 스트레스 테스트",
+      "model_version": "0.6.0",
+      "source_url": "",
+      "source_version": "internal-v0.6.0",
+      "extraction_date": "2026-08-07",
+      "geography": "회사별 공시 경계",
+      "integration_status": "active",
+      "data_status": "model_estimate",
+      "source_note": "내부 가정은 METHODOLOGY.md에 기록; 1.5°C는 가속 스트레스의 방향을 뜻하며 공식 GCAM 결과가 아님"
+    },
+    {
+      "scenario_id": "DISCLOSED_PATH",
+      "scenario_name": "기업 공시경로",
+      "scenario_family": "corporate_disclosed",
+      "climate_target_c": null,
+      "is_active": true,
+      "model_name": "기업 공시와 내부 보간",
+      "model_version": "0.6.0",
+      "source_url": "",
+      "source_version": "2025 disclosures",
+      "extraction_date": "2026-08-07",
+      "geography": "회사별 공시 경계",
+      "integration_status": "active",
+      "data_status": "official_anchor_plus_model_interpolation",
+      "source_note": "기업별 원문은 companies.csv에 기록; 공시 목표를 절대배출 앵커로 환산한 경로이며 GCAM 경로가 아님"
+    },
+    {
+      "scenario_id": "GCAM_15C",
+      "scenario_name": "GCAM 1.5°C 공식 추출 대기",
+      "scenario_family": "gcam_climate",
+      "climate_target_c": 1.5,
+      "is_active": false,
+      "model_name": "GCAM + Hector",
+      "model_version": "pending",
+      "source_url": "https://jgcri.github.io/gcam-doc/hector.html",
+      "source_version": "pending",
+      "extraction_date": "",
+      "geography": "한국·일본 GCAM 지역",
+      "integration_status": "pending_database_export",
+      "data_status": "pending_official_extract",
+      "source_note": "GCAM DB 버전·구성명·query XML·추출 CSV·SHA256이 확보되기 전에는 숫자 앵커와 정책값을 활성화하지 않음"
+    },
+    {
+      "scenario_id": "GCAM_2C",
+      "scenario_name": "GCAM 2.0°C 공식 추출 대기",
+      "scenario_family": "gcam_climate",
+      "climate_target_c": 2.0,
+      "is_active": false,
+      "model_name": "GCAM + Hector",
+      "model_version": "pending",
+      "source_url": "https://jgcri.github.io/gcam-doc/hector.html",
+      "source_version": "pending",
+      "extraction_date": "",
+      "geography": "한국·일본 GCAM 지역",
+      "integration_status": "pending_database_export",
+      "data_status": "pending_official_extract",
+      "source_note": "GCAM DB 버전·구성명·query XML·추출 CSV·SHA256이 확보되기 전에는 숫자 앵커와 정책값을 활성화하지 않음"
+    }
+  ]
+}

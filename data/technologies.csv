@@ -1,0 +1,7 @@
+technology_id,technology_name,capex_bn_krw_per_mtpa,fixed_opex_kkrw_per_t,electricity_mwh_per_t,hydrogen_t_per_t,emissions_tco2_per_t,available_year,construction_years,lifetime_years,data_status,source_note
+BF_BOF,기준 BF-BOF 복합 블록,200,30,0.12,0.000,2.12,2026,3,20,model_estimate,기업별 실제 집약도는 facilities.csv에서 보정
+EAF_BASELINE,기존 전기로 기준 블록,180,34,0.62,0.000,0.50,2026,2,20,model_estimate,기존 EAF 운영 프록시
+BF_RELINE,BF 개수·효율 패키지,250,32,0.13,0.000,1.90,2026,2,20,model_estimate,수명연장과 에너지효율 개선의 공통 비용 프록시
+SCRAP_EAF,스크랩 기반 대형 EAF,560,37,0.68,0.000,0.45,2026,3,25,model_estimate,용해설비·전력계통·부대설비 포함 표준화 비용 가정
+H2_DRI_EAF,수소 DRI + EAF,900,44,0.58,0.055,0.20,2028,4,25,model_estimate,DRI 모듈·EAF·저장·BOP 포함 표준화 비용 가정
+EAF_RENEWABLE,기존 EAF 재생전력 업그레이드,260,36,0.68,0.000,0.10,2026,2,20,model_estimate,PPA·전력계통·효율개선 패키지 프록시

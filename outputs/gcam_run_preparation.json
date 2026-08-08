@@ -1,0 +1,88 @@
+{
+  "prepared_at_kst": "2026-08-07T12:21:45.786511+09:00",
+  "status": "READY_FOR_SMOKE_RUN",
+  "numeric_gcam_results_produced": false,
+  "host": {
+    "machine": "arm64",
+    "platform": "macOS-26.6-arm64-arm-64bit-Mach-O"
+  },
+  "gcam": {
+    "package_dir": "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1",
+    "executable": "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1/exe/gcam",
+    "executable_sha256": "b2ac5520bfaa1fc9e1dde34751cc918215c525f288f6c884f1bb4bfaefc169cd",
+    "version_probe": {
+      "command": [
+        "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1/exe/gcam",
+        "--version"
+      ],
+      "exit_code": 0,
+      "stdout": "GCAM version 9.1 Revision: gcam-v9.1",
+      "stderr": ""
+    },
+    "version_id_probe": {
+      "command": [
+        "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1/exe/gcam",
+        "--versionID"
+      ],
+      "exit_code": 0,
+      "stdout": "gcam-v9.1",
+      "stderr": ""
+    },
+    "configuration_origin": "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1/exe/configuration_policy.xml",
+    "configuration_origin_sha256": "4aa38bf0f229f972a007845940ff2c69215340b144af8c7c2bc3de6ea64a942b"
+  },
+  "java": {
+    "java_home": "/Users/jinsu/Documents/cap-efficient/tmp/jdk-portable-17.0.20_8/jdk-17.0.20+8/Contents/Home",
+    "java_version": {
+      "command": [
+        "/Users/jinsu/Documents/cap-efficient/tmp/jdk-portable-17.0.20_8/jdk-17.0.20+8/Contents/Home/bin/java",
+        "-version"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "openjdk version \"17.0.20\" 2026-07-21\nOpenJDK Runtime Environment Temurin-17.0.20+8 (build 17.0.20+8)\nOpenJDK 64-Bit Server VM Temurin-17.0.20+8 (build 17.0.20+8, mixed mode, sharing)"
+    },
+    "libjvm": "/Users/jinsu/Documents/cap-efficient/tmp/jdk-portable-17.0.20_8/jdk-17.0.20+8/Contents/Home/lib/server/libjvm.dylib",
+    "libjvm_sha256": "6b093935541ac4159505c663fbb798d11ea71fd30775b4257f420448edd3ebe2",
+    "gcam_java_link": "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1/libs/java/lib",
+    "gcam_java_link_target": "/Users/jinsu/Documents/cap-efficient/tmp/jdk-portable-17.0.20_8/jdk-17.0.20+8/Contents/Home/lib/server"
+  },
+  "smoke": {
+    "configuration": "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1/exe/generated/configuration_GCAM_SMOKE.xml",
+    "configuration_sha256": "24b287ae2651fd2ad405a510a551f79217e5a0d1cc4d82b6d013dfb624a63eba",
+    "database_dir": "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1/output/cap_efficient/GCAM_SMOKE/database_basexdb",
+    "run_command": [
+      "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1/exe/gcam",
+      "-C",
+      "generated/configuration_GCAM_SMOKE.xml"
+    ],
+    "scope": "reference configuration stopped at 2020; runtime/integration test only"
+  },
+  "scenarios": {
+    "GCAM_15C": {
+      "configuration": "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1/exe/generated/configuration_GCAM_15C.xml",
+      "configuration_sha256": "34a702e8d279322b878d850a4ac23303507923fd5fcde56aa29d6346026ecba4",
+      "policy_target_file": "/Users/jinsu/Documents/cap-efficient/data/gcam/policy_target_temperature_1p5.xml",
+      "policy_target_sha256": "ff1bb76debbd2524a45f2a143d5065eb6b40f5369458776696a895439e0c5501",
+      "database_dir": "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1/output/cap_efficient/GCAM_15C/database_basexdb",
+      "run_command": [
+        "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1/exe/gcam",
+        "-C",
+        "generated/configuration_GCAM_15C.xml"
+      ]
+    },
+    "GCAM_2C": {
+      "configuration": "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1/exe/generated/configuration_GCAM_2C.xml",
+      "configuration_sha256": "e86e5596964999cbee4e0c643895f38b9e5898658d6e328c5edda3bd8698733d",
+      "policy_target_file": "/Users/jinsu/Documents/cap-efficient/data/gcam/policy_target_temperature_2p0.xml",
+      "policy_target_sha256": "1b4b6e00352d22ab0e80d8d6153d7a216f35f549e0f87a129624d5e1b51391cc",
+      "database_dir": "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1/output/cap_efficient/GCAM_2C/database_basexdb",
+      "run_command": [
+        "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1/exe/gcam",
+        "-C",
+        "generated/configuration_GCAM_2C.xml"
+      ]
+    }
+  },
+  "activation_warning": "Prepared configurations are project-authored inputs, not official JGCRI results. Do not activate scenarios until full runs and all query/hash gates pass."
+}

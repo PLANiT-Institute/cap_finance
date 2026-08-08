@@ -1,0 +1,364 @@
+{
+  "model_version": "0.3.0",
+  "data_status": "official_company_totals_plus_explicit_model_estimates",
+  "path_count": 1000,
+  "seed": 40,
+  "active_scenario_ids": [
+    "ACCELERATED_15C",
+    "DISCLOSED_PATH"
+  ],
+  "pending_scenario_ids": [
+    "GCAM_15C",
+    "GCAM_2C"
+  ],
+  "companies": {
+    "POSCO_KR": {
+      "company_name": "POSCO",
+      "country_code": "KR",
+      "scenarios": {
+        "ACCELERATED_15C": {
+          "frontier_plan_ids": [
+            "P1",
+            "P5",
+            "P7"
+          ],
+          "current_plan_gap": {
+            "cost_gap_same_or_lower_risk": 63.819412,
+            "risk_gap_same_or_lower_cost": 10.238362
+          },
+          "lambda_optimal_plans": {
+            "0.0": {
+              "plan_id": "P1",
+              "objective": -4.623524
+            },
+            "0.5": {
+              "plan_id": "P1",
+              "objective": -0.611086
+            },
+            "1.0": {
+              "plan_id": "P1",
+              "objective": 3.401352
+            },
+            "2.0": {
+              "plan_id": "P1",
+              "objective": 11.426228
+            },
+            "4.0": {
+              "plan_id": "P1",
+              "objective": 27.47598
+            },
+            "8.0": {
+              "plan_id": "P1",
+              "objective": 59.575484
+            },
+            "16.0": {
+              "plan_id": "P7",
+              "objective": 122.725802
+            }
+          }
+        },
+        "DISCLOSED_PATH": {
+          "frontier_plan_ids": [
+            "P1",
+            "P7"
+          ],
+          "current_plan_gap": {
+            "cost_gap_same_or_lower_risk": 115.404595,
+            "risk_gap_same_or_lower_cost": 20.089946
+          },
+          "lambda_optimal_plans": {
+            "0.0": {
+              "plan_id": "P1",
+              "objective": 11.190838
+            },
+            "0.5": {
+              "plan_id": "P1",
+              "objective": 15.748852
+            },
+            "1.0": {
+              "plan_id": "P1",
+              "objective": 20.306866
+            },
+            "2.0": {
+              "plan_id": "P1",
+              "objective": 29.422894
+            },
+            "4.0": {
+              "plan_id": "P1",
+              "objective": 47.65495
+            },
+            "8.0": {
+              "plan_id": "P1",
+              "objective": 84.119062
+            },
+            "16.0": {
+              "plan_id": "P7",
+              "objective": 146.329534
+            }
+          }
+        }
+      }
+    },
+    "NIPPON_STEEL_JP": {
+      "company_name": "Nippon Steel",
+      "country_code": "JP",
+      "scenarios": {
+        "ACCELERATED_15C": {
+          "frontier_plan_ids": [
+            "P1",
+            "P5",
+            "P7"
+          ],
+          "current_plan_gap": {
+            "cost_gap_same_or_lower_risk": 39.874419,
+            "risk_gap_same_or_lower_cost": 4.246854999999998
+          },
+          "lambda_optimal_plans": {
+            "0.0": {
+              "plan_id": "P1",
+              "objective": 10.134164
+            },
+            "0.5": {
+              "plan_id": "P1",
+              "objective": 15.51452
+            },
+            "1.0": {
+              "plan_id": "P1",
+              "objective": 20.894877
+            },
+            "2.0": {
+              "plan_id": "P1",
+              "objective": 31.65559
+            },
+            "4.0": {
+              "plan_id": "P1",
+              "objective": 53.177016
+            },
+            "8.0": {
+              "plan_id": "P1",
+              "objective": 96.219868
+            },
+            "16.0": {
+              "plan_id": "P7",
+              "objective": 175.462225
+            }
+          }
+        },
+        "DISCLOSED_PATH": {
+          "frontier_plan_ids": [
+            "P1",
+            "P6",
+            "P7"
+          ],
+          "current_plan_gap": {
+            "cost_gap_same_or_lower_risk": 57.981385,
+            "risk_gap_same_or_lower_cost": 8.408556
+          },
+          "lambda_optimal_plans": {
+            "0.0": {
+              "plan_id": "P1",
+              "objective": 22.81128
+            },
+            "0.5": {
+              "plan_id": "P1",
+              "objective": 27.747356
+            },
+            "1.0": {
+              "plan_id": "P1",
+              "objective": 32.683432
+            },
+            "2.0": {
+              "plan_id": "P1",
+              "objective": 42.555584
+            },
+            "4.0": {
+              "plan_id": "P1",
+              "objective": 62.299888
+            },
+            "8.0": {
+              "plan_id": "P1",
+              "objective": 101.788496
+            },
+            "16.0": {
+              "plan_id": "P1",
+              "objective": 180.765712
+            }
+          }
+        }
+      }
+    },
+    "JFE_STEEL_JP": {
+      "company_name": "JFE Steel",
+      "country_code": "JP",
+      "scenarios": {
+        "ACCELERATED_15C": {
+          "frontier_plan_ids": [
+            "P1",
+            "P5",
+            "P7"
+          ],
+          "current_plan_gap": {
+            "cost_gap_same_or_lower_risk": 34.606633,
+            "risk_gap_same_or_lower_cost": 2.2917120000000004
+          },
+          "lambda_optimal_plans": {
+            "0.0": {
+              "plan_id": "P1",
+              "objective": 8.351986
+            },
+            "0.5": {
+              "plan_id": "P1",
+              "objective": 13.864283
+            },
+            "1.0": {
+              "plan_id": "P1",
+              "objective": 19.376581
+            },
+            "2.0": {
+              "plan_id": "P1",
+              "objective": 30.401176
+            },
+            "4.0": {
+              "plan_id": "P1",
+              "objective": 52.450366
+            },
+            "8.0": {
+              "plan_id": "P1",
+              "objective": 96.548746
+            },
+            "16.0": {
+              "plan_id": "P7",
+              "objective": 173.979916
+            }
+          }
+        },
+        "DISCLOSED_PATH": {
+          "frontier_plan_ids": [
+            "P1",
+            "P5",
+            "P7"
+          ],
+          "current_plan_gap": {
+            "cost_gap_same_or_lower_risk": 33.961205,
+            "risk_gap_same_or_lower_cost": 1.9993920000000003
+          },
+          "lambda_optimal_plans": {
+            "0.0": {
+              "plan_id": "P1",
+              "objective": 21.109617
+            },
+            "0.5": {
+              "plan_id": "P1",
+              "objective": 26.357845
+            },
+            "1.0": {
+              "plan_id": "P1",
+              "objective": 31.606073
+            },
+            "2.0": {
+              "plan_id": "P1",
+              "objective": 42.102529
+            },
+            "4.0": {
+              "plan_id": "P1",
+              "objective": 63.095441
+            },
+            "8.0": {
+              "plan_id": "P1",
+              "objective": 105.081265
+            },
+            "16.0": {
+              "plan_id": "P1",
+              "objective": 189.052913
+            }
+          }
+        }
+      }
+    },
+    "KOBE_STEEL_JP": {
+      "company_name": "Kobe Steel",
+      "country_code": "JP",
+      "scenarios": {
+        "ACCELERATED_15C": {
+          "frontier_plan_ids": [
+            "P7"
+          ],
+          "current_plan_gap": {
+            "cost_gap_same_or_lower_risk": 13.987054999999984,
+            "risk_gap_same_or_lower_cost": 29.755981
+          },
+          "lambda_optimal_plans": {
+            "0.0": {
+              "plan_id": "P7",
+              "objective": 124.988297
+            },
+            "0.5": {
+              "plan_id": "P7",
+              "objective": 125.597614
+            },
+            "1.0": {
+              "plan_id": "P7",
+              "objective": 126.206931
+            },
+            "2.0": {
+              "plan_id": "P7",
+              "objective": 127.425565
+            },
+            "4.0": {
+              "plan_id": "P7",
+              "objective": 129.862833
+            },
+            "8.0": {
+              "plan_id": "P7",
+              "objective": 134.737369
+            },
+            "16.0": {
+              "plan_id": "P7",
+              "objective": 144.486441
+            }
+          }
+        },
+        "DISCLOSED_PATH": {
+          "frontier_plan_ids": [
+            "P1",
+            "P7"
+          ],
+          "current_plan_gap": {
+            "cost_gap_same_or_lower_risk": 44.998857,
+            "risk_gap_same_or_lower_cost": 7.401265
+          },
+          "lambda_optimal_plans": {
+            "0.0": {
+              "plan_id": "P1",
+              "objective": 13.351044
+            },
+            "0.5": {
+              "plan_id": "P1",
+              "objective": 17.644765
+            },
+            "1.0": {
+              "plan_id": "P1",
+              "objective": 21.938485
+            },
+            "2.0": {
+              "plan_id": "P1",
+              "objective": 30.525926
+            },
+            "4.0": {
+              "plan_id": "P1",
+              "objective": 47.700808
+            },
+            "8.0": {
+              "plan_id": "P1",
+              "objective": 82.050572
+            },
+            "16.0": {
+              "plan_id": "P1",
+              "objective": 150.7501
+            }
+          }
+        }
+      }
+    }
+  }
+}
