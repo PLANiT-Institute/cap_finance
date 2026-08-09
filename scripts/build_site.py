@@ -104,6 +104,15 @@ a{{color:var(--accent)}}
     <div class="meta">{dash_meta} · <span class="en">English 버전은 아래 링크</span></div>
   </a>
 </div>
+<div class="cards" style="margin-top:16px">
+  <a class="card" href="/evidence" style="border-style:dashed">
+    <div class="tag" style="color:var(--ink2)">방법론 부속서</div>
+    <h3>증거 등급과 민감도 진단</h3>
+    <p>전 입력 파라미터를 T1(규제·검증)~T5(모델 추정)로 등급화하고, 무엇이 결론을 움직이는지 측정.
+    영향력 × 증거등급 매트릭스가 데이터 보강 순서를 결정한다.</p>
+    <div class="meta">{ev_meta}</div>
+  </a>
+</div>
 <p class="lede" style="margin-top:14px;font-size:13.5px">
   <a href="/dashboard_en">→ Decision dashboard (English)</a></p>
 <div style="display:none">
@@ -151,10 +160,12 @@ def main():
 
     rep = build_report()
     dash = copy_dashboards(pathlib.Path(a.eff))
+    subprocess.run([sys.executable, str(ROOT / "scripts/build_evidence_page.py")], check=True)
     today = dt.date.today().isoformat()
     (WEB / "index.html").write_text(DOCTYPE + LANDING.format(
         report_meta=f"갱신 {today} · {rep.stat().st_size // 1024} KB",
         dash_meta=f"갱신 {today} · {len(dash)}개 언어" if dash else "대시보드 미생성",
+        ev_meta=f"갱신 {today} · 파라미터 415건 · OAT 25종",
     ) + "</body></html>")
     print(f"[site] web/ 준비 완료: index.html, report.html, {', '.join(dash) or '(대시보드 없음)'}")
 
