@@ -118,6 +118,10 @@ def _computed() -> dict[str, float]:
     for r in _out("g2", "summary").itertuples():
         got[r.key] = float(r.value)
 
+    # §5 결과 절 (M4, D12): 경계 사다리·후회비용·빈 지원 축
+    for r in _out("m4", "summary").itertuples():
+        got[r.key] = float(r.value)
+
     # §4 경계 퇴화: 경계 위 점들이 한 기술 일정만 쓰는 묶음 수
     per_group = fp[fp.on_frontier].groupby(
         ["company_id", "scenario", "support"]).base_plan_id.nunique()

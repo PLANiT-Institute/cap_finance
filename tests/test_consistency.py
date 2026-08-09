@@ -19,7 +19,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from cap import config as C  # noqa: E402
-from cap.plancost import auction_share  # noqa: E402
+from cap.plancost import auction_share, support_params  # noqa: E402
 from cap.schemas import load_input  # noqa: E402
 
 OUT = ROOT / "out"
@@ -276,3 +276,24 @@ def test_canonical_run_is_reproducible_not_load_dependent():
     m = json.loads(p.read_text())
     off = {s: v.get("solver_threads") for s, v in m.items() if v.get("solver_threads") != 1}
     assert not off, f"out/이 병렬 solver로 만들어진 단계가 있다: {off} — `python -m cap all` 재실행"
+
+
+def test_support_axis_is_empty_and_the_paper_says_so():
+    """§5.4 — `support` 축이 헤드라인을 못 바꾸는 이유는 모형이 아니라 D5의 빈칸이다.
+
+    `support_params`가 지원 시나리오에서 읽는 수단은 `subsidy_capex`·`ccfd` 둘뿐이고
+    D5에 그 행이 하나도 없다. 그래서 `current`는 `none`과 **같은 객체**를 낸다 — 표에
+    열은 있는데 정보는 없다. 이것을 테스트로 박아 두는 이유는 값이 아니라 **서술**을
+    지키기 위해서다. 보조금 행이 들어오는 날 이 테스트가 깨지고, 그때 §5.4의
+    "이 축은 비어 있다"는 문장도 같이 고쳐져야 한다.
+    """
+    d5 = load_input(C.data_dir(C.load()), "D5_policy_support")
+    years = np.arange(2025, 2051)
+    none, cur = support_params(d5, "none", years), support_params(d5, "current", years)
+    has_rows = d5.instrument.isin(["subsidy_capex", "ccfd"]).any()
+    inert = not none["subsidy"] and not cur["subsidy"] and none["ccfd_strike"] is None \
+        and cur["ccfd_strike"] is None
+    assert inert != has_rows, (
+        "D5의 지원 수단 유무와 support 축의 작동이 어긋난다 — "
+        f"subsidy/ccfd 행 {int(d5.instrument.isin(['subsidy_capex', 'ccfd']).sum())}개, "
+        f"축 작동={not inert}. 페이퍼 §5.4를 같이 고쳐라")
