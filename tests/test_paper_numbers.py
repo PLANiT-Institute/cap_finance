@@ -1,0 +1,82 @@
+"""페이퍼 §0 수치 대장이 out/ 실산출물과 일치하는가.
+
+논문 원고에 손으로 적은 숫자는 파이프라인이 바뀌면 조용히 낡는다. 이 테스트는
+`paper/working_paper.md` §0 표를 파싱해 out/에서 다시 계산한 값과 대조한다.
+불일치는 "원고를 고쳐라"라는 뜻이고, 대장에 없는 key를 본문에서 인용하는 것은 금지다.
+
+산출물이 없으면 skip (파이프라인 미실행 = 실패가 아님) — test_consistency.py와 같은 규약.
+
+Run: .venv/bin/pytest tests/test_paper_numbers.py -q
+"""
+
+import pathlib
+import re
+
+import pandas as pd
+import pytest
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+PAPER = ROOT / "paper" / "working_paper.md"
+OUT = ROOT / "out"
+
+SCEN, SUPP = "NZ15", "none"
+
+
+def _out(stage: str, name: str) -> pd.DataFrame:
+    p = OUT / stage / f"{name}.csv"
+    if not p.exists():
+        pytest.skip(f"{p.relative_to(ROOT)} 없음 — `python -m cap all` 먼저 실행")
+    return pd.read_csv(p)
+
+
+def _ledger() -> dict[str, float]:
+    """§0 표의 `| key | value | 출처 |` 행만 뽑는다."""
+    rows = re.findall(r"^\|\s*([a-z0-9_]+)\s*\|\s*([-\d.]+)\s*\|", PAPER.read_text(), re.M)
+    assert rows, "페이퍼 §0 수치 대장을 찾지 못했다"
+    return {k: float(v) for k, v in rows}
+
+
+def _computed() -> dict[str, float]:
+    m = _out("e5", "metrics_company").query("scenario == @SCEN and support == @SUPP")
+    m = m.set_index("company_id")
+    gap = _out("e5", "gap").query("scenario == @SCEN and support == @SUPP").set_index("company_id")
+    fp = _out("e5", "frontier_points")
+
+    got: dict[str, float] = {}
+    for co in m.index:
+        got[f"m2_{co.lower()}"] = round(float(m.loc[co, "cost_per_tco2_thkrw"]), 1)
+        got[f"tcar_{co.lower()}"] = round(float(m.loc[co, "tcar_bnkrw"]), 1)
+    for co in gap.index:
+        got[f"gap_cost_{co.lower()}"] = round(float(gap.loc[co, "gap_cost_bnkrw"]), 1)
+        got[f"gap_risk_{co.lower()}"] = round(float(gap.loc[co, "gap_risk_bnkrw"]), 1)
+    got["gap_companies"] = float(gap.index.nunique())
+
+    # 위험 1원의 가격: 최소비용 → 최소위험 이동의 교환비
+    fr = fp[(fp.scenario == SCEN) & (fp.support == SUPP) & fp.on_frontier]
+    for co, d in fr.groupby("company_id"):
+        a, b = d.loc[d.p50.idxmin()], d.loc[d.tcar.idxmin()]
+        got[f"hedge_rate_{co.lower()}"] = round((a.tcar - b.tcar) / (b.p50 - a.p50), 2)
+
+    # §4 경계 퇴화: 경계 위 점들이 한 기술 일정만 쓰는 묶음 수
+    per_group = fp[fp.on_frontier].groupby(
+        ["company_id", "scenario", "support"]).base_plan_id.nunique()
+    got["frontier_groups_total"] = float(len(per_group))
+    got["frontier_single_schedule_groups"] = float((per_group == 1).sum())
+    return got
+
+
+def test_ledger_matches_outputs():
+    ledger, got = _ledger(), _computed()
+    missing = sorted(set(ledger) - set(got))
+    assert not missing, f"대장에만 있고 out/에서 재계산되지 않는 key: {missing}"
+    bad = {k: (v, got[k]) for k, v in ledger.items() if abs(v - got[k]) > max(0.05, abs(got[k]) * 5e-4)}
+    assert not bad, f"페이퍼 §0 대장이 out/과 어긋난다 (paper, out): {bad}"
+
+
+def test_body_quotes_only_ledger_keys():
+    """§4의 서술 주장이 대장 값과 같은 사실을 말하는지 — 퇴화 묶음 수만 검사."""
+    led = _ledger()
+    body = PAPER.read_text()
+    n, tot = int(led["frontier_single_schedule_groups"]), int(led["frontier_groups_total"])
+    assert f"{tot}개 (기업×시나리오×지원) 묶음 중 **{n}개" in body, \
+        "§4 본문의 경계 퇴화 서술이 §0 대장과 어긋난다"
