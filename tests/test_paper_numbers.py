@@ -29,6 +29,11 @@ def _out(stage: str, name: str) -> pd.DataFrame:
     return pd.read_csv(p)
 
 
+def _spearman(a, b) -> float:
+    """순위상관. scipy가 환경에 없으므로 순위 변환 후 피어슨으로 낸다 (동점은 평균순위)."""
+    return float(a.rank().corr(b.rank()))
+
+
 def _ledger() -> dict[str, float]:
     """§0 표의 `| key | value | 출처 |` 행만 뽑는다."""
     rows = re.findall(r"^\|\s*([a-z0-9_]+)\s*\|\s*([-\d.]+)\s*\|", PAPER.read_text(), re.M)
@@ -67,6 +72,29 @@ def _computed() -> dict[str, float]:
         got[f"tcar_co2only_{co.lower()}"] = round(float(u30.loc[co, "tcar_co2_only"]), 1)
         got[f"co2_increment_{co.lower()}"] = round(float(u30.loc[co, "co2_increment"]), 1)
 
+    # M2 §3.4 — E2 대리 목적함수가 E4 정본 순위를 얼마나 보존하는가.
+    # 대리는 "후보를 나열하는 장치"일 뿐이라는 A-14를 숫자로 뒷받침한다. 여기서 상관이
+    # 1에 가까워지면 대리를 그냥 믿어도 된다는 뜻이고, 그때는 본문 서술을 고쳐야 한다.
+    s = _out("e4", "summary").query("support == @SUPP")
+    pidx = _out("e2", "plan_index")[["plan_id", "risk_proxy"]]
+    s = s.merge(pidx, on="plan_id")
+    got["e2_plans_total"] = float(len(_out("e2", "plan_index")))
+    scen = s[s.scenario == SCEN]
+    for co, d in scen.groupby("company_id"):
+        got[f"surrogate_rho_{co.lower()}"] = round(_spearman(d.e2_surrogate_cost, d.p50), 3)
+        got[f"riskproxy_rho_{co.lower()}"] = round(_spearman(d.risk_proxy, d.tcar), 3)
+    # 정본 기준으로 서로 다른 계획의 수 (중앙 경로 비용이 같으면 같은 계획)
+    grp = s.groupby(["company_id", "scenario"])
+    got["e2_plans_canonical"] = float(grp.central_cost.apply(lambda x: x.round(6).nunique()).sum())
+    # 대리가 고른 최저비용 계획이 정본에서도 최저인 묶음 수
+    got["surrogate_argmin_groups"] = float(grp.ngroups)
+    got["surrogate_argmin_match"] = float(sum(
+        d.loc[d.e2_surrogate_cost.idxmin(), "plan_id"] == d.loc[d.p50.idxmin(), "plan_id"]
+        for _, d in grp))
+    # 재정렬이 몬테카를로 탓이 아님을 보이는 대조군
+    got["rho_central_p50_min"] = round(
+        min(_spearman(d.central_cost, d.p50) for _, d in grp), 3)
+
     # §4 경계 퇴화: 경계 위 점들이 한 기술 일정만 쓰는 묶음 수
     per_group = fp[fp.on_frontier].groupby(
         ["company_id", "scenario", "support"]).base_plan_id.nunique()
@@ -90,3 +118,10 @@ def test_body_quotes_only_ledger_keys():
     n, tot = int(led["frontier_single_schedule_groups"]), int(led["frontier_groups_total"])
     assert f"{tot}개 (기업×시나리오×지원) 묶음 중 **{n}개" in body, \
         "§4 본문의 경계 퇴화 서술이 §0 대장과 어긋난다"
+
+    # 본문 §3.4 — 대리/정본 관계 서술. 여기가 낡으면 방법 절이 거짓말을 한다.
+    m, g = int(led["surrogate_argmin_match"]), int(led["surrogate_argmin_groups"])
+    assert f"일치 {m}/{g}" in body, "§3.4의 argmin 일치 서술이 §0 대장과 어긋난다"
+    total, canon = int(led["e2_plans_total"]), int(led["e2_plans_canonical"])
+    assert f"{total}개 계획 중 정본 평가에서 서로 다른 것은\n**{canon}개**" in body, \
+        "§3.4의 후보 중복 서술이 §0 대장과 어긋난다"
