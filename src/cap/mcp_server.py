@@ -91,6 +91,9 @@ def t_get_metrics(a):
             "policy_exposure_bnkrw": "④ 시나리오 간 비용 차 (NZ15 − B20)",
             "flex_value_bnkrw": "⑤ 경로별 계획 전환 가치의 하한",
         },
+        "sampling_error": ("시드 5개 기준 변동계수 — ② 0.3~0.8%, ③ TCaR 1.1~1.8%, "
+                           "⑤ 유연성 3~9%. ③은 두 자리, ⑤는 자릿수 하나로만 읽는다 "
+                           "(docs/seed_stability.md)."),
         "rows": _clean(rows), "note": _stale_note()}
 
 
@@ -179,6 +182,7 @@ def t_get_validation_summary(_):
                      ("cross_model_check", DOCS / "cross_model_check.md"),
                      ("validation_backtest", DOCS / "validation_backtest.md"),
                      ("validation_external", DOCS / "validation_external.md"),
+                     ("seed_stability", DOCS / "seed_stability.md"),
                      ("methodology", ROOT / "METHODOLOGY.md")]:
         (out["available"].__setitem__(label, str(p.relative_to(ROOT)))
          if p.exists() else out["missing"].append(label))
