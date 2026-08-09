@@ -157,3 +157,45 @@ def test_outputs_isolated_from_production(cfg):
     """Guard the 2026-08-09 incident: the suite must never write into out/."""
     assert cfg["out_dir"] != "out", "test out_dir collides with production outputs"
     assert "test" in cfg["out_dir"]
+
+
+def test_emis_cap_is_an_axis_contracts_cannot_buy(cfg, pipeline):
+    """M8: 기술 일정 축 epsilon-constraint. (a) 상한이 실제로 물린다, (b) 제약이
+    붙었으므로 대리비용이 내려가지 않는다, (c) 계약(PPA/EPC/CCfD)은 배출을 1t도
+    바꾸지 않는다 — (c)가 깨지면 이 축은 일정 축이 아니게 되고 M8 진단이 무의미해진다."""
+    import pandas as pd
+
+    from cap.e2_milp import _prep_company, _solve_company
+    from cap.plancost import build_profile
+
+    fac, d3, cal = _prep_company(cfg, C.data_dir(cfg))
+    prices = pd.read_csv(C.out_dir(cfg, "e1") / "price_paths_central.csv")
+    constraints = pd.read_csv(C.out_dir(cfg, "e1") / "constraints.csv")
+    avail = pd.read_csv(C.out_dir(cfg, "e1") / "tech_availability.csv")
+    company = sorted(fac.company_id.unique())[0]
+    scen = cfg.scenarios[0]
+    args = (cfg, company, scen, fac, d3, cal, prices, constraints, avail)
+
+    base = _solve_company(*args, objective="cost")
+    assert base is not None and base["cum_emis_tco2"] > 0
+    cap = 0.9 * base["cum_emis_tco2"]
+    capped = _solve_company(*args, objective="cost", emis_cap=cap)
+    assert capped is not None, "10% 감축 상한이 실행불가 — 표본자료 문제"
+    assert capped["cum_emis_tco2"] <= cap * 1.001
+    # mip_gap_rel 만큼의 여유. 제약 추가가 대리비용을 개선할 수는 없다.
+    assert capped["npv_cost"] >= base["npv_cost"] * (1 - 2 * float(cfg.milp.get("mip_gap_rel", 0.005)))
+
+    px = {k: prices[(prices.scenario == scen) & (prices.variable == f"{k}_price")]
+          .groupby("year").value.mean().reindex(
+              np.arange(cfg.years.start, cfg.years.end + 1)).ffill().bfill().to_numpy()
+          for k in ("elec", "coal", "gas")}
+    techs = d3[d3.sector == fac[fac.company_id == company].sector.iloc[0]]
+    years = np.arange(cfg.years.start, cfg.years.end + 1)
+    rows = base["plan"] or [{"facility_id": None, "tech_id": None,
+                             "adopt_year": None, "op_year": None}]
+    emis = []
+    for ppa, epc, ccfd in [(0.0, 0, 0), (1.0, 1, 1)]:
+        pdf = pd.DataFrame(rows).assign(company_id=company, scenario=scen,
+                                        ppa_share=ppa, epc=epc, ccfd=ccfd)
+        emis.append(build_profile(pdf, fac, techs, px, years, cfg).emissions)
+    assert np.array_equal(emis[0], emis[1])

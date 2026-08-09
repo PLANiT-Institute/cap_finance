@@ -95,6 +95,16 @@ def _computed() -> dict[str, float]:
     got["rho_central_p50_min"] = round(
         min(_spearman(d.central_cost, d.p50) for _, d in grp), 3)
 
+    # M8 §6-7 — 기술 일정 축 epsilon-constraint. 강제 일정이 정본 (P50, TCaR)에서
+    # 살아남는 수가 규약(탄소 결정론/확률)에 따라 갈리는 것이 이 논문의 진술을 정한다.
+    m8 = _out("m8", "tech_epsilon")
+    got["m8_caps_total"] = float(len(m8))
+    got["m8_new_schedules"] = float(m8.schedule_is_new.sum())
+    got["m8_nondominated_headline"] = float(m8.nondominated_headline.sum())
+    got["m8_nondominated_l2"] = float(m8.nondominated_l2.sum())
+    got["m8_groups_nondominated_l2"] = float(
+        m8.groupby(["company_id", "scenario"]).nondominated_l2.any().sum())
+
     # §4 경계 퇴화: 경계 위 점들이 한 기술 일정만 쓰는 묶음 수
     per_group = fp[fp.on_frontier].groupby(
         ["company_id", "scenario", "support"]).base_plan_id.nunique()

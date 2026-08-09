@@ -90,8 +90,14 @@ def _year_cost_components(fac_row, tech, years, px, cfg):
 
 
 def _solve_company(cfg, company, scen, fac, d3, cal, prices, constraints, avail,
-                   eps=None, fixed=None, objective="cost"):
-    """Build & solve one MILP. Returns dict(plan rows, npv_cost, risk, meta) or None."""
+                   eps=None, fixed=None, objective="cost", emis_cap=None):
+    """Build & solve one MILP. Returns dict(plan rows, npv_cost, risk, meta) or None.
+
+    emis_cap (tCO2, cumulative over the horizon) is a SECOND epsilon axis, on the
+    technology schedule rather than the risk proxy — contracts cannot buy it, so it
+    is the axis that tells a thin candidate set apart from a genuinely unique
+    cost-minimal schedule (M8). None = untouched behaviour, headline pipeline never
+    passes it."""
     years = np.arange(cfg.years.start, cfg.years.end + 1)
     disc = (1 + cfg.discount_rate) ** -(years - years[0])
     region = COMPANY_REGION.get(company)
@@ -179,7 +185,7 @@ def _solve_company(cfg, company, scen, fac, d3, cal, prices, constraints, avail,
 
     # accumulate per-year expressions
     auc = auction_share(years, cfg)
-    cost_terms, risk_terms, salvage_terms, retire_terms = [], [], [], []
+    cost_terms, risk_terms, salvage_terms, retire_terms, emis_exprs = [], [], [], [], []
     for (fid, ta), rv in rt.items():
         fr = cf.loc[fid]
         # margin (영업이익/t) is net of energy costs — neutralize the model's own
@@ -219,6 +225,7 @@ def _solve_company(cfg, company, scen, fac, d3, cal, prices, constraints, avail,
                     salvage_terms.append(disc[-1] * SCALE * capex_kb * frac * v)
 
         emis_expr = pulp.lpSum(emis_t)
+        emis_exprs.append(emis_expr)
         m += emis_expr <= budget[i] + slack[t]
         if rt:
             # closure cap: retired production ≤ share of company output (수요·시장지위 프록시)
@@ -266,7 +273,10 @@ def _solve_company(cfg, company, scen, fac, d3, cal, prices, constraints, avail,
 
     if eps is not None:
         m += risk_lb <= eps
-    m += cost if objective == "cost" else risk_lb
+    cum_emis = pulp.lpSum(emis_exprs)
+    if emis_cap is not None:
+        m += cum_emis <= float(emis_cap)
+    m += {"cost": cost, "risk": risk_lb, "emissions": cum_emis}[objective]
 
     # A relative MIP gap is not a shortcut here, it is the honest setting: this
     # objective is an ORDERING surrogate (linear risk proxy, linearized contracts)
@@ -299,7 +309,7 @@ def _solve_company(cfg, company, scen, fac, d3, cal, prices, constraints, avail,
     # sandwiched max(risk,0) <= risk_lb <= eps and can sit anywhere in between
     # when the objective is cost)
     return {"plan": plan, "npv_cost": pulp.value(cost), "risk": max(0.0, pulp.value(risk)),
-            "solve_status": status,
+            "solve_status": status, "cum_emis_tco2": pulp.value(cum_emis),
             "ppa": ppa.value(), "epc": round(epc.value() or 0), "ccfd": round(ccfd.value() or 0),
             "budget_slack": sum(s.value() or 0 for s in slack.values())}
 
