@@ -181,8 +181,10 @@ for company, grp in d1a.groupby("company_id"):
                     inner = (r.capacity * ROUTE[r.unit_type][0]) / sum(
                         x.capacity * ROUTE[x.unit_type][0] for x in sib.itertuples())
                     s1 = s1_t * renorm * site_w.get(sk, 0.0) * inner
-                else:
+                elif site_w:            # 사업소 데이터는 있으나 이 시설은 충돌 → 옛 몫 유지
                     s1 = s1_t * fb_share * (r.capacity * ROUTE[r.unit_type][0]) / fb_wsum
+                else:                   # 사업소 데이터 자체가 없는 회사 → 옛 규칙 그대로
+                    s1 = s1_t * (r.capacity * ROUTE[r.unit_type][0]) / w_ef.sum()
                 s2 = s2_t * (r.capacity * ROUTE[r.unit_type][1]) / w_elec.sum()
                 ef = ROUTE[r.unit_type]
                 rows.append([fid, y, prod, s1, s2, prod * ef[2], prod * ef[3], prod * ef[1], "", "PREP_ALLOC"])
@@ -214,6 +216,21 @@ for company, grp in d1a.groupby("company_id"):
                 f"전력 가중 배분")
 d1b = pd.DataFrame(rows, columns=["facility_id", "year", "production", "emissions_s1", "emissions_s2",
                                   "energy_coal", "energy_gas", "energy_elec", "energy_naphtha", "source_id"])
+
+# 배분 항등식 — 철강은 회사 공시 총량에 재척도하므로 시설 합계가 총량과 같아야 한다.
+# 이 한 줄이 없어서 배분 버그(POSCO 배출 전량 0)가 파이프라인 20분을 지나 E5까지 갔다.
+_chk = d1b.merge(d1a[["facility_id", "company_id"]], on="facility_id")
+for _co in ("POSCO", "NSC"):
+    for _y in years:
+        _got = _chk[(_chk.company_id == _co) & (_chk.year == _y)].emissions_s1.sum()
+        _row = fp[(fp.facility_id == {"POSCO": "POSCO_TOTAL", "NSC": "NSC_TOTAL"}[_co])
+                  & (fp.year == _y)]
+        if not len(_row):
+            continue
+        _want = float(_row.emissions_s1.iloc[0])
+        if abs(_got - _want) > max(1.0, _want * 1e-6):
+            raise SystemExit(f"배분 항등식 위반: {_co} {_y} 시설합 {_got:,.0f} != 공시 {_want:,.0f}")
+log("배분 항등식 확인: 철강 2사 전 연도에서 시설 합계 = 회사 공시 Scope1 총량")
 
 # ---------------------------------------------------------------- D2a budget
 d2a = read("scenario_budget")
