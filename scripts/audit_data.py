@@ -28,7 +28,10 @@ from cap import schemas as S  # noqa: E402
 
 PREPARED = ROOT / "data" / "prepared"
 SAMPLE = ROOT / "data" / "sample"
-REGISTER = ROOT / "data" / "raw" / "source_register.csv"
+# data/raw는 gitignore다 — 클론한 저장소에서도 감사가 돌도록 공개 사본으로 폴백한다
+REGISTER = next((p for p in [ROOT / "data" / "raw" / "source_register.csv",
+                             ROOT / "data" / "manifests" / "source_register.csv"]
+                 if p.exists()), ROOT / "data" / "manifests" / "source_register.csv")
 # schemas.py lists every column by name — including it would mark all of them
 # "used" and defeat the utilisation check. Scan only the modelling modules.
 ENGINE = [p for p in sorted((ROOT / "src" / "cap").glob("*.py")) if p.name != "schemas.py"]

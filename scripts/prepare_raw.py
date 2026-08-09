@@ -325,6 +325,19 @@ d2b.to_csv(OUT / "D2b_scenario_prices.csv", index=False)
 to.to_csv(OUT / "D3_tech_options.csv", index=False)
 d5.to_csv(OUT / "D5_policy_support.csv", index=False)
 
+# 공개 출처 등록부 동기화. data/raw는 gitignore이므로 이걸 안 하면 저장소를 클론한
+# 사람은 대부분 수치의 출처를 추적할 수 없다 (실제로 50건 뒤처져 있었다).
+# 자료 자체가 아니라 인용 메타데이터만 옮긴다 — data/manifests/README 정책.
+_sr = RAW / "source_register.csv"
+if _sr.exists():
+    import csv as _csv
+    _rows = list(_csv.DictReader(_sr.open(encoding="utf-8-sig")))
+    _dst = ROOT / "data" / "manifests" / "source_register.csv"
+    with _dst.open("w", encoding="utf-8-sig", newline="") as _f:
+        _w = _csv.DictWriter(_f, fieldnames=list(_rows[0]), quoting=_csv.QUOTE_ALL)
+        _w.writeheader(); _w.writerows(_rows)
+    log(f"출처 등록부 공개 사본 동기화: {len(_rows)}건 -> data/manifests/source_register.csv")
+
 (OUT / "PREP_LOG.md").write_text("\n".join(LOG) + "\n")
 print("\n".join(LOG))
 print(f"\nprepared {len(d1a)} facilities, {len(d1b)} panel rows -> {OUT}")
