@@ -185,6 +185,7 @@ def t_get_validation_summary(_):
                      ("seed_stability", DOCS / "seed_stability.md"),
                      ("robustness_structural", DOCS / "robustness_structural.md"),
                      ("process_alternative", DOCS / "process_alternative.md"),
+                     ("data_gap_registry", DOCS / "data_gap_registry.md"),
                      ("methodology", ROOT / "METHODOLOGY.md")]:
         (out["available"].__setitem__(label, str(p.relative_to(ROOT)))
          if p.exists() else out["missing"].append(label))
