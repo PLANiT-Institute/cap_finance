@@ -9,16 +9,16 @@ EFF.evidence.COST_NS_HIROHATA_EAF,EFF,cost_evidence,SCRAP_EAF,expansion_project 
 EFF.evidence.COST_NS_SHUNAN_EAF,EFF,cost_evidence,SCRAP_EAF,restart_and_modification (0.4 Mtpa),906.2,십억원,T2,,,NS_SHUNAN_EAF_04,,기술비용 대조(docs/tech_cost_reconciliation.md) — 모형 입력에는 미연결,False
 EFF.evidence.COST_NS_YAWATA_EAF,EFF,cost_evidence,SCRAP_EAF,full_project (2.0 Mtpa),5797.84,십억원,T2,,,NS_YAWATA_EAF_20,,기술비용 대조(docs/tech_cost_reconciliation.md) — 모형 입력에는 미연결,False
 EFF.evidence.COST_POSCO_GWY_EAF,EFF,cost_evidence,SCRAP_EAF,full_project (2.5 Mtpa),600.0,십억원,T2,,,POSCO_GWY_EAF_25,,기술비용 대조(docs/tech_cost_reconciliation.md) — 모형 입력에는 미연결,False
-FIN.facility.MCI_ICH_CR.capacity,FIN,facility,MCI_ICH_CR,capacity,553000.0,t/yr,T2,,,MCI_RELEASES,,E2 capex·retire scale,False
-FIN.facility.MCI_ICH_CR.incumbent_capex_unit,FIN,facility,MCI_ICH_CR,incumbent_capex_unit,150.0,천원/t능력,T2,,,MCI_RELEASES,,E2 stranded_cost_k,False
-FIN.facility.MCI_ICH_CR.margin_kthou_t,FIN,facility,MCI_ICH_CR,margin_kthou_t,290.0,천원/t,T2,,,MCI_RELEASES,,E2 retire_terms,False
-FIN.facility.MCI_ICH_CR.next_reinvest_year,FIN,facility,MCI_ICH_CR,next_reinvest_year,2027.0,year,T2,,,MCI_RELEASES,,E2 stranded_cost_k,False
-FIN.facility.MCI_ICH_CR.reinvest_cycle_yr,FIN,facility,MCI_ICH_CR,reinvest_cycle_yr,4.0,yr,T2,,,MCI_RELEASES,,E2 stranded_cost_k,False
-FIN.facility.MCI_OSK_CR.capacity,FIN,facility,MCI_OSK_CR,capacity,455000.0,t/yr,T2,,,MCI_RELEASES,,E2 capex·retire scale,False
-FIN.facility.MCI_OSK_CR.incumbent_capex_unit,FIN,facility,MCI_OSK_CR,incumbent_capex_unit,150.0,천원/t능력,T2,,,MCI_RELEASES,,E2 stranded_cost_k,False
-FIN.facility.MCI_OSK_CR.margin_kthou_t,FIN,facility,MCI_OSK_CR,margin_kthou_t,290.0,천원/t,T2,,,MCI_RELEASES,,E2 retire_terms,False
-FIN.facility.MCI_OSK_CR.next_reinvest_year,FIN,facility,MCI_OSK_CR,next_reinvest_year,2028.0,year,T2,,,MCI_RELEASES,,E2 stranded_cost_k,False
-FIN.facility.MCI_OSK_CR.reinvest_cycle_yr,FIN,facility,MCI_OSK_CR,reinvest_cycle_yr,4.0,yr,T2,,,MCI_RELEASES,,E2 stranded_cost_k,False
+FIN.facility.MCI_ICH_CR.capacity,FIN,facility,MCI_ICH_CR,capacity,553000.0,t/yr,T2,,,MCI_RELEASES+JPCA_CAPACITY_2024,,E2 capex·retire scale,False
+FIN.facility.MCI_ICH_CR.incumbent_capex_unit,FIN,facility,MCI_ICH_CR,incumbent_capex_unit,150.0,천원/t능력,T2,,,MCI_RELEASES+JPCA_CAPACITY_2024,,E2 stranded_cost_k,False
+FIN.facility.MCI_ICH_CR.margin_kthou_t,FIN,facility,MCI_ICH_CR,margin_kthou_t,290.0,천원/t,T2,,,MCI_RELEASES+JPCA_CAPACITY_2024,,E2 retire_terms,False
+FIN.facility.MCI_ICH_CR.next_reinvest_year,FIN,facility,MCI_ICH_CR,next_reinvest_year,2027.0,year,T2,,,MCI_RELEASES+JPCA_CAPACITY_2024,,E2 stranded_cost_k,False
+FIN.facility.MCI_ICH_CR.reinvest_cycle_yr,FIN,facility,MCI_ICH_CR,reinvest_cycle_yr,4.0,yr,T2,,,MCI_RELEASES+JPCA_CAPACITY_2024,,E2 stranded_cost_k,False
+FIN.facility.MCI_OSK_CR.capacity,FIN,facility,MCI_OSK_CR,capacity,455000.0,t/yr,T2,,,MCI_RELEASES+JPCA_CAPACITY_2024,,E2 capex·retire scale,False
+FIN.facility.MCI_OSK_CR.incumbent_capex_unit,FIN,facility,MCI_OSK_CR,incumbent_capex_unit,150.0,천원/t능력,T2,,,MCI_RELEASES+JPCA_CAPACITY_2024,,E2 stranded_cost_k,False
+FIN.facility.MCI_OSK_CR.margin_kthou_t,FIN,facility,MCI_OSK_CR,margin_kthou_t,290.0,천원/t,T2,,,MCI_RELEASES+JPCA_CAPACITY_2024,,E2 retire_terms,False
+FIN.facility.MCI_OSK_CR.next_reinvest_year,FIN,facility,MCI_OSK_CR,next_reinvest_year,2028.0,year,T2,,,MCI_RELEASES+JPCA_CAPACITY_2024,,E2 stranded_cost_k,False
+FIN.facility.MCI_OSK_CR.reinvest_cycle_yr,FIN,facility,MCI_OSK_CR,reinvest_cycle_yr,4.0,yr,T2,,,MCI_RELEASES+JPCA_CAPACITY_2024,,E2 stranded_cost_k,False
 FIN.facility.NSC_KAS_BF1.capacity,FIN,facility,NSC_KAS_BF1,capacity,4904600.0,t/yr,T2,,,NSC_DATABOOK_2025,,E2 capex·retire scale,False
 FIN.facility.NSC_KAS_BF1.incumbent_capex_unit,FIN,facility,NSC_KAS_BF1,incumbent_capex_unit,200.0,천원/t능력,T2,,,NSC_DATABOOK_2025,,E2 stranded_cost_k,False
 FIN.facility.NSC_KAS_BF1.margin_kthou_t,FIN,facility,NSC_KAS_BF1,margin_kthou_t,70.0,천원/t,T2,,,NSC_DATABOOK_2025,,E2 retire_terms,False
@@ -102,9 +102,9 @@ FIN.technology.petchem_ecracker_hybrid.opex_var,FIN,technology,petchem_ecracker_
 FIN.technology.steel_eaf.avail_year,FIN,technology,steel_eaf,avail_year,2024,year,T2,,,POSCO_GY_EAF,,,False
 FIN.technology.steel_eaf.build_years,FIN,technology,steel_eaf,build_years,3,yr,T2,,,POSCO_GY_EAF,,,False
 FIN.technology.steel_eaf.capex_uncertainty,FIN,technology,steel_eaf,capex_uncertainty,60,%,T2,,,POSCO_GY_EAF,,,False
-FIN.technology.steel_eaf.capex_unit,FIN,technology,steel_eaf,capex_unit,240.0,천원/t능력,T2,,,POSCO_GY_EAF,,E2/plancost capex,False
+FIN.technology.steel_eaf.capex_unit,FIN,technology,steel_eaf,capex_unit,240.0,천원/t능력,T2,370.0,835.0,POSCO_GY_EAF,,E2/plancost capex,False
 FIN.technology.steel_eaf.elec_intensity,FIN,technology,steel_eaf,elec_intensity,0.667,MWh/t,T2,,,POSCO_GY_EAF,,energy cost + TCaR elec,False
-FIN.technology.steel_eaf.emission_factor,FIN,technology,steel_eaf,emission_factor,0.05,tCO2/t,T2,,,POSCO_GY_EAF,,budget + carbon cost,False
+FIN.technology.steel_eaf.emission_factor,FIN,technology,steel_eaf,emission_factor,0.05,tCO2/t,T2,0.04,0.05,POSCO_GY_EAF,,budget + carbon cost,False
 FIN.technology.steel_eaf.h2_intensity,FIN,technology,steel_eaf,h2_intensity,0.0,kg/t,T2,,,POSCO_GY_EAF,,energy cost + TCaR h2,False
 FIN.technology.steel_eaf.lifetime,FIN,technology,steel_eaf,lifetime,20,yr,T2,,,POSCO_GY_EAF,,,False
 FIN.technology.steel_eaf.opex_fixed,FIN,technology,steel_eaf,opex_fixed,0.0,천원/t능력/yr,T2,,,POSCO_GY_EAF,,,False
@@ -163,7 +163,7 @@ FIN.technology.steel_eff.opex_var,FIN,technology,steel_eff,opex_var,6.0,천원/t
 FIN.technology.steel_h2dri.avail_year,FIN,technology,steel_h2dri,avail_year,2030,year,T3,,,"DIW_DP2082+VOGL_2018 (ex-electrolyser, 광석공통분 제외)",,,False
 FIN.technology.steel_h2dri.build_years,FIN,technology,steel_h2dri,build_years,4,yr,T3,,,"DIW_DP2082+VOGL_2018 (ex-electrolyser, 광석공통분 제외)",,,False
 FIN.technology.steel_h2dri.capex_uncertainty,FIN,technology,steel_h2dri,capex_uncertainty,40,%,T3,,,"DIW_DP2082+VOGL_2018 (ex-electrolyser, 광석공통분 제외)",,,False
-FIN.technology.steel_h2dri.capex_unit,FIN,technology,steel_h2dri,capex_unit,863.0,천원/t능력,T3,,,"DIW_DP2082+VOGL_2018 (ex-electrolyser, 광석공통분 제외)",,E2/plancost capex,False
+FIN.technology.steel_h2dri.capex_unit,FIN,technology,steel_h2dri,capex_unit,863.0,천원/t능력,T3,863.0,1095.0,"DIW_DP2082+VOGL_2018 (ex-electrolyser, 광석공통분 제외)",,E2/plancost capex,False
 FIN.technology.steel_h2dri.elec_intensity,FIN,technology,steel_h2dri,elec_intensity,0.85,MWh/t,T3,,,"DIW_DP2082+VOGL_2018 (ex-electrolyser, 광석공통분 제외)",,energy cost + TCaR elec,False
 FIN.technology.steel_h2dri.emission_factor,FIN,technology,steel_h2dri,emission_factor,0.053,tCO2/t,T3,,,"DIW_DP2082+VOGL_2018 (ex-electrolyser, 광석공통분 제외)",,budget + carbon cost,False
 FIN.technology.steel_h2dri.h2_intensity,FIN,technology,steel_h2dri,h2_intensity,51.0,kg/t,T3,,,"DIW_DP2082+VOGL_2018 (ex-electrolyser, 광석공통분 제외)",,energy cost + TCaR h2,False
@@ -387,7 +387,7 @@ FIN.config.discount_rate,FIN,model_choice,config.yaml,실질 할인율,0.05,1,T5
 FIN.config.milp.budget_violation_floor_thkrw,FIN,model_choice,config.yaml,예산위반 페널티 바닥,300,천원/tCO2,T5,150,600,MODEL_CHOICE,2026-08,E2 slack,False
 FIN.config.milp.reinvest_window_halfwidth,FIN,model_choice,config.yaml,재투자 창 유예,1,yr,T5,0,2,MODEL_CHOICE,2026-08,stranded_cost_k,False
 FIN.config.milp.retire_max_share,FIN,model_choice,config.yaml,폐쇄 상한,0.2,share,T5,0.10,0.30,MODEL_CHOICE,2026-08,E2 retire cap,False
-FIN.config.simulation.n_sims,FIN,model_choice,config.yaml,시뮬레이션 수,5000,count,T5,10000,50000,MODEL_CHOICE,2026-08,E3/E4,False
+FIN.config.simulation.n_sims,FIN,model_choice,config.yaml,시뮬레이션 수,10000,count,T5,10000,50000,MODEL_CHOICE,2026-08,E3/E4,False
 FIN.config.auction_share.2035,FIN,policy_assumption,carbon_auction_share,2035,0.3,share,T5,0.18,0.42,MODEL_ESTIMATE,2025,carbon cost (E2/plancost/E5),False
 FIN.config.auction_share.2040,FIN,policy_assumption,carbon_auction_share,2040,0.5,share,T5,0.3,0.7,MODEL_ESTIMATE,2025,carbon cost (E2/plancost/E5),False
 FIN.config.auction_share.2045,FIN,policy_assumption,carbon_auction_share,2045,0.75,share,T5,0.45,1.0,MODEL_ESTIMATE,2025,carbon cost (E2/plancost/E5),False

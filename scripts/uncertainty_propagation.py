@@ -177,6 +177,38 @@ def co2_shocks(cfg, T: int, n: int, vol: float, seed_offset: int = 0) -> np.ndar
     return np.exp(np.cumsum(inc, axis=1))
 
 
+def evidence_bands(cfg) -> dict[str, tuple[float, float]]:
+    """G2(D10) — 문헌 밴드를 base_param의 **승수 구간**으로 옮긴다.
+
+    F3의 추첨은 base_param 하나에 승수 하나를 곱해 D3 열 전체를 스케일한다. 밴드는
+    기술별로 붙으므로 그대로 대응하지 않는다. 여기서는 밴드가 붙은 기술들의 상대편차
+    [low/value, high/value]의 **포락**을 쓴다 — 즉 "증거가 허용하는 최대 오설정"이고,
+    좁히는 방향이 아니라 넓히는 방향의 보수적 선택이다. 어느 기술이 포락을 만드는지는
+    보고서에 그대로 적는다(경계 불일치가 섞일 수 있다).
+    """
+    p = C.data_dir(cfg) / "D3b_tech_bands.csv"
+    if not p.exists():
+        return {}
+    tb = pd.read_csv(p)
+    d3 = pd.read_csv(C.data_dir(cfg) / "D3_tech_options.csv")
+    out: dict[str, tuple[float, float]] = {}
+    for r in tb.itertuples():
+        base = {"capex_unit": "tech.capex", "opex_fixed": "tech.opex_fixed",
+                "opex_var": "tech.opex_var", "elec_intensity": "tech.elec_intensity",
+                "h2_intensity": "tech.h2_intensity",
+                "emission_factor": "tech.emission_factor"}.get(r.field)
+        m = d3.tech_id == r.tech_id
+        if base is None or not m.any():
+            continue
+        v = float(d3.loc[m, r.field].iloc[0])
+        if v == 0:
+            continue
+        lo, hi = r.value_low / v, r.value_high / v
+        p0, p1 = out.get(base, (lo, hi))
+        out[base] = (min(p0, lo), max(p1, hi))
+    return out
+
+
 def pick_params(k: int) -> list[str]:
     rank = pd.read_csv(ROOT / "out" / "sensitivity" / "ranking.csv")
     keep = [p for p in rank.base_param if p in SPEC]
@@ -190,6 +222,8 @@ def main() -> int:
     ap.add_argument("--params", type=int, default=10)
     ap.add_argument("--widths", type=float, nargs="+", default=[0.15, 0.30])
     ap.add_argument("--co2-seeds", type=int, default=3, dest="co2_seeds")
+    ap.add_argument("--bands", action="store_true",
+                    help="G2: 문헌 밴드가 있는 파라미터는 ±width 대신 밴드에서 추첨")
     a = ap.parse_args()
 
     cfg = C.load(data_dir="data/prepared")
@@ -265,11 +299,18 @@ def main() -> int:
               f" [{pol[co]['co2_increment_lo']:+,.0f}, {pol[co]['co2_increment_hi']:+,.0f}]bn",
               flush=True)
 
+    bands = evidence_bands(cfg) if a.bands else {}
+    used = {p: b for p, b in bands.items() if p in params}
+    if a.bands:
+        print("[G2] 증거 밴드 적용 " + (", ".join(f"{p} [{lo:.3f}, {hi:.3f}]"
+              for p, (lo, hi) in used.items()) or "없음")
+              + f" — 나머지 {len(params) - len(used)}개는 ±width 규약")
+
     rows = []
     for width in a.widths:
         rng = np.random.default_rng(cfg.seed)
-        draws = [{p: float(rng.uniform(1 - width, 1 + width)) for p in params}
-                 for _ in range(a.draws)]
+        draws = [{p: float(rng.uniform(*used.get(p, (1 - width, 1 + width))))
+                  for p in params} for _ in range(a.draws)]
         for co, (_p50, pdf, ppa, epc, inc_price) in base_pt.items():
             joint, param_only = [], []
             for mult in draws:
@@ -280,7 +321,8 @@ def main() -> int:
                                             sh1, pxs))
             d = decompose(inc_price, np.concatenate(param_only), np.concatenate(joint))
             rows.append(dict(company_id=co, scenario=SCEN, support=SUPPORT,
-                             width=width, draws=a.draws, sims=a.sims, **d, **pol[co]))
+                             width=width, draws=a.draws, sims=a.sims,
+                             bands=bool(a.bands), n_banded=len(used), **d, **pol[co]))
             print(f"  [{width:.0%}] {co:6} price {d['tcar_price']:9,.0f} "
                   f"param {d['tcar_param']:9,.0f} joint {d['tcar_joint']:9,.0f} "
                   f"(param {d['param_share_pct']:.0f}%)", flush=True)
@@ -288,9 +330,14 @@ def main() -> int:
     df = pd.DataFrame(rows)
     odir = ROOT / "out" / "uncertainty"
     odir.mkdir(parents=True, exist_ok=True)
-    df.to_csv(odir / "decomposition.csv", index=False)
-    _write_report(df, params, skipped, a)
-    print(f"[F3] wrote {odir/'decomposition.csv'} + docs/uncertainty_propagation.md")
+    # --bands는 **별도 파일**로 쓴다. 정본(±규약)을 덮으면 페이퍼 대장의 F3 key가
+    # 조용히 다른 규약의 값으로 바뀐다 — G2는 정본을 교체하는 작업이 아니다.
+    tag = "_bands" if a.bands else ""
+    df.to_csv(odir / f"decomposition{tag}.csv", index=False)
+    if not a.bands:
+        _write_report(df, params, skipped, a)
+    print(f"[F3] wrote {odir/f'decomposition{tag}.csv'}"
+          + ("" if a.bands else " + docs/uncertainty_propagation.md"))
     return 0
 
 

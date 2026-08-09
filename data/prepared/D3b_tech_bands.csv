@@ -1,0 +1,4 @@
+tech_id,field,value_low,value_high,unit,evidence_tier,source_id,derivation
+steel_h2dri,capex_unit,863.0,1095.0,천원/t능력,T3,DIW_DP2082,"Table 1 DRP+EAF 출처군 중앙값 €2022/t: 문헌 592(n=11) · OECD2015 626(n=6) · 발표 프로젝트 751(n=8). 전해조 제외 경계 — 우리 값과 동일(수소 외부조달 v2.1). €→천원 1.4578 (= USDKRW 1350 x EURUSD 1.08). 592x1.4578=863 (현행 값과 일치), 751x1.4578=1095"
+steel_eaf,capex_unit,370.0,835.0,천원/t능력,T3,DIW_DP2082,"Table 1 EAF 출처군 중앙값 €2022/t: 문헌 254(n=11) · 발표 467(n=6) · OECD2015 573(n=40). 254x1.4578=370, 573x1.4578=835. 그린필드 EAF 기준 — 우리 값 240은 POSCO 광양 실제 프로젝트(DIW A2표 €170.15/t)이고 밴드 하한 아래에 있다"
+steel_eaf,emission_factor,0.04,0.05,tCO2/t,T3,IEA_ISTR_2020,p.38 스크랩 EAF 직접배출 'only about 0.04 t CO2/t of crude steel produced on a direct emissions basis'. 간접(전력 0.3)은 우리 모형이 elec_intensity로 따로 처리하므로 직접만 대응. 상한은 현행 값 0.05

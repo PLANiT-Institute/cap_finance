@@ -109,6 +109,10 @@ def _computed() -> dict[str, float]:
     for r in _out("m3", "summary").itertuples():
         got[r.key] = float(r.value)
 
+    # §4.6 데이터 절 (G2, D10): 증거 밴드와 그것이 F3에 준 영향
+    for r in _out("g2", "summary").itertuples():
+        got[r.key] = float(r.value)
+
     # §4 경계 퇴화: 경계 위 점들이 한 기술 일정만 쓰는 묶음 수
     per_group = fp[fp.on_frontier].groupby(
         ["company_id", "scenario", "support"]).base_plan_id.nunique()
@@ -141,7 +145,7 @@ def test_body_quotes_only_ledger_keys():
         "§3.4의 후보 중복 서술이 §0 대장과 어긋난다"
 
     # 본문 §4 — 데이터 절의 세 표. 여기가 낡으면 출처 주장이 거짓말을 한다.
-    assert f"| **계** | **{int(led['inv_rows'])}** | **{int(led['inv_banded'])}** |" in body, \
+    assert f"| **계** | **{int(led['inv_rows'])}** | **18 → {int(led['inv_banded'])}** |" in body, \
         "§4.2 등급 표 합계가 §0 대장과 어긋난다"
     assert f"열 중 {int(led['top10_t3plus'])}개만 규약을 만족한다" in body, \
         "§4.3의 상위 10 등급 서술이 §0 대장과 어긋난다"

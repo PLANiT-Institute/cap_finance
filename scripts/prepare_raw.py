@@ -403,6 +403,24 @@ d1a.to_csv(OUT / "D1a_facility_static.csv", index=False)
 d1b.to_csv(OUT / "D1b_facility_panel.csv", index=False)
 d2b.to_csv(OUT / "D2b_scenario_prices.csv", index=False)
 to.to_csv(OUT / "D3_tech_options.csv", index=False)
+
+# ---------------------------------------------------------------- D3b tech bands (G2, D10)
+# 문헌 [low, high]. 값이 아니라 **범위**를 받는 것이 G2의 완료 기준이다 (D9 발견 1) —
+# 등급 T2·T3·T4의 257행이 전부 점 추정이었던 것은 수집 규약의 결함이었다.
+_tb = RAW / "tech_bands.csv"
+if _tb.exists():
+    tb = pd.read_csv(_tb, encoding="utf-8-sig")
+    tb = tb[tb.tech_id.isin(to.tech_id)]          # 본 실행에서 빠진 기술(*_alt·ccus)은 제외
+    for r in tb.itertuples():
+        v = float(to.loc[to.tech_id == r.tech_id, r.field].iloc[0])
+        flag = "" if r.value_low <= v <= r.value_high else "  ** 현행 값이 밴드 밖 **"
+        log(f"D3b 밴드 {r.tech_id}.{r.field}: [{r.value_low:g}, {r.value_high:g}] "
+            f"vs 현행 {v:g} ({r.evidence_tier}, {r.source_id}){flag}")
+        # 밴드 밖이어도 값을 고치지 않는다. 경계·표본이 다를 수 있고, 조용한 교체가
+        # 이 저장소의 반복 실패 방식이다. 사실만 남기고 판단은 문서(G2)에서 한다.
+    tb.to_csv(OUT / "D3b_tech_bands.csv", index=False)
+else:
+    log("D3b: tech_bands.csv 없음 — 밴드 없이 진행")
 d5.to_csv(OUT / "D5_policy_support.csv", index=False)
 
 # 공개 출처 등록부 동기화. data/raw는 gitignore이므로 이걸 안 하면 저장소를 클론한

@@ -31,4 +31,7 @@
 - D4 electrolyzer_capex USD→KRW x1350. 관측 2개(2022 상승 구간)뿐 → 감소율은 캘리브레이션 사전값(연 5%) 사용, 앵커는 최종 관측값
 - D5: 수집된 수단은 K-ETS 유상할당·GX-ETS 프라이스칼라 — CAPEX 보조·CCfD 아님 → subsidy/ccfd 경로에는 미적용(확정된 직접 지원 부재 = net=gross, 그 자체가 발견). 다만 유상할당 비율은 탄소비용의 직접 입력이므로 instrument를 auction_share(발전외=철강·석화) / auction_share_power(발전부문) / price_cap / price_floor로 분류해 엔진이 발전외 행만 읽게 한다 (plancost.auction_share)
 - D7: EAF 신설 커밋(NSC_YAW_EAF1·NSC_HIR_EAF2·POSCO_GWY_EAF1)은 기존 시설의 '전환'이 아니라 신설 경로 — BF→EAF 전환 불허 규칙에 따라 모형 커밋으로 미해석(경고로 드롭). NSC 공시 좌표는 KIM_BF2 수소환원 실증 커밋으로 측정
-- 출처 등록부 공개 사본 동기화: 81건 -> data/manifests/source_register.csv
+- D3b 밴드 steel_h2dri.capex_unit: [863, 1095] vs 현행 863 (T3, DIW_DP2082)
+- D3b 밴드 steel_eaf.capex_unit: [370, 835] vs 현행 240 (T3, DIW_DP2082)  ** 현행 값이 밴드 밖 **
+- D3b 밴드 steel_eaf.emission_factor: [0.04, 0.05] vs 현행 0.05 (T3, IEA_ISTR_2020)
+- 출처 등록부 공개 사본 동기화: 82건 -> data/manifests/source_register.csv

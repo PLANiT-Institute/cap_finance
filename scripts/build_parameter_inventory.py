@@ -111,6 +111,18 @@ def main():
         {"capex_unit": "E2/plancost capex", "elec_intensity": "energy cost + TCaR elec",
          "h2_intensity": "energy cost + TCaR h2", "emission_factor": "budget + carbon cost"})
 
+    # G2(D10) — 문헌 밴드를 tech 행에 붙인다. 여기가 T2/T3/T4에 [low, high]가 들어오는
+    # 첫 경로다. **tier·source는 건드리지 않는다** — 밴드의 출처가 값의 출처와 다를 수
+    # 있고(steel_eaf: 값은 POSCO 광양 T2, 밴드는 DIW T3), 덮으면 값의 출처가 사라져
+    # §3 인용 무결성 검사가 잘못된 것을 센다. 밴드 출처는 D3b_tech_bands.csv에 있다.
+    _bands = PREP / "D3b_tech_bands.csv"
+    if _bands.exists():
+        for b in pd.read_csv(_bands).itertuples():
+            pid = f"FIN.technology.{b.tech_id}.{b.field}"
+            for r in rows:
+                if r["param_id"] == pid:
+                    r["value_low"], r["value_high"] = b.value_low, b.value_high
+
     # ---- FIN D2b scenario prices (one row per variable x scenario x region, anchor years)
     d2b = pd.read_csv(PREP / "D2b_scenario_prices.csv")
     for (scen, region, var), g in d2b.groupby(["scenario", "region", "variable"]):

@@ -143,3 +143,35 @@ def test_co2_vol_comes_from_the_kau_series_not_a_prior():
     assert n == len(s) >= 6 and src
     assert abs(v - _annual_vol(s)[0]) < 1e-12
     assert v > 0.30          # K-ETS 실측: 전력(0.242)보다 크다 — 이 사실이 §4의 논지다
+
+
+def test_evidence_bands_carry_literature_not_a_convention():
+    """G2(D10) — 밴드가 (a) 값을 바꾸지 않고 (b) 규약이 아니라 파일에서 오며
+    (c) 대칭이 아니라는 것. (c)가 깨지면 이 사이클의 결론(±30% 규약은 폭이 아니라
+    중심이 틀렸다)이 성립하지 않는다."""
+    from uncertainty_propagation import evidence_bands
+    cfg = C.load(data_dir="data/prepared")
+    prep = C.data_dir(cfg)
+    tb = pd.read_csv(prep / "D3b_tech_bands.csv")
+    d3 = pd.read_csv(prep / "D3_tech_options.csv")
+
+    # (a) 밴드를 붙였다고 D3 값이 밴드 안으로 끌려 들어가지 않았다 — 하나는 밖에 있다
+    vals = {(r.tech_id, r.field): float(d3.loc[d3.tech_id == r.tech_id, r.field].iloc[0])
+            for r in tb.itertuples()}
+    outside = [k for k, v in vals.items()
+               if not (tb.set_index(["tech_id", "field"]).loc[k].value_low <= v
+                       <= tb.set_index(["tech_id", "field"]).loc[k].value_high)]
+    assert outside, "밴드 밖 값이 하나도 없다 — 값이 조용히 밴드에 맞춰졌는지 확인할 것"
+
+    # (b) 승수 구간이 파일의 [low/value, high/value] 포락과 정확히 일치
+    env = evidence_bands(cfg)
+    assert env, "D3b_tech_bands.csv가 승수 구간으로 옮겨지지 않았다"
+    for p, (lo, hi) in env.items():
+        col = {"tech.capex": "capex_unit", "tech.emission_factor": "emission_factor",
+               "tech.elec_intensity": "elec_intensity", "tech.h2_intensity": "h2_intensity",
+               "tech.opex_var": "opex_var", "tech.opex_fixed": "opex_fixed"}[p]
+        sub = tb[tb.field == col]
+        assert abs(lo - min(r.value_low / vals[(r.tech_id, col)] for r in sub.itertuples())) < 1e-9
+        assert abs(hi - max(r.value_high / vals[(r.tech_id, col)] for r in sub.itertuples())) < 1e-9
+        # (c) 1이 구간 안쪽이 아니라 끝(또는 밖)에 있다 = 규약의 대칭 추첨과 다르다
+        assert lo >= 1.0 or hi <= 1.0, f"{p} 구간이 1을 안쪽에 둔다 — 대칭 규약과 구별되지 않는다"
