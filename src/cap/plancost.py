@@ -67,6 +67,9 @@ def stranded_cost_k(fr, ta: int, cfg) -> float:
                 else getattr(fr, "incumbent_capex_unit", 200.0))
     if pd.isna(inc):
         inc = 200.0
+    # H3 외부 대조: 공시된 실제 개수(고베 3고로 2016) 47천원/t 대비 주입값 200이 ×4.2다.
+    # 이 값이 조기 전환의 벌점을 정하므로 결론 불변성을 시나리오로 흔들 수 있어야 한다.
+    inc *= float(cfg.get("incumbent_capex_scale", 1.0))
     k = max(1, int(np.ceil((ta - fr.last_reline_year) / cycle)))
     anchor = fr.last_reline_year + k * cycle
     remaining = max(0.0, anchor - ta - cfg.milp.reinvest_window_halfwidth) / cycle

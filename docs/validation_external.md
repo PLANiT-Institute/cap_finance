@@ -1,0 +1,70 @@
+# H3 외부 대조 — 우리 값은 바깥과 맞는가
+
+> `scripts/validate_external.py` 자동 생성. 내부 일관성(H1)과 달리 **모형 밖의 실제 프로젝트 공시와 문헌 범위**에 우리 값을 견준다.
+
+**환율.** USD 1,350 · JPY 9.2 · EUR 1,450 KRW. USD·JPY는 `prepare_raw.py`와 동일 기준. EUR는 이 문서에서 처음 쓰는 값으로 2024–25 근사이며, 문헌이 €2022 기준이라 물가·환율 이중 근사가 들어간다 — 배수 판정(0.5~2배)에는 견디지만 소수점 비교에는 쓸 수 없다.
+
+## 1. 기술 CAPEX ↔ 공시된 실제 프로젝트
+
+출처는 EFF `data/technology_cost_evidence.csv` — 전부 기업 1차 공시(T2)에서 용량으로 나눈 값이다. 비교 시 **범위(scope)가 결정적**이다: 노(爐)만 센 값과 물류·수전설비·후공정까지 센 값은 5~12배 차이가 난다.
+
+| 프로젝트 | 기술 | 천원/t능력 | 범위 | 등급 |
+|---|---|---|---|---|
+| KOB_BF3_RELINE_2016 | BF_RELINE | 47 | hot_metal_capacity_directional_comparator | A_primary_quantitative |
+| POSCO_GWY_EAF_25 | SCRAP_EAF | 240 | partial_scope_comparator | A_primary_quantitative |
+| KOB_KAKO_MELTER_07 | SCRAP_EAF | 1,314 | hybrid_route_directional_comparator | B_primary_approximate |
+| JFE_KURA_EAF_20 | SCRAP_EAF | 1,515 | broad_scope_upper_comparator | A_primary_quantitative |
+| NS_SHUNAN_EAF_04 | SCRAP_EAF | 2,266 | broad_scope_upper_comparator | A_primary_quantitative |
+| NS_HIROHATA_EAF_05 | SCRAP_EAF | 2,576 | broad_scope_upper_comparator | A_primary_quantitative |
+| NS_YAWATA_EAF_20 | SCRAP_EAF | 2,899 | broad_scope_upper_comparator | A_primary_quantitative |
+
+**EAF 실적 분포**: 240 ~ 2,899 천원/t (중앙 1,890). 최저값은 POSCO 광양(노 중심, 기존 부지 재활용), 최고값은 NSC 야하타(물류·수전·후공정 포함). 우리 D3의 `steel_eaf` = 240 천원/t는 **최저값과 같은 출처에서 왔다** — 즉 우리는 EAF 비용을 이 분포의 하단으로 잡고 있다. (모형은 BF→EAF 전면 전환을 허용하지 않으므로 결과에 직접 영향은 없다. A-10)
+
+### 1-1. 개수(reline) 재조달가 — 투자 시점을 좌우하는 앵커
+
+모형의 `incumbent_capex_unit`(BF 중앙값) = **200** 천원/t, 공시된 실제 개수(고베제강 3고로 2016, 외피 재사용 90일) = **47** 천원/t → **우리 값이 ×4.2 크다**.
+
+이 값은 좌초비용(A-13) = 개수 캠페인 자산의 잔존 장부가를 정한다. 과대하면 **조기 전환의 벌점이 과대**해지고 투자가 재투자 창(relining anchor)으로 과도하게 몰린다. 실제 우리 결과의 CAPEX 피크가 2040–41에 집중된 것과 방향이 일치한다.
+
+다만 단일 관측(1개 프로젝트, 2016년, 외피 재사용 = 저비용 사례)이므로 **교체가 아니라 범위 부여의 근거**로 쓴다: `incumbent_capex_unit`을 [47, 200] 범위의 T5로 승급하고 민감도로 결론 불변성을 확인하는 것이 다음 작업이다.
+
+## 2. 기술 CAPEX ↔ 문헌 범위
+
+| 우리 기술 | 우리 값 | 문헌 비교 대상 | 문헌 범위 | 판정 | 출처 |
+|---|---|---|---|---|---|
+| `steel_h2dri` | 863 | DRP+EAF (전해조 제외) | 858 ~ 1,089 | **범위 안** | DIW_DP2082 |
+| `steel_hyrex` | 863 | DRP+EAF (전해조 제외) | 858 ~ 1,089 | **범위 안** | DIW_DP2082 |
+| `steel_eaf` | 240 | EAF (문헌~발표 범위) | 368 ~ 677 | **범위 밖 — 하단 아래 ×0.65** | DIW_DP2082 |
+
+*단위: 천원/t 능력. 문헌 원값은 €2022/2011이며 위 환율로 환산했다.*
+
+**참조 앵커 원값**
+
+| 항목 | €/t | 천원/t | 출처 | 비고 |
+|---|---|---|---|---|
+| EAF 문헌 중앙값 | 254 | 368 | DIW_DP2082 | €2022, 그린필드 |
+| EAF 발표 프로젝트 | 467 | 677 | DIW_DP2082 | €2022 |
+| POSCO 광양 EAF (DIW 수록) | 170 | 247 | DIW_DP2082 | €2023, 기존 부지·인프라 재활용 추정 |
+| DRP+EAF 문헌 (전해조 제외) | 592 | 858 | DIW_DP2082 | €2022 |
+| DRP+EAF 발표 프로젝트 | 751 | 1,089 | DIW_DP2082 | €2022 |
+| H2-DRI 전체 (Vogl) | 574 | 832 | VOGL_2018 | €2011, 전해조 160 포함 — 우리 모형은 수소를 사서 쓰므로 전해조분 제외 비교 |
+
+## 3. 감축 단가 ② ↔ 문헌·정책 섀도가격
+
+우리 값 (NZ15, 지원 없음): **115 ~ 275 천원/tCO₂** = US$85 ~ 204/tCO₂.
+
+| 비교 대상 | 값 | 우리 값과의 관계 | 출처 |
+|---|---|---|---|
+| NGFS 1.5℃ 섀도 탄소가격 2030 | US$150/tCO₂ | 우리 하단(US$85)이 이보다 낮다 | BOK_FSS_CST_2025 |
+| NGFS 1.5℃ 섀도 탄소가격 2050 | US$1,700/tCO₂ | 우리 상단(US$204)이 ×8.3 낮다 | BOK_FSS_CST_2025 |
+| 철강 BAT 리트로핏 평균 | US$15/tCO₂ | 우리 전 기업이 이보다 높다 — 우리 계획은 리트로핏이 아니라 **루트 전환**을 포함하므로 대상이 다르다 | NATURE_STEELEFF_2025 |
+| 에너지효율 단독 | −US$8.5/tCO₂ (비용절감형) | 우리 `steel_eff`는 CAPEX 120천원/t·EF 2.15→1.60으로 20년 환산 시 약 US$8/tCO₂ (양수) — 문헌이 운영비 절감을 포함해 음수인 반면 우리는 CAPEX만 센 값이라 부호가 갈린다 | NATURE_STEELEFF_2025 |
+
+**판정.** 감축 단가는 2050 섀도 탄소가격보다 한 자릿수 낮고 2030 가격과 같은 자릿수다. 즉 **전환은 그것이 마주할 탄소가격보다 싸다** — 시나리오 러너의 `carbon_fast` 묶음에서 탄소 포함 P50이 크게 음수로 가는 결과와 같은 이야기다. 이것은 결론을 지지하는 방향이지 검증의 종료가 아니다: 문헌의 LCOA(수소환원 US$/tCO₂ 직접 비교)는 아직 추출하지 않았다.
+
+## 4. 아직 못 한 대조 (없는 것을 있다고 하지 않는다)
+
+- **문헌 LCOA 직접 대조**: Vogl·Agora·IEA ISTR·Material Economics·MPP의 수소환원 LCOA(US$/tCO₂) 수치를 아직 추출하지 않았다. 위 3절은 섀도 탄소가격과 리트로핏 비용만으로 자릿수를 확인한 것이다.
+- **석유화학 대조 없음**: `technology_cost_evidence`가 철강 프로젝트뿐이다. LOTTE·MCI의 CAPEX는 외부 프로젝트 대조 없이 D3 주입값에만 의존한다 — 석화 결과의 가장 약한 고리.
+- **범위 정합 미보정**: 실제 프로젝트의 `comparability` 라벨이 `partial_scope_comparator`~`broad_scope_upper_comparator`로 갈리는데 범위를 맞춘 재계산은 하지 않았다. 배수 판정까지만 유효하다.
+

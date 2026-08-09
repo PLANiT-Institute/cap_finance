@@ -61,6 +61,9 @@ BUNDLES: dict[str, tuple[str, dict]] = {
                    {"contracts": "ppa_premium_pct*2"}),
     "retire_free": ("폐쇄 상한 40% — 시장지위 방어 제약을 절반으로 풀면",
                     {"milp": "retire_max_share=0.4"}),
+    "reline_cheap": ("개수 재조달가 ×0.235 — 공시된 실제 개수(47천원/t, 고베 3고로)에 맞추면. "
+                     "좌초비용이 줄어 조기 전환의 벌점이 작아진다 (H3 §1-1)",
+                     {"incumbent_capex_scale": 0.235}),
 }
 
 
