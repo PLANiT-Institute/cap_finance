@@ -75,7 +75,24 @@ def run(cfg: C.Config) -> dict[str, pd.DataFrame]:
     price_vars = [v for v in d2b.variable.unique() if not str(v).startswith("tech_avail_")]
     for (scen, region, var), g in d2b[d2b.variable.isin(price_vars)].groupby(["scenario", "region", "variable"]):
         g = g.sort_values("year")
+        # A blank anchor cell (collector gap) used to flow straight into np.interp and
+        # poison every year up to the next anchor with NaN. E2 then rejected the whole
+        # path and silently fell back to a retired structural model — a design change
+        # undone by one empty cell, announced only as a 'note'. Drop blanks, clamp at
+        # the ends (np.interp does), and say so loudly.
+        n_anchor = len(g)
+        g = g.dropna(subset=["value"])
+        if len(g) < 2:
+            raise RuntimeError(
+                f"{scen} {region} {var}: 유효 앵커 {len(g)}개 — 경로를 만들 수 없다. "
+                f"data/raw/scenario_prices.csv 확인")
+        if len(g) < n_anchor or g.year.min() > years[0] or g.year.max() < years[-1]:
+            print(f"[e1] warning: {scen} {region} {var} — 앵커 {n_anchor}개 중 유효 {len(g)}개"
+                  f"({int(g.year.min())}–{int(g.year.max())}). 바깥 구간은 최근접 앵커로 평탄 "
+                  f"외삽했다. 추정이 아니라 데이터 공백이다 — 수집 대상.", flush=True)
         vals = np.interp(years, g.year, g.value)
+        if not np.isfinite(vals).all():
+            raise RuntimeError(f"{scen} {region} {var}: 보간 결과에 NaN — 입력 확인")
         unit = g.unit.iloc[0]
         rows += [[scen, region, var, int(y), float(v), unit] for y, v in zip(years, vals)]
     prices = pd.DataFrame(rows, columns=["scenario", "region", "variable", "year", "value", "unit"])

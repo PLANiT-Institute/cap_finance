@@ -4,8 +4,8 @@
 
 대상 4사: POSCO · Nippon Steel (철강), LOTTE Chemical · Mitsui Chemicals (석유화학).
 
-기준 문서: [`REDESIGN_SPEC.md`](REDESIGN_SPEC.md) — 데이터셋(D1–D7)·엔진(E1–E5)·지표(①–⑤) 정의.
-기존 v1(cost-gap 설계)은 `archive/cap_kj_v1/`.
+기준 문서: [`REDESIGN_SPEC.md`](REDESIGN_SPEC.md) — 데이터셋(D1–D7)·엔진(E1–E5)·지표(①–⑤) 정의. ⑥ 조달부담은 v2.2 추가.
+기존 v1(cost-gap 설계)은 `archive/cap_kj_v1/`. 형식 명세: [`METHODOLOGY.md`](METHODOLOGY.md).
 
 ## 방법 요약
 
@@ -18,20 +18,28 @@
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 
-# 합성 샘플 데이터로 전 파이프라인 검증
-.venv/bin/python scripts/make_sample_data.py
-.venv/bin/python -m cap all --data data/sample --sims 1000
+# 0) 수집본 정규화 — data/raw/*.csv -> data/prepared/D*.csv (변환 전량 PREP_LOG.md에 기록)
+.venv/bin/python scripts/prepare_raw.py
 
-# 실데이터 (data/raw/*.csv — 엑셀 템플릿에서 변환)
-.venv/bin/python -m cap e1
-.venv/bin/python -m cap e2      # 단계별 실행, 각 out/<stage>/ 확인 후 다음
-.venv/bin/python -m cap e3
-.venv/bin/python -m cap e4
-.venv/bin/python -m cap e5
-.venv/bin/python -m cap render
+# 1) 데이터 감사 — 가짜·미사용·무출처 컬럼을 먼저 잡는다 (합성 누출이면 실패 종료)
+.venv/bin/python scripts/audit_data.py
 
-.venv/bin/pytest tests/ -q      # 전체 테스트 (~4분)
+# 2) 전 파이프라인 (E1 -> render). MILP 때문에 ~10분
+.venv/bin/python -m cap all
+
+# 3) 시나리오 분석 — 가정 묶음별 재평가 (묶음당 ~10초)
+.venv/bin/python scripts/run_scenarios.py
+
+# 4) 보고서·사이트
+.venv/bin/python scripts/build_report.py && .venv/bin/python scripts/build_site.py
+
+# 검증
+.venv/bin/pytest tests/ -q                       # 합성 데이터 end-to-end (~2분)
+.venv/bin/pytest tests/test_consistency.py -q    # 실산출물 내부 일관성 (즉시)
 ```
+
+단계별로 보려면 `.venv/bin/python -m cap e1` … `e5`, `render`. 합성 데이터로만 돌리려면
+`--data data/sample`(산출물은 `out_test/`로 격리해야 한다 — `tests/`가 그렇게 한다).
 
 ## 파이프라인
 
@@ -44,10 +52,21 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 | E5 지표·경계·gap | `e5_metrics.py` | E4, D7 | `out/e5/metrics_company.csv`, frontier, gap |
 | 렌더링 | `render.py` | E5 | `out/render/` 그림·공개 지표표 |
 
+부속 도구
+
+| 도구 | 하는 일 | 산출 |
+|---|---|---|
+| `scripts/audit_data.py` | 입력 전 컬럼의 채움률·엔진 참조·출처 해소 판정 | `docs/data_audit.{csv,md}` |
+| `scripts/run_scenarios.py` | 가정 묶음(할인율·탄소·수소·전력·계약·폐쇄상한)별 재평가 | `out/scenarios/summary.csv` |
+| `scripts/sensitivity_screening.py` | 어떤 파라미터가 결론을 좌우하는지 OAT 랭킹 | `out/sensitivity/ranking.csv` |
+| `scripts/build_parameter_inventory.py` | 전 파라미터의 값·등급·출처 인벤토리 | `docs/parameter_inventory.csv` |
+| `src/cap/mcp_server.py` | 결과·증거·감사를 MCP 도구로 노출 (읽기 전용) | [`docs/mcp_server.md`](docs/mcp_server.md) |
+
 ## 데이터
 
 - 수집 템플릿: `data/CAP_data_collection_template.xlsx` (작성 지침: [`DATA_COLLECTION_GUIDE.md`](DATA_COLLECTION_GUIDE.md))
-- 완성된 시트를 `data/raw/<시트명>.csv`로 저장하면 파이프라인이 스키마 검증 후 사용
+- 완성된 시트를 `data/raw/<시트명>.csv`로 저장 → `scripts/prepare_raw.py`가 `data/prepared/D*.csv`로 정규화 (원본 raw는 절대 수정하지 않는다)
+- 파이프라인이 읽는 곳은 `data/prepared` (`config.yaml: data_dir`)
 - `data/sample/` — 합성 검증용 (전부 허구값, 실분석 사용 금지)
 
 ## 공개 범위

@@ -19,6 +19,8 @@ Outputs: out/e2/plan_index.csv, out/e2/plans/plan_<id>.csv
 from __future__ import annotations
 
 import itertools
+import shutil
+import time
 
 import numpy as np
 import pandas as pd
@@ -266,13 +268,27 @@ def _solve_company(cfg, company, scen, fac, d3, cal, prices, constraints, avail,
         m += risk_lb <= eps
     m += cost if objective == "cost" else risk_lb
 
-    m.solve(pulp.PULP_CBC_CMD(msg=0, timeLimit=cfg.milp.solver_time_limit_s))
+    # A relative MIP gap is not a shortcut here, it is the honest setting: this
+    # objective is an ORDERING surrogate (linear risk proxy, linearized contracts)
+    # and the authoritative cost of every plan is re-derived by simulation in E4.
+    # Proving the last fraction of a percent of surrogate optimality buys nothing
+    # and was costing tens of minutes per run.
+    m.solve(pulp.PULP_CBC_CMD(msg=0, timeLimit=cfg.milp.solver_time_limit_s,
+                              gapRel=float(cfg.milp.get("mip_gap_rel", 0.005)),
+                              threads=int(cfg.milp.get("solver_threads", 0)) or None))
     status = pulp.LpStatus[m.status]
     if status != "Optimal":
-        print(f"[e2] warning: {company} {scen} solve ended '{status}' "
-              f"(eps={eps}, fixed={'yes' if fixed else 'no'}) — "
-              "if 'Not Solved', raise milp.solver_time_limit_s")
-        return None
+        # A time-limited solve that found an incumbent is still a usable candidate
+        # plan — E4 re-costs it from scratch anyway. Dropping it silently shrank the
+        # frontier instead. Keep it, but carry the status into plan_index so the
+        # quality of every point is visible in the artefact.
+        has_incumbent = any(v.value() is not None for v in x.values()) if x else False
+        if not has_incumbent:
+            print(f"[e2] warning: {company} {scen} '{status}' with no incumbent "
+                  f"(eps={eps}, fixed={'yes' if fixed else 'no'}) — 계획 없음", flush=True)
+            return None
+        print(f"[e2] note: {company} {scen} '{status}' — 시간상한에서 얻은 실행가능해 사용 "
+              f"(eps={eps}). 대리목적함수이므로 정본 비용은 E4가 재산출.", flush=True)
 
     plan = [{"facility_id": fid, "tech_id": k, "adopt_year": ta,
              "op_year": ta + int(techs.set_index("tech_id").loc[k].build_years)}
@@ -283,6 +299,7 @@ def _solve_company(cfg, company, scen, fac, d3, cal, prices, constraints, avail,
     # sandwiched max(risk,0) <= risk_lb <= eps and can sit anywhere in between
     # when the objective is cost)
     return {"plan": plan, "npv_cost": pulp.value(cost), "risk": max(0.0, pulp.value(risk)),
+            "solve_status": status,
             "ppa": ppa.value(), "epc": round(epc.value() or 0), "ccfd": round(ccfd.value() or 0),
             "budget_slack": sum(s.value() or 0 for s in slack.values())}
 
@@ -327,6 +344,10 @@ def _disclosed_fixed(d7, cf, techs, years, av):
 def run(cfg: C.Config):
     ddir = C.data_dir(cfg)
     odir = C.out_dir(cfg, "e2")
+    # plan ids restart at P0001 every run, so a shorter run leaves the previous
+    # run's higher-numbered plans on disk. plan_index.csv keeps downstream stages
+    # honest, but the stale files still look like current output — clear them.
+    shutil.rmtree(odir / "plans", ignore_errors=True)
     (odir / "plans").mkdir(exist_ok=True)
     fac, d3, cal = _prep_company(cfg, ddir)
     d7 = load_input(ddir, "D7_disclosed_plan")
@@ -336,7 +357,13 @@ def run(cfg: C.Config):
     years = np.arange(cfg.years.start, cfg.years.end + 1)
 
     index_rows, pid = [], 0
-    for company, scen in itertools.product(sorted(fac.company_id.unique()), cfg.scenarios):
+    combos = list(itertools.product(sorted(fac.company_id.unique()), cfg.scenarios))
+    # each combo is ~14 CBC solves and the stage runs for tens of minutes; without
+    # a heartbeat there is no way to tell a slow solve from a hung one
+    for n, (company, scen) in enumerate(combos, 1):
+        t_co = time.time()
+        print(f"[e2] {n}/{len(combos)} {company} {scen} — 경계 추적 "
+              f"{cfg.milp.frontier_points}점 ...", flush=True)
         args = (cfg, company, scen, fac, d3, cal, prices, constraints, avail)
         lo = _solve_company(*args, objective="risk")
         hi = _solve_company(*args, objective="cost")
@@ -385,11 +412,13 @@ def run(cfg: C.Config):
             ).to_csv(odir / "plans" / f"plan_{plan_id}.csv", index=False)
             index_rows.append([plan_id, company, scen, s["npv_cost"], s["risk"],
                                s["ppa"], s["epc"], s["ccfd"], s["budget_slack"],
-                               bool(s.get("disclosed", False))])
+                               bool(s.get("disclosed", False)), s.get("solve_status", "Optimal")])
+        print(f"[e2] {n}/{len(combos)} {company} {scen} — 고유 계획 {len(sols)}개, "
+              f"{time.time() - t_co:.0f}s", flush=True)
 
     idx = pd.DataFrame(index_rows, columns=["plan_id", "company_id", "scenario", "npv_cost_bnkrw",
                                             "risk_proxy", "ppa_share", "epc", "ccfd",
-                                            "budget_slack_tco2", "is_disclosed"])
+                                            "budget_slack_tco2", "is_disclosed", "solve_status"])
     idx.to_csv(odir / "plan_index.csv", index=False)
     return idx
 

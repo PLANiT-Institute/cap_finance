@@ -17,7 +17,14 @@ simulation:
 
 milp:
   frontier_points: 12        # epsilon-constraint grid size
-  solver_time_limit_s: 600
+  solver_time_limit_s: 300
+  # relative MIP gap. E2's objective is an ordering surrogate — the authoritative
+  # cost of every plan comes from the E4 simulation — so proving surrogate
+  # optimality to the last basis point costs tens of minutes and changes nothing.
+  mip_gap_rel: 0.02
+  # CBC defaults to one thread; the NSC instance (1,110 binaries) is the
+  # binding cost of a full run. 0 = solver default.
+  solver_threads: 6
   # early conversion writes off the incumbent campaign asset's remaining
   # straight-line book value (D1a incumbent_capex_unit); halfwidth = grace years
   # before a relining anchor that count as on-window

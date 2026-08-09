@@ -105,6 +105,13 @@ a{{color:var(--accent)}}
   </a>
 </div>
 <div class="cards" style="margin-top:16px">
+  <a class="card" href="/scenarios">
+    <div class="tag">cap_finance · 시나리오</div>
+    <h3>시나리오 분석</h3>
+    <p>할인율·유상할당 램프·수소가·전력가·PPA 프리미엄·폐쇄 상한을 바꿔 같은 계획 메뉴를 다시 평가.
+    값의 이동폭이 아니라 <b>지목되는 기업이 바뀌는가</b>로 결론의 강건성을 판정한다.</p>
+    <div class="meta">{scen_meta}</div>
+  </a>
   <a class="card" href="/evidence" style="border-style:dashed">
     <div class="tag" style="color:var(--ink2)">방법론 부속서</div>
     <h3>증거 등급과 민감도 진단</h3>
@@ -114,6 +121,7 @@ a{{color:var(--accent)}}
   </a>
 </div>
 <p class="lede" style="margin-top:14px;font-size:13.5px">
+  <a href="/memo">→ 이사회 1페이지 메모 (A4 인쇄용)</a> ·
   <a href="/dashboard_en">→ Decision dashboard (English)</a></p>
 <div style="display:none">
 </div>
@@ -146,7 +154,7 @@ cd cap_finance &amp;&amp; python3 -m venv .venv &amp;&amp; .venv/bin/pip install
 직결되므로 비공개 원칙(설계서 §8-2)을 따르며, 공개 배포본에서는 기업 집계만 인용할 것.</div>
 
 <div class="footer">PLANiT Institute · 데이터 컷오프 2026-08-07 ·
-<a href="https://github.com/PLANiT-Institute/cap_finance">cap_finance</a> ·
+<a href="https://github.com/PLANiT-Institute/cap_finance/blob/main/METHODOLOGY.md">형식 명세</a> · <a href="https://github.com/PLANiT-Institute/cap_finance/blob/main/docs/data_audit.md">데이터 감사</a> · <a href="https://github.com/PLANiT-Institute/cap_finance">cap_finance</a> ·
 <a href="https://github.com/PLANiT-Institute/cap-efficient">cap-efficient</a></div>
 </div>
 """
@@ -161,11 +169,23 @@ def main():
     rep = build_report()
     dash = copy_dashboards(pathlib.Path(a.eff))
     subprocess.run([sys.executable, str(ROOT / "scripts/build_evidence_page.py")], check=True)
+    # 시나리오 페이지는 run_scenarios.py 산출이 있어야 만들어진다 — 없으면 건너뛴다
+    subprocess.run([sys.executable, str(ROOT / "scripts/build_board_memo.py")], check=True)
+    scen = subprocess.run([sys.executable, str(ROOT / "scripts/build_scenario_page.py")],
+                          capture_output=True, text=True)
+    n_bundles = 0
+    if scen.returncode == 0:
+        import csv as _csv
+        with (ROOT / "out/scenarios/summary.csv").open(encoding="utf-8") as f:
+            n_bundles = len({r["bundle"] for r in _csv.DictReader(f)})
+    else:
+        print(f"[site] 시나리오 페이지 생략: {scen.stderr.strip().splitlines()[-1:]}")
     today = dt.date.today().isoformat()
     (WEB / "index.html").write_text(DOCTYPE + LANDING.format(
         report_meta=f"갱신 {today} · {rep.stat().st_size // 1024} KB",
         dash_meta=f"갱신 {today} · {len(dash)}개 언어" if dash else "대시보드 미생성",
         ev_meta=f"갱신 {today} · 파라미터 415건 · OAT 25종",
+        scen_meta=(f"갱신 {today} · 묶음 {n_bundles}종" if n_bundles else "미생성 — run_scenarios.py 실행 필요"),
     ) + "</body></html>")
     print(f"[site] web/ 준비 완료: index.html, report.html, {', '.join(dash) or '(대시보드 없음)'}")
 

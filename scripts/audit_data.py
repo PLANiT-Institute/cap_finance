@@ -75,9 +75,12 @@ def audit() -> tuple[pd.DataFrame, list[str]]:
             notes.append(f"SYNTHETIC LEAK: {name} is byte-identical to data/sample — fake input")
 
         for col in df.columns:
+            # pandas 3 keeps NA as NA through astype(str) — comparing against the
+            # literal "nan" silently counted every blank cell as filled
             v = df[col].astype(str).str.strip()
-            filled = int(((v != "") & (v != "nan")).sum())
-            distinct = int(v[(v != "") & (v != "nan")].nunique())
+            ok_cell = df[col].notna() & (v != "") & (v.str.lower() != "nan")
+            filled = int(ok_cell.sum())
+            distinct = int(v[ok_cell].nunique())
             # word-boundary match so 'capacity' does not match 'capacity_unit'
             used = bool(re.search(rf'["\'\[]{re.escape(col)}["\'\]]', code)) or bool(
                 re.search(rf"\.{re.escape(col)}\b", code)
@@ -90,6 +93,11 @@ def audit() -> tuple[pd.DataFrame, list[str]]:
                 verdict = "UNUSED"
             elif distinct == 1 and col not in ("unit", "capacity_unit", "region"):
                 verdict = "CONSTANT"
+            elif filled < len(df):
+                # a single blank anchor in D2b's `value` poisoned an entire
+                # interpolated price path and sent E2 back to a retired model.
+                # Partial fill is a data gap, not a rounding detail.
+                verdict = "PARTIAL"
             else:
                 verdict = "ok"
 
@@ -142,11 +150,12 @@ def main() -> int:
         f"| ok | {tally.get('ok', 0)} | 채워져 있고 엔진이 참조 |",
         f"| CONSTANT | {tally.get('CONSTANT', 0)} | 전 행 동일값 — 변수 아님(자리표시자 의심) |",
         f"| UNUSED | {tally.get('UNUSED', 0)} | 수집했으나 엔진이 안 읽음 |",
+        f"| PARTIAL | {tally.get('PARTIAL', 0)} | 일부 행이 빈칸 — 보간·집계에서 조용히 번진다 |",
         f"| EMPTY | {tally.get('EMPTY', 0)} | 스키마 필수인데 전부 빈칸 |",
         f"| EMPTY-extra | {tally.get('EMPTY-extra', 0)} | 스키마 외 빈 컬럼 |",
         "",
     ]
-    for v in ("EMPTY", "UNUSED", "CONSTANT"):
+    for v in ("EMPTY", "PARTIAL", "UNUSED", "CONSTANT"):
         sub = df[df.verdict == v]
         if len(sub):
             lines += [f"## {v}", "", "| 파일 | 컬럼 | 채움% |", "|---|---|---|"]

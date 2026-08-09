@@ -8,25 +8,51 @@ summary.csv (they differ by the slack penalty and contract linearization — spe
 
 from __future__ import annotations
 
+import pathlib
 from dataclasses import dataclass
+from functools import lru_cache
 
 import numpy as np
 import pandas as pd
+
+from . import config as C
+from .schemas import load_input
 
 SCALE = 1e-6  # KRW thousands -> billions
 GJ_PER_T_COAL = 28.0
 GJ_PER_T_GAS = 54.0
 
 
+@lru_cache(maxsize=8)
+def _d5_auction_windows(ddir: str) -> tuple:
+    """(from, to, share) windows for 발전외 유상할당 from D5 — the allocation rule
+    our four companies actually face. Cached: called once per simulated path."""
+    try:
+        d5 = load_input(pathlib.Path(ddir), "D5_policy_support")
+    except Exception:  # optional refinement — the config ramp stands on its own
+        return ()
+    g = d5[d5.instrument == "auction_share"]
+    return tuple((float(r.valid_from), float(r.valid_to), float(r.value) / 100.0)
+                 for r in g.itertuples() if pd.notna(r.value))
+
+
 def auction_share(years: np.ndarray, cfg) -> np.ndarray:
-    """Share of emissions actually facing the carbon price (유상할당), interpolated
-    from cfg.carbon_auction_share. Free allocation is why an emitting plant stays
-    solvent at a carbon price many times its product margin; charging 100% makes
-    'close everything' the optimum. Emissions still count fully toward the budget."""
+    """Share of emissions actually facing the carbon price (유상할당). Free
+    allocation is why an emitting plant stays solvent at a carbon price many times
+    its product margin; charging 100% makes 'close everything' the optimum.
+    Emissions still count fully toward the budget.
+
+    Confirmed allocation windows come from D5 (K-ETS 4기 발전외 15%, 2026–2030);
+    cfg.carbon_auction_share is the ESTIMATE ramp that covers the years no
+    allocation plan has been published for. Data wins wherever data exists."""
     tbl = cfg.get("carbon_auction_share") or {2025: 1.0}
     ky = np.array(sorted(int(k) for k in tbl))
     kv = np.array([float(tbl[int(k)]) for k in ky])
-    return np.interp(np.asarray(years, dtype=float), ky, kv)
+    yrs = np.asarray(years, dtype=float)
+    out = np.interp(yrs, ky, kv)
+    for lo, hi, v in _d5_auction_windows(str(C.data_dir(cfg))):
+        out[(yrs >= lo) & (yrs <= hi)] = v
+    return out
 
 
 def stranded_cost_k(fr, ta: int, cfg) -> float:

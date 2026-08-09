@@ -27,17 +27,18 @@ data/raw/**
 data/interim/**
 !data/interim/.gitkeep
 
-# Generated analytical outputs
-outputs/tables/**
-outputs/figures/**
-outputs/diagnostics/**
-!outputs/**/.gitkeep
-
 # CAP v2 pipeline outputs — regenerable; facility layer is CONFIDENTIAL (설계서 §8-2)
 out/**
 out/render/facility_confidential/**
+# ...except the sensitivity screening, which the site build needs and which costs
+# 7 minutes to regenerate. One output root (out/) — v1 artefacts live in archive/.
+!out/sensitivity/
+!out/sensitivity/*.csv
 tmp/
 
 
 # test artefacts
 out_test/
+
+# archived v1 generated artefacts — kept on disk, out of the repo
+archive/cap_kj_v1/outputs_generated/

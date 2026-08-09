@@ -9,7 +9,7 @@ Perturbations are ±30% by default, or the [low, high] range recorded in the
 parameter inventory where one exists.
 
     .venv/bin/python scripts/sensitivity_screening.py [--sims 4000]
-Writes outputs/sensitivity_screening.csv + prints the top-10 ranking with tiers.
+Writes out/sensitivity/screening.csv + prints the top-10 ranking with tiers.
 """
 
 from __future__ import annotations
@@ -145,7 +145,7 @@ def main():
             (f"fac.margin×{tag}", "T4", dict(fac=("margin_kthou_t", f))),
             # model choices
             (f"cfg.discount×{tag}", "T5", dict(cfg=("discount_rate", f))),
-            (f"cfg.auction_share×{tag}", "T1/T5", dict(auction=f)),
+            (f"cfg.auction_ramp_post2030×{tag}", "T5", dict(auction=f)),
             (f"cfg.ppa_premium×{tag}", "T5", dict(cfg2=("contracts", "ppa_premium_pct", f))),
             (f"cfg.epc_premium×{tag}", "T5", dict(cfg2=("contracts", "epc_premium_pct", f))),
             # stochastic calibration
@@ -173,8 +173,12 @@ def main():
             c2 = C.Config({**cfg, grp: {**cfg[grp], k: cfg[grp][k] * f}})
         if "auction" in spec:
             f = spec["auction"]
+            # 2026–2030 is a confirmed allocation plan (D5, T1) and auction_share()
+            # overrides it from data regardless of config — perturbing it would be
+            # perturbing settled policy. Only the post-2030 ESTIMATE ramp is varied.
             c2 = C.Config({**cfg, "carbon_auction_share":
-                           {y: min(1.0, v * f) for y, v in cfg["carbon_auction_share"].items()}})
+                           {y: (v if int(y) <= 2030 else min(1.0, v * f))
+                            for y, v in cfg["carbon_auction_share"].items()}})
         if "vol" in spec:
             fkey, f = spec["vol"]
             sh2 = {k: (np.exp(np.log(v) * f) if k == fkey or (fkey == "h2" and k == "h2") else v)

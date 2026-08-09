@@ -24,5 +24,5 @@
 - D3 applies_to_unit 정규화: 석화→NCC, 철강 BF→수소환원+부분감축 리트로핏(수소취입·스크랩·HBI·효율), FINEX→HyREX(2035). steel_eaf는 신설 경로라 제거. 2차 수집 수단 반영: 감축률 기준으로 당사 시설 EF에 재스케일, 부분 적용 상한(스크랩 15%p·HBI 30%·바이오 10%·열펌프 15%·수소취입 20%·하이브리드 40%)은 EF에 blended
 - D3 retrofit 구분: steel_ccus, steel_eff, steel_h2inj, steel_scrap, steel_hbi, petchem_h2fuel, petchem_ccus, petchem_eff, petchem_bio, petchem_ecracker_hybrid, petchem_hp_whr — 기존 공정 에너지 유지 + 기술 원단위 가산 (하이브리드 전기로의 연료 40% 감축분은 미반영 = 보수적). 대체형(H2DRI·HyREX·e-cracker 완전)만 공정 에너지 교체
 - D4 electrolyzer_capex USD→KRW x1350. 관측 2개(2022 상승 구간)뿐 → 감소율은 캘리브레이션 사전값(연 5%) 사용, 앵커는 최종 관측값
-- D5: 수집된 수단은 K-ETS 유상할당·GX-ETS 프라이스칼라 — CAPEX 보조·CCfD 아님 → 엔진 미적용(instrument=other). 결과 해석: 확정된 직접 지원 부재로 net=gross (그 자체가 발견)
+- D5: 수집된 수단은 K-ETS 유상할당·GX-ETS 프라이스칼라 — CAPEX 보조·CCfD 아님 → subsidy/ccfd 경로에는 미적용(확정된 직접 지원 부재 = net=gross, 그 자체가 발견). 다만 유상할당 비율은 탄소비용의 직접 입력이므로 instrument를 auction_share(발전외=철강·석화) / auction_share_power(발전부문) / price_cap / price_floor로 분류해 엔진이 발전외 행만 읽게 한다 (plancost.auction_share)
 - D7: EAF 신설 커밋(NSC_YAW_EAF1·NSC_HIR_EAF2·POSCO_GWY_EAF1)은 기존 시설의 '전환'이 아니라 신설 경로 — BF→EAF 전환 불허 규칙에 따라 모형 커밋으로 미해석(경고로 드롭). NSC 공시 좌표는 KIM_BF2 수소환원 실증 커밋으로 측정

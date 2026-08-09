@@ -103,6 +103,11 @@ for company, grp in d1a.groupby("company_id"):
     tot = fp[fp.facility_id == {"POSCO": "POSCO_TOTAL", "NSC": "NSC_TOTAL",
                                 "LOTTE": "LOTTE_TOTAL", "MCI": "MITSUI_TOTAL"}[company]]
     tot = tot[tot.year.isin(years)]
+    # Scope 2 배분 가중치 = 시설 전력 소비 (구매전력 배출이므로 인과적으로 맞는 축).
+    # 이전 판은 회사가 보고한 Scope 2를 전부 0으로 덮어썼다 — 원자료 36/37행에 값이
+    # 있고 NSC는 11.9 MtCO₂(Scope 1의 19%)다. 수집한 것을 버리지 않는다.
+    w_elec = grp.apply(lambda r: r.capacity * ROUTE[r.unit_type][1], axis=1)
+
     if company in ("POSCO", "NSC"):
         # steel: 회사 합계(생산·배출 실측)를 능력 x 루트가중으로 시설 배분
         w_ef = grp.apply(lambda r: r.capacity * ROUTE[r.unit_type][0], axis=1)
@@ -111,26 +116,39 @@ for company, grp in d1a.groupby("company_id"):
             t = tot[tot.year == y]
             prod_t = float(t.production.iloc[0]) if len(t) and pd.notna(t.production.iloc[0]) else np.nan
             s1_t = float(t.emissions_s1.iloc[0]) if len(t) else np.nan
+            s2_t = float(t.emissions_s2.iloc[0]) if len(t) and pd.notna(t.emissions_s2.iloc[0]) else 0.0
             for fid, r in grp.set_index("facility_id").iterrows():
                 prod = prod_t * r.capacity / w_cap.sum()
                 s1 = s1_t * (r.capacity * ROUTE[r.unit_type][0]) / w_ef.sum()
+                s2 = s2_t * (r.capacity * ROUTE[r.unit_type][1]) / w_elec.sum()
                 ef = ROUTE[r.unit_type]
-                rows.append([fid, y, prod, s1, 0.0, prod * ef[2], prod * ef[3], prod * ef[1], "", "PREP_ALLOC"])
+                rows.append([fid, y, prod, s1, s2, prod * ef[2], prod * ef[3], prod * ef[1], "", "PREP_ALLOC"])
+        s2_last = tot[tot.year == max(years)].emissions_s2
         log(f"{company}: 회사 실측 합계(생산·Scope1)를 능력x루트EF 가중으로 {len(grp)}기 배분 "
-            f"(연도 {years})")
+            f"(연도 {years}). Scope2는 전력 소비 가중 배분 "
+            f"({float(s2_last.iloc[0]) / 1e6:.2f} MtCO₂ @{max(years)})")
     else:
         # petchem: 회사 합계에 비NCC 설비 다수 포함 → 상향식(능력 x 가동률 0.9 x 루트EF)
         util = 0.9
+        cov_s1 = sum(r.capacity * util * ROUTE[r.unit_type][0] for _, r in grp.iterrows())
+        t24 = tot[tot.year == tot.year.max()]
+        # Scope1이 상향식이므로 Scope2도 같은 경계로 맞춘다: 회사 보고 Scope2에
+        # Scope1 커버리지를 곱한 뒤 전력 소비로 배분. 회사 전력 소비 공시가 없어
+        # 직접 배출강도를 쓸 수 없다 — 커버리지 정합이 차선의 정직한 선택.
+        cover = (cov_s1 / float(t24.emissions_s1.iloc[0])) if len(t24) else 1.0
         for y in years:
+            t = tot[tot.year == y]
+            s2_t = float(t.emissions_s2.iloc[0]) if len(t) and pd.notna(t.emissions_s2.iloc[0]) else 0.0
             for fid, r in grp.set_index("facility_id").iterrows():
                 prod = r.capacity * util
                 ef = ROUTE[r.unit_type]
-                rows.append([fid, y, prod, prod * ef[0], 0.0, prod * ef[2], prod * ef[3], prod * ef[1], "", "PREP_BOTTOMUP"])
-        cov = sum(r.capacity * 0.9 * ROUTE[r.unit_type][0] for _, r in grp.iterrows())
-        t24 = tot[tot.year == tot.year.max()]
+                s2 = s2_t * cover * (r.capacity * ef[1]) / w_elec.sum()
+                rows.append([fid, y, prod, prod * ef[0], s2, prod * ef[2], prod * ef[3],
+                             prod * ef[1], "", "PREP_BOTTOMUP"])
         if len(t24):
             log(f"{company}: 상향식 추정 (능력x0.9xEF). 회사 보고 Scope1 대비 커버리지 "
-                f"{cov / float(t24.emissions_s1.iloc[0]):.0%} — 비분해로 설비는 모형 밖")
+                f"{cover:.0%} — 비분해로 설비는 모형 밖. Scope2는 같은 커버리지로 축소 후 "
+                f"전력 가중 배분")
 d1b = pd.DataFrame(rows, columns=["facility_id", "year", "production", "emissions_s1", "emissions_s2",
                                   "energy_coal", "energy_gas", "energy_elec", "energy_naphtha", "source_id"])
 
@@ -261,11 +279,32 @@ d4.to_csv(OUT / "D4_price_history.csv", index=False)
 # ---------------------------------------------------------------- D5 policy
 ps = read("policy_support")
 ps2 = ps.rename(columns=str)
-ps2["instrument"] = "other"   # K-ETS 유상할당·GX-ETS 칼라 — 엔진 수단(subsidy/ccfd) 아님
+
+
+
+def _instrument(r) -> str:
+    """Machine key for the collected instrument. Flattening every row to 'other'
+    (previous behaviour) destroyed the one distinction that matters: K-ETS 4기의
+    유상할당 비율은 발전부문 50%와 발전외(철강·석화) 15%로 갈리고, 우리 4사는
+    전부 발전외다. 그 구분을 잃으면 배출권 비용이 3배 이상 어긋난다."""
+    label, kind = str(r.instrument), str(r.param_type)
+    if "유상할당" in kind:
+        return "auction_share_power" if "발전부문" in label else "auction_share"
+    if "상한" in kind:
+        return "price_cap"
+    if "하한" in kind:
+        return "price_floor"
+    return "other"
+
+
+ps2["instrument"] = [_instrument(r) for r in ps2.itertuples()]
 d5 = ps2[["support_scenario", "instrument", "tech_id", "param_type", "value", "unit",
           "valid_from", "valid_to", "source_id"]]
-log("D5: 수집된 수단은 K-ETS 유상할당·GX-ETS 프라이스칼라 — CAPEX 보조·CCfD 아님 → 엔진 미적용(instrument=other). "
-    "결과 해석: 확정된 직접 지원 부재로 net=gross (그 자체가 발견)")
+log("D5: 수집된 수단은 K-ETS 유상할당·GX-ETS 프라이스칼라 — CAPEX 보조·CCfD 아님 → "
+    "subsidy/ccfd 경로에는 미적용(확정된 직접 지원 부재 = net=gross, 그 자체가 발견). "
+    "다만 유상할당 비율은 탄소비용의 직접 입력이므로 instrument를 "
+    "auction_share(발전외=철강·석화) / auction_share_power(발전부문) / price_cap / price_floor로 "
+    "분류해 엔진이 발전외 행만 읽게 한다 (plancost.auction_share)")
 
 # ---------------------------------------------------------------- D6 financials
 d6 = read("company_financials")

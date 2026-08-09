@@ -1,0 +1,260 @@
+# METHODOLOGY — CAP v2 형식 명세
+
+이 문서는 모형을 **수식으로** 기술한다. 서술과 코드가 어긋나면 코드가 정본이고 이 문서가
+결함이다. 모든 가정에 `A-xx` 식별자를 붙였고, 각 가정은 근거·영향·검증 위치를 갖는다.
+
+정본 코드: `src/cap/` (E1 `e1_constraints.py`, E2 `e2_milp.py`, E3 `e3_prices.py`,
+E4 `e4_revalue.py`, E5 `e5_metrics.py`, 공용 원가 `plancost.py`).
+설계 서사: [`REDESIGN_SPEC.md`](REDESIGN_SPEC.md). 데이터 정의: [`DATA_COLLECTION_GUIDE.md`](DATA_COLLECTION_GUIDE.md).
+
+---
+
+## 0. 연구질문과 반증 가능한 주장
+
+**질문.** 한·일 철강·석유화학 기업이 선택할 수 있는 전환 계획 전체를 놓고 볼 때,
+(a) 기대 전환비용과 꼬리위험의 효율 경계는 어디에 있고, (b) 공시된 계획은 그 경계에서
+얼마나 떨어져 있으며, (c) 그 거리는 **자본 부족인가 위험관리 실패인가**?
+
+**반증 가능한 주장** — 각각 어긋나면 결론이 틀린 것이다.
+- **P1.** 기대값에서 싼 계획은 꼬리에서 비싸다 (경계가 우하향하지 않고 한 점으로 붕괴하면 P1 기각).
+- **P2.** 계약 수단(재생 PPA·고정가 EPC·CCfD)은 기대비용을 올리고 꼬리위험을 내린다.
+  계약을 늘려도 TCaR이 줄지 않으면 P2 기각.
+- **P3.** 지출 부족은 그 자체로 에너지 가격 리스크 포지션이다 — 즉 공시 계획의 `gap_risk > 0`.
+- **P4.** 감축 단가 순위와 조달 부담 순위는 일치하지 않는다 (⑥ 도입 근거).
+
+---
+
+## 1. 집합과 지표
+
+| 기호 | 정의 | 원천 |
+|---|---|---|
+| $c \in C$ | 기업 (POSCO, NSC, LOTTE, MCI) | D1a |
+| $f \in F_c$ | 시설 (고로·전로·NCC 등) | D1a |
+| $k \in K_s$ | 섹터 $s$의 전환 기술 | D3 |
+| $t \in T$ | 연도, 2025…2050 | `config.years` |
+| $a \in T$ | 채택(FID) 연도 | 결정 |
+| $\sigma \in S$ | 시나리오 (NZ15, B20) | D2 |
+| $\omega$ | 몬테카를로 경로, $\lvert\Omega\rvert = N$ | E3 |
+
+---
+
+## 2. 파라미터
+
+### 2-1. 시설 (D1a·D1b)
+
+| 기호 | 의미 | 단위 | 도출 |
+|---|---|---|---|
+| $Q_f$ | 연간 생산 | t/yr | D1b 최근 3개년 평균 |
+| $\mathrm{cap}_f$ | 설비 능력 | t/yr | D1a (**A-01**) |
+| $e_f$ | 기존 배출 원단위 | tCO₂/t | $E^{s1}_f / Q_f$ (**A-02**) |
+| $\eta^{el}_f,\ \eta^{coal}_f,\ \eta^{gas}_f$ | 기존 에너지 원단위 | MWh/t, t/t, t/t | D1b ÷ $Q_f$ (**A-03**) |
+| $y^{re}_f,\ L_f$ | 다음 재투자 연도, 개수 주기 | yr | D1a |
+| $\mu_f$ | 톤당 영업마진 | 천원/t | D6 배분 (**A-04**) |
+
+### 2-2. 기술 (D3)
+
+$I_k$ 단위 CAPEX(천원/t능력), $o^{fix}_k$(천원/t능력·yr), $o^{var}_k$(천원/t),
+$\eta^{el}_k$(MWh/t), $\eta^{h2}_k$(kg/t), $\epsilon_k$(tCO₂/t), $b_k$ 공사기간(yr),
+$\ell_k$ 수명(yr), $a^{0}_k$ 최초 가용 연도.
+
+### 2-3. 가격·정책
+
+$p^{el}_t$ 계통 전력, $p^{re}_t$ 재생 PPA, $p^{h2}_t$ 수소(외부 조달, **A-05**),
+$p^{coal}_t, p^{gas}_t, p^{co2}_t$, $B_{c,t}$ 기업 탄소예산(**A-06**),
+$\alpha_t$ 유상할당 비율(**A-07**), $\delta$ 할인율.
+
+$$\text{discount}_t=(1+\delta)^{-(t-t_0)}$$
+
+---
+
+## 3. E1 — 제약 추출
+
+**탄소예산.** 섹터 경로는 **형태만** 쓰고 수준은 기업 자체 실적에 앵커한다:
+
+$$B_{c,t} \;=\; E^{base}_c \cdot \frac{\text{SectorBudget}_{s(c),\sigma,t}}{\text{SectorBudget}_{s(c),\sigma,t_0}}$$
+
+이것이 **A-06**이다. 한국(직접배출 기준)과 일본(구매전력 포함 기준)의 섹터 예산 정의가
+다르지만, 수준이 아니라 비율만 쓰므로 그 차이는 경로 형태에만 남는다. 감축량 안분은 하지
+않는다 — 누가 언제 감축할지는 E2가 정한다.
+
+**중앙 가격 경로.** 5년 앵커를 연 단위 선형 보간. 결측 앵커는 **제거 후** 보간하고 바깥
+구간은 최근접 앵커로 평탄 외삽하며, 그 사실을 경고로 남긴다. 보간 결과에 NaN이 남으면
+즉시 실패한다 (**A-08**, 회귀 시험 `test_central_price_paths_are_complete_and_finite`).
+
+---
+
+## 4. E2 — 시설 전환 MILP + ε-제약 경계 추적
+
+### 4-1. 결정변수
+
+$$x_{f,k,a}\in\{0,1\},\quad r_{f,a}\in\{0,1\},\quad \pi\in[0,1],\quad z^{epc},z^{ccfd}\in\{0,1\},\quad s_t\ge 0$$
+
+$x$ = 시설 $f$가 연도 $a$에 기술 $k$ 채택, $r$ = 폐쇄, $\pi$ = 기업 재생 PPA 비중,
+$z$ = 고정가 EPC / CCfD 체결 여부, $s_t$ = 예산 초과 슬랙.
+
+### 4-2. 제약
+
+**(C1) 시설당 1회 결정**
+$$\sum_{k,a}x_{f,k,a}+\sum_a r_{f,a}\ \le\ 1\qquad \forall f$$
+
+**(C2) 탄소예산 (소프트)**
+$$\underbrace{\sum_f\Big[e_f Q_f\big(1-\theta_{f,t}-\rho_{f,t}\big)+\sum_{k,a}\epsilon_k Q_f\,x_{f,k,a}\mathbb 1[a+b_k\le t]\Big]}_{\textstyle \mathcal E_t}\ \le\ B_{c,t}+s_t$$
+
+여기서 $\theta_{f,t}=\sum_{k,a}x_{f,k,a}\mathbb 1[a+b_k\le t]$ (전환 가동 지시자),
+$\rho_{f,t}=\sum_{a\le t}r_{f,a}$ (폐쇄 지시자).
+
+**(C3) 폐쇄 상한** — 수요·시장지위 프록시 (**A-09**)
+$$\sum_{f,a\le t}Q_f\,r_{f,a}\ \le\ \bar\rho\sum_f Q_f,\qquad \bar\rho=0.2$$
+
+**(C4) 기술 가용성** $x_{f,k,a}=0$ if $a<\max(a^0_k,\,a^{0,\sigma,\text{region}}_k)$ 또는 $a+b_k>t_{\max}$,
+그리고 $k$가 $f$의 설비 유형에 적용 가능할 때만 변수를 생성한다 (**A-10**).
+
+**(C5) ε-제약** $\;\mathcal R\le\varepsilon$ (경계 추적용).
+
+### 4-3. 목적함수 (대리)
+
+$$\min\ \mathcal C=\sum_t \text{discount}_t\Big[\underbrace{V_t}_{\text{운영·에너지}}+\underbrace{X_t}_{\text{CAPEX+좌초}}+\underbrace{\alpha_t p^{co2}_t\mathcal E_t}_{\text{탄소}}+\underbrace{v_t s_t}_{\text{위반}}\Big]+\mathcal M-\mathcal S+\mathcal P$$
+
+- $v_t=\max(2\alpha_t p^{co2}_t,\ \underline v)$, $\underline v=300$천원/tCO₂ (**A-11**) — 바닥이 없으면
+  최적해가 심전환 대신 위반 구매를 택한다(1차 실행에서 실증).
+- $\mathcal M$ = 폐쇄의 마진 상실 + 장부가 상각. 마진이 영업이익 기준이라 모형 자신의
+  에너지비 절감을 되돌려 더한다 — 아니면 폐쇄가 이중으로 보상된다 (**A-12**).
+- $\mathcal S$ = 지평 말 잔존가치, $\mathcal P$ = 계약 프리미엄 (PPA·EPC·CCfD).
+- **좌초비용** = 개수 캠페인 자산의 정액상각 잔존 장부가. 캠페인 앵커는
+  $y^{re}_f+jL_f$이고, 앵커 ±1년(유예폭) 채택은 상각 잔액이 0이다 (**A-13**).
+
+> **이 목적함수는 순서를 정하는 대리다.** 위험 항이 선형 근사이고 계약이 선형화돼 있다.
+> 각 계획의 **정본 비용과 TCaR은 E4 시뮬레이션이 다시 낸다**. 그래서 상대 MIP 갭 2%는
+> 근사가 아니라 정합적 설정이다 (**A-14**). 시간상한에서 얻은 실행가능해도 후보로
+> 채택하며 품질은 `plan_index.csv`의 `solve_status`에 남는다.
+
+### 4-4. 선형 위험 대리
+
+$$\mathcal R=\sum_t\text{discount}_t\big[\nu^{el}\Lambda^{el}_t+\nu^{h2}\Lambda^{h2}_t+\nu^{cx}X_t+\nu^{pol}\alpha_t p^{co2}_t\mathcal E_t\big]\;-\;\nu^{el}\bar\Lambda\pi-0.8\nu^{cx}\bar X z^{epc}-\nu^{pol}\bar\Pi z^{ccfd}$$
+
+$\Lambda$ = 미헤지 시장 노출액, $\nu$ = 연율 변동성(E3 캘리브레이션).
+노출액에 $(1-\pi)$를 곱하면 $x$와 쌍선형이 되므로, 헤지는 **계획 무관 중앙값 기준의 선형
+공제**로 들어간다 — 보수적 상한 처리다 (**A-15**).
+
+### 4-5. 경계 추적
+
+$\varepsilon$을 $[\mathcal R^{\min},\mathcal R^{\max}]$의 균등 격자(12점)로 훑고,
+(시설·기술·연도) 조합이 같은 해는 중복 제거한다. 공시 계획은 D7의 강제 가능한 커밋을
+$x$에 고정해 별도로 푼다. 강제 가능한 커밋이 하나도 없으면 **공시 좌표를 산출하지 않는다** —
+비어 있는 고정은 두 번째 무제약 최적화가 되어 gap을 날조하기 때문이다 (**A-16**, 설계서 §8-4).
+
+---
+
+## 5. E3 — 확률 가격
+
+기하 브라운 운동, 요인 $\{el, h2, cx\}$:
+
+$$\ln p^{j}_{t+1}=\ln p^{j}_t+\Big(\hat g^{j}_t-\tfrac12(\nu^j)^2\Big)+\nu^j\,\xi^j_{t},\qquad \xi\sim\mathcal N(0,\Sigma)$$
+
+$\hat g$는 중앙 경로가 함의하는 성장률, $\nu$는 D4 이력에서 추정. **관측이 6개 미만인
+요인은 사전값을 쓰고 그 사실을 매 실행 경고한다** (현재 $h2$ 0.25, $cx$ 0.06, 상관 = 항등
+— **A-17**, TCaR 절대값이 여기에 직결되므로 최우선 데이터 보강 대상).
+
+---
+
+## 6. E4 — 경로별 재평가 (정본 비용)
+
+각 계획 $P$와 경로 $\omega$에 대해 `plancost.build_profile`이 만든 수량 프로파일에
+경로 가격을 곱해 NPV를 낸다. 계약은 여기서 **비선형 그대로** 적용된다.
+
+$$\mathcal C^{res}(P,\omega)=\sum_t \text{discount}_t\Big[(1-\pi)p^{el}_t(\omega)\Lambda^{grid}_t+\pi\,p^{re,\pi}_t\Lambda^{re}_t+p^{h2}_t(\omega)H_t+\hat I_t(\omega,z^{epc})+O_t\Big]$$
+
+- **CAPEX는 공사기간 $b_k$에 균등 분산**된다 (**A-18**). 채택연도 일시 계상은 피크 자금
+  소요를 최대 $b_k$배 과대평가했다.
+- 좌초 상각은 회계 사건이므로 채택연도 일시 계상이며 시장 CAPEX 충격을 받지 않는다.
+- $z^{epc}=1$이면 CAPEX가 중앙값 × (1+프리미엄)으로 **고정**된다(충격 미적용).
+
+**지표 ②는 자원비용 기준**이다. 총비용에서 탄소지출 델타를 뺀다:
+
+$$\text{P50} = \operatorname{med}_\omega\big[\mathcal C^{tot}(P,\omega)-\mathcal C^{tot}(P_0,\omega)\big]-\Delta^{carbon}(P)$$
+
+탄소 회피가 지배하면 "전환은 공짜"가 되어 자본배분 질문 자체가 사라지기 때문이다
+(**A-19**, 설계서 §4). TCaR은 이 처리에 영향받지 않는다.
+
+---
+
+## 7. E5 — 지표
+
+| 지표 | 정의 | 산출 |
+|---|---|---|
+| ① 자본 규모·시점 | $\sum_t X_t$, $\arg\max_t X_t$ | `metrics_company.csv` |
+| ② 기대 전환비용 | $\text{P50}$, 및 $\text{P50}\big/\sum_t \text{discount}_t\Delta\mathcal E_t$ | 〃 |
+| ③ TCaR | $\text{P90}-\text{P50}$ | 〃 |
+| ④ 정책 노출 | $\text{P50}^{NZ15}-\text{P50}^{B20}$ | 〃 |
+| ⑤ 유연성 가치 | 경로별 재최적화 가치의 하한 | 〃 |
+| ⑥ 조달 부담 | $X^{peak}/\overline{\text{EBITDA}}_{3y}$, $\sum X/\overline{\text{EBITDA}}$, 사후 순차입배수 | `affordability.csv` |
+
+**효율 경계** = $(\text{P50},\text{TCaR})$ 평면의 파레토 비지배 집합.
+**frontier gap** = 공시 계획 좌표에서 경계까지의 수평·수직 거리
+($\text{gap}_{cost}$: 같은 위험에서 더 쓸 수 있었던 비용, $\text{gap}_{risk}$: 같은 비용에서
+더 줄일 수 있었던 꼬리위험).
+
+**⑥의 기준이익**은 최근 3개 회계연도 EBITDA 평균이다 (**A-20**) — 석유화학이 저점 구간이라
+단년으로 재면 결론이 뒤집힌다. 기준이익이 0 이하인 기업은 **비율을 산출하지 않고 그
+사실을 판정으로 보고**한다. 사후 순차입배수는 **전액 차입 가정의 상한**이며 조달 구성
+예측이 아니다.
+
+---
+
+## 8. 가정 대장
+
+| ID | 가정 | 근거 | 결론 영향 | 검증 |
+|---|---|---|---|---|
+| A-01 | 능력 = 공표 능력 우선, 미공표는 내용적×913 t/m³·yr | 업계 관행 | 중 (민감도 8위) | G3 미완 |
+| A-02 | 시설 배출 = 회사 실측을 능력×루트EF 가중 배분 | 시설별 실측 미확보 | **최대** (민감도 1위, T5) | G1 미완 |
+| A-03 | 에너지 원단위 = 루트 표준값 주입 | 기업 공시 부재 | 중 | G2 미완 |
+| A-04 | 마진은 톤당 영업이익, 폐쇄 시 상실 | D6 | 중(폐쇄 결정) | — |
+| A-05 | 수소 = 외부 조달 상품 (전해조 구조식 폐기) | 설계서 §5-1 | 대 (TCaR 30~42%) | `test_hydrogen_priced_from_data_not_structural_fallback` |
+| A-06 | 기업 예산 = 자체 base × 섹터 경로 비율 | 설계서 §3 | 대 | E1 잔차 검사 |
+| A-07 | 유상할당 = 확정 할당계획(2026–30 발전외 15%) 우선, 이후 추정 램프 | KETS_P4_CONFIRM_2025 | **대** (전량 부과 시 전 설비 폐쇄가 최적해) | `test_auction_share_follows_confirmed_allocation_plan` |
+| A-08 | 결측 가격 앵커는 제거·평탄 외삽하고 경고 | — | 대 (조용한 모형 후퇴 차단) | `test_central_price_paths_are_complete_and_finite` |
+| A-09 | 폐쇄 상한 20% | 시장지위 프록시 | 대 | I2 대안 검증 대상 |
+| A-10 | BF 전환 = 수소환원만, CCUS·효율은 리트로핏, BF→EAF 전면 전환 불허 | 사용자 확정 | 대 | 설계 결정 |
+| A-11 | 예산 위반 페널티 바닥 300천원/tCO₂ | 1차 실행 실증 | 대 | — |
+| A-12 | 폐쇄 시 모형 자신의 에너지 절감을 되돌려 더함 | 이중계상 방지 | 중 | — |
+| A-13 | 좌초비용 = 캠페인 정액상각 잔존 장부가, 앵커 ±1년 유예 | 설계서 §2 | 대(투자 시점) | — |
+| A-14 | E2는 순서용 대리, 상대갭 2% | 설계서 §3 E4 | 소 | `solve_status` 기록 |
+| A-15 | 헤지는 계획 무관 중앙값 기준 선형 공제 | 쌍선형 회피 | 중 | E4가 비선형 정본 |
+| A-16 | 강제 가능한 커밋이 없으면 공시 좌표 미산출 | 설계서 §8-4 | 대(gap 날조 방지) | E2 로그 |
+| A-17 | 관측 부족 요인은 사전 변동성 (h2 0.25, capex 0.06, 상관 항등) | D4 부족 | **대** (TCaR 절대값) | G5 미완 |
+| A-18 | CAPEX는 공사기간 균등 분산 | EPC 실무 | 대(피크·⑥) | `test_capex_spreads_over_build_years` |
+| A-19 | ②는 자원비용 기준 (탄소지출 분리) | 설계서 §4 | 대 | `test_resource_cost_is_total_minus_carbon` |
+| A-20 | ⑥ 기준이익 = 최근 3년 EBITDA 평균 | 경기 평활 | 대(석화 판정) | `test_affordability_ratios_reproduce` |
+| A-21 | 배출 경계 = **Scope 1**. 보고 Scope 2는 D1b에 보존하되 미계상 | 예산이 자체 base 앵커라 수준 중립 | 중 | 구조 대안 검증 대상 |
+
+---
+
+## 9. 알려진 한계
+
+1. **A-02가 최대 약점.** 감축 단가를 86% 움직이는 파라미터가 가장 약한 증거(T5) 위에 있다.
+   시설별 실측 배출(GIR 명세서·SHK) 확보 전까지 시설 단위 절대값은 **순서 정보로만** 다뤄야 한다.
+2. **TCaR 절대값은 사전 변동성에 의존한다** (A-17). 월별 이력 확보 전까지 TCaR의 *순위*는
+   방어 가능하나 *수준*은 아니다.
+3. **석유화학 원료(나프타) 미수집** — `D1b.energy_naphtha` 0/69. 기존설비 원료가 노출이
+   과소평가된다. 마진이 영업이익 기준이라 이중계상은 없다.
+4. **공시 해상도** — 4개 기업×시나리오 중 일부는 강제 가능한 커밋이 없어 gap을 산출하지
+   않는다. 이것은 결측이 아니라 **측정 불가 판정**이다 (A-16).
+5. **계획 선택 채널의 민감도는 부분적으로만 검증됐다.** 시나리오 러너는 계획 메뉴를
+   고정하고 평가만 다시 한다. 가정이 최적 계획 자체를 바꾸는 효과는 `--replan`으로
+   따로 확인해야 한다.
+
+---
+
+## 10. 재현
+
+```bash
+.venv/bin/python scripts/prepare_raw.py     # data/raw -> data/prepared (변환 전량 PREP_LOG)
+.venv/bin/python scripts/audit_data.py      # 가짜·미사용·무출처 게이트
+.venv/bin/python -m cap all                 # E1 -> render
+.venv/bin/python scripts/run_scenarios.py   # 가정 묶음별 재평가
+.venv/bin/pytest tests/ -q                  # 합성 end-to-end
+.venv/bin/pytest tests/test_consistency.py -q   # 실산출물 내부 일관성
+```
+
+시드는 `config.yaml: seed`로 고정된다. MCP로 결과를 조회하려면
+[`docs/mcp_server.md`](docs/mcp_server.md).
