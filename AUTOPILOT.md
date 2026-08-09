@@ -66,9 +66,9 @@
 
 ### F. 신뢰도 기반 공사 (최우선 — 이후 모든 작업의 순서를 결정)
 
-- [ ] **F1. 파라미터 인벤토리**: FIN·EFF의 모든 입력 파라미터를 한 표로(`docs/parameter_inventory.csv`): id, 모형, 값, 단위, tier, 범위, source_id, vintage, 사용처(어느 방정식). 누락·무출처 항목 목록화.
+- [x] **F1. 파라미터 인벤토리**: FIN·EFF의 모든 입력 파라미터를 한 표로(`docs/parameter_inventory.csv`): id, 모형, 값, 단위, tier, 범위, source_id, vintage, 사용처(어느 방정식). 누락·무출처 항목 목록화.
   - *완료 기준*: 전 파라미터 행 존재, tier 부여율 100%, 무출처 항목이 명시적으로 `T5-norange`로 표시됨.
-- [ ] **F2. 사전 민감도 스크리닝**: 각 파라미터를 ±30%(또는 tier 범위) 흔들어 헤드라인 4지표(②·③·gap·경계 점수) 변화 측정 → `outputs/sensitivity_screening.csv` + 상위 10 랭킹.
+- [x] **F2. 사전 민감도 스크리닝**: 각 파라미터를 ±30%(또는 tier 범위) 흔들어 헤드라인 4지표(②·③·gap·경계 점수) 변화 측정 → `outputs/sensitivity_screening.csv` + 상위 10 랭킹.
   - *완료 기준*: 랭킹 표 존재, 상위 10의 현재 tier 명시, T3 미만인 것이 §5 데이터 사이클의 작업 목록이 됨.
 - [ ] **F3. 불확실성 범위 도입**: 상위 파라미터에 [low, high] 부여 → E3 시뮬레이션에 **파라미터 불확실성**을 가격 불확실성과 함께 전파(현재는 가격만).
   - *완료 기준*: TCaR이 가격변동분/파라미터분으로 분해 가능, 보고서에 반영.
@@ -85,12 +85,12 @@
 
 ### H. 검증 (학술 방어의 핵심)
 
-- [ ] **H1. 내부 일관성 테스트**: 회계 항등식(총비용 = 구성요소 합), 질량·에너지 균형(생산량×원단위 = 에너지 소비), 배출 정합(EF×생산 = 배출), 단위 왕복 변환. → `tests/test_consistency.py`.
-- [ ] **H2. 후향 검증(back-test)**: 2020–2024 실제 생산·에너지가격을 입력했을 때 모형이 실제 배출·에너지비용을 얼마나 재현하는가. 오차율 보고.
+- [x] **H1. 내부 일관성 테스트**: 회계 항등식(총비용 = 구성요소 합), 질량·에너지 균형(생산량×원단위 = 에너지 소비), 배출 정합(EF×생산 = 배출), 단위 왕복 변환. → `tests/test_consistency.py`.
+- [x] **H2. 후향 검증(back-test)**: 2020–2024 실제 생산·에너지가격을 입력했을 때 모형이 실제 배출·에너지비용을 얼마나 재현하는가. 오차율 보고.
   - *완료 기준*: `docs/validation_backtest.md`, 기업별 배출 재현 오차 ±10% 이내 목표, 벗어나면 원인 규명.
-- [ ] **H3. 외부 대조**: (a) 실제 프로젝트 비용(광양 EAF, NSC 야하타, JFE 구라시키 — EFF `technology_cost_evidence`)과 모형 CAPEX 비교, (b) 문헌 LCOA/MAC 범위(Vogl, Agora, IEA ISTR, Material Economics, MPP)와 우리 ② 비교.
+- [x] **H3. 외부 대조**: (a) 실제 프로젝트 비용(광양 EAF, NSC 야하타, JFE 구라시키 — EFF `technology_cost_evidence`)과 모형 CAPEX 비교, (b) 문헌 LCOA/MAC 범위(Vogl, Agora, IEA ISTR, Material Economics, MPP)와 우리 ② 비교.
   - *완료 기준*: `docs/validation_external.md`에 비교표 + 우리 값이 문헌 범위 안/밖 판정과 사유.
-- [ ] **H4. 두 모형 교차대조(C4 승격)**: POSCO·NSC의 배출경로·CAPEX·비용을 양 모형에서 대조, 차이를 **구조 요인별로 분해**(경계 정의, 마진 처리, 탄소 처리, 시설 해상도).
+- [x] **H4. 두 모형 교차대조(C4 승격)**: POSCO·NSC의 배출경로·CAPEX·비용을 양 모형에서 대조, 차이를 **구조 요인별로 분해**(경계 정의, 마진 처리, 탄소 처리, 시설 해상도).
   - *완료 기준*: `docs/cross_model_check.md`, 각 차이에 정량 기여도.
 
 ### I. 강건성 (심사자가 반드시 묻는 것)
@@ -102,9 +102,9 @@
 
 ### J. 형식화·공개
 
-- [ ] **J1. `METHODOLOGY.md`**: 집합·파라미터·변수·목적함수·제약 수식 기술, 각 가정에 `A-01` 형태 식별자, 근거·영향 명시. E2 대리목적함수와 E4 정본의 관계를 정면 기술.
+- [x] **J1. `METHODOLOGY.md`**: 집합·파라미터·변수·목적함수·제약 수식 기술, 각 가정에 `A-01` 형태 식별자, 근거·영향 명시. E2 대리목적함수와 E4 정본의 관계를 정면 기술.
 - [ ] **J2. 데이터 패키지**: `data/package/` 공개 CSV + 병합 데이터 사전 + 출처 등록부 공개분 + LICENSE(재배포 불가 출처 제외/구간화) + `manifest.json`(SHA256).
-- [ ] **J3. MCP 서버**: EFF `cap_efficient/mcp_server.py` stdlib JSON-RPC — `list_companies`, `get_plan_metrics`, `get_frontier`, `get_parameter(id)`(tier·출처 반환), `get_validation_summary`, `get_data_package_manifest`. 시설 단위는 기본 거부.
+- [x] **J3. MCP 서버**: EFF `cap_efficient/mcp_server.py` stdlib JSON-RPC — `list_companies`, `get_plan_metrics`, `get_frontier`, `get_parameter(id)`(tier·출처 반환), `get_validation_summary`, `get_data_package_manifest`. 시설 단위는 기본 거부.
 - [ ] **J4. 워킹 페이퍼**: `paper/working_paper.md` — 연구질문, 선행연구 대비 기여(자본배분 경계·TCaR·공시 gap), 방법, 데이터·신뢰등급, 결과, 강건성, 한계, **반증가능 주장 목록**.
 - [ ] **J5. README 재작성 양쪽**: 30초 스타트, 아키텍처, 산출물 표, 신뢰등급 요약, 인용 방법(BibTeX), 라이선스.
 - [ ] **J6. 사이트 확장**: 방법론·검증·강건성·데이터 패키지 페이지 추가, 랜딩에서 전부 도달 가능.
