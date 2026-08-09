@@ -43,6 +43,14 @@
 | param_share30_nsc | 43.9 | out/uncertainty/decomposition.csv |
 | param_share30_mci | 26.6 | out/uncertainty/decomposition.csv |
 | param_share30_lotte | 26.4 | out/uncertainty/decomposition.csv |
+| tcar_co2only_posco | 16510.3 | out/uncertainty/decomposition.csv |
+| co2_increment_posco | 2444.0 | out/uncertainty/decomposition.csv |
+| tcar_co2only_nsc | 15464.5 | out/uncertainty/decomposition.csv |
+| co2_increment_nsc | 1223.0 | out/uncertainty/decomposition.csv |
+| tcar_co2only_mci | 75.0 | out/uncertainty/decomposition.csv |
+| co2_increment_mci | -37.2 | out/uncertainty/decomposition.csv |
+| tcar_co2only_lotte | 162.7 | out/uncertainty/decomposition.csv |
+| co2_increment_lotte | -100.3 | out/uncertainty/decomposition.csv |
 
 `hedge_rate` = (최소비용 계획 → 최소위험 계획으로 옮길 때 줄어드는 TCaR) ÷ (늘어나는 P50).
 단위 없는 교환비이며 1보다 크면 "위험 1원을 1원 미만으로 산다"는 뜻이다.
@@ -85,7 +93,7 @@ M5(강건성·한계 절)가 이 표를 그대로 이어받는다.
 | **FC1** | 공시계획은 효율경계 위에 있지 않고, 그 거리는 무시할 수 없다 | NSC `gap_cost` 1,164 / `gap_risk` 4,364, MCI 713 / 969 (십억원) | 같은 예산·제약 아래 공시계획보다 P50과 TCaR이 **동시에** 낮은 계획이 존재하지 않으면(=gap≈0) 무너진다 | `src/cap/e5_metrics.py::_gap`, `out/e5/gap.csv` |
 | **FC2** | 기대값에서 싼 계획이 꼬리에서 비싸다 | NZ15·none에서 최소비용→최소위험 이동이 NSC P50 +8.7% / TCaR −45.9%, POSCO +9.3% / −35.1% | 경계가 사실상 한 점이거나(교환비 ≈ 0) 최소비용 계획이 최소위험 계획과 같으면 무너진다 | `out/e5/frontier_points.csv` |
 | **FC3** | 위험 헤지의 가격은 업종별로 다르고, 철강이 유리하다 | `hedge_rate` 철강 2.44·3.27 대 석화 0.21·0.24 | 전력집약도·계약 가능량을 통제했을 때 차이가 사라지면 업종 효과가 아니라 규모 효과다 | 미작성 — **M5에서 통제 필요** |
-| **FC4** | 우리 TCaR은 정책 위험을 **빼고** 잰 값이다 | 탄소가격이 시나리오 축(결정론)에 고정돼 있다 | 탄소가격을 확률 축으로 옮겨도 TCaR이 유의하게 커지지 않으면, 이 한계는 실무적으로 무해하다(= 우리에게 유리한 반증) | **L2(D6) 예정** |
+| **FC4** | 우리 TCaR은 정책 위험을 **빼고** 잰 값이다 | **검사 완료 (L2, D6) — 업종별로 답이 갈렸다.** 탄소가격을 확률 축(K-ETS 실측 연변동성 36.3%)으로 옮기면 TCaR 증분은 철강 +2,444 / +1,223, 석화 **−100 / −37** (십억원, 시드 3개 평균) | 철강에서는 반증되지 않았다 — 정책 축만으로도 TCaR 16,510 / 15,465로 파라미터분(11,665 / 15,578)과 같은 자릿수다. 석화에서는 **반증됐다**: 증분이 음수이므로 이 한계는 그쪽에서 실무적으로 무해하다 | `scripts/uncertainty_propagation.py` §4, `out/uncertainty/decomposition.csv` |
 | **FC5** | 두 독립 구현이 같은 수준을 본다 | FIN ② POSCO 115가 EFF 실행가능 후보 범위 26.6–155.9 안에 든다 | FIN 값이 EFF 실행가능 범위 **밖**으로 나가면 수준 자체가 의심된다 | `docs/cross_model_check.md`, `tests/test_independence.py` |
 
 ## 4. 이 골격이 드러낸 문제 — 경계가 기술 선택이 아니라 계약으로 그려진다
@@ -134,7 +142,11 @@ LOTTE는 후보 기술 일정 자체가 1개라 선택집합이 없다.
    회사 총량 재척도 뒤에는 −0.6%로 맞지만, 재척도 전 능력가중 표준값은 맞지 않는다.
 4. **석유화학 2사는 원단위 대조가 불가능하다.** 생산량 공시가 없어 0.95 tCO₂/t는 검증되지 않은
    주입값이다.
-5. **정책 위험이 빠져 있다** (FC4).
+5. **정책 위험이 헤드라인에서 빠져 있다** (FC4). L2(D6)에서 크기를 쟀다 — 철강은 정책 축
+   하나로 TCaR 16.5조·15.5조가 나오고 이는 파라미터 불확실성과 같은 자릿수다. 헤드라인 ③은
+   여전히 탄소가격 결정론 위에 있으므로 **철강 TCaR은 하한으로 읽어야 한다**. 석화는 증분이
+   음수라 이 유보가 필요 없다. 방향도 통념과 다르다 — 전환계획은 배출이 적어 탄소가격 상승 시
+   상대적으로 싸지므로, 정책 위험은 '규제 강화'가 아니라 **탄소가격 붕괴에 따른 좌초**로 들어온다.
 6. **개수 단가 200 천원/t의 외부 앵커가 [47, 269]로 5배 폭이다.** 점 추정이 아니라 폭을 전파해야
    한다 (`docs/validation_external.md` §1-1).
 7. **§4의 경계 퇴화.**

@@ -249,14 +249,18 @@ def simulate_cost(p: PlanProfile, px: dict[str, np.ndarray], shocks: dict[str, n
             amp = p.capex_unc.get(tech_id, CAPEX_UNC_REF) / CAPEX_UNC_REF
             capex_cost += eff[None, :] * (1 + (shocks["capex"] - 1) * amp)
 
-    carbon_price = px["co2"] * auction_share(years, cfg)               # 유상할당 반영, KRW/tCO2
+    carbon_price = px["co2"][None, :] * auction_share(years, cfg)[None, :]   # (1,T) 유상할당 반영, KRW/tCO2
+    # L2/FC4: 탄소가격은 기본적으로 시나리오 축(결정론)이다 — 정책 위험을 뺀 위험을 재고
+    # 있다는 뜻이다. shocks에 'co2'가 있으면 (N,T)로 확률화된다. 없으면 (1,T) 그대로라
+    # 기존 파이프라인 수치는 불변이다.
+    carbon_price = carbon_price * shocks.get("co2", 1.0)
     strike_t = support.get("ccfd_strike")                              # (T,) with inf outside window
     if p.ccfd and strike_t is not None:
-        capped = np.minimum(carbon_price, strike_t)
+        capped = np.minimum(carbon_price, strike_t[None, :])
         fee = cfg.contracts.ccfd_fee_pct * np.isfinite(strike_t)       # fee only in covered years
-        carbon_cost = p.emissions[None, :] * (capped * (1 + fee))[None, :] / 1000.0
+        carbon_cost = p.emissions[None, :] * capped * (1 + fee)[None, :] / 1000.0
     else:
-        carbon_cost = p.emissions[None, :] * carbon_price[None, :] / 1000.0
+        carbon_cost = p.emissions[None, :] * carbon_price / 1000.0
 
     total_k = elec_cost + h2_cost + capex_cost + carbon_cost + p.other_cost_k[None, :]
     return (total_k * disc[None, :]).sum(axis=1) * SCALE

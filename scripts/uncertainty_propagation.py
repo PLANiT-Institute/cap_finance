@@ -35,6 +35,7 @@ import pandas as pd
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from cap import config as C  # noqa: E402
+from cap.calibration import _annual_vol  # noqa: E402
 from cap.e1_constraints import COMPANY_REGION  # noqa: E402
 from cap.e2_milp import _prep_company  # noqa: E402
 from cap.e3_prices import load_shocks  # noqa: E402
@@ -45,6 +46,7 @@ from cap.schemas import load_input  # noqa: E402
 
 SCEN = "NZ15"
 SUPPORT = "none"
+KAU = "kau_krw"  # L2: 탄소가격 확률화의 유일한 관측 계열 (D4)
 CONTRACTS = [(0.0, 0), (0.5, 0), (1.0, 0), (1.0, 1)]
 CONAME = {"POSCO": "POSCO", "NSC": "Nippon Steel",
           "LOTTE": "LOTTE Chemical", "MCI": "Mitsui Chemicals"}
@@ -150,6 +152,31 @@ def decompose(inc_price: np.ndarray, inc_param: np.ndarray,
             "p50_price": float(np.median(inc_price))}
 
 
+def co2_vol(cfg) -> tuple[float, int, str]:
+    """L2 — 탄소가격 변동성을 D4 `kau_krw`(K-ETS 연평균)에서 그대로 추정한다.
+    투입가 변동성과 **같은 추정기**(`calibration._annual_vol`)를 쓴다 — 두 축의 크기를
+    비교하는 것이 이 사이클의 목적이므로 추정 규약이 다르면 비교가 성립하지 않는다."""
+    d4 = load_input(C.data_dir(cfg), "D4_price_history").copy()
+    d4["date"] = pd.to_datetime(d4.date.astype(str), format="mixed")
+    s = d4[d4.series_id == KAU].set_index("date").value.sort_index().dropna()
+    if len(s) < 6:
+        raise RuntimeError(f"D4 {KAU}: {len(s)} obs — 6+ 필요(계산 규약: calibration.py)")
+    v, _ = _annual_vol(s)
+    src = str(d4[d4.series_id == KAU].source_id.iloc[0])
+    return float(v), len(s), src
+
+
+def co2_shocks(cfg, T: int, n: int, vol: float, seed_offset: int = 0) -> np.ndarray:
+    """탄소가격 충격 (n,T). 입력가 충격과 같은 규약 — GBM 로그공간 랜덤워크, 평균 1,
+    0년차는 '오늘'이라 분산 없음. **상관은 넣지 않는다**(§4 한계): 탄소가격과 전력가는
+    물리적으로 얽혀 있지만 D4에서 두 계열의 관측 연도가 겹치지 않아 추정할 수 없다."""
+    rng = np.random.default_rng(cfg.seed + 1 + seed_offset)
+    drift = -0.5 * vol**2 if str(cfg.get("shock_normalisation", "mean")) == "mean" else 0.0
+    inc = rng.standard_normal((n, T)) * vol + drift
+    inc[:, 0] = 0.0
+    return np.exp(np.cumsum(inc, axis=1))
+
+
 def pick_params(k: int) -> list[str]:
     rank = pd.read_csv(ROOT / "out" / "sensitivity" / "ranking.csv")
     keep = [p for p in rank.base_param if p in SPEC]
@@ -162,6 +189,7 @@ def main() -> int:
     ap.add_argument("--sims", type=int, default=2000)
     ap.add_argument("--params", type=int, default=10)
     ap.add_argument("--widths", type=float, nargs="+", default=[0.15, 0.30])
+    ap.add_argument("--co2-seeds", type=int, default=3, dest="co2_seeds")
     a = ap.parse_args()
 
     cfg = C.load(data_dir="data/prepared")
@@ -171,6 +199,9 @@ def main() -> int:
     d5 = load_input(ddir, "D5_policy_support")
     prices = pd.read_csv(C.out_dir(cfg, "e1") / "price_paths_central.csv")
     shocks = {k: v[:a.sims] for k, v in load_shocks(cfg).items()}
+    # e3가 저장한 경로 수가 --sims보다 적을 수 있다(config n_sims). 실제 N을 쓴다 —
+    # co2 충격을 요청값으로 만들면 조용히 브로드캐스트가 깨진다.
+    a.sims = int(shocks["elec"].shape[0])
     T = shocks["elec"].shape[1]
     ones = {k: np.ones((1, T)) for k in shocks}
 
@@ -206,6 +237,34 @@ def main() -> int:
         base_pt[co] = best
         print(f"  {co:6} 기준점 P50 {best[0]:9,.0f}bn  TCaR(price) {tcar(best[4]):9,.0f}bn")
 
+    # --- L2 (FC4): 탄소가격을 시나리오 축(결정론)에서 확률 축으로 옮긴다.
+    # increment()는 **결정론적** 탄소비용 델타(dc)를 빼므로, 확률화된 탄소가격은
+    # (계획 배출 − 무대응 배출) × (충격 − 1)만큼만 남는다 — 정확히 정책 위험의 몫이다.
+    cvol, cn, csrc = co2_vol(cfg)
+    print(f"[L2] 탄소가격 연변동성 {cvol:.3f} ({KAU} {cn}obs, {csrc}) — 전력 대비 비교는 보고서")
+    # 증분의 **부호**가 결론이 되므로(석화가 음수면 FC4는 그쪽에서 무해하다) 시드를
+    # 여러 개 돌려 몬테카를로 잡음보다 큰지 확인한다. 한 시드로 부호를 주장하지 않는다.
+    sets = [co2_shocks(cfg, T, a.sims, cvol, s) for s in range(a.co2_seeds)]
+    pol = {}
+    for co, (_p50, pdf, ppa, epc, inc_price) in base_pt.items():
+        onlys, boths = [], []
+        for co2 in sets:
+            onlys.append(tcar(increment(cfg, fac, d3, d5, prices, co, pdf, ppa, epc,
+                                        {**ones, "co2": co2})))
+            boths.append(tcar(increment(cfg, fac, d3, d5, prices, co, pdf, ppa, epc,
+                                        {**shocks, "co2": co2})))
+        incs = [b - tcar(inc_price) for b in boths]
+        pol[co] = {"tcar_co2_only": float(np.mean(onlys)),
+                   "tcar_price_co2": float(np.mean(boths)),
+                   "co2_increment": float(np.mean(incs)),
+                   "co2_increment_lo": float(np.min(incs)),
+                   "co2_increment_hi": float(np.max(incs)),
+                   "co2_seeds": a.co2_seeds, "co2_vol": cvol}
+        print(f"  {co:6} co2만 {pol[co]['tcar_co2_only']:9,.0f}  가격+co2 "
+              f"{pol[co]['tcar_price_co2']:9,.0f}  증분 {pol[co]['co2_increment']:+9,.0f}"
+              f" [{pol[co]['co2_increment_lo']:+,.0f}, {pol[co]['co2_increment_hi']:+,.0f}]bn",
+              flush=True)
+
     rows = []
     for width in a.widths:
         rng = np.random.default_rng(cfg.seed)
@@ -221,7 +280,7 @@ def main() -> int:
                                             sh1, pxs))
             d = decompose(inc_price, np.concatenate(param_only), np.concatenate(joint))
             rows.append(dict(company_id=co, scenario=SCEN, support=SUPPORT,
-                             width=width, draws=a.draws, sims=a.sims, **d))
+                             width=width, draws=a.draws, sims=a.sims, **d, **pol[co]))
             print(f"  [{width:.0%}] {co:6} price {d['tcar_price']:9,.0f} "
                   f"param {d['tcar_param']:9,.0f} joint {d['tcar_joint']:9,.0f} "
                   f"(param {d['param_share_pct']:.0f}%)", flush=True)
@@ -296,13 +355,51 @@ def _write_report(df: pd.DataFrame, params, skipped, a) -> None:
               "절대값(십억원)으로 환산했다. **두 열의 크기가 같은 자릿수다** — ③의 불확실성은",
               "'무엇을 모르는가'만큼이나 '무엇을 골랐는가'에 달려 있고, 후자는 D4에서 확인했듯",
               "데이터로 줄일 수 없다. 파라미터 승급(G2·G3)이 줄일 수 있는 것은 앞 칸뿐이다.", ""]
-    L += ["## 4. 한계", "",
+    L += _l2_section(df)
+    L += ["## 5. 한계", "",
           "- **계획 고정.** 추첨마다 MILP를 다시 풀지 않는다. 파라미터가 바뀌면 최적 계획도",
           "  바뀌므로 여기 파라미터분은 **하한**이다(계획 재선택은 손실을 흡수한다).",
           "- **균등·독립 추첨.** 상관을 넣지 않았다. 원단위와 배출계수처럼 물리적으로 얽힌",
           "  파라미터를 독립으로 뽑으면 결합 분산이 과대·과소 어느 쪽으로도 갈 수 있다.",
+          "- **탄소가격 충격도 독립이다**(§4). 탄소가격과 전력가는 물리적으로 얽혀 있으나",
+          "  D4에서 `kau_krw`(연, 2015–2023)와 `smp_monthly`(월, 2025–)의 관측 구간이 겹치지",
+          "  않아 상관을 추정할 수 없다. 양의 상관이 실제라면 §4의 증분은 **과소**다.",
           "- **폭이 규약.** §2 참조.", ""]
     (ROOT / "docs" / "uncertainty_propagation.md").write_text("\n".join(L) + "\n")
+
+
+def _l2_section(df: pd.DataFrame) -> list[str]:
+    """L2/FC4 — 문헌이 우리보다 앞선 축(정책·탄소가격 확률화)을 이식한 결과."""
+    g = df.drop_duplicates("company_id").set_index("company_id")
+    if "tcar_co2_only" not in g:
+        return []
+    v = float(g.co2_vol.iloc[0])
+    L = ["## 4. 네 번째 칸 — 정책(탄소가격) 확률화 [L2/FC4]", "",
+         "L1이 찾아낸 것 중 **문헌이 우리보다 나은 항목**은 하나였다: 그들은 탄소가격·정책을",
+         "확률변수로 두고 우리는 시나리오로 고정한 채 투입가만 흔든다. 즉 우리가 보고해 온",
+         "③ TCaR은 **정책 위험을 빼고 잰 위험**이다(FC4). 여기서 그 축을 켠다.", "",
+         f"탄소가격 변동성은 D4 `{KAU}`(K-ETS 연평균 2015–2023, 9obs)에서 투입가와 **같은",
+         f"추정기**로 뽑았다 — **연 {v:.1%}**. 전력(0.242)의 1.5배이고 우리 위험인자 중 가장 크다.",
+         "충격은 GBM·평균1로 입력가와 같은 규약을 쓴다.", "",
+         "| 기업 | TCaR 가격분 | TCaR 탄소만 | TCaR 가격+탄소 | 정책 증분 (시드 범위) | 증분/가격분 |",
+         "|---|---|---|---|---|---|"]
+    for co in g.index:
+        r, base = g.loc[co], float(g.loc[co, "tcar_price"])
+        L.append(f"| {CONAME[co]} | {base:,.0f} | {r.tcar_co2_only:,.0f} | "
+                 f"{r.tcar_price_co2:,.0f} | {r.co2_increment:+,.0f} "
+                 f"[{r.co2_increment_lo:+,.0f}, {r.co2_increment_hi:+,.0f}] | "
+                 f"**{100*r.co2_increment/base:+.0f}%** |")
+    L += ["", f"증분은 탄소충격 시드 {int(g.co2_seeds.iloc[0])}개의 평균이고 대괄호는 그 범위다 —",
+          "**부호가 결론이 되므로 한 시드로 주장하지 않는다.**", "",
+          "단위 십억원. `increment()`가 **결정론적** 탄소비용 델타를 빼므로, 확률화된 탄소가격은",
+          "(계획 배출 − 무대응 배출) × (충격 − 1)만큼만 남는다 — 그 잔차가 정책 위험이다.", "",
+          "**부호를 읽는 법이 중요하다.** 전환계획은 무대응보다 배출이 적으므로 탄소가격이",
+          "**오를 때** 상대적으로 싸진다. 따라서 이 축의 나쁜 꼬리(P90)는 고탄소가격이 아니라",
+          "**탄소가격 붕괴**다 — 투자해 놓고 정책이 물러서는 경우. TCaR을 '추가 조달 여력'으로",
+          "읽는 우리 정의에서 정책 위험은 '규제 강화 위험'이 아니라 **좌초 위험**으로 들어온다.",
+          "이것은 실물옵션 문헌(탄소세 상승이 투자를 앞당긴다)과 반대 방향이 아니라, 같은",
+          "메커니즘을 조달 관점에서 본 것이다.", ""]
+    return L
 
 
 def _cited_vs_current(proc, tol: float = 0.01) -> list[str]:

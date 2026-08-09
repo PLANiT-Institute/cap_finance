@@ -72,3 +72,74 @@ def test_perturbation_scales_the_right_column_only():
     assert np.allclose(d32.capex_unit, d3.capex_unit * 0.7)
     assert np.allclose(sh2["elec"], shocks["elec"] ** 2.0)
     assert np.allclose(sh2["h2"], shocks["h2"])
+
+
+# --- L2/FC4: 탄소가격 확률 축 -------------------------------------------------
+
+def _plan_profile(emis: float):
+    from cap.plancost import PlanProfile
+    T = 4
+    z = np.zeros(T)
+    return PlanProfile(z.copy(), z.copy(), z.copy(), z.copy(), z.copy(), {}, {},
+                       np.full(T, emis), ppa=0.0, epc=0, ccfd=0)
+
+
+def _cfg_px_shocks(n=5, T=4):
+    cfg = C.Config({"years": {"start": 2025, "end": 2028}, "discount_rate": 0.0,
+                    "carbon_auction_share": {2025: 1.0},
+                    "contracts": {"ppa_premium_pct": 0.0, "epc_premium_pct": 0.0,
+                                  "ccfd_fee_pct": 0.0},
+                    "data_dir": "data/prepared"})
+    px = {k: np.zeros(T) for k in ("elec", "re", "h2", "coal", "gas")}
+    px["co2"] = np.full(T, 50.0)
+    shocks = {k: np.ones((n, T)) for k in ("elec", "h2", "capex")}
+    return cfg, px, shocks
+
+
+def test_absent_co2_shock_leaves_every_existing_number_unchanged():
+    """확률화는 opt-in이어야 한다 — 'co2' 키가 없거나 1이면 기존 파이프라인과 동일."""
+    from cap.plancost import simulate_cost
+    cfg, px, shocks = _cfg_px_shocks()
+    p, sup = _plan_profile(1000.0), {"subsidy": {}, "ccfd_strike": None}
+    base = simulate_cost(p, px, shocks, sup, cfg)
+    ones = simulate_cost(p, px, {**shocks, "co2": np.ones_like(shocks["elec"])}, sup, cfg)
+    assert np.allclose(base, ones)
+
+
+def test_co2_shock_moves_only_the_carbon_channel_and_scales_with_emissions():
+    """충격이 탄소비용에만 닿는지. 배출 0이면 정책 위험도 0이어야 한다."""
+    from cap.plancost import simulate_cost
+    cfg, px, shocks = _cfg_px_shocks()
+    sup = {"subsidy": {}, "ccfd_strike": None}
+    sh2 = {**shocks, "co2": np.full_like(shocks["elec"], 2.0)}
+    hot = simulate_cost(_plan_profile(1000.0), px, sh2, sup, cfg)
+    cold = simulate_cost(_plan_profile(1000.0), px, shocks, sup, cfg)
+    assert np.allclose(hot, 2.0 * cold)                       # 탄소비용이 유일한 비용
+    zero = _plan_profile(0.0)
+    assert np.allclose(simulate_cost(zero, px, sh2, sup, cfg),
+                       simulate_cost(zero, px, shocks, sup, cfg))
+
+
+def test_co2_shocks_are_mean_one_and_start_known():
+    from uncertainty_propagation import co2_shocks
+    cfg = C.Config({"seed": 7, "shock_normalisation": "mean"})
+    s = co2_shocks(cfg, 30, 20000, 0.363)
+    assert np.allclose(s[:, 0], 1.0)                          # 0년차 = 오늘, 분산 없음
+    # 평균 1 규약은 로그공간에서 검정한다. σ=0.36·29년이면 로그정규 평균은 소수의 경로가
+    # 지배해 20,000회로도 표본평균이 ±7%까지 흔들린다(꼬리가 두껍다는 것 자체가 §4의 논지).
+    lg = np.log(s[:, -1])
+    assert abs(lg.mean() + 0.5 * lg.var()) < 0.02             # E[shock]=1 ⇔ μ = −σ²/2
+    assert s[:, -1].std() > s[:, 1].std()                     # GBM: 분산이 T에 비례해 벌어진다
+
+
+def test_co2_vol_comes_from_the_kau_series_not_a_prior():
+    from cap.calibration import _annual_vol
+    from uncertainty_propagation import KAU, co2_vol
+    cfg = C.load(data_dir="data/prepared")
+    v, n, src = co2_vol(cfg)
+    d4 = pd.read_csv(C.data_dir(cfg) / "D4_price_history.csv")
+    d4["date"] = pd.to_datetime(d4.date.astype(str), format="mixed")
+    s = d4[d4.series_id == KAU].set_index("date").value.sort_index()
+    assert n == len(s) >= 6 and src
+    assert abs(v - _annual_vol(s)[0]) < 1e-12
+    assert v > 0.30          # K-ETS 실측: 전력(0.242)보다 크다 — 이 사실이 §4의 논지다

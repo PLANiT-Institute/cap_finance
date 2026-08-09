@@ -63,6 +63,9 @@ def _computed() -> dict[str, float]:
     for co in u30.index:
         got[f"tcar_param30_{co.lower()}"] = round(float(u30.loc[co, "tcar_param"]), 1)
         got[f"param_share30_{co.lower()}"] = round(float(u30.loc[co, "param_share_pct"]), 1)
+        # L2/FC4: 탄소가격을 확률 축으로 옮겼을 때의 TCaR 증분 (폭과 무관 — 시드 평균)
+        got[f"tcar_co2only_{co.lower()}"] = round(float(u30.loc[co, "tcar_co2_only"]), 1)
+        got[f"co2_increment_{co.lower()}"] = round(float(u30.loc[co, "co2_increment"]), 1)
 
     # §4 경계 퇴화: 경계 위 점들이 한 기술 일정만 쓰는 묶음 수
     per_group = fp[fp.on_frontier].groupby(
