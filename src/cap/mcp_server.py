@@ -183,6 +183,7 @@ def t_get_validation_summary(_):
                      ("validation_backtest", DOCS / "validation_backtest.md"),
                      ("validation_external", DOCS / "validation_external.md"),
                      ("seed_stability", DOCS / "seed_stability.md"),
+                     ("robustness_structural", DOCS / "robustness_structural.md"),
                      ("methodology", ROOT / "METHODOLOGY.md")]:
         (out["available"].__setitem__(label, str(p.relative_to(ROOT)))
          if p.exists() else out["missing"].append(label))
