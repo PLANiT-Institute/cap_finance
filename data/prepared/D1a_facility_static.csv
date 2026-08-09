@@ -20,5 +20,5 @@ NSC_OIT_BF1,NSC,steel,大分,BF,"大分 第1高炉 (5,775m³)",5274500.0,t용선
 NSC_OIT_BF2,NSC,steel,大分,BF,"大分 第2高炉 (5,775m³)",5274500.0,t용선/yr (내용적 추정),,2004.0,20.0,2027.0,200.0,70.0,가동,NSC_DATABOOK_2025
 LOTTE_YEO_NCC,LOTTE,petchem,여수,NCC,여수 NC공장,1230000.0,t에틸렌/yr,1992.0,2026.0,4.0,2030.0,150.0,290.0,가동(여천NCC 통합법인 이관 예정),LOTTE_MEDIA_2026
 LOTTE_DAE_NCC,LOTTE,petchem,대산,NCC,대산 NC공장,1100000.0,t에틸렌/yr,1991.0,2025.0,4.0,2026.0,150.0,290.0,가동중단 계획(롯데대산석화 재편),LOTTE_MEDIA_2026
-MCI_ICH_CR,MCI,petchem,市原,NCC,市原 에틸렌 플랜트 2UPC,553000.0,t에틸렌/yr,1978.0,1978.0,4.0,2027.0,150.0,290.0,가동(2027.7 지바 집약 거점),MCI_RELEASES
-MCI_OSK_CR,MCI,petchem,大阪,NCC,大阪石油化学 에틸렌 플랜트,455000.0,t에틸렌/yr,1970.0,2024.0,4.0,2028.0,150.0,290.0,가동(2030년도 서일본 집약 거점),MCI_RELEASES
+MCI_ICH_CR,MCI,petchem,市原,NCC,市原 에틸렌 플랜트 2UPC,553000.0,t에틸렌/yr,1978.0,1978.0,4.0,2027.0,150.0,290.0,가동(2027.7 지바 집약 거점),MCI_RELEASES+JPCA_CAPACITY_2024
+MCI_OSK_CR,MCI,petchem,大阪,NCC,大阪石油化学 에틸렌 플랜트,455000.0,t에틸렌/yr,1970.0,2024.0,4.0,2028.0,150.0,290.0,가동(2030년도 서일본 집약 거점),MCI_RELEASES+JPCA_CAPACITY_2024
