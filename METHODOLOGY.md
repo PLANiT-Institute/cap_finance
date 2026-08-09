@@ -153,6 +153,8 @@ $x$에 고정해 별도로 푼다. 강제 가능한 커밋이 하나도 없으�
 
 $$\ln p^{j}_{t+1}=\ln p^{j}_t+\Big(\hat g^{j}_t-\tfrac12(\nu^j)^2\Big)+\nu^j\,\xi^j_{t},\qquad \xi\sim\mathcal N(0,\Sigma)$$
 
+설비비 충격은 기술별로 진폭이 다르다 — D3 `capex_uncertainty`(30~60%)를 기준값 40%로 나눈 배율을 공통 충격에 곱한다(**A-22**). 스펙이 이 컬럼의 구간 규약을 정의하지 않으므로 **수준이 아니라 상대 분산으로만** 쓴다.
+
 $\hat g$는 중앙 경로가 함의하는 성장률, $\nu$는 D4 이력에서 추정. **관측이 6개 미만인
 요인은 사전값을 쓰고 그 사실을 매 실행 경고한다** (현재 $h2$ 0.25, $cx$ 0.06, 상관 = 항등
 — **A-17**, TCaR 절대값이 여기에 직결되므로 최우선 데이터 보강 대상).
@@ -227,6 +229,7 @@ $$\text{P50} = \operatorname{med}_\omega\big[\mathcal C^{tot}(P,\omega)-\mathcal
 | A-18 | CAPEX는 공사기간 균등 분산 | EPC 실무 | 대(피크·⑥) | `test_capex_spreads_over_build_years` |
 | A-19 | ②는 자원비용 기준 (탄소지출 분리) | 설계서 §4 | 대 | `test_resource_cost_is_total_minus_carbon` |
 | A-20 | ⑥ 기준이익 = 최근 3년 EBITDA 평균 | 경기 평활 | 대(석화 판정) | `test_affordability_ratios_reproduce` |
+| A-22 | CAPEX 충격 진폭을 D3 `capex_uncertainty`로 기술별 배율화 (기준 40%) | 수집돼 있으나 미사용이던 컬럼 | 소 (설비비는 분산의 ~1%) | `variance_decomp.csv` |
 | A-21 | 배출 경계 = **Scope 1**. 보고 Scope 2는 D1b에 보존하되 미계상 | 예산이 자체 base 앵커라 수준 중립 | 중 | 구조 대안 검증 대상 |
 
 ---

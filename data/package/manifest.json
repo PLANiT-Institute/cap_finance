@@ -12,7 +12,7 @@
       "B20"
     ],
     "discount_rate": 0.05,
-    "n_sims": 5000,
+    "n_sims": 10000,
     "milp": {
       "frontier_points": 10,
       "solver_time_limit_s": 60,
@@ -104,17 +104,17 @@
     {
       "name": "result_gap.csv",
       "rows": 8,
-      "sha256": "8c7307ceec1ea2a396047ccdeea02d65ae890082509fd9f850fd96f0290c3fab"
+      "sha256": "ac75ebff3c51b49a187e449d121b2be28c3cf3998f471faddf97218c6a16d774"
     },
     {
       "name": "result_metrics_company.csv",
       "rows": 16,
-      "sha256": "7573b8d0b4b3d3f2bc8708845786afa4bc132c9d6d7c6fe00ed4334e22dc59ae"
+      "sha256": "bbda7e40776e11856bf0860ee0f63cfa427ef8c14a56f8928cb69dd5affefb49"
     },
     {
       "name": "source_register.csv",
-      "rows": 76,
-      "sha256": "1213f1bb0d07ff9dfaa12cb5b82b5f4fd8f311d6949c3a0ded8459d649be8022"
+      "rows": 77,
+      "sha256": "62bd242d4ef661ee7b2c15d3489448b145d41196310952d985b2045bb6678d16"
     }
   ]
 }

@@ -19,6 +19,12 @@ from . import config as C
 from .schemas import load_input
 
 SCALE = 1e-6  # KRW thousands -> billions
+# D3 capex_uncertainty is a per-technology band in % (spec §D3, 30–60 across our set).
+# The calibrated market shock (E3) carries the LEVEL of construction-cost risk; this
+# column carries how much MORE or LESS uncertain a given technology is than the rest.
+# Using it as a relative amplitude avoids inventing a band convention the spec never
+# states, while no longer throwing the column away. — A-22
+CAPEX_UNC_REF = 40.0
 GJ_PER_T_COAL = 28.0
 GJ_PER_T_GAS = 54.0
 
@@ -91,6 +97,7 @@ class PlanProfile:
     other_cost_k: np.ndarray  # coal+gas+opex+margin-loss+write-offs, KRW thousands (deterministic)
     capex_k: np.ndarray       # KRW thousands spent per year, incl. stranded penalty
     capex_by_tech: dict[str, np.ndarray]
+    capex_unc: dict[str, float]   # D3 capex_uncertainty (%) per adopted tech — A-22
     emissions: np.ndarray     # tCO2 scope1
     ppa: float
     epc: int
@@ -113,6 +120,7 @@ def build_profile(plan_df: pd.DataFrame, fac: pd.DataFrame, techs: pd.DataFrame,
     other = np.zeros(T)
     capex = np.zeros(T)
     capex_by_tech: dict[str, np.ndarray] = {}
+    capex_unc: dict[str, float] = {}
     emis = np.zeros(T)
     tk_idx = techs.set_index("tech_id")
     adopt = {r.facility_id: r for r in plan_df.itertuples() if pd.notna(r.tech_id)}
@@ -169,6 +177,8 @@ def build_profile(plan_df: pd.DataFrame, fac: pd.DataFrame, techs: pd.DataFrame,
                     bv = tk.get("build_years", 1)
                     nb = max(int(bv) if pd.notna(bv) else 1, 1)
                     by_tech = capex_by_tech.setdefault(a.tech_id, np.zeros(T))
+                    u = tk.get("capex_uncertainty", np.nan)
+                    capex_unc[a.tech_id] = float(u) if pd.notna(u) else CAPEX_UNC_REF
                     for j in range(nb):
                         if i + j < T:
                             capex[i + j] += base / nb
@@ -191,7 +201,7 @@ def build_profile(plan_df: pd.DataFrame, fac: pd.DataFrame, techs: pd.DataFrame,
     def _num(v, cast):
         return cast(0) if pd.isna(v) else cast(v)
 
-    return PlanProfile(grid, re, h2, other, capex, capex_by_tech, emis,
+    return PlanProfile(grid, re, h2, other, capex, capex_by_tech, capex_unc, emis,
                        _num(plan_df.ppa_share.iloc[0], float),
                        _num(plan_df.epc.iloc[0], int), _num(plan_df.ccfd.iloc[0], int))
 
@@ -223,17 +233,21 @@ def simulate_cost(p: PlanProfile, px: dict[str, np.ndarray], shocks: dict[str, n
                  + p.re_mwh[None, :] * ((1 - p.ppa) * re_sim + p.ppa * ppa_re[None, :])) / 1000.0
     h2_cost = (p.h2_kg[None, :] * h2_sim) / 1000.0                      # no power hedge on H2
 
-    # capex: per-year subsidy (valid_from/valid_to windows) by tech, then EPC fix or shock
-    capex_eff = np.zeros_like(p.capex_k)
+    # capex: per-year subsidy (valid_from/valid_to windows) by tech, then EPC fix or shock.
+    # The shock amplitude is scaled per technology by D3 capex_uncertainty (A-22): a
+    # hydrogen-reduction plant and a heat-recovery retrofit do not carry the same
+    # construction-cost risk, and the data says so.
+    capex_cost = np.zeros((N, len(years)))
     for tech_id, arr in p.capex_by_tech.items():
         sub_t = support["subsidy"].get(tech_id, support["subsidy"].get("all"))
-        capex_eff += arr * (1 - sub_t) if sub_t is not None else arr
-    if p.epc:
-        capex_cost = np.tile(capex_eff * (1 + cfg.contracts.epc_premium_pct), (N, 1))
-    elif freeze == "capex":
-        capex_cost = np.tile(capex_eff, (N, 1))
-    else:
-        capex_cost = capex_eff[None, :] * shocks["capex"]
+        eff = arr * (1 - sub_t) if sub_t is not None else arr
+        if p.epc:
+            capex_cost += np.tile(eff * (1 + cfg.contracts.epc_premium_pct), (N, 1))
+        elif freeze == "capex":
+            capex_cost += np.tile(eff, (N, 1))
+        else:
+            amp = p.capex_unc.get(tech_id, CAPEX_UNC_REF) / CAPEX_UNC_REF
+            capex_cost += eff[None, :] * (1 + (shocks["capex"] - 1) * amp)
 
     carbon_price = px["co2"] * auction_share(years, cfg)               # 유상할당 반영, KRW/tCO2
     strike_t = support.get("ccfd_strike")                              # (T,) with inf outside window
