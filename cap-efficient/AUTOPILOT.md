@@ -1,10 +1,15 @@
-# AUTOPILOT v2 — CAP 듀얼 프로젝트 학술 완성 프로토콜
+# AUTOPILOT v2 — CAP 이중구현 학술 완성 프로토콜
 
-> 매 사이클의 시스템 지시. 두 저장소에 동일 사본, 수정 시 양쪽 동기화.
-> - **FIN** = `~/Documents/GitHub/cap_finance` — 시설 MILP·계약 격자·위험 경계·석유화학 포함
-> - **EFF** = `~/Documents/cap-efficient` — stdlib 전용·증거 레지스트리·강건 선별·철강 4사
+> 매 사이클의 시스템 지시. **단일 저장소**(2026-08-10 통합) 안에 두 구현이 나란히 산다.
+> - **FIN** = 저장소 루트 `~/Documents/GitHub/cap_finance` — 시설 MILP·계약 격자·위험 경계·석유화학 포함
+> - **EFF** = `cap-efficient/` 하위디렉터리 — stdlib 전용·증거 레지스트리·강건 선별·철강 4사
 >
-> **기간**: 2026-08-08 22:35 → 2026-08-09 09:00, 30분 × 21사이클 (C6–C26).
+> **이중구현은 유지된다.** 통합은 폴더 관리 문제를 없앤 것이고, H4 교차대조의 전제인
+> **코드 독립성**은 그대로다: EFF는 `cap.*`를 import하지 않고 FIN은 `cap_efficient.*`를
+> import하지 않는다. 공유는 CSV 산출물과 크로스워크로만. 이 규칙이 깨지면 교차대조는
+> 순환논증이 되고 §7의 "독립 구현과의 교차대조" 방어가 무효가 된다.
+>
+> **기간**: 2026-08-10 00:41 → 09:00, 30분 × 17사이클 (D1–D17).
 > **기준**: "돌아간다"가 아니라 **"심사자가 반박하지 못한다"**. 이전 v1의 완료 기준은 전부 무효.
 
 ---
@@ -53,12 +58,15 @@
 **중단 규칙**: 같은 오류 2사이클 → 백로그 하단으로 강등, 원인 가설 기록, 다음 항목.
 **웹 수집 규칙**: 접근 실패한 출처는 `data_gap_registry`에 `access_blocked` 사유와 대체 경로를 남긴다. 추측으로 채우지 않는다.
 
-## 3. 동기화 규약
+## 3. 동기화 규약 (통합 후)
 
-- **정본**: 데이터 증거·성숙도 = EFF / 최적화 방법론·석유화학 = FIN. 개선은 상대 저장소에 **소비 경로**(변환 스크립트)로 전달, 맹목적 복사 금지.
-- **공유 산출물**(양쪽 동일 사본): `data/crosswalk_facilities.csv`, `data/crosswalk_scenarios.csv`, `docs/tech_cost_reconciliation.md`, `docs/cross_model_check.md`, `AUTOPILOT.md`, `METHODOLOGY.md`(FIN 정본, EFF는 참조 링크).
+- **커밋은 하나**: 이제 한 저장소이므로 사이클당 커밋 1개. FIN·EFF 양쪽을 건드렸으면 한 커밋에 담고 메시지에 둘 다 밝힌다.
+- **코드 독립성은 불가침**: EFF 코드는 `cap.*`를, FIN 코드는 `cap_efficient.*`를 import하지 않는다. 이를 강제하는 테스트는 `tests/test_independence.py`.
+- **정본**: 데이터 증거·성숙도 = EFF / 최적화 방법론·석유화학 = FIN. 개선은 상대 구현에 **소비 경로**(변환 스크립트 + CSV)로 전달, 맹목적 복사 금지.
+- **공유 산출물**(양쪽 동일 사본 유지): `data/crosswalk_facilities.csv`, `data/crosswalk_scenarios.csv`, `docs/tech_cost_reconciliation.md`, `docs/cross_model_check.md`, `AUTOPILOT.md`(루트 정본, `cap-efficient/AUTOPILOT.md`는 사본), `METHODOLOGY.md`(FIN 정본, EFF는 참조 링크).
 - **매 사이클 1개 교차대조**: 값 하나를 양 모형에서 확인. 2배 이상 차이는 백로그 항목 생성.
 - **비공개 원칙**: 시설 단위 산출은 설계서 §8-2. 공개 패키지·페이퍼 본문은 기업 집계, 시설 결과는 부속서 취급.
+- **폐기**: `~/Documents/GitHub/cap-rebuild`는 `archive/cap_kj_v1`의 오래된 부분집합으로 확인됨(2026-08-10). 저장소에 넣지 않는다.
 
 ---
 
@@ -95,15 +103,15 @@
 
 ### I. 강건성 (심사자가 반드시 묻는 것)
 
-- [ ] **I1. 할인율**: 3.5 / 5.0 / 6.5% 전 파이프라인 재실행, 헤드라인 표 3종 → 결론(순위·gap 부호) 불변 여부.
-- [ ] **I2. 구조 대안**: (a) 비용 정의 P50 vs P90 기준, (b) retire 상한 10/20/30%, (c) 무상할당 램프 3종(현행/보수/공격), (d) 예산 위반 페널티 수준. 각각 결론 영향.
-- [ ] **I3. 확률과정 대안**: GBM vs 평균회귀(OU) — G5 검정 결과 반영, TCaR 차이 보고.
-- [ ] **I4. 표본 안정성**: 시드 5개 반복, 헤드라인 지표 표준편차 보고(EFF는 이미 seed 반복 있음 — 방식 이식).
+- [x] **I1. 할인율**: 3.5 / 5.0 / 6.5% 전 파이프라인 재실행, 헤드라인 표 3종 → 결론(순위·gap 부호) 불변 여부.
+- [x] **I2. 구조 대안**: (a) 비용 정의 P50 vs P90 기준, (b) retire 상한 10/20/30%, (c) 무상할당 램프 3종(현행/보수/공격), (d) 예산 위반 페널티 수준. 각각 결론 영향.
+- [x] **I3. 확률과정 대안**: GBM vs 평균회귀(OU) — G5 검정 결과 반영, TCaR 차이 보고.
+- [x] **I4. 표본 안정성**: 시드 5개 반복, 헤드라인 지표 표준편차 보고(EFF는 이미 seed 반복 있음 — 방식 이식).
 
 ### J. 형식화·공개
 
 - [x] **J1. `METHODOLOGY.md`**: 집합·파라미터·변수·목적함수·제약 수식 기술, 각 가정에 `A-01` 형태 식별자, 근거·영향 명시. E2 대리목적함수와 E4 정본의 관계를 정면 기술.
-- [ ] **J2. 데이터 패키지**: `data/package/` 공개 CSV + 병합 데이터 사전 + 출처 등록부 공개분 + LICENSE(재배포 불가 출처 제외/구간화) + `manifest.json`(SHA256).
+- [x] **J2. 데이터 패키지**: `data/package/` 공개 CSV + 병합 데이터 사전 + 출처 등록부 공개분 + LICENSE(재배포 불가 출처 제외/구간화) + `manifest.json`(SHA256).
 - [x] **J3. MCP 서버**: EFF `cap_efficient/mcp_server.py` stdlib JSON-RPC — `list_companies`, `get_plan_metrics`, `get_frontier`, `get_parameter(id)`(tier·출처 반환), `get_validation_summary`, `get_data_package_manifest`. 시설 단위는 기본 거부.
 - [ ] **J4. 워킹 페이퍼**: `paper/working_paper.md` — 연구질문, 선행연구 대비 기여(자본배분 경계·TCaR·공시 gap), 방법, 데이터·신뢰등급, 결과, 강건성, 한계, **반증가능 주장 목록**.
 - [ ] **J5. README 재작성 양쪽**: 30초 스타트, 아키텍처, 산출물 표, 신뢰등급 요약, 인용 방법(BibTeX), 라이선스.
