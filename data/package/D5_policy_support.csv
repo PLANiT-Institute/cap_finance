@@ -1,0 +1,8 @@
+support_scenario,instrument,tech_id,param_type,value,unit,valid_from,valid_to,source_id
+current,auction_share_power,all,유상할당 비율,15,%,2026,2026,KETS_P4_CONFIRM_2025
+current,auction_share_power,all,유상할당 비율,50,%,2030,2030,KETS_P4_CONFIRM_2025
+current,auction_share,all,유상할당 비율,15,%,2026,2030,KETS_P4_CONFIRM_2025
+current,price_cap,all,상한가격,4300,JPY/tCO2 (실질),2026,2026,GXETS_COLLAR_METI
+current,price_cap,all,상한가격,4840,JPY/tCO2 (실질),2030,2030,GXETS_COLLAR_METI
+current,price_floor,all,하한가격,1700,JPY/tCO2 (실질),2026,2026,GXETS_COLLAR_METI
+current,price_floor,all,하한가격,1913,JPY/tCO2 (실질),2030,2030,GXETS_COLLAR_METI

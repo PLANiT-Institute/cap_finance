@@ -191,6 +191,13 @@ def t_get_validation_summary(_):
     return out
 
 
+def t_get_data_package_manifest(_):
+    p = ROOT / "data" / "package" / "manifest.json"
+    if not p.exists():
+        raise FileNotFoundError(p)
+    return json.loads(p.read_text(encoding="utf-8"))
+
+
 def t_get_facility_detail(_):
     raise PermissionError(
         "시설 단위 산출은 공개 대상이 아니다 (설계서 §8-2). 기업 집계만 조회 가능하다. "
@@ -213,6 +220,8 @@ TOOLS = [
     ("get_sensitivity", "결론을 좌우하는 파라미터 랭킹", {"top": "기본 15"}, t_get_sensitivity),
     ("get_data_audit", "데이터 진위·활용 감사 결과 (미사용 컬럼·출처 경고)", {}, t_get_data_audit),
     ("get_validation_summary", "존재하는 검증과 아직 없는 검증", {}, t_get_validation_summary),
+    ("get_data_package_manifest", "재현 패키지 목록·해시·재실행 명령", {},
+     t_get_data_package_manifest),
     ("get_facility_detail", "시설 단위 상세 — 기본 거부(비공개)", {}, t_get_facility_detail),
 ]
 IMPL = {name: fn for name, _, _, fn in TOOLS}

@@ -1,0 +1,120 @@
+{
+  "package": "CAP v2 재현 패키지",
+  "boundary": "시설 단위 절대값은 포함하지 않는다 (설계서 §8-2). D1a·D1b는 기업 단위 집계본이며, 시설 해상도는 저장소 소유자에게 요청해야 한다.",
+  "config": {
+    "seed": 20260806,
+    "years": {
+      "start": 2025,
+      "end": 2050
+    },
+    "scenarios": [
+      "NZ15",
+      "B20"
+    ],
+    "discount_rate": 0.05,
+    "n_sims": 5000,
+    "milp": {
+      "frontier_points": 10,
+      "solver_time_limit_s": 60,
+      "mip_gap_rel": 0.02,
+      "retire_max_share": 0.2
+    },
+    "carbon_auction_share": {
+      "2025": 0.1,
+      "2030": 0.15,
+      "2035": 0.3,
+      "2040": 0.5,
+      "2045": 0.75,
+      "2050": 1.0
+    }
+  },
+  "reproduce": [
+    "python -m cap all              # E1 → render (MILP 약 20분)",
+    "python scripts/run_scenarios.py",
+    "pytest tests/ -q && pytest tests/test_consistency.py -q"
+  ],
+  "validation": [
+    "docs/data_audit.md",
+    "docs/validation_backtest.md",
+    "docs/validation_external.md",
+    "docs/cross_model_check.md",
+    "METHODOLOGY.md"
+  ],
+  "files": [
+    {
+      "name": "D1a_company_capacity.csv",
+      "rows": 6,
+      "sha256": "20e98b8fab1f15ba78e9fccb129d689a1203e397fa6fa680c433f18ee6a30536"
+    },
+    {
+      "name": "D1b_company_panel.csv",
+      "rows": 12,
+      "sha256": "2a110c1bba5d960e7a949c869abda81ead100c460b3ffe157f7a9dbf2827333a"
+    },
+    {
+      "name": "D2a_scenario_budget.csv",
+      "rows": 48,
+      "sha256": "efaae85d39a277de026c0d7b6df4876007a6ffe66968c70cc7189687349a7202"
+    },
+    {
+      "name": "D2b_scenario_prices.csv",
+      "rows": 224,
+      "sha256": "f8cea0792468eab964f7a9ebad02ee8a4da37fe097cada6c689278b41b34265e"
+    },
+    {
+      "name": "D3_tech_options.csv",
+      "rows": 13,
+      "sha256": "47825efd715bbfd48aba92dd1df6d50124b88d09b6e66b27f3038aaaa25c7191"
+    },
+    {
+      "name": "D4_price_history.csv",
+      "rows": 99,
+      "sha256": "c88502f65cfdf047c929f10b7c634ec2bbdfdaea219830402cb77dd04ee69d34"
+    },
+    {
+      "name": "D5_policy_support.csv",
+      "rows": 7,
+      "sha256": "f8ee1a263f1216ff383bfb86ab9fe4a6c6ecb0737dd1b094b5acb6edc2db04c8"
+    },
+    {
+      "name": "D6_company_financials.csv",
+      "rows": 22,
+      "sha256": "532511e90f2864b2f5992634c2a8a5e491861d39a27808999f06d62db7492cdc"
+    },
+    {
+      "name": "D7_disclosed_plan.csv",
+      "rows": 12,
+      "sha256": "de00d555d51bc78226397872b9a7f710f3372177abdeccc05a36fd6270cbccd8"
+    },
+    {
+      "name": "data_dictionary.csv",
+      "rows": 85,
+      "sha256": "45f2b53a8881780fba9a9925bdf9aaee469ebd01aec91062ca39b7317f3163aa"
+    },
+    {
+      "name": "result_affordability.csv",
+      "rows": 16,
+      "sha256": "b4f9e5851ee398be18c1d6b9971eec62b5fb2d0ce94601cdcf6c548e6917fc30"
+    },
+    {
+      "name": "result_emissions_pathway.csv",
+      "rows": 520,
+      "sha256": "c0819b8f2355a15e8d5bf63493ffe52fc3e93408631cc34877333aa6510bbbca"
+    },
+    {
+      "name": "result_gap.csv",
+      "rows": 8,
+      "sha256": "8c7307ceec1ea2a396047ccdeea02d65ae890082509fd9f850fd96f0290c3fab"
+    },
+    {
+      "name": "result_metrics_company.csv",
+      "rows": 16,
+      "sha256": "7573b8d0b4b3d3f2bc8708845786afa4bc132c9d6d7c6fe00ed4334e22dc59ae"
+    },
+    {
+      "name": "source_register.csv",
+      "rows": 76,
+      "sha256": "1213f1bb0d07ff9dfaa12cb5b82b5f4fd8f311d6949c3a0ded8459d649be8022"
+    }
+  ]
+}

@@ -30,7 +30,15 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 # 3) 시나리오 분석 — 가정 묶음별 재평가 (묶음당 ~10초)
 .venv/bin/python scripts/run_scenarios.py
 
-# 4) 보고서·사이트
+# 4) 재현 패키지 (기업 집계 + SHA256 manifest, 시설 단위는 제외)
+.venv/bin/python scripts/build_data_package.py
+
+# 5) 검증 문서
+.venv/bin/python scripts/validate_backtest.py
+.venv/bin/python scripts/validate_external.py
+.venv/bin/python scripts/cross_model_check.py
+
+# 6) 보고서·사이트
 .venv/bin/python scripts/build_report.py && .venv/bin/python scripts/build_site.py
 
 # 검증
@@ -61,6 +69,12 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 | `scripts/sensitivity_screening.py` | 어떤 파라미터가 결론을 좌우하는지 OAT 랭킹 | `out/sensitivity/ranking.csv` |
 | `scripts/build_parameter_inventory.py` | 전 파라미터의 값·등급·출처 인벤토리 | `docs/parameter_inventory.csv` |
 | `src/cap/mcp_server.py` | 결과·증거·감사를 MCP 도구로 노출 (읽기 전용) | [`docs/mcp_server.md`](docs/mcp_server.md) |
+| `scripts/validate_backtest.py` | 주입 표준값이 2020–24 실적을 재현하는가 | `docs/validation_backtest.md` |
+| `scripts/validate_external.py` | 실제 프로젝트·문헌 범위 대비 판정 | `docs/validation_external.md` |
+| `scripts/cross_model_check.py` | FIN ↔ EFF 교차대조 | `docs/cross_model_check.md` |
+| `scripts/build_data_package.py` | 재현 패키지(기업 집계 + SHA256 manifest) | `data/package/` |
+| `scripts/build_board_memo.py` | A4 1페이지 이사회 메모 | `web/memo.html` |
+| `scripts/build_scenario_page.py` | 대화형 시나리오 화면 | `web/scenarios.html` |
 
 ## 데이터
 

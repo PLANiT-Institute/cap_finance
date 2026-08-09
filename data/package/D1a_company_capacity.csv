@@ -1,0 +1,7 @@
+company_id,sector,unit_type,units,capacity_t_yr
+LOTTE,petchem,NCC,2,2330000.0
+MCI,petchem,NCC,2,1008000.0
+NSC,steel,BF,10,44348726.66666667
+POSCO,steel,BF,7,33108333.333333336
+POSCO,steel,EAF,1,2500000.0
+POSCO,steel,FINEX,1,2000000.0
