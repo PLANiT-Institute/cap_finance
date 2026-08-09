@@ -18,6 +18,17 @@ simulation:
   n_sims_flex: 1500
   convergence_check_n: 2000  # P50/TCaR must match full run within 1%
 
+# 가격 확률과정. gbm = 로그 랜덤워크(분산이 지평에 비례), ou = 로그 평균회귀(포화).
+# D4 관측이 10~19개뿐이라 둘을 통계적으로 가를 수 없다 — 선택을 감추지 않고 드러내고
+# TCaR 차이를 docs/process_alternative.md에 잰다 (I3).
+price_process: gbm
+ou_halflife_years: 10
+# 충격 정규화. mean = E[충격]=1 (현행) — 로그정규 왜도로 **중앙값이 아래로 흐른다**:
+# σ=0.25·25년이면 2050 중앙값이 중심경로의 0.47배다. ②는 P50 지표라 그 세계에서
+# 계산된다. median = 중앙값을 중심경로에 고정(평균이 위로). D2b 중심경로가 평균인지
+# 중앙값인지 출처가 명시하지 않으므로 선택을 드러낸다 (A-24, I3 문서에 영향 측정).
+shock_normalisation: mean
+
 milp:
   frontier_points: 10        # epsilon-constraint grid size (중복 제거 후 8~10개 생존)
   # 대형 인스턴스(NSC 1,110 이진변수)는 최적성 증명에 조합당 40분 이상을 쓴다. E2는

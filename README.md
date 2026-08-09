@@ -39,6 +39,7 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/python scripts/cross_model_check.py
 .venv/bin/python scripts/seed_stability.py
 .venv/bin/python scripts/robustness_structural.py
+.venv/bin/python scripts/process_alternative.py
 
 # 6) 보고서·사이트
 .venv/bin/python scripts/build_report.py && .venv/bin/python scripts/build_site.py
@@ -76,6 +77,7 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 | `scripts/cross_model_check.py` | FIN ↔ EFF 교차대조 | `docs/cross_model_check.md` |
 | `scripts/seed_stability.py` | 시드 5개로 헤드라인 표본오차 측정 | `docs/seed_stability.md` |
 | `scripts/robustness_structural.py` | 결정 기준(P50 vs P90)을 바꿔 재선택 | `docs/robustness_structural.md` |
+| `scripts/process_alternative.py` | GBM vs 평균회귀·충격 정규화 대안 | `docs/process_alternative.md` |
 | `scripts/build_data_package.py` | 재현 패키지(기업 집계 + SHA256 manifest) | `data/package/` |
 | `scripts/build_board_memo.py` | A4 1페이지 이사회 메모 | `web/memo.html` |
 | `scripts/build_scenario_page.py` | 대화형 시나리오 화면 | `web/scenarios.html` |
