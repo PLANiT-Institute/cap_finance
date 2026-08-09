@@ -207,6 +207,7 @@ def main():
     }
     for r in bm.itertuples():
         rows[f"m5_d_m2_pct_{r.bundle}"] = r.d_m2_pct
+        rows[f"m5_d_tcar_pct_{r.bundle}"] = r.d_tcar_pct
     pd.DataFrame(sorted(rows.items()), columns=["key", "value"]).to_csv(
         OUT / "summary.csv", index=False)
     print(ck.to_string(index=False), "\n")
