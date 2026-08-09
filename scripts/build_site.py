@@ -115,6 +115,7 @@ a{{color:var(--accent)}}
   </a>
 </div>
 <p class="lede" style="margin-top:14px;font-size:13.5px">
+  <a href="/changelog">→ 변경 보고 (무엇이 바뀌었나)</a> ·
   <a href="/memo">→ 이사회 1페이지 메모 (A4 인쇄용)</a> ·
   <a href="/dashboard_en">→ Decision dashboard (English)</a></p>
 <div style="display:none">
@@ -174,6 +175,7 @@ def main():
     subprocess.run([sys.executable, str(ROOT / "scripts/build_evidence_page.py")], check=True)
     # 시나리오 페이지는 run_scenarios.py 산출이 있어야 만들어진다 — 없으면 건너뛴다
     subprocess.run([sys.executable, str(ROOT / "scripts/build_board_memo.py")], check=True)
+    subprocess.run([sys.executable, str(ROOT / "scripts/build_changelog_page.py")], check=True)
     scen = subprocess.run([sys.executable, str(ROOT / "scripts/build_scenario_page.py")],
                           capture_output=True, text=True)
     n_bundles = 0
