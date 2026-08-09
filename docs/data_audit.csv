@@ -73,7 +73,7 @@ D6_company_financials,year,22,22,100.0,6,True,True,ok,
 D6_company_financials,revenue,22,21,95.5,21,True,True,PARTIAL,
 D6_company_financials,ebitda,22,22,100.0,22,True,True,ok,
 D6_company_financials,capex_total,22,11,50.0,11,True,True,PARTIAL,
-D6_company_financials,total_debt,22,9,40.9,9,True,False,설계상 정상,`net_debt`(= total_debt − cash)가 지표 ⑥에 쓰이고 이 컬럼은 그 구성요소다. 검증·추적용으로 보존.
+D6_company_financials,total_debt,22,9,40.9,9,True,False,설계상 정상,`net_debt`(= total_debt − cash)가 지표 ⑥에 쓰이고 이 컬럼은 그 구성요소다. POSCO·LOTTE 미확보는 단순 미공시가 아니라 **경계 문제**다 — D6의 POSCO 행은 철강 별도(매출 37.6조)인데 DART에서 바로 얻히는 것은 홀딩스 연결(자산 103조) 또는 홀딩스 별도(순수지주)여서 EBITDA 분모와 어긋난다. 맞지 않는 수를 넣느니 비워 둔다.
 D6_company_financials,net_debt,22,9,40.9,9,True,True,PARTIAL,
 D6_company_financials,interest_expense,22,2,9.1,2,True,False,설계상 정상,이자보상배율용이나 22행 중 2행만 공시돼 지표를 만들 수 없다. **공시 부재가 기록으로 남는 편이 낫다.**
 D6_company_financials,cash,22,10,45.5,10,True,False,설계상 정상,위와 같음 — `net_debt`의 구성요소.

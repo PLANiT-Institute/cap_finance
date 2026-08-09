@@ -33,7 +33,7 @@
 | D5_policy_support | support_scenario | 100.0 | 수집된 지원 시나리오가 `current` 하나뿐이라 전 행 동일한 것이 맞다. **확정된 직접 지원이 없다는 것 자체가 발견**이다(PREP_LOG D5). |
 | D5_policy_support | tech_id | 100.0 | 수집된 정책이 전부 업종 전반(`all`) 적용이라 기술별 값이 없다 — 기술 특정 지원이 존재하지 않는다는 뜻. |
 | D5_policy_support | param_type | 100.0 | **준비 단계에서 소비**된다 — `_instrument`가 이 값으로 유상할당/상한/하한을 분류하고, 엔진은 분류된 `instrument`를 읽는다. |
-| D6_company_financials | total_debt | 40.9 | `net_debt`(= total_debt − cash)가 지표 ⑥에 쓰이고 이 컬럼은 그 구성요소다. 검증·추적용으로 보존. |
+| D6_company_financials | total_debt | 40.9 | `net_debt`(= total_debt − cash)가 지표 ⑥에 쓰이고 이 컬럼은 그 구성요소다. POSCO·LOTTE 미확보는 단순 미공시가 아니라 **경계 문제**다 — D6의 POSCO 행은 철강 별도(매출 37.6조)인데 DART에서 바로 얻히는 것은 홀딩스 연결(자산 103조) 또는 홀딩스 별도(순수지주)여서 EBITDA 분모와 어긋난다. 맞지 않는 수를 넣느니 비워 둔다. |
 | D6_company_financials | interest_expense | 9.1 | 이자보상배율용이나 22행 중 2행만 공시돼 지표를 만들 수 없다. **공시 부재가 기록으로 남는 편이 낫다.** |
 | D6_company_financials | cash | 45.5 | 위와 같음 — `net_debt`의 구성요소. |
 | D7_disclosed_plan | facility_id | 66.7 | `target` 행(회사 전체 목표)은 시설이 없는 것이 정상이다. 채움률 67%는 결손이 아니라 행 종류 구성. |

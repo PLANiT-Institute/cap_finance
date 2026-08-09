@@ -91,6 +91,12 @@ def _affordability(metrics: pd.DataFrame, d6: pd.DataFrame) -> pd.DataFrame:
     such rather than as an infinite ratio — it is the finding, not an error.
     `netdebt_to_ebitda_post` is the debt-financed upper bound (전액 차입 가정):
     it is a ceiling on leverage impact, not a forecast of the funding mix.
+
+    POSCO and LOTTE carry no leverage figures. That is an ENTITY BOUNDARY problem,
+    not a disclosure gap: D6's POSCO rows are the steel operating company (revenue
+    37.6조) while the balance sheet that is readily available is the holding
+    company's, consolidated or separate. Pairing group debt with operating-company
+    EBITDA would produce a ratio that means nothing, so the field stays empty.
     """
     d6 = d6.sort_values("year")
     fin = []

@@ -64,9 +64,13 @@ EXPECTED_GAP = {
     ("D5_policy_support", "tech_id"):
         "수집된 정책이 전부 업종 전반(`all`) 적용이라 기술별 값이 없다 — 기술 특정 지원이 "
         "존재하지 않는다는 뜻.",
+    ("D6_company_financials", "net_debt_note"):
+        "",   # placeholder key (미사용) — 아래 total_debt 주석 참조
     ("D6_company_financials", "total_debt"):
         "`net_debt`(= total_debt − cash)가 지표 ⑥에 쓰이고 이 컬럼은 그 구성요소다. "
-        "검증·추적용으로 보존.",
+        "POSCO·LOTTE 미확보는 단순 미공시가 아니라 **경계 문제**다 — D6의 POSCO 행은 "
+        "철강 별도(매출 37.6조)인데 DART에서 바로 얻히는 것은 홀딩스 연결(자산 103조) 또는 "
+        "홀딩스 별도(순수지주)여서 EBITDA 분모와 어긋난다. 맞지 않는 수를 넣느니 비워 둔다.",
     ("D6_company_financials", "cash"): "위와 같음 — `net_debt`의 구성요소.",
     ("D6_company_financials", "interest_expense"):
         "이자보상배율용이나 22행 중 2행만 공시돼 지표를 만들 수 없다. "
