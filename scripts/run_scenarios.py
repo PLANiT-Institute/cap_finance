@@ -64,7 +64,17 @@ BUNDLES: dict[str, tuple[str, dict]] = {
     "reline_cheap": ("개수 재조달가 ×0.235 — 공시된 실제 개수(47천원/t, 고베 3고로)에 맞추면. "
                      "좌초비용이 줄어 조기 전환의 벌점이 작아진다 (H3 §1-1)",
                      {"incumbent_capex_scale": 0.235}),
+    "penalty_none": ("예산 초과 벌칙 바닥 300 → 0 — 초과에 별도 제재 없이 탄소요금 2배만 무는 제도. "
+                     "§5.3.1의 손익분기(36.5–39.4천원/tCO2)가 이 바닥 아래이므로, 바닥을 치우면 "
+                     "조기 전환이 모형 안에서도 지는지 본다 (한계 13)",
+                     {"milp": "budget_violation_floor_thkrw=0"}),
 }
+
+# E2에서만 읽히는 축 — E2를 공유한 채 돌리면 base와 **한 자리도 다르지 않은** 결과가 나온다.
+# D14까지 carbon_slow·carbon_fast·ppa_costly·retire_free가 그 상태로 요약표에 실려 있었고,
+# 읽는 사람에게는 "흔들어 봤는데 안 변했다"로 보였다. 흔든 적이 없다. 아래 묶음은 --replan
+# 없이 도는 것을 막는다.
+REPLAN_REQUIRED = {"carbon_slow", "carbon_fast", "ppa_costly", "retire_free", "penalty_none"}
 
 
 def build_cfg(name: str) -> C.Config:
@@ -76,8 +86,9 @@ def build_cfg(name: str) -> C.Config:
         if k == "contracts" and v == "ppa_premium_pct*2":
             cfg["contracts"] = dict(cfg["contracts"],
                                     ppa_premium_pct=cfg["contracts"]["ppa_premium_pct"] * 2)
-        elif k == "milp" and v == "retire_max_share=0.4":
-            cfg["milp"] = dict(cfg["milp"], retire_max_share=0.4)
+        elif k == "milp":
+            key, val = v.split("=")
+            cfg["milp"] = dict(cfg["milp"], **{key: float(val)})
         else:
             cfg[k] = v
     return cfg
@@ -168,6 +179,14 @@ def main() -> int:
     bad = [n for n in names if n not in BUNDLES]
     if bad:
         raise SystemExit(f"모르는 묶음: {bad}. 선택지: {list(BUNDLES)}")
+    inert = sorted(set(names) & REPLAN_REQUIRED) if not a.replan else []
+    if inert:
+        if a.bundles:                    # 이름을 찍어 부른 것 — 침묵하면 가짜 결과가 남는다
+            raise SystemExit(f"{inert}: E2에서만 읽히는 축이다. --replan 없이 돌리면 base와 "
+                             f"같은 수가 나오고 그것이 요약표에 '검증됨'으로 남는다. "
+                             f"--replan을 붙여라 (묶음당 ~10분).")
+        print(f"[scenario] --replan 없음 — E2 전용 축 {inert} 건너뜀", flush=True)
+        names = [n for n in names if n not in inert]
 
     SCEN_ROOT.mkdir(parents=True, exist_ok=True)
     path = SCEN_ROOT / "summary.csv"

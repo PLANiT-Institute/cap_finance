@@ -122,6 +122,10 @@ def _computed() -> dict[str, float]:
     for r in _out("m4", "summary").itertuples():
         got[r.key] = float(r.value)
 
+    # §6 강건성 절 (M5, D14): 흔든 축·묶음 행렬·벌칙 바닥 값매김
+    for r in _out("m5", "summary").itertuples():
+        got[r.key] = float(r.value)
+
     # §4 경계 퇴화: 경계 위 점들이 한 기술 일정만 쓰는 묶음 수
     per_group = fp[fp.on_frontier].groupby(
         ["company_id", "scenario", "support"]).base_plan_id.nunique()
