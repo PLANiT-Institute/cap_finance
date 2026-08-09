@@ -292,3 +292,31 @@ POSCO 감축단가가 **−5.7**로 나왔다. FIN이 예산 실행가능 집합
 
 **MCP `get_validation_summary` missing = 0** — 계획한 검증 4종(데이터 감사·후향·외부·교차)이
 전부 존재하는 상태가 됐다.
+
+## Cycle 17 (자체 결함 — `--replan`이 실산출물을 파괴했다)
+
+**무슨 일**: I1 할인율 강건성을 위해 `run_scenarios.py --replan disc35 disc65`를 돌렸다.
+`_link_shared(dst, ["e1"])`은 e1만 링크하고 **이전 실행이 남긴 `<bundle>/e2 → out/e2`
+심볼릭 링크는 그대로 뒀다**. 그 상태에서 E2가 `out_dir=<bundle>` 로 돌면서
+`shutil.rmtree(<bundle>/e2/plans)`가 링크를 따라가 **공유 `out/e2/plans`를 지우고**
+disc35의 계획을 그 자리에 썼다.
+
+**어떻게 드러났나**: `build_site.py` → `build_report.py`가 `plan_P0034.csv` 없음으로
+실패. 산출물 정합이 깨졌다는 신호였다.
+
+**근본 수정**: `_link_shared`가 전 단계를 순회해 **공유 목록에 없는 단계의 낡은 링크를
+반드시 제거**한다. 링크를 남기면 원본에 쓰게 된다는 것이 이 결함의 전부였다.
+
+**회귀 테스트 2개**
+- `test_scenario_bundles_never_write_into_shared_out` — 묶음이 직접 쓰는 e3/e4/e5가
+  공유 `out/`을 링크하고 있지 않은가.
+- `test_production_plan_index_matches_plan_files` — `plan_index.csv`의 계획 파일이 전부
+  실재하는가. **이번 손상을 정확히 검출**했다(추가 즉시 red).
+
+**영향 범위**: 커밋된 C12~C16의 수치는 손상 이전 정상 실행본에서 나온 것이라 유효하다.
+파괴된 것은 `out/` 작업본뿐이며 재실행으로 복구했다(`out/scenarios` 전체 삭제 후
+`python -m cap all`).
+
+**교훈**: 심볼릭 링크로 산출물을 공유하는 설계는 "쓰기 단계에서 링크를 지운다"가
+불변식이다. 공유는 읽기 전용일 때만 안전하다. 시나리오 러너가 원본 `out/`을 절대
+건드리지 않는다는 것이 이제 테스트로 고정됐다.

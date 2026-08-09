@@ -83,16 +83,29 @@ def build_cfg(name: str) -> C.Config:
     return cfg
 
 
+STAGES = ["e1", "e2", "e3", "e4", "e5", "render"]
+
+
 def _link_shared(dst: pathlib.Path, stages: list[str]) -> None:
-    """E1/E2 결과를 공유. 복사 대신 링크 — 묶음이 원본을 덮어쓰지 않게 읽기만 한다."""
+    """공유할 단계는 링크하고, 묶음이 직접 쓸 단계의 낡은 링크는 **반드시 지운다**.
+
+    지우지 않으면 재앙이 난다: 이전 실행이 남긴 `<bundle>/e2 -> out/e2` 링크가 살아 있는
+    상태에서 `--replan`을 걸면 E2가 링크를 따라가 **실산출물 out/e2를 덮어쓴다**.
+    실제로 한 번 그렇게 파괴됐다(2026-08-09). 공유 목록에 없는 단계는 전부 제거한다.
+    """
     dst.mkdir(parents=True, exist_ok=True)
-    for s in stages:
-        src, tgt = ROOT / "out" / s, dst / s
-        if not src.exists():
-            raise SystemExit(f"{src.relative_to(ROOT)} 없음 — `python -m cap all` 먼저 실행")
-        if tgt.is_symlink() or tgt.exists():
-            (tgt.unlink() if tgt.is_symlink() else shutil.rmtree(tgt))
-        tgt.symlink_to(src.resolve(), target_is_directory=True)
+    for s in STAGES:
+        tgt = dst / s
+        if s in stages:
+            src = ROOT / "out" / s
+            if not src.exists():
+                raise SystemExit(f"{src.relative_to(ROOT)} 없음 — `python -m cap all` 먼저 실행")
+            if tgt.is_symlink() or tgt.exists():
+                (tgt.unlink() if tgt.is_symlink() else shutil.rmtree(tgt))
+            tgt.symlink_to(src.resolve(), target_is_directory=True)
+        elif tgt.is_symlink():
+            # 이 단계는 묶음이 직접 쓴다 — 링크를 남겨두면 원본에 쓰게 된다
+            tgt.unlink()
 
 
 def run_bundle(name: str, replan: bool) -> pd.DataFrame:

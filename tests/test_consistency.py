@@ -224,3 +224,33 @@ def test_frontier_points_are_pareto_nondominated():
         for p in on.itertuples():
             dominated = pool[(pool.p50 <= p.p50 - 1e-9) & (pool.tcar <= p.tcar - 1e-9)]
             assert dominated.empty, f"{cid} {scen} {supp}: {p.plan_id}이 지배당함"
+
+
+# ---------------------------------------------------------------- 산출물 격리
+
+def test_scenario_bundles_never_write_into_shared_out():
+    """시나리오 묶음 디렉터리의 링크가 공유 out/을 가리킨 채 남아 있지 않은가.
+
+    회귀 방지: `<bundle>/e2 -> out/e2` 링크가 살아 있는 상태로 `--replan`을 걸면 E2가
+    링크를 따라가 **실산출물을 덮어쓴다**. 실제로 out/e2/plans가 그렇게 파괴됐다.
+    묶음이 직접 쓰는 단계(e2 replan 시)는 링크가 아니라 실디렉터리여야 한다.
+    """
+    root = ROOT / "out" / "scenarios"
+    if not root.exists():
+        pytest.skip("시나리오 산출물 없음")
+    bad = []
+    for b in sorted(p for p in root.iterdir() if p.is_dir()):
+        for stage in ("e3", "e4", "e5"):          # 묶음이 항상 직접 쓰는 단계
+            t = b / stage
+            if t.is_symlink():
+                bad.append(str(t.relative_to(ROOT)))
+    assert not bad, f"묶음이 직접 쓰는 단계가 공유 out/을 링크한다: {bad}"
+
+
+def test_production_plan_index_matches_plan_files():
+    """plan_index.csv의 모든 계획 파일이 실제로 있는가 — 산출물 정합의 최소선."""
+    idx = _read("e2", "plan_index")
+    missing = [p for p in idx.plan_id
+               if not (OUT / "e2" / "plans" / f"plan_{p}.csv").exists()]
+    assert not missing, (f"plan_index에 있으나 파일이 없는 계획 {len(missing)}개 "
+                         f"(예: {missing[:3]}) — out/e2가 다른 실행에 덮어쓰였을 수 있다")

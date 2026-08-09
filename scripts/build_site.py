@@ -148,7 +148,7 @@ cd cap_finance &amp;&amp; python3 -m venv .venv &amp;&amp; .venv/bin/pip install
 직결되므로 비공개 원칙(설계서 §8-2)을 따르며, 공개 배포본에서는 기업 집계만 인용할 것.</div>
 
 <div class="footer">PLANiT Institute · 데이터 컷오프 2026-08-07 ·
-<a href="https://github.com/PLANiT-Institute/cap_finance/blob/main/METHODOLOGY.md">형식 명세</a> · <a href="https://github.com/PLANiT-Institute/cap_finance/blob/main/docs/data_audit.md">데이터 감사</a> · <a href="https://github.com/PLANiT-Institute/cap_finance">cap_finance</a> ·
+<a href="https://github.com/PLANiT-Institute/cap_finance/blob/main/METHODOLOGY.md">형식 명세</a> · <a href="https://github.com/PLANiT-Institute/cap_finance/blob/main/docs/data_audit.md">데이터 감사</a> · <a href="https://github.com/PLANiT-Institute/cap_finance/blob/main/docs/validation_backtest.md">후향 검증</a> · <a href="https://github.com/PLANiT-Institute/cap_finance/blob/main/docs/validation_external.md">외부 대조</a> · <a href="https://github.com/PLANiT-Institute/cap_finance/blob/main/docs/cross_model_check.md">교차 대조</a> · <a href="https://github.com/PLANiT-Institute/cap_finance">cap_finance</a> ·
 <a href="https://github.com/PLANiT-Institute/cap-efficient">cap-efficient</a></div>
 </div>
 """
