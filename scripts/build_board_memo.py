@@ -47,6 +47,26 @@ def main() -> int:
 
     d = m.merge(a.drop(columns=["capex_total_bnkrw", "capex_peak_year", "capex_peak_bnkrw"]),
                 on=["company_id", "scenario", "support"], how="left")
+
+    # 무엇을 언제 — 시설 단위는 비공개(§8-2)이므로 **기술 단위로 집계**해서만 싣는다
+    TECH_KR = {"steel_h2dri": "수소환원제철", "steel_hyrex": "HyREX", "steel_eff": "에너지효율",
+               "steel_h2inj": "수소 취입", "steel_scrap": "스크랩 증대", "steel_hbi": "HBI 장입",
+               "petchem_h2fuel": "연료 전환", "petchem_eff": "에너지효율",
+               "petchem_ecracker": "전기 크래커", "petchem_ecracker_hybrid": "전기 크래커(하이브리드)",
+               "petchem_bio": "바이오나프타", "petchem_hp_whr": "고온 히트펌프·폐열",
+               "retire": "설비 폐쇄"}
+    best = (fr[~fr.is_disclosed & fr.budget_ok].sort_values("p50")
+            .groupby("company_id").head(1))
+    sched = []
+    for r in best.itertuples():
+        f = ROOT / "out" / "e2" / "plans" / f"plan_{r.base_plan_id}.csv"
+        if not f.exists():
+            continue
+        pl = pd.read_csv(f).dropna(subset=["tech_id"])
+        for t, g in pl.groupby("tech_id"):
+            sched.append(dict(company_id=r.company_id, tech=TECH_KR.get(t, t),
+                              units=int(len(g)), first=int(g.adopt_year.min()),
+                              last=int(g.adopt_year.max()), is_retire=(t == "retire")))
     D = {
         "co": json.loads(d.to_json(orient="records")),
         "frontier": json.loads(fr[fr.on_frontier | fr.is_disclosed][
@@ -55,6 +75,7 @@ def main() -> int:
         "gap": json.loads(gap.drop_duplicates("company_id")[
             ["company_id", "gap_cost_bnkrw", "gap_risk_bnkrw"]].round(1).to_json(orient="records")),
         "coname": CONAME, "sector": SECTOR, "skipped": skipped,
+        "schedule": sched,
         "date": dt.date.today().isoformat(),
     }
     WEB.mkdir(exist_ok=True)
@@ -126,12 +147,14 @@ li b{color:var(--ink)}
 <div>
   <h2>3. 자본 규모와 시점</h2>
   <div class="tbl"><table id="cap"></table></div>
-  <h2 style="margin-top:12px">4. 읽을 때 유의</h2>
+  <h2 style="margin-top:12px">4. 무엇을 언제 — 기술 단위</h2>
+  <div id="sched"></div>
+  <h2 style="margin-top:12px">5. 읽을 때 유의</h2>
   <ul id="caveats"></ul>
 </div>
 </div>
 
-<h2>5. 결론</h2>
+<h2>6. 결론</h2>
 <ol id="concl"></ol>
 
 <div class="ft" id="ft"></div>
@@ -194,6 +217,32 @@ const why=Object.entries(D.skipped);
 if(why.length) document.getElementById("cap").insertAdjacentHTML("afterend",
   `<div style="font-size:9.5px;color:var(--ink3);margin-top:5px;line-height:1.45">
    * 경계까지 거리 미산출 사유 — ${why.map(([c,r])=>`<b>${D.coname[c]||c}</b>: ${r}`).join(" · ")}</div>`);
+
+(()=>{  // 기술 단위 전환 일정 — 시설 식별자 없음(§8-2)
+  const S=D.schedule||[]; if(!S.length){document.getElementById("sched").innerHTML="";return;}
+  const y0=2025,y1=2050,W=330,rowH=15,P={l:0,r:8,t:12};
+  const co=CO.filter(c=>S.some(s=>s.company_id===c));
+  const H=P.t+co.reduce((n,c)=>n+S.filter(s=>s.company_id===c).length,0)*rowH+co.length*4+10;
+  const X=y=>P.l+(y-y0)/(y1-y0)*(W-P.l-P.r);
+  let s=`<svg viewBox="0 0 ${W+150} ${H}">`, y=P.t;
+  for(const yr of [2030,2040,2050]) s+=`<line x1="${X(yr)+150}" y1="6" x2="${X(yr)+150}" y2="${H-6}"
+    stroke="var(--line2)"/><text class="ax" x="${X(yr)+150}" y="5" text-anchor="middle">${yr}</text>`;
+  for(const c of co){
+    for(const r of S.filter(s=>s.company_id===c)){
+      const x=X(r.first)+150, w=Math.max(4,X(r.last)-X(r.first));
+      const col=r.is_retire?"var(--disc)":"var(--nz)";
+      s+=`<text class="ax" x="146" y="${y+9}" text-anchor="end">${c===S.filter(s=>s.company_id===c)[0].company_id&&r===S.filter(s=>s.company_id===c)[0]?D.coname[c]+" · ":""}${r.tech}</text>
+        <rect x="${x}" y="${y+2}" width="${w}" height="8" rx="2" fill="${col}" opacity="${r.is_retire?.55:.85}"/>
+        <text class="ax" x="${x+w+5}" y="${y+9}">${r.units}기 ${r.first}${r.last>r.first?"–"+r.last:""}</text>`;
+      y+=rowH;
+    }
+    y+=4;
+  }
+  document.getElementById("sched").innerHTML=s+`</svg>
+   <div style="font-size:9px;color:var(--ink3);margin-top:3px;line-height:1.4">
+   비용최소 계획의 채택 연도. <b>시설 식별자는 싣지 않는다</b>(설계서 §8-2) — 몇 기를 언제
+   착수하는지가 자본계획에 필요한 해상도다. 빨강 = 설비 폐쇄.</div>`;
+})();
 
 document.getElementById("caveats").innerHTML=[
  "<b>시설 배출은 배분값이다.</b> 회사 실측을 능력×루트 배출계수로 나눈 값이라 시설 단위 절대값은 순서 정보로만 읽는다.",
