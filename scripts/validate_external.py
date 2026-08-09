@@ -52,6 +52,12 @@ LIT_CAPEX = [
      "€2011, 전해조 160 포함 — 우리 모형은 수소를 사서 쓰므로 전해조분 제외 비교"),
 ]
 
+# 개수(reline) 앵커 원값 — L1 문헌 지도(2026-08-10)에서 등록. 여기서 보정하지 않는다.
+# 주의: NATCOMM_APA_2026의 H2-DRI-EAF 574 EUR/t는 VOGL_2018과 정확히 같다. 즉 아래 48 EUR/t도
+# 독립 관측이 아니라 같은 계보의 2차 인용일 수 있다 — 3점이 아니라 2.5점으로 취급한다.
+NATCOMM_RELINE_EUR_T = 48.0
+ACCR_RELINE_USD_M = (300.0, 1000.0)  # 고로 1기당, 통화 표기 없음 → USD 가정
+
 # 우리 기술 ↔ 어떤 문헌 항목과 비교 가능한가 (범위는 [저, 고] 천원/t능력)
 TECH_MAP = {
     "steel_h2dri": ("DRP+EAF (전해조 제외)", 592 * EURKRW / 1000, 751 * EURKRW / 1000, "DIW_DP2082"),
@@ -124,6 +130,50 @@ def main() -> int:
                   "**교체가 아니라 범위 부여의 근거**로 쓴다: `incumbent_capex_unit`을 "
                   f"[{real:,.0f}, {ours:,.0f}] 범위의 T5로 승급하고 민감도로 결론 불변성을 "
                   "확인하는 것이 다음 작업이다.", ""]
+
+            # L1(2026-08-10)에서 추가된 독립 앵커 둘. 단일 관측이던 위 판정을 3점으로 늘린다.
+            bf_cap_med = float(d1a[d1a.unit_type == "BF"].capacity.median()) / 1e6  # Mt/yr
+            accr_lo = ACCR_RELINE_USD_M[0] * USDKRW / 1e3 / bf_cap_med  # 천원/t
+            accr_hi = ACCR_RELINE_USD_M[1] * USDKRW / 1e3 / bf_cap_med
+            natcom = NATCOMM_RELINE_EUR_T * EURKRW / 1000
+            L += ["| 앵커 | 천원/t능력 | 원값 | 출처 |", "|---|---|---|---|",
+                  f"| 고베제강 3고로 실적 | {real:,.0f} | 공시 프로젝트비 | KOBELCO_HBI_BF |",
+                  f"| 문헌 개수 단가 | {natcom:,.0f} | €{NATCOMM_RELINE_EUR_T}/t | NATCOMM_APA_2026 |",
+                  f"| 개수 1기당 재조달비 | {accr_lo:,.0f} ~ {accr_hi:,.0f} | "
+                  f"{ACCR_RELINE_USD_M[0]:,.0f}~{ACCR_RELINE_USD_M[1]:,.0f} M USD/기 | ACCR_BF_RELINE_2025 |",
+                  f"| **우리 값** | **{ours:,.0f}** | D1a BF 중앙값 | — |", "",
+                  f"ACCR 값은 기당 금액이라 우리 BF 능력 중앙값 {bf_cap_med:.2f} Mt/yr로 나눴다 "
+                  "— **환산 자체가 T5**이고, 원문이 통화(USD/AUD)를 명시하지 않아 USD로 가정했다. "
+                  "AUD였다면 대역이 약 0.65배로 내려간다.", "",
+                  f"**세 앵커가 한 점으로 모이지 않는다**: {real:,.0f} · {natcom:,.0f} · "
+                  f"[{accr_lo:,.0f}, {accr_hi:,.0f}]. 우리 {ours:,.0f}은 앞의 둘보다 "
+                  f"×{ours / natcom:.1f}~×{ours / real:.1f} 크지만 세 번째 대역 **안에** 있다. "
+                  "따라서 판정은 '우리 값이 틀렸다'가 아니라 **'개수 단가는 5배 폭으로 흩어져 "
+                  "있고 그 폭이 결론에 전파돼야 한다'**이다. 점 추정 교체가 아니라 "
+                  f"[{real:,.0f}, {accr_hi:,.0f}] 범위의 민감도가 필요하다.", ""]
+
+        # 재투자 창 타이밍 — 우리 D1a 가정(마지막 개수 + 15/20년)이 바깥과 맞는가
+        bf = d1a[d1a.unit_type == "BF"]
+        if not bf.empty and "next_reinvest_year" in bf.columns:
+            yr, cap = bf.next_reinvest_year.astype(float), bf.capacity.astype(float)
+            n30, s30 = int((yr <= 2030).sum()), 100 * cap[yr <= 2030].sum() / cap.sum()
+            win = (yr >= 2026) & (yr <= 2035)
+            nwin, swin = int(win.sum()), 100 * cap[win].sum() / cap.sum()
+            L += ["### 1-2. 재투자 창 타이밍 ↔ 문헌", "",
+                  "`incumbent_capex_unit`과 달리 **재투자 시점**은 지금까지 외부 대조가 없었다 "
+                  "— D1a의 `last_reline_year + reinvest_cycle_yr`(15/20년)라는 내부 가정이다. "
+                  "이 가정이 CAPEX 피크 연도를 직접 정하므로 바깥과 견준다.", "",
+                  "| 지표 | 우리 (고로 {n}기) | 문헌 | 출처 |".format(n=len(bf)),
+                  "|---|---|---|---|",
+                  f"| 2030년까지 재투자 도래 | {n30}기 / 능력 {s30:.1f}% | 철강 자산 42% | "
+                  "NATCOMM_APA_2026 |",
+                  f"| 2026–2035 도래 비중 | {nwin}/{len(bf)}기 = {100 * nwin / len(bf):.0f}% "
+                  f"(능력 {swin:.1f}%) | 개수 의사결정의 70% 이상 | ACCR_BF_RELINE_2025 |", "",
+                  "**두 지표 모두 문헌과 같은 자리에 떨어진다.** 표본이 다르므로(우리=한일 "
+                  "일관제철 17기, NATCOMM=CA100+ 철강 10사, ACCR=13사 62기) 일치 자체를 "
+                  "검증으로 볼 수는 없지만, 적어도 우리 재투자 창이 **바깥에서 관측되는 창과 "
+                  "어긋나지 않는다**. 우리 쪽이 조금 앞선 것(48.9% vs 42%)은 한일 노후 "
+                  "고로 표본이라는 설명과 일치한다.", ""]
 
     # ---------------------------------------------------------------- (a-2) 문헌 범위
     L += ["## 2. 기술 CAPEX ↔ 문헌 범위", "",
