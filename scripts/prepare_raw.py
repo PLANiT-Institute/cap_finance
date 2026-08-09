@@ -88,6 +88,15 @@ d1a = fs[["facility_id", "company_id", "sector", "site", "unit_type", "unit_name
 
 # ---------------------------------------------------------------- D1b panel
 fp = read("facility_panel")
+# G1 사업소 실측 (EEGS 온대법 공표, T1) — 있으면 배분 분포에 쓴다
+_se = RAW / "jp_site_emissions.csv"
+SITE_EM = pd.read_csv(_se, encoding="utf-8-sig") if _se.exists() else None
+if SITE_EM is not None:
+    SITE_EM = SITE_EM[SITE_EM.fiscal_year == SITE_EM.fiscal_year.max()]
+    log(f"사업소 실측 배출 로드: {len(SITE_EM)}행 "
+        f"({', '.join(sorted(SITE_EM.company_id.unique()))}, EEGS_GHG_2023)")
+# 루트별 물리 타당 배출원단위 대역 (tCO₂/t) — 새 데이터가 불가능한 값을 만들면 잡는다
+EF_BAND = {"BF": (1.2, 3.0), "FINEX": (1.2, 3.0), "EAF": (0.1, 1.0), "NCC": (0.4, 2.0)}
 ROUTE = {  # (EF tCO2/t, elec MWh/t, coal GJ/t, gas GJ/t) — 업계 표준 원단위, 문서화된 주입 가정
     "BF": (2.15, 0.08, 13.5, 0.4),
     "FINEX": (2.05, 0.10, 13.0, 0.4),
@@ -109,9 +118,54 @@ for company, grp in d1a.groupby("company_id"):
     w_elec = grp.apply(lambda r: r.capacity * ROUTE[r.unit_type][1], axis=1)
 
     if company in ("POSCO", "NSC"):
-        # steel: 회사 합계(생산·배출 실측)를 능력 x 루트가중으로 시설 배분
+        # steel: 회사 합계(생산·배출 실측)를 능력 x 루트가중으로 시설 배분.
+        # G1: 사업소 실측이 있으면 **분포는 사업소 공시에서, 수준은 회사 공시에서** 가져온다.
+        # EEGS 온대법 산정배출량은 에너지기원 CO₂(S1+S2)라 수준을 그대로 쓸 수 없다 —
+        # 그래서 사업소 간 '몫'만 취하고 회사 Scope1 총량에 재척도한다. 배분 오차가
+        # 회사 전체에서 사업소 내부로 줄어들고, 고로 1기 사이트는 사실상 실측이 된다.
+        site_w, conflict = None, set()
+        if SITE_EM is not None:
+            se = SITE_EM[SITE_EM.company_id == company]
+            if len(se):
+                site_tot = se.groupby("site_key").emissions_tco2.sum()
+                keys = grp.facility_id.str.split("_").str[1]
+                have = site_tot.reindex(keys.unique()).dropna()
+                if len(have) >= 2:                      # 최소 2개 사업소가 맞아야 의미
+                    site_w = (have / have.sum()).to_dict()
+                    # **물리 타당성 가드**: 사업소 공시와 설비 목록이 어긋나면 새 데이터가
+                    # 불가능한 원단위를 만든다. 실제로 室蘭은 사업소 배출 0.68 Mt에 고로
+                    # 2.75 Mt 능력이라 0.28 tCO₂/t가 나왔다 — 고로로는 불가능하다.
+                    # 그런 시설은 **옛 규칙으로 되돌리고 충돌을 로그로 남긴다.**
+                    prod_t0 = float(tot[tot.year == max(years)].production.iloc[0])
+                    for x in grp.itertuples():
+                        k = x.facility_id.split("_")[1]
+                        sib_w = sum(y.capacity * ROUTE[y.unit_type][0]
+                                    for y in grp.itertuples()
+                                    if y.facility_id.split("_")[1] == k)
+                        pr = prod_t0 * x.capacity / grp.capacity.sum()
+                        ef_imp = (float(tot[tot.year == max(years)].emissions_s1.iloc[0])
+                                  * site_w.get(k, 0) * (x.capacity * ROUTE[x.unit_type][0])
+                                  / sib_w) / pr if pr else 0
+                        lo, hi = EF_BAND.get(x.unit_type, (0.0, 9.9))
+                        if not (lo <= ef_imp <= hi):
+                            conflict.add(x.facility_id)
+                            log(f"{company} **충돌**: {x.facility_id}({k}) 사업소 배출로 배분하면 "
+                                f"원단위 {ef_imp:.2f} tCO₂/t — {x.unit_type} 타당 대역 "
+                                f"[{lo}, {hi}] 밖. 사업소 공시와 설비 목록이 어긋난다 "
+                                f"(능력 과대 또는 사업소 경계 차이). **이 시설은 옛 규칙 유지**")
+                    log(f"{company}: 사업소 실측 배출로 **분포** 대체 "
+                        f"({len(have)}개 사업소, EEGS_GHG_2023). 수준은 회사 Scope1 공시 유지 "
+                        f"— 온대법 산정배출량은 S1+S2라 수준 직접 사용 불가")
         w_ef = grp.apply(lambda r: r.capacity * ROUTE[r.unit_type][0], axis=1)
         w_cap = grp.capacity
+        # 충돌 시설은 옛 규칙 몫을 그대로 갖고, 나머지가 남은 몫을 사업소 분포로 나눈다
+        fb_wsum = sum(x.capacity * ROUTE[x.unit_type][0]
+                      for x in grp.itertuples() if x.facility_id in conflict) or 1.0
+        fb_share = fb_wsum / w_ef.sum() if conflict else 0.0
+        renorm = (1.0 - fb_share) / sum(
+            v for k, v in (site_w or {}).items()
+            if any(x.facility_id.split("_")[1] == k and x.facility_id not in conflict
+                   for x in grp.itertuples())) if site_w else 1.0
         for y in years:
             t = tot[tot.year == y]
             prod_t = float(t.production.iloc[0]) if len(t) and pd.notna(t.production.iloc[0]) else np.nan
@@ -119,7 +173,16 @@ for company, grp in d1a.groupby("company_id"):
             s2_t = float(t.emissions_s2.iloc[0]) if len(t) and pd.notna(t.emissions_s2.iloc[0]) else 0.0
             for fid, r in grp.set_index("facility_id").iterrows():
                 prod = prod_t * r.capacity / w_cap.sum()
-                s1 = s1_t * (r.capacity * ROUTE[r.unit_type][0]) / w_ef.sum()
+                if site_w and fid not in conflict:
+                    # 사업소 몫 × 사업소 내부 능력×EF 몫
+                    sk = fid.split("_")[1]
+                    sib = grp[(grp.facility_id.str.split("_").str[1] == sk)
+                              & (~grp.facility_id.isin(conflict))]
+                    inner = (r.capacity * ROUTE[r.unit_type][0]) / sum(
+                        x.capacity * ROUTE[x.unit_type][0] for x in sib.itertuples())
+                    s1 = s1_t * renorm * site_w.get(sk, 0.0) * inner
+                else:
+                    s1 = s1_t * fb_share * (r.capacity * ROUTE[r.unit_type][0]) / fb_wsum
                 s2 = s2_t * (r.capacity * ROUTE[r.unit_type][1]) / w_elec.sum()
                 ef = ROUTE[r.unit_type]
                 rows.append([fid, y, prod, s1, s2, prod * ef[2], prod * ef[3], prod * ef[1], "", "PREP_ALLOC"])

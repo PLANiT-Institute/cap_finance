@@ -6,8 +6,12 @@
 - 재투자 창 결측 2기(신설 EAF/FINEX): commissioning+20년으로 설정
 - D1a incumbent_capex_unit 주입: BF 200천원/t, FINEX 300천원/t, EAF 250천원/t, NCC 150천원/t — 개수·대정비 재조달가 기준(포항4고로 개수비 앵커), 조기 전환 좌초비용=캠페인 정액상각 잔존가
 - D1a margin_kthou_t 주입: 철강 70·석화 290천원/t (D4 마진 시계열 평균 — 조기폐쇄의 상실 마진, 석화는 스프레드라 상한 성격)
+- 사업소 실측 배출 로드: 35행 (MCI, NSC, EEGS_GHG_2023)
 - 에너지 원단위 전면 결측 → 루트 표준값 주입: BF: EF 2.15, 전력 0.08MWh/t, 원료탄 13.5GJ/t, 가스 0.4GJ/t; FINEX: EF 2.05, 전력 0.1MWh/t, 원료탄 13.0GJ/t, 가스 0.4GJ/t; EAF: EF 0.45, 전력 0.55MWh/t, 원료탄 0.0GJ/t, 가스 1.0GJ/t; NCC: EF 0.95, 전력 0.35MWh/t, 원료탄 0.0GJ/t, 가스 8.0GJ/t
 - MCI: 상향식 추정 (능력x0.9xEF). 회사 보고 Scope1 대비 커버리지 25% — 비분해로 설비는 모형 밖. Scope2는 같은 커버리지로 축소 후 전력 가중 배분
+- NSC **충돌**: NSC_MUR_BF2(MUR) 사업소 배출로 배분하면 원단위 0.28 tCO₂/t — BF 타당 대역 [1.2, 3.0] 밖. 사업소 공시와 설비 목록이 어긋난다 (능력 과대 또는 사업소 경계 차이). **이 시설은 옛 규칙 유지**
+- NSC **충돌**: NSC_KAS_BF1(KAS) 사업소 배출로 배분하면 원단위 3.01 tCO₂/t — BF 타당 대역 [1.2, 3.0] 밖. 사업소 공시와 설비 목록이 어긋난다 (능력 과대 또는 사업소 경계 차이). **이 시설은 옛 규칙 유지**
+- NSC: 사업소 실측 배출로 **분포** 대체 (7개 사업소, EEGS_GHG_2023). 수준은 회사 Scope1 공시 유지 — 온대법 산정배출량은 S1+S2라 수준 직접 사용 불가
 - NSC: 회사 실측 합계(생산·Scope1)를 능력x루트EF 가중으로 10기 배분 (연도 [2022, 2023, 2024]). Scope2는 전력 소비 가중 배분 (11.42 MtCO₂ @2024)
 - POSCO: 회사 실측 합계(생산·Scope1)를 능력x루트EF 가중으로 9기 배분 (연도 [2022, 2023, 2024]). Scope2는 전력 소비 가중 배분 (1.40 MtCO₂ @2024)
 - D2a 단조성 보정: NZ15 > B20 역전 5개 연도-지역-섹터에서 NZ15 := min(NZ15, B20). 초반 급감형 재보간은 2차 수집(F항) 대상
@@ -26,4 +30,4 @@
 - D4 electrolyzer_capex USD→KRW x1350. 관측 2개(2022 상승 구간)뿐 → 감소율은 캘리브레이션 사전값(연 5%) 사용, 앵커는 최종 관측값
 - D5: 수집된 수단은 K-ETS 유상할당·GX-ETS 프라이스칼라 — CAPEX 보조·CCfD 아님 → subsidy/ccfd 경로에는 미적용(확정된 직접 지원 부재 = net=gross, 그 자체가 발견). 다만 유상할당 비율은 탄소비용의 직접 입력이므로 instrument를 auction_share(발전외=철강·석화) / auction_share_power(발전부문) / price_cap / price_floor로 분류해 엔진이 발전외 행만 읽게 한다 (plancost.auction_share)
 - D7: EAF 신설 커밋(NSC_YAW_EAF1·NSC_HIR_EAF2·POSCO_GWY_EAF1)은 기존 시설의 '전환'이 아니라 신설 경로 — BF→EAF 전환 불허 규칙에 따라 모형 커밋으로 미해석(경고로 드롭). NSC 공시 좌표는 KIM_BF2 수소환원 실증 커밋으로 측정
-- 출처 등록부 공개 사본 동기화: 77건 -> data/manifests/source_register.csv
+- 출처 등록부 공개 사본 동기화: 78건 -> data/manifests/source_register.csv
