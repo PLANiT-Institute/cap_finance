@@ -159,6 +159,8 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("bundles", nargs="*", default=None,
                     help=f"기본 전체. 선택지: {', '.join(BUNDLES)}")
+    ap.add_argument("--force", action="store_true",
+                    help="재계획본을 평가 전용 결과로 덮어쓴다 (기본은 보존)")
     ap.add_argument("--replan", action="store_true",
                     help="E2 MILP까지 다시 푼다 (계획 선택 채널 포함, 묶음당 ~10분)")
     a = ap.parse_args()
@@ -168,6 +170,17 @@ def main() -> int:
         raise SystemExit(f"모르는 묶음: {bad}. 선택지: {list(BUNDLES)}")
 
     SCEN_ROOT.mkdir(parents=True, exist_ok=True)
+    path = SCEN_ROOT / "summary.csv"
+    # 재계획(--replan) 결과는 20분씩 든 계산이다. 평가 전용 실행이 그것을 조용히 덮어쓰면
+    # I1 강건성 결과가 산출물에서 사라진다 — 실제로 한 번 그렇게 잃었다(2026-08-09).
+    if path.exists() and not a.replan:
+        prev = pd.read_csv(path)
+        keep = set(prev[prev.replanned].bundle) & set(names)
+        if keep:
+            print(f"[scenario] 재계획본 보존: {sorted(keep)} 건너뜀 "
+                  f"(덮어쓰려면 --force 또는 --replan)", flush=True)
+            names = [n for n in names if n not in keep] if not a.force else names
+
     frames = []
     for n in names:
         t0 = time.time()
@@ -175,9 +188,10 @@ def main() -> int:
         frames.append(run_bundle(n, a.replan))
         print(f"[scenario] {n} done in {time.time() - t0:.1f}s", flush=True)
 
+    if not frames:
+        print("[scenario] 새로 계산한 묶음이 없다 — 기존 요약 유지"); return 0
     df = pd.concat(frames, ignore_index=True)
-    path = SCEN_ROOT / "summary.csv"
-    if path.exists() and a.bundles:                 # 부분 실행은 기존 표를 갱신
+    if path.exists():                               # 부분 실행은 기존 표를 갱신
         old = pd.read_csv(path)
         df = pd.concat([old[~old.bundle.isin(names)], df], ignore_index=True)
     df.sort_values(["bundle", "company_id", "scenario", "support"]).to_csv(path, index=False)
