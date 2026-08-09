@@ -2,12 +2,12 @@ file,column,rows,filled,filled_pct,distinct,in_schema,engine_reference,verdict,n
 D1a_facility_static,facility_id,23,23,100.0,23,True,True,ok,
 D1a_facility_static,company_id,23,23,100.0,4,True,True,ok,
 D1a_facility_static,sector,23,23,100.0,2,True,True,ok,
-D1a_facility_static,site,23,23,100.0,13,True,False,UNUSED,
+D1a_facility_static,site,23,23,100.0,13,True,False,설계상 정상,시설 부지명 — 시설 단위 비공개 원칙(§8-2)상 모형이 읽지 않는 것이 맞다.
 D1a_facility_static,unit_type,23,23,100.0,4,True,True,ok,
 D1a_facility_static,unit_name,23,23,100.0,23,True,False,ok,e2 (capacity parsed from 내용적 in name — G3)
 D1a_facility_static,capacity,23,23,100.0,19,True,True,ok,
 D1a_facility_static,capacity_unit,23,23,100.0,4,True,False,ok,unit label only
-D1a_facility_static,commissioning_year,23,14,60.9,12,True,False,UNUSED,
+D1a_facility_static,commissioning_year,23,14,60.9,12,True,False,설계상 정상,"**준비 단계에서 소비**된다(prepare_raw: 2027년 이후 신설 제외, 재투자 창 결측 보정). 엔진이 직접 읽지 않을 뿐 버려지는 값이 아니다."
 D1a_facility_static,last_reline_year,23,23,100.0,17,True,True,ok,
 D1a_facility_static,reinvest_cycle_yr,23,23,100.0,3,True,True,ok,
 D1a_facility_static,next_reinvest_year,23,23,100.0,14,True,True,ok,
@@ -19,18 +19,18 @@ D1b_facility_panel,facility_id,69,69,100.0,23,True,True,ok,
 D1b_facility_panel,year,69,69,100.0,3,True,True,ok,
 D1b_facility_panel,production,69,69,100.0,49,True,True,ok,
 D1b_facility_panel,emissions_s1,69,69,100.0,49,True,True,ok,
-D1b_facility_panel,emissions_s2,69,69,100.0,52,True,False,UNUSED,
+D1b_facility_panel,emissions_s2,69,69,100.0,52,True,False,설계상 정상,"수집·보존하되 지표 경계는 Scope 1이다(A-21). 예산이 기업 자체 base에 앵커되므로 수준 중립이고, 넣으면 전기화가 더 유리해지는 방향의 구조 대안."
 D1b_facility_panel,energy_coal,69,69,100.0,43,True,True,ok,
 D1b_facility_panel,energy_gas,69,69,100.0,49,True,True,ok,
 D1b_facility_panel,energy_elec,69,69,100.0,49,True,True,ok,
-D1b_facility_panel,energy_naphtha,69,0,0.0,0,True,False,EMPTY,
+D1b_facility_panel,energy_naphtha,69,0,0.0,0,True,False,설계상 정상,석화 원료비는 물량×가격이 아니라 **에틸렌-납사 스프레드 마진**(D1a margin_kthou_t)으로 들어온다 — 전환 계획이 원료를 바꾸지 않는 한 증분비용에서 상쇄된다. 다만 원료가격 변동은 TCaR에 잡히지 않는다(한계로 기재).
 D1b_facility_panel,source_id,69,69,100.0,2,True,False,ok,"provenance (audited here, not modelled)"
 D2a_scenario_budget,scenario,48,48,100.0,2,True,True,ok,
 D2a_scenario_budget,region,48,48,100.0,2,True,True,ok,
 D2a_scenario_budget,sector,48,48,100.0,2,True,True,ok,
 D2a_scenario_budget,year,48,48,100.0,6,True,True,ok,
 D2a_scenario_budget,carbon_budget,48,48,100.0,37,True,True,ok,
-D2a_scenario_budget,gcam_version,48,48,100.0,1,True,False,UNUSED,
+D2a_scenario_budget,gcam_version,48,48,100.0,1,True,False,설계상 정상,출처 추적용 라벨. EST_v0 잠정이라 전 행 동일한 것이 맞다.
 D2a_scenario_budget,source_id,48,48,100.0,2,True,False,ok,"provenance (audited here, not modelled)"
 D2b_scenario_prices,scenario,224,224,100.0,2,True,True,ok,
 D2b_scenario_prices,region,224,224,100.0,2,True,True,ok,
@@ -51,7 +51,7 @@ D3_tech_options,emission_factor,13,13,100.0,11,True,True,ok,
 D3_tech_options,avail_year,13,13,100.0,6,True,True,ok,
 D3_tech_options,build_years,13,13,100.0,5,True,True,ok,
 D3_tech_options,lifetime,13,13,100.0,3,True,True,ok,
-D3_tech_options,capex_uncertainty,13,13,100.0,4,True,False,UNUSED,
+D3_tech_options,capex_uncertainty,13,13,100.0,4,True,True,ok,
 D3_tech_options,source_id,13,13,100.0,13,True,False,ok,"provenance (audited here, not modelled)"
 D3_tech_options,retrofit,13,13,100.0,2,False,True,ok,
 D4_price_history,date,99,99,100.0,43,True,True,ok,
@@ -59,10 +59,10 @@ D4_price_history,series_id,99,99,100.0,18,True,True,ok,
 D4_price_history,value,99,99,100.0,98,True,True,ok,
 D4_price_history,unit,99,99,100.0,19,True,True,ok,
 D4_price_history,source_id,99,99,100.0,15,True,False,ok,"provenance (audited here, not modelled)"
-D5_policy_support,support_scenario,7,7,100.0,1,True,True,CONSTANT,
+D5_policy_support,support_scenario,7,7,100.0,1,True,True,설계상 정상,수집된 지원 시나리오가 `current` 하나뿐이라 전 행 동일한 것이 맞다. **확정된 직접 지원이 없다는 것 자체가 발견**이다(PREP_LOG D5).
 D5_policy_support,instrument,7,7,100.0,4,True,True,ok,
-D5_policy_support,tech_id,7,7,100.0,1,True,True,CONSTANT,
-D5_policy_support,param_type,7,7,100.0,3,True,False,UNUSED,
+D5_policy_support,tech_id,7,7,100.0,1,True,True,설계상 정상,수집된 정책이 전부 업종 전반(`all`) 적용이라 기술별 값이 없다 — 기술 특정 지원이 존재하지 않는다는 뜻.
+D5_policy_support,param_type,7,7,100.0,3,True,False,설계상 정상,"**준비 단계에서 소비**된다 — `_instrument`가 이 값으로 유상할당/상한/하한을 분류하고, 엔진은 분류된 `instrument`를 읽는다."
 D5_policy_support,value,7,7,100.0,6,True,True,ok,
 D5_policy_support,unit,7,7,100.0,2,True,True,ok,
 D5_policy_support,valid_from,7,7,100.0,2,True,True,ok,
@@ -73,17 +73,17 @@ D6_company_financials,year,22,22,100.0,6,True,True,ok,
 D6_company_financials,revenue,22,21,95.5,21,True,True,PARTIAL,
 D6_company_financials,ebitda,22,22,100.0,22,True,True,ok,
 D6_company_financials,capex_total,22,11,50.0,11,True,True,PARTIAL,
-D6_company_financials,total_debt,22,9,40.9,9,True,False,UNUSED,
+D6_company_financials,total_debt,22,9,40.9,9,True,False,설계상 정상,`net_debt`(= total_debt − cash)가 지표 ⑥에 쓰이고 이 컬럼은 그 구성요소다. 검증·추적용으로 보존.
 D6_company_financials,net_debt,22,9,40.9,9,True,True,PARTIAL,
-D6_company_financials,interest_expense,22,2,9.1,2,True,False,UNUSED,
-D6_company_financials,cash,22,10,45.5,10,True,False,UNUSED,
+D6_company_financials,interest_expense,22,2,9.1,2,True,False,설계상 정상,이자보상배율용이나 22행 중 2행만 공시돼 지표를 만들 수 없다. **공시 부재가 기록으로 남는 편이 낫다.**
+D6_company_financials,cash,22,10,45.5,10,True,False,설계상 정상,위와 같음 — `net_debt`의 구성요소.
 D6_company_financials,source_id,22,22,100.0,4,True,False,ok,"provenance (audited here, not modelled)"
 D7_disclosed_plan,company_id,12,12,100.0,4,True,True,ok,
 D7_disclosed_plan,item_type,12,12,100.0,3,True,True,ok,
-D7_disclosed_plan,facility_id,12,8,66.7,7,True,True,PARTIAL,
-D7_disclosed_plan,tech_id,12,8,66.7,4,True,True,PARTIAL,
+D7_disclosed_plan,facility_id,12,8,66.7,7,True,True,설계상 정상,`target` 행(회사 전체 목표)은 시설이 없는 것이 정상이다. 채움률 67%는 결손이 아니라 행 종류 구성.
+D7_disclosed_plan,tech_id,12,8,66.7,4,True,True,설계상 정상,위와 같음 — `target`·`timing` 행은 기술 특정이 없다.
 D7_disclosed_plan,year_stated,12,12,100.0,6,True,True,ok,
-D7_disclosed_plan,coverage_pct,12,0,0.0,0,True,True,EMPTY,
-D7_disclosed_plan,resolution,12,12,100.0,2,True,False,UNUSED,
+D7_disclosed_plan,coverage_pct,12,0,0.0,0,True,True,설계상 정상,PPA·EPC 커버리지 비율용 컬럼. 현재 수집된 공시에 해당 항목이 없다 — 비어 있는 것이 곧 '그런 공시가 없다'는 발견.
+D7_disclosed_plan,resolution,12,12,100.0,2,True,False,설계상 정상,공시 해상도 등급. 엔진 입력은 아니지만 **gap 미산출 사유 판정**의 근거이고 `disclosed_skipped.csv` 해석에 필요하다.
 D7_disclosed_plan,source_id,12,12,100.0,5,True,False,ok,"provenance (audited here, not modelled)"
-D7_disclosed_plan,quote,12,12,100.0,12,True,False,UNUSED,
+D7_disclosed_plan,quote,12,12,100.0,12,True,False,설계상 정상,공시 원문. 엔진이 읽지 않지만 **검증에서 결정적으로 쓰였다** — 미쓰이 설비집약 공시의 능력·감축량이 여기 있었고 그것으로 NCC 배출계수를 역산했다(H3 §4-1-a).
