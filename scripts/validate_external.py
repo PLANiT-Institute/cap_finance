@@ -250,6 +250,17 @@ def main() -> int:
                  ("LOTTE_DAE_NCC", "LOTTE_DAE_TOTAL", "대산 사업장")]
         rows2 = [(lab, f, mod[f], t, site[t]) for f, t, lab in PAIRS
                  if f in mod.index and t in site.index]
+        # 일본은 EEGS 온대법 사업소별 공시(T1)로 같은 검증이 된다 — 이전 판에서 "미쓰이는
+        # 사업장별 공시가 없어 검증 불가"라고 적었던 것은 EEGS를 찾기 전 이야기였다.
+        jp = ROOT / "data" / "raw" / "jp_site_emissions.csv"
+        if jp.exists():
+            js = pd.read_csv(jp)
+            js = js[js.fiscal_year == js.fiscal_year.max()].groupby(
+                ["company_id", "site_key"]).emissions_tco2.sum()
+            for f, key, lab in [("MCI_OSK_CR", ("MCI", "OSK"), "미쓰이 오사카공장"),
+                                ("MCI_ICH_CR", ("MCI", "ICH"), "미쓰이 이치하라공장")]:
+                if f in mod.index and key in js.index:
+                    rows2.append((lab, f, mod[f], key, float(js.loc[key])))
         if rows2:
             L += ["### 4-2. 상한 검증 — 모형 크래커 배출 ≤ 공시 사업장 배출", "",
                   "석화는 수준을 직접 대조할 수 없지만 **상한은 검증된다**: 크래커 한 기의 "
@@ -261,11 +272,11 @@ def main() -> int:
                 sh = mv / sv
                 v = "**초과 — 오류**" if sh > 1 else ("높음 — 확인 필요" if sh > 0.85 else "정합")
                 L.append(f"| {lab} | {mv / 1e6:.2f} | {sv / 1e6:.2f} | {sh:.0%} | {v} |")
-            L += ["", "두 사업장 모두 크래커가 사업장 배출의 55~61%를 차지하는 것으로 나온다. "
+            L += ["", "롯데는 크래커가 사업장 배출의 55~61%, 미쓰이는 27~43%를 차지한다. "
                   "NCC 중심 사업장에서 나프타 분해로가 최대 배출원인 것은 자연스러우므로 "
                   "**상한을 위반하지 않고 비중도 부자연스럽지 않다**. 이것은 '틀리지 않았다'는 "
                   "확인이지 '맞다'는 확인이 아니다 — 생산량 공시가 없어 원단위 자체는 여전히 "
-                  "검증되지 않는다. 미쓰이는 사업장별 배출 공시가 없어 같은 검증을 못 한다.", ""]
+                  "검증되지 않는다. 미쓰이 비중이 낮은 것은 오사카·이치하라가 크래커 외에 폴리프로필렌·페놀 등 유도품 설비를 함께 두기 때문이며, **§4-1의 0.70 Mt가 크래커보다 넓은 경계라는 판정을 다시 지지한다** — 크래커가 공장의 27%인데 공장 감축 전망이 48%다.", ""]
 
     # ---------------------------------------------------------------- 남은 것
     L += ["## 5. 아직 못 한 대조 (없는 것을 있다고 하지 않는다)", "",
