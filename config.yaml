@@ -13,7 +13,9 @@ discount_rate_sensitivity: [0.035, 0.065]
 simulation:
   # 5,000에서는 P50/TCaR 수렴 검사가 2.6% 이탈해 스펙의 대응(10,000 상향)을 따랐다.
   n_sims: 10000
-  n_sims_flex: 300           # re-optimization subsample for flexibility value (⑤)
+  # ⑤ 유연성 가치의 재최적화 부표본. 300에서는 시드 간 변동계수가 10~15%로
+  # 표기 자릿수가 표본 잡음에 묻혔다(I4). 1,500으로 상향.
+  n_sims_flex: 1500
   convergence_check_n: 2000  # P50/TCaR must match full run within 1%
 
 milp:
