@@ -57,6 +57,13 @@ def _computed() -> dict[str, float]:
         a, b = d.loc[d.p50.idxmin()], d.loc[d.tcar.idxmin()]
         got[f"hedge_rate_{co.lower()}"] = round((a.tcar - b.tcar) / (b.p50 - a.p50), 2)
 
+    # F3 불확실성 분해: ③ TCaR 중 파라미터가 만드는 몫 (추첨 폭 ±30%)
+    u = _out("uncertainty", "decomposition")
+    u30 = u[(u.scenario == SCEN) & (u.support == SUPP) & (u.width == 0.30)].set_index("company_id")
+    for co in u30.index:
+        got[f"tcar_param30_{co.lower()}"] = round(float(u30.loc[co, "tcar_param"]), 1)
+        got[f"param_share30_{co.lower()}"] = round(float(u30.loc[co, "param_share_pct"]), 1)
+
     # §4 경계 퇴화: 경계 위 점들이 한 기술 일정만 쓰는 묶음 수
     per_group = fp[fp.on_frontier].groupby(
         ["company_id", "scenario", "support"]).base_plan_id.nunique()

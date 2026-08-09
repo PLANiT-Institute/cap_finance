@@ -35,6 +35,14 @@
 | frontier_single_schedule_groups | 14 | out/e5/frontier_points.csv |
 | frontier_groups_total | 16 | out/e5/frontier_points.csv |
 | gap_companies | 2 | out/e5/gap.csv |
+| tcar_param30_posco | 11664.9 | out/uncertainty/decomposition.csv |
+| tcar_param30_nsc | 15578.0 | out/uncertainty/decomposition.csv |
+| tcar_param30_mci | 229.1 | out/uncertainty/decomposition.csv |
+| tcar_param30_lotte | 590.9 | out/uncertainty/decomposition.csv |
+| param_share30_posco | 40.6 | out/uncertainty/decomposition.csv |
+| param_share30_nsc | 43.9 | out/uncertainty/decomposition.csv |
+| param_share30_mci | 26.6 | out/uncertainty/decomposition.csv |
+| param_share30_lotte | 26.4 | out/uncertainty/decomposition.csv |
 
 `hedge_rate` = (최소비용 계획 → 최소위험 계획으로 옮길 때 줄어드는 TCaR) ÷ (늘어나는 P50).
 단위 없는 교환비이며 1보다 크면 "위험 1원을 1원 미만으로 산다"는 뜻이다.
@@ -136,6 +144,14 @@ LOTTE는 후보 기술 일정 자체가 1개라 선택집합이 없다.
    (`docs/price_process_test.md`). 따라서 이것은 데이터로 메울 공백이 아니라 **명시적 선택**이며,
    방법 절(M2)에 그렇게 적는다 — 보수적(위험을 크게 잡는) 쪽인 GBM을 고르고 대안의 크기를
    함께 보고한다. 독립 구현 EFF가 반감기 2년 OU를 쓰고 있다는 사실도 같이 적는다(G8).
+9. **③ TCaR은 파라미터를 다 안다고 가정한 세계의 위험이었다** (F3, D5). 상위 10개 파라미터를
+   ±30%로 동시에 추첨해 전파하면 파라미터가 만드는 몫이 결합 TCaR의 **철강 41~44%,
+   석유화학 26~27%**다(`docs/uncertainty_propagation.md`). 그 크기는 추첨 폭에 거의 정확히
+   비례하고(폭 2배 → ×2.08~2.14), 폭 자체는 근거가 아니라 규약이다 —
+   `docs/parameter_inventory.csv` 415행 중 [low, high]를 가진 것이 18행뿐이기 때문이다.
+   따라서 본문은 파라미터분을 **절대값이 아니라 "±30%를 가정했을 때의 몫"으로만** 인용한다.
+   더 중요한 것은 그 옆칸이다: 확률과정 선택이 만드는 폭(한계 8)이 파라미터분과 **같은
+   자릿수이거나 더 크고**, 이쪽은 데이터로 줄일 수 없다.
 
 ## 7. 타깃 저널 후보
 
