@@ -38,6 +38,12 @@ def main() -> int:
     a = pd.read_csv(E5 / "affordability.csv").query("scenario=='NZ15' and support=='none'")
     fr = pd.read_csv(E5 / "frontier_points.csv").query("scenario=='NZ15' and support=='none'")
     gap = pd.read_csv(E5 / "gap.csv").query("scenario=='NZ15' and support=='none'")
+    # "측정 불가"의 사유 — 공시가 모호해서인지 우리 모형이 그 수단을 빼서인지는 전혀 다른 말이다
+    skip_path = ROOT / "out" / "e2" / "disclosed_skipped.csv"
+    skipped = {}
+    if skip_path.exists():
+        sk = pd.read_csv(skip_path).query("scenario=='NZ15'")
+        skipped = dict(zip(sk.company_id, sk.reason))
 
     d = m.merge(a.drop(columns=["capex_total_bnkrw", "capex_peak_year", "capex_peak_bnkrw"]),
                 on=["company_id", "scenario", "support"], how="left")
@@ -48,7 +54,7 @@ def main() -> int:
             .round(1).to_json(orient="records")),
         "gap": json.loads(gap.drop_duplicates("company_id")[
             ["company_id", "gap_cost_bnkrw", "gap_risk_bnkrw"]].round(1).to_json(orient="records")),
-        "coname": CONAME, "sector": SECTOR,
+        "coname": CONAME, "sector": SECTOR, "skipped": skipped,
         "date": dt.date.today().isoformat(),
     }
     WEB.mkdir(exist_ok=True)
@@ -181,7 +187,13 @@ document.getElementById("cap").innerHTML=
  CO.map(c=>{const r=get(c),g=gp(c); if(!r.company_id)return"";
   return `<tr><td>${D.coname[c]}</td><td>${jo(r.capex_total_bnkrw)}조</td>
    <td>${r.capex_peak_year??"—"}</td><td>${jo(r.capex_peak_bnkrw)}조</td>
-   <td>${g.gap_cost_bnkrw==null?"측정 불가":jo(g.gap_cost_bnkrw)+"조"}</td></tr>`;}).join("");
+   <td>${g.gap_cost_bnkrw==null
+     ? `<span data-tip="${(D.skipped[c]||"사유 미기록").replace(/"/g,"&quot;")}">측정 불가*</span>`
+     : jo(g.gap_cost_bnkrw)+"조"}</td></tr>`;}).join("");
+const why=Object.entries(D.skipped);
+if(why.length) document.getElementById("cap").insertAdjacentHTML("afterend",
+  `<div style="font-size:9.5px;color:var(--ink3);margin-top:5px;line-height:1.45">
+   * 경계까지 거리 미산출 사유 — ${why.map(([c,r])=>`<b>${D.coname[c]||c}</b>: ${r}`).join(" · ")}</div>`);
 
 document.getElementById("caveats").innerHTML=[
  "<b>시설 배출은 배분값이다.</b> 회사 실측을 능력×루트 배출계수로 나눈 값이라 시설 단위 절대값은 순서 정보로만 읽는다.",

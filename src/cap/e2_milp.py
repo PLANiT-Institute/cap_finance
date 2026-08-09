@@ -309,18 +309,24 @@ def _disclosed_fixed(d7, cf, techs, years, av):
     the feasible variable range [max(avail, start), end - build] so a commitment
     whose back-computed start predates tech availability is enforced at the
     earliest feasible year instead of silently vanishing."""
-    fixed = {"x": {}}
+    fixed = {"x": {}, "dropped": []}
     sub = d7[d7.company_id.isin(cf.company_id.unique())]
     for _, r in sub.iterrows():
         if r.item_type == "tech_commit" and r.facility_id in cf.index and pd.notna(r.year_stated):
             tk = techs[techs.tech_id == r.tech_id]
             if not len(tk):
                 print(f"[e2] warning: disclosed tech {r.tech_id!r} not in D3 — commitment dropped")
+                fixed["dropped"].append(
+                    f"{r.facility_id}/{r.tech_id}: 기술이 D3에 없음(모형 밖 수단)")
                 continue
             if tk.applies_to_unit.iloc[0] != cf.loc[r.facility_id].unit_type:
                 print(f"[e2] note: disclosed {r.facility_id}({cf.loc[r.facility_id].unit_type})/"
                       f"{r.tech_id} not applicable (applies to {tk.applies_to_unit.iloc[0]}) "
                       "— commitment dropped")
+                fixed["dropped"].append(
+                    f"{r.facility_id}/{r.tech_id}: 모형 규칙상 이 설비 유형에 적용 불가"
+                    f"(A-10, {r.tech_id}는 {tk.applies_to_unit.iloc[0]}에만) — "
+                    "공시 해상도 문제가 아니라 모형 경계 문제")
                 continue
             build = int(tk.build_years.iloc[0])
             a0 = int(max(years[0], av.get(r.tech_id, tk.avail_year.iloc[0]), tk.avail_year.iloc[0]))
@@ -356,7 +362,7 @@ def run(cfg: C.Config):
     avail = pd.read_csv(C.out_dir(cfg, "e1") / "tech_availability.csv")
     years = np.arange(cfg.years.start, cfg.years.end + 1)
 
-    index_rows, pid = [], 0
+    index_rows, pid, skipped_rows = [], 0, []
     combos = list(itertools.product(sorted(fac.company_id.unique()), cfg.scenarios))
     # each combo is ~14 CBC solves and the stage runs for tens of minutes; without
     # a heartbeat there is no way to tell a slow solve from a hung one
@@ -390,8 +396,10 @@ def run(cfg: C.Config):
             # no enforceable commitment survived — a "disclosed" solve would just be a
             # second unconstrained optimization whose surrogate near-optimum can differ
             # arbitrarily in E4 terms, fabricating a gap. 공시 해상도 부족 = gap 미식별 (§8-4).
-            print(f"[e2] note: {company} {scen} disclosed plan has no enforceable commitments "
-                  "— disclosed coordinate skipped (resolution too low to locate the plan)")
+            why = disc_fixed.get("dropped") or ["공시에 시설·기술이 특정된 커밋 자체가 없음"]
+            print(f"[e2] note: {company} {scen} 공시 좌표 미산출 — 강제 가능한 커밋 없음. "
+                  f"사유: {'; '.join(why)}", flush=True)
+            skipped_rows.append([company, scen, "; ".join(why)])
             s_disc = None
         else:
             s_disc = _solve_company(*args, fixed=disc_fixed)
@@ -416,6 +424,9 @@ def run(cfg: C.Config):
         print(f"[e2] {n}/{len(combos)} {company} {scen} — 고유 계획 {len(sols)}개, "
               f"{time.time() - t_co:.0f}s", flush=True)
 
+    if skipped_rows:
+        pd.DataFrame(skipped_rows, columns=["company_id", "scenario", "reason"]).to_csv(
+            odir / "disclosed_skipped.csv", index=False)
     idx = pd.DataFrame(index_rows, columns=["plan_id", "company_id", "scenario", "npv_cost_bnkrw",
                                             "risk_proxy", "ppa_share", "epc", "ccfd",
                                             "budget_slack_tco2", "is_disclosed", "solve_status"])
