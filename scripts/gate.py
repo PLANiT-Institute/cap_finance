@@ -101,14 +101,46 @@ def _newest(*globs):
 
 
 def check_freshness():
-    raw = _newest("data/raw/*.csv")
+    """out/이 **입력과 모형 코드 둘 다**보다 새로운가.
+
+    D10까지 이 검사는 data/raw만 봤다. 그래서 D6~D9이 `src/cap/`을 고치고 `cap all`을
+    돌리지 않은 채 지나갔고, out/e2는 나흘 전 것이었으며 페이퍼 §0 대장은 그 낡은
+    산출물에 대해 '검증됨'으로 통과했다. 코드도 입력이다 — 여기서 같이 센다.
+    """
+    src = _newest("data/raw/*.csv", "src/cap/*.py", "config.yaml")
     out = _newest("out/e5/*.csv")
-    if raw is None or out is None:
+    if src is None or out is None:
         return False, "data/raw or out/e5 missing — pipeline has never run here"
-    fresh = out[0] >= raw[0]
+    fresh = out[0] >= src[0]
     rel = out[1].relative_to(ROOT)
-    return fresh, (f"out/ newer than data/raw ({rel})" if fresh
-                   else f"STALE: {raw[1].relative_to(ROOT)} changed after {rel} — rerun `python -m cap all`")
+    return fresh, (f"out/ newer than data/raw + src/cap ({rel})" if fresh
+                   else f"STALE: {src[1].relative_to(ROOT)} changed after {rel} — rerun `python -m cap all`")
+
+
+def check_provenance():
+    """out/이 **정본 설정**의 전체 실행인가.
+
+    freshness는 out/이 새것인지만 본다. D10 뒤 out/e2·e4는 새것이었지만 `--sims`를
+    줄인 실행이었고, 페이퍼 §0 대장과 어긋난 쪽은 out/이었다. 각 단계가 남긴
+    run_manifest.json을 config.yaml과 대조해 그 착오를 이름으로 잡는다.
+    """
+    p = ROOT / "out" / "run_manifest.json"
+    if not p.exists():
+        return False, "out/run_manifest.json 없음 — `python -m cap all`로 재생성"
+    m = json.loads(p.read_text())
+    cfg = json.loads(run([PY, "-c", "import sys,json;sys.path.insert(0,'src');"
+                          "from cap import config as C;c=C.load();"
+                          "print(json.dumps({'data_dir':str(c.data_dir),"
+                          "'n_sims':c.simulation['n_sims'],'n_sims_flex':c.simulation['n_sims_flex'],"
+                          "'frontier_points':c.milp['frontier_points'],'seed':c.seed}))"])[1])
+    stages = ["e1", "e2", "e3", "e4", "e5", "render"]
+    missing = [s for s in stages if s not in m]
+    if missing:
+        return False, f"단계 기록 없음: {', '.join(missing)} — 전체 실행이 아니다"
+    off = [f"{s}.{k}={m[s][k]}(≠{v})" for s in stages for k, v in cfg.items() if m[s].get(k) != v]
+    if off:
+        return False, "정본 설정 아님 — " + ", ".join(off[:4])
+    return True, f"6단계 전부 정본 설정 (n_sims {cfg['n_sims']}, seed {cfg['seed']})"
 
 
 def check_git():
@@ -127,6 +159,7 @@ CHECKS = [
     ("mcp", "MCP tools/list", check_mcp),
     ("cli", "python -m cap", check_cli),
     ("freshness", "out/ vs data/raw", check_freshness),
+    ("provenance", "out/ 실행 설정 = config.yaml", check_provenance),
     ("git", "committed and pushed", check_git),
 ]
 

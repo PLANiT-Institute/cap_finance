@@ -9,13 +9,18 @@
 Run: .venv/bin/pytest tests/test_paper_numbers.py -q
 """
 
+import json
 import pathlib
 import re
+import sys
 
 import pandas as pd
 import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+from cap import config as C  # noqa: E402
 PAPER = ROOT / "paper" / "working_paper.md"
 OUT = ROOT / "out"
 
@@ -126,7 +131,23 @@ def test_ledger_matches_outputs():
     missing = sorted(set(ledger) - set(got))
     assert not missing, f"대장에만 있고 out/에서 재계산되지 않는 key: {missing}"
     bad = {k: (v, got[k]) for k, v in ledger.items() if abs(v - got[k]) > max(0.05, abs(got[k]) * 5e-4)}
-    assert not bad, f"페이퍼 §0 대장이 out/과 어긋난다 (paper, out): {bad}"
+    # 어긋나면 **어느 쪽이 틀렸는지**부터 말한다. D10 뒤 어긋난 쪽은 페이퍼가 아니라
+    # `--sims`를 줄인 실행으로 덮인 out/이었는데, 메시지는 페이퍼를 지목하고 있었다.
+    assert not bad, f"페이퍼 §0 대장이 out/과 어긋난다 (paper, out): {bad}\n{_provenance_hint()}"
+
+
+def _provenance_hint() -> str:
+    p = ROOT / "out" / "run_manifest.json"
+    if not p.exists():
+        return "out/run_manifest.json 없음 — out/이 정본 실행인지 알 수 없다. `python -m cap all` 먼저."
+    m = json.loads(p.read_text())
+    cfg = C.load()
+    want = {"data_dir": str(cfg.data_dir), "n_sims": cfg.simulation["n_sims"],
+            "n_sims_flex": cfg.simulation["n_sims_flex"],
+            "frontier_points": cfg.milp["frontier_points"], "seed": cfg.seed}
+    off = [f"{s}.{k}={m[s][k]}(≠{v})" for s in m for k, v in want.items() if m[s].get(k) != v]
+    return ("out/이 정본 설정이 아니다 — " + ", ".join(off[:4]) + " · 페이퍼가 아니라 out/을 고쳐라"
+            if off else "out/은 정본 설정 실행이다 — 대장(페이퍼) 쪽을 고쳐라")
 
 
 def test_body_quotes_only_ledger_keys():
@@ -154,3 +175,23 @@ def test_body_quotes_only_ledger_keys():
                        ("EFF 이름공간", "inv_src_eff")):
         assert f"| {label} | {int(led[key])} |" in body, \
             f"§4.4 무결성 표의 '{label}' 행이 §0 대장과 어긋난다"
+
+
+def test_run_manifest_records_the_settings_a_run_actually_used(tmp_path):
+    """축소 실행이 자기 이름을 남기는가 — D11의 착오가 되풀이되지 않게 하는 최소 조건.
+
+    D10 뒤 out/e2·e4는 `--sims`를 줄인 실행으로 덮였는데 산출물 어디에도 그 사실이
+    없었다. 그래서 대장 불일치가 '원고가 낡았다'로 읽혔다. 기록은 단계별로 **병합**
+    되어야 한다 — e1만 다시 돌렸다고 e2의 출처가 지워지면 같은 착오가 돌아온다.
+    """
+    from cap.__main__ import _stamp
+
+    small = C.load(out_dir=str(tmp_path))
+    small["simulation"] = dict(small["simulation"], n_sims=7)
+    _stamp(small, "e2")
+    _stamp(C.load(out_dir=str(tmp_path)), "e1")
+
+    m = json.loads((tmp_path / "run_manifest.json").read_text())
+    assert set(m) == {"e1", "e2"}, "단계 기록이 병합되지 않고 덮어써졌다"
+    assert m["e2"]["n_sims"] == 7, "축소 실행이 기록되지 않았다"
+    assert m["e1"]["n_sims"] == C.load().simulation["n_sims"], "정본 실행이 잘못 기록됐다"

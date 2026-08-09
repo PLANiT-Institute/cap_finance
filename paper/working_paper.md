@@ -28,49 +28,49 @@
 | m2_mci | 241.7 | out/e5/metrics_company.csv |
 | m2_lotte | 279.2 | out/e5/metrics_company.csv |
 | tcar_posco | 26752.6 | out/e5/metrics_company.csv |
-| tcar_nsc | 32973.1 | out/e5/metrics_company.csv |
+| tcar_nsc | 33047.2 | out/e5/metrics_company.csv |
 | tcar_mci | 864.1 | out/e5/metrics_company.csv |
 | tcar_lotte | 2242.2 | out/e5/metrics_company.csv |
-| gap_cost_nsc | 1164.4 | out/e5/gap.csv |
-| gap_risk_nsc | 4364.3 | out/e5/gap.csv |
+| gap_cost_nsc | 1097.4 | out/e5/gap.csv |
+| gap_risk_nsc | 4038.7 | out/e5/gap.csv |
 | gap_cost_mci | 712.5 | out/e5/gap.csv |
 | gap_risk_mci | 969.5 | out/e5/gap.csv |
 | hedge_rate_posco | 2.44 | out/e5/frontier_points.csv |
 | hedge_rate_nsc | 3.27 | out/e5/frontier_points.csv |
 | hedge_rate_mci | 0.21 | out/e5/frontier_points.csv |
 | hedge_rate_lotte | 0.24 | out/e5/frontier_points.csv |
-| frontier_single_schedule_groups | 14 | out/e5/frontier_points.csv |
+| frontier_single_schedule_groups | 16 | out/e5/frontier_points.csv |
 | frontier_groups_total | 16 | out/e5/frontier_points.csv |
 | gap_companies | 2 | out/e5/gap.csv |
 | tcar_param30_posco | 11664.9 | out/uncertainty/decomposition.csv |
-| tcar_param30_nsc | 15578.0 | out/uncertainty/decomposition.csv |
+| tcar_param30_nsc | 15605.9 | out/uncertainty/decomposition.csv |
 | tcar_param30_mci | 229.1 | out/uncertainty/decomposition.csv |
 | tcar_param30_lotte | 590.9 | out/uncertainty/decomposition.csv |
 | param_share30_posco | 40.6 | out/uncertainty/decomposition.csv |
-| param_share30_nsc | 43.9 | out/uncertainty/decomposition.csv |
+| param_share30_nsc | 43.8 | out/uncertainty/decomposition.csv |
 | param_share30_mci | 26.6 | out/uncertainty/decomposition.csv |
 | param_share30_lotte | 26.4 | out/uncertainty/decomposition.csv |
 | tcar_co2only_posco | 16510.3 | out/uncertainty/decomposition.csv |
 | co2_increment_posco | 2444.0 | out/uncertainty/decomposition.csv |
-| tcar_co2only_nsc | 15464.5 | out/uncertainty/decomposition.csv |
-| co2_increment_nsc | 1223.0 | out/uncertainty/decomposition.csv |
+| tcar_co2only_nsc | 15484.6 | out/uncertainty/decomposition.csv |
+| co2_increment_nsc | 1207.3 | out/uncertainty/decomposition.csv |
 | tcar_co2only_mci | 75.0 | out/uncertainty/decomposition.csv |
 | co2_increment_mci | -37.2 | out/uncertainty/decomposition.csv |
 | tcar_co2only_lotte | 162.7 | out/uncertainty/decomposition.csv |
 | co2_increment_lotte | -100.3 | out/uncertainty/decomposition.csv |
-| e2_plans_total | 51 | out/e2/plan_index.csv |
-| e2_plans_canonical | 43 | out/e4/summary.csv |
+| e2_plans_total | 48 | out/e2/plan_index.csv |
+| e2_plans_canonical | 41 | out/e4/summary.csv |
 | surrogate_argmin_match | 0 | out/e4/summary.csv |
 | surrogate_argmin_groups | 8 | out/e4/summary.csv |
 | surrogate_rho_posco | 0.0 | out/e4/summary.csv |
-| surrogate_rho_nsc | -0.051 | out/e4/summary.csv |
+| surrogate_rho_nsc | -0.105 | out/e4/summary.csv |
 | surrogate_rho_mci | 0.204 | out/e4/summary.csv |
 | surrogate_rho_lotte | 0.725 | out/e4/summary.csv |
 | riskproxy_rho_posco | 0.0 | out/e2/plan_index.csv |
-| riskproxy_rho_nsc | 0.553 | out/e2/plan_index.csv |
+| riskproxy_rho_nsc | 0.632 | out/e2/plan_index.csv |
 | riskproxy_rho_mci | 0.707 | out/e2/plan_index.csv |
 | riskproxy_rho_lotte | 0.783 | out/e2/plan_index.csv |
-| rho_central_p50_min | 0.941 | out/e4/summary.csv |
+| rho_central_p50_min | 0.412 | out/e4/summary.csv |
 | m8_caps_total | 32 | out/m8/tech_epsilon.csv |
 | m8_new_schedules | 32 | out/m8/tech_epsilon.csv |
 | m8_nondominated_headline | 4 | out/m8/tech_epsilon.csv |
@@ -141,20 +141,20 @@ M5(강건성·한계 절)가 이 표를 그대로 이어받는다.
 
 M1을 쓰면서 처음 확인한 것이고, C1의 범위를 좁힌다.
 
-16개 (기업×시나리오×지원) 묶음 중 **14개에서 효율경계 위 점들이 전부 같은 기술 일정**을
-공유한다. 즉 경계를 따라 움직이는 것은 무엇을 언제 짓느냐가 아니라 **PPA 비중 0→100%** 뿐이다.
+16개 (기업×시나리오×지원) 묶음 중 **16개 전부에서 효율경계 위 점들이 같은 기술 일정**을
+공유한다(D10-b 재실행 기준. D8까지는 14개였고, 낡은 `out/e2`를 읽고 있었다). 즉 경계를 따라 움직이는 것은 무엇을 언제 짓느냐가 아니라 **PPA 비중 0→100%** 뿐이다.
 LOTTE는 후보 기술 일정 자체가 1개라 선택집합이 없다.
 
 이것을 지금 적어 두는 이유는 심사자가 반드시 여기를 친다는 것이다 — *"자본배분 효율경계라고
 부르지만 실제로는 PPA 헤지비율 곡선 아닌가."* 가능한 답은 둘이고, 둘 중 무엇인지 아직 모른다.
 
 1. **계획 생성이 얇다** — E2 MILP가 만드는 서로 다른 기술 일정이 기업당 1–5개뿐이다.
-   (`out/e2/plan_index.csv` 기준 NZ15·none: LOTTE 1, MCI 3, NSC 3, POSCO 2)
+   (`out/e2/plan_index.csv` 기준 NZ15·none: LOTTE 1, MCI 3, NSC 2, POSCO 2)
 2. **진짜로 한 일정이 지배한다** — 재투자 창과 기술 집합(A-10: BF→EAF 전면 전환 불허)이
    자유도를 없앤다. 그렇다면 결과가 아니라 **모형 경계에 관한 발견**이고 그렇게 써야 한다.
 
-**D7 보강**: 후보집합은 여기 적힌 것보다 더 얇다. E2가 낸 51개 계획 중 정본 평가에서 서로
-다른 것은 43개이고, 사라지는 8개는 **CCfD 체결 여부만 다른 쌍**이다(본문 §3.4). 즉 (1)의
+**D7 보강**: 후보집합은 여기 적힌 것보다 더 얇다. E2가 낸 48개 계획 중 정본 평가에서 서로
+다른 것은 41개이고, 사라지는 7개는 **CCfD 체결 여부만 다른 쌍**이다(본문 §3.4). 즉 (1)의
 "기업당 1–5개"조차 상한이다.
 
 → 백로그 **M8** 신설: ε-constraint를 기술 일정 축에서도 걸어 계획 다양성을 강제한 뒤
@@ -323,7 +323,7 @@ E2의 목적함수는 **정답이 아니라 순서용 대리**다(**A-14**). 위
 | 기업 | 후보 수 | ρ(대리비용, 정본 P50) | ρ(대리위험, 정본 TCaR) |
 |---|---|---|---|
 | POSCO | 3 | **0.00** | **0.00** |
-| Nippon Steel | 5 | **−0.05** | 0.55 |
+| Nippon Steel | 4 | **−0.11** | 0.63 |
 | Mitsui Chemicals | 8 | 0.20 | 0.71 |
 | LOTTE Chemical | 6 | 0.73 | 0.78 |
 
@@ -333,16 +333,17 @@ E2의 목적함수는 **정답이 아니라 순서용 대리**다(**A-14**). 위
 E2의 해를 "그 기업의 최적 계획"으로 보고했다면 여덟 번 모두 틀린 계획을 보고했을 것이다.
 
 재정렬을 만드는 것이 몬테카를로 잡음이 아니라는 것도 확인했다. 중앙 경로 결정론 비용과
-정본 P50의 순위상관은 여덟 묶음에서 **최소 0.94, 대부분 1.00**이다. 즉 순위를 흔드는 것은
+정본 P50의 순위상관은 여덟 묶음 중 **일곱에서 0.94~1.00**이다(NSC B20만 0.41 — 이 묶음은
+후보 6개 중 CCfD 중복을 빼면 5개라 순위상관이 한 쌍의 교환에도 크게 흔들린다). 즉 순위를 흔드는 것은
 불확실성이 아니라 **대리 목적함수 자체의 구조**다: 폐쇄의 마진 상실·잔존가치·계약 프리미엄이
 E2에는 들어가고 E4의 자원비용 계산에는 다르게 들어간다.
 
-같은 대조가 후보집합의 성질도 드러냈다. E2가 낸 51개 계획 중 정본 평가에서 서로 다른 것은
-**43개**뿐이다. 여덟 묶음 각각에서 정확히 한 쌍이 정본 비용·TCaR까지 완전히 같다 — 기술
+같은 대조가 후보집합의 성질도 드러냈다. E2가 낸 48개 계획 중 정본 평가에서 서로 다른 것은
+**41개**뿐이다. 여덟 묶음 중 일곱에서 정확히 한 쌍이 정본 비용·TCaR까지 완전히 같다 — 기술
 일정도 PPA 비중도 같고 **CCfD 체결 여부만 다른** 쌍이다. 지원 `none` 세계에서는 CCfD 행사가가
 정의되지 않아 정본 평가에서 아무 일도 하지 않는데, E2는 그 계약에 프리미엄을 물리고 선형
 위험 공제를 되돌려 준다. 헤드라인(E5)은 이 쌍을 중복 제거하므로 영향이 없지만, **E2가 세는
-후보 다양성은 정본 기준 다양성보다 크다**. §4에서 지적한 경계 퇴화(16개 묶음 중 14개에서
+후보 다양성은 정본 기준 다양성보다 크다**. §4에서 지적한 경계 퇴화(16개 묶음 **전부**에서
 경계 위 점들이 같은 기술 일정을 공유)를 읽을 때 이 사실을 함께 읽어야 한다 — 후보가 얇다는
 진단이 실제로는 더 얇다는 뜻이다.
 
