@@ -53,9 +53,9 @@ BUNDLES: dict[str, tuple[str, dict]] = {
                     {"carbon_auction_share": _ramp([(2025, .10), (2030, .15), (2035, .60),
                                                     (2040, 1.0), (2045, 1.0), (2050, 1.0)])}),
 
-    "h2_cheap": ("수소 −30% — 대규모 수입 수소가 값싸게 들어오면", {"_px": {"h2": 0.7}}),
-    "h2_expensive": ("수소 +30% — 청정수소 프리미엄이 유지되면", {"_px": {"h2": 1.3}}),
-    "elec_high": ("전력 +30% — 계통요금 상승이 기존 설비를 먼저 때린다", {"_px": {"elec": 1.3}}),
+    "h2_cheap": ("수소 −30% — 대규모 수입 수소가 값싸게 들어오면", {"_px": {"h2_price": 0.7}}),
+    "h2_expensive": ("수소 +30% — 청정수소 프리미엄이 유지되면", {"_px": {"h2_price": 1.3}}),
+    "elec_high": ("전력 +30% — 계통요금 상승이 기존 설비를 먼저 때린다", {"_px": {"elec_price": 1.3, "re_price": 1.3}}),
 
     "ppa_costly": ("재생 PPA 프리미엄 2배 — 전환 설비의 전력 조달이 비싸지면",
                    {"contracts": "ppa_premium_pct*2"}),
@@ -109,7 +109,14 @@ def run_bundle(name: str, replan: bool) -> pd.DataFrame:
         shutil.copytree((ROOT / "out" / "e1").resolve(), e1)
         p = pd.read_csv(e1 / "price_paths_central.csv")
         for var, f in px.items():
-            p.loc[p.variable == var, "value"] *= f
+            # D2b names the series h2_price / elec_price / re_price — matching the
+            # bare factor name silently scaled nothing and every price bundle
+            # returned the base answer
+            mask = p.variable == var
+            if not mask.any():
+                raise SystemExit(f"{name}: 가격 변수 '{var}' 없음. "
+                                 f"있는 것: {sorted(p.variable.unique())}")
+            p.loc[mask, "value"] *= f
         p.to_csv(e1 / "price_paths_central.csv", index=False)
         (dst / "e1").unlink()
         (dst / "e1").symlink_to(e1.resolve(), target_is_directory=True)
@@ -160,9 +167,11 @@ def main() -> int:
     df.sort_values(["bundle", "company_id", "scenario", "support"]).to_csv(path, index=False)
 
     v = df[(df.scenario == "NZ15") & (df.support == "none")]
-    p = v.pivot_table(index="bundle", columns="company_id", values="cost_per_tco2_thkrw")
-    print("\n=== ② 감축단가 (천원/tCO₂, NZ15 · support=none)")
-    print(p.round(0).to_string())
+    for label, col, unit in [("② 감축단가", "cost_per_tco2_thkrw", "천원/tCO₂"),
+                             ("③ TCaR", "tcar_bnkrw", "십억원"),
+                             ("탄소 포함 P50", "p50_incl_carbon_bnkrw", "십억원")]:
+        print(f"\n=== {label} ({unit}, NZ15 · support=none)")
+        print(v.pivot_table(index="bundle", columns="company_id", values=col).round(0).to_string())
     print(f"\n-> {path.relative_to(ROOT)}")
     return 0
 

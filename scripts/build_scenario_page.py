@@ -22,6 +22,16 @@ from _style import CSS, DOCTYPE  # noqa: E402
 
 WEB = ROOT / "web"
 SUMMARY = ROOT / "out" / "scenarios" / "summary.csv"
+WHY_FLAT = {
+    "carbon_fast": "②는 자원비용 기준이라 탄소지출이 빠져 있다 — 유상할당은 ②를 정의상 "
+                   "못 움직인다. 탄소를 포함한 P50(out/scenarios/summary.csv의 "
+                   "p50_incl_carbon_bnkrw)에서는 크게 움직인다.",
+    "carbon_slow": "위와 같은 이유. 유상할당은 탄소 포함 비용과 폐쇄 의사결정에만 걸린다.",
+    "ppa_costly": "비용최소 계획의 PPA 비중이 0이라 프리미엄이 붙을 대상이 없다. "
+                  "PPA를 쓰는 계획은 경계 위의 다른 점들이다.",
+    "retire_free": "폐쇄 상한은 E2 계획 탐색 단계의 제약이다. 이 실행은 계획 메뉴를 "
+                   "공유하므로 효과가 나타나지 않는다 — `--replan`이 필요하다.",
+}
 CONAME = {"POSCO": "POSCO", "NSC": "Nippon Steel",
           "LOTTE": "LOTTE Chemical", "MCI": "Mitsui Chemicals"}
 
@@ -46,6 +56,8 @@ def main() -> int:
                     for b, g in df.groupby("bundle", sort=False)],
         "companies": [c for c in CONAME if c in set(df.company_id)],
         "coname": CONAME,
+        # ②가 구조적으로 움직일 수 없는 묶음은 0.0%가 고장처럼 읽힌다. 이유를 붙인다.
+        "why_flat": WHY_FLAT,
     }
     html = (TEMPLATE.replace("__CSS__", CSS)
             .replace("__DATA__", json.dumps(D, ensure_ascii=False)))
@@ -149,6 +161,8 @@ function render(){
   const same=r0.join()===r1.join();
   document.getElementById("verdict").innerHTML= cur==="base"
     ? `<b>기준</b> — 감축단가 순서: ${r0.map(c=>NAME[c]).join(" < ")}`
+    : D.why_flat[cur]
+      ? `<b>이 묶음은 ②를 구조적으로 움직이지 못한다.</b> ${D.why_flat[cur]}`
     : same
       ? `<b>결론 불변.</b> 감축단가 순서가 기준과 같다 (${r1.map(c=>NAME[c]).join(" < ")}).
          이 가정은 값을 옮기되 지목되는 기업을 바꾸지 않는다.`
@@ -193,7 +207,11 @@ function drawSlope(){
       const p=b.id==="base"?null:pct(r?.cost_per_tco2_thkrw,bs?.cost_per_tco2_thkrw);
       t+=`<td>${fmt(r?.cost_per_tco2_thkrw)}${p==null?"":" "+dspan(p)}</td>`;
     }
+    const why=D.why_flat[b.id];
     t+=`</tr>`;
+    if(why) t+=`<tr><td></td><td colspan="${CO.length+1}"
+      style="text-align:left;white-space:normal;font-size:11.5px;color:var(--ink3);
+      padding-bottom:9px">↳ 변화 없음의 이유: ${why}</td></tr>`;
   }
   document.getElementById("gtable").innerHTML=t;
 })();

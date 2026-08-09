@@ -1,0 +1,195 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><title>CAP — 시나리오 분석</title>
+<style>
+:root{--surface:#FBFBF9;--panel:#fff;--panel2:#F4F4F0;--ink:#191C24;--ink2:#565B66;--ink3:#8B909C;
+  --line:#E4E4DE;--line2:#EEEEE8;--accent:#2a78d6;--warn-bg:#FBF3E2;--warn-line:#E5C878;--danger:#e34948}
+@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){
+  --surface:#15171C;--panel:#1C1F26;--panel2:#22252D;--ink:#EDEEF0;--ink2:#A8ADB8;--ink3:#747A87;
+  --line:#2E323B;--line2:#262A32;--accent:#3987e5;--warn-bg:#2A2517;--warn-line:#6B5A2A;--danger:#e66767}}
+:root[data-theme="dark"]{--surface:#15171C;--panel:#1C1F26;--panel2:#22252D;--ink:#EDEEF0;
+  --ink2:#A8ADB8;--ink3:#747A87;--line:#2E323B;--line2:#262A32;--accent:#3987e5;
+  --warn-bg:#2A2517;--warn-line:#6B5A2A;--danger:#e66767}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface);color:var(--ink);line-height:1.62;font-size:15px;
+  font-family:"Apple SD Gothic Neo",Pretendard,"Noto Sans KR",system-ui,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:56px 30px 90px}
+.eyebrow{font-size:11.5px;letter-spacing:.15em;color:var(--accent);font-weight:700;text-transform:uppercase}
+h1{font-size:31px;line-height:1.22;margin:8px 0 8px;font-weight:800;letter-spacing:-.015em;text-wrap:balance}
+.lede{color:var(--ink2);max-width:74ch;margin:0;font-size:14.5px}
+h2{font-size:19px;margin:0 0 4px;font-weight:760}
+section{margin-top:56px}
+.secno{color:var(--ink3);font-weight:600;margin-right:8px}
+.secnote{color:var(--ink2);font-size:13.5px;margin:0 0 20px;max-width:80ch}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+svg{display:block;width:100%;height:auto}
+.axis{font-size:10.5px;fill:var(--ink3)}
+.axislab{font-size:11px;fill:var(--ink2);font-weight:600}
+.gridline{stroke:var(--line2);stroke-width:1}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--ink2);margin:10px 0 16px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:11px;height:11px;border-radius:3px;display:inline-block}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:13.5px}
+th{font-size:11.5px;color:var(--ink2);font-weight:650;text-align:right;padding:9px 10px;border-bottom:1.5px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+td{padding:7.5px 10px;border-bottom:1px solid var(--line2);text-align:right;white-space:nowrap}
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:8px 12px}
+.chip{display:inline-block;font-size:10.5px;padding:1px 7px;border-radius:999px;font-weight:700;color:#fff}
+.callout{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:12px;padding:16px 20px;font-size:13.5px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:22px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px 17px}
+.kpi .l{font-size:12px;color:var(--ink2);font-weight:600}
+.kpi .v{font-size:25px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums}
+.kpi .d{font-size:12px;color:var(--ink3);margin-top:3px}
+.tip{position:fixed;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:9px;
+  padding:8px 11px;font-size:12px;box-shadow:0 6px 18px rgba(0,0,0,.14);opacity:0;transition:opacity .1s;z-index:9;max-width:290px}
+ul.tight{margin:8px 0 0;padding-left:18px} ul.tight li{margin:5px 0;font-size:13.5px;color:var(--ink2)}
+ul.tight li b{color:var(--ink)}
+.footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink3)}
+a{color:var(--accent)}
+
+.bsel{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
+.bsel button{font:inherit;font-size:12.5px;font-weight:640;padding:7px 13px;border-radius:999px;
+  border:1px solid var(--line);background:var(--panel);color:var(--ink2);cursor:pointer}
+.bsel button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.qline{color:var(--ink2);font-size:13.5px;margin:8px 0 0;min-height:20px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(238px,1fr));gap:14px;margin-top:20px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 17px}
+.card .co{font-size:12.5px;font-weight:700;color:var(--ink2)}
+.card .v{font-size:27px;font-weight:800;margin-top:5px;font-variant-numeric:tabular-nums}
+.card .u{font-size:11.5px;color:var(--ink3);font-weight:600}
+.card .row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink2);
+  margin-top:7px;padding-top:7px;border-top:1px solid var(--line2)}
+.dlt{font-weight:700;font-variant-numeric:tabular-nums}
+.up{color:var(--danger)} .dn{color:#1b8f63} .flat{color:var(--ink3)}
+.verdict{margin-top:24px;font-size:13.5px}
+.verdict b{font-size:15px}
+</style>
+<div class="wrap">
+<div class="eyebrow">CAP · 시나리오 분석</div>
+<h1>가정을 바꾸면 답이 어디까지 움직이는가</h1>
+<p class="lede">하나의 숫자는 하나의 세계에서만 참이다. 아래 묶음은 각각 기업이 실제로 묻는 질문
+하나에 대응한다 — 자본비용이 낮으면? 무상할당이 오래 가면? 수소가 비싸면? 같은 계획 메뉴를
+그 세계에서 다시 평가한 결과다. 중요한 것은 값의 이동폭이 아니라 <b>지목되는 기업이 바뀌는가</b>다.</p>
+
+<section>
+<h2><span class="secno">1</span>묶음 선택</h2>
+<div class="bsel" id="bsel"></div>
+<p class="qline" id="qline"></p>
+<div class="cards" id="cards"></div>
+<div class="verdict" id="verdict"></div>
+</section>
+
+<section>
+<h2><span class="secno">2</span>순위 이동 — 기준에서 선택 묶음으로</h2>
+<p class="secnote">왼쪽이 기준, 오른쪽이 선택한 묶음의 감축단가(천원/tCO₂). 선이 교차하면
+그 가정에서 <b>기업 간 순서가 뒤집혔다</b>는 뜻이고, 결론이 그 가정에 의존한다는 신호다.</p>
+<div class="panel"><div id="slope"></div></div>
+</section>
+
+<section>
+<h2><span class="secno">3</span>전 묶음 대조표</h2>
+<p class="secnote">② 감축단가 (천원/tCO₂, NZ15 · 지원 없음). 괄호는 기준 대비 변화율.</p>
+<div class="tblwrap"><table id="gtable"></table></div>
+</section>
+
+<div class="footer">
+계획 메뉴(E2 MILP 산출)는 묶음 간 공유하고 E3–E5만 다시 계산한다. 따라서 이 화면은
+<b>"같은 선택지를 다른 세계에서 평가한 값"</b>이며, 가정이 최적 계획 자체를 바꾸는 효과는
+<code>run_scenarios.py --replan</code>으로 따로 확인해야 한다. 그 경우 표에 replan 표시가 붙는다.
+</div>
+</div>
+
+<script>
+const D={"rows": [{"bundle": "base", "bundle_label": "기준 — 할인율 5%, 확정 유상할당(2026–30 15%) + 추정 램프", "replanned": false, "company_id": "LOTTE", "capex_total_bnkrw": 158.44, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 274.94, "tcar_bnkrw": 2212.785, "p50_bnkrw": 764.125, "capex_peak_to_ebitda": null, "netdebt_to_ebitda_post": null, "funding_verdict": "EBITDA 음수 — 자체 조달 불가"}, {"bundle": "base", "bundle_label": "기준 — 할인율 5%, 확정 유상할당(2026–30 15%) + 추정 램프", "replanned": false, "company_id": "MCI", "capex_total_bnkrw": 68.544, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 237.188, "tcar_bnkrw": 859.851, "p50_bnkrw": 305.1, "capex_peak_to_ebitda": 0.033, "netdebt_to_ebitda_post": 6.055, "funding_verdict": "피크연도 EBITDA 절반 이내"}, {"bundle": "base", "bundle_label": "기준 — 할인율 5%, 확정 유상할당(2026–30 15%) + 추정 램프", "replanned": false, "company_id": "NSC", "capex_total_bnkrw": 31665.199, "capex_peak_year": 2040, "cost_per_tco2_thkrw": 164.468, "tcar_bnkrw": 34288.295, "p50_bnkrw": 54883.129, "capex_peak_to_ebitda": 0.505, "netdebt_to_ebitda_post": 15.06, "funding_verdict": "피크연도 EBITDA 1배 이내"}, {"bundle": "base", "bundle_label": "기준 — 할인율 5%, 확정 유상할당(2026–30 15%) + 추정 램프", "replanned": false, "company_id": "POSCO", "capex_total_bnkrw": 20564.834, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 114.922, "tcar_bnkrw": 26916.312, "p50_bnkrw": 41523.724, "capex_peak_to_ebitda": 1.906, "netdebt_to_ebitda_post": null, "funding_verdict": "피크연도 EBITDA 초과 — 외부조달 필수"}, {"bundle": "carbon_fast", "bundle_label": "유상할당 가속 — 2040년 전량 유상 (EU CBAM 정합 압력 시나리오)", "replanned": false, "company_id": "LOTTE", "capex_total_bnkrw": 158.44, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 274.94, "tcar_bnkrw": 2212.785, "p50_bnkrw": 764.125, "capex_peak_to_ebitda": null, "netdebt_to_ebitda_post": null, "funding_verdict": "EBITDA 음수 — 자체 조달 불가"}, {"bundle": "carbon_fast", "bundle_label": "유상할당 가속 — 2040년 전량 유상 (EU CBAM 정합 압력 시나리오)", "replanned": false, "company_id": "MCI", "capex_total_bnkrw": 68.544, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 237.188, "tcar_bnkrw": 859.851, "p50_bnkrw": 305.1, "capex_peak_to_ebitda": 0.033, "netdebt_to_ebitda_post": 6.055, "funding_verdict": "피크연도 EBITDA 절반 이내"}, {"bundle": "carbon_fast", "bundle_label": "유상할당 가속 — 2040년 전량 유상 (EU CBAM 정합 압력 시나리오)", "replanned": false, "company_id": "NSC", "capex_total_bnkrw": 31665.199, "capex_peak_year": 2040, "cost_per_tco2_thkrw": 164.468, "tcar_bnkrw": 34288.295, "p50_bnkrw": 54883.129, "capex_peak_to_ebitda": 0.505, "netdebt_to_ebitda_post": 15.06, "funding_verdict": "피크연도 EBITDA 1배 이내"}, {"bundle": "carbon_fast", "bundle_label": "유상할당 가속 — 2040년 전량 유상 (EU CBAM 정합 압력 시나리오)", "replanned": false, "company_id": "POSCO", "capex_total_bnkrw": 20564.834, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 114.922, "tcar_bnkrw": 26916.312, "p50_bnkrw": 41523.724, "capex_peak_to_ebitda": 1.906, "netdebt_to_ebitda_post": null, "funding_verdict": "피크연도 EBITDA 초과 — 외부조달 필수"}, {"bundle": "carbon_slow", "bundle_label": "유상할당 완화 — 2050년까지 60%에 그침 (무상할당 존속 시나리오)", "replanned": false, "company_id": "LOTTE", "capex_total_bnkrw": 158.44, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 274.94, "tcar_bnkrw": 2212.785, "p50_bnkrw": 764.125, "capex_peak_to_ebitda": null, "netdebt_to_ebitda_post": null, "funding_verdict": "EBITDA 음수 — 자체 조달 불가"}, {"bundle": "carbon_slow", "bundle_label": "유상할당 완화 — 2050년까지 60%에 그침 (무상할당 존속 시나리오)", "replanned": false, "company_id": "MCI", "capex_total_bnkrw": 68.544, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 237.188, "tcar_bnkrw": 859.851, "p50_bnkrw": 305.1, "capex_peak_to_ebitda": 0.033, "netdebt_to_ebitda_post": 6.055, "funding_verdict": "피크연도 EBITDA 절반 이내"}, {"bundle": "carbon_slow", "bundle_label": "유상할당 완화 — 2050년까지 60%에 그침 (무상할당 존속 시나리오)", "replanned": false, "company_id": "NSC", "capex_total_bnkrw": 31665.199, "capex_peak_year": 2040, "cost_per_tco2_thkrw": 164.468, "tcar_bnkrw": 34288.295, "p50_bnkrw": 54883.129, "capex_peak_to_ebitda": 0.505, "netdebt_to_ebitda_post": 15.06, "funding_verdict": "피크연도 EBITDA 1배 이내"}, {"bundle": "carbon_slow", "bundle_label": "유상할당 완화 — 2050년까지 60%에 그침 (무상할당 존속 시나리오)", "replanned": false, "company_id": "POSCO", "capex_total_bnkrw": 20564.834, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 114.922, "tcar_bnkrw": 26916.312, "p50_bnkrw": 41523.724, "capex_peak_to_ebitda": 1.906, "netdebt_to_ebitda_post": null, "funding_verdict": "피크연도 EBITDA 초과 — 외부조달 필수"}, {"bundle": "disc35", "bundle_label": "할인율 3.5% — 자본비용이 낮으면(정책금융·장기채) 결론이 유지되는가", "replanned": false, "company_id": "LOTTE", "capex_total_bnkrw": 158.44, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 271.558, "tcar_bnkrw": 3004.149, "p50_bnkrw": 1025.133, "capex_peak_to_ebitda": null, "netdebt_to_ebitda_post": null, "funding_verdict": "EBITDA 음수 — 자체 조달 불가"}, {"bundle": "disc35", "bundle_label": "할인율 3.5% — 자본비용이 낮으면(정책금융·장기채) 결론이 유지되는가", "replanned": false, "company_id": "MCI", "capex_total_bnkrw": 68.544, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 234.208, "tcar_bnkrw": 1167.339, "p50_bnkrw": 407.61, "capex_peak_to_ebitda": 0.033, "netdebt_to_ebitda_post": 6.055, "funding_verdict": "피크연도 EBITDA 절반 이내"}, {"bundle": "disc35", "bundle_label": "할인율 3.5% — 자본비용이 낮으면(정책금융·장기채) 결론이 유지되는가", "replanned": false, "company_id": "NSC", "capex_total_bnkrw": 31665.199, "capex_peak_year": 2040, "cost_per_tco2_thkrw": 164.482, "tcar_bnkrw": 45269.472, "p50_bnkrw": 69024.405, "capex_peak_to_ebitda": 0.505, "netdebt_to_ebitda_post": 15.06, "funding_verdict": "피크연도 EBITDA 1배 이내"}, {"bundle": "disc35", "bundle_label": "할인율 3.5% — 자본비용이 낮으면(정책금융·장기채) 결론이 유지되는가", "replanned": false, "company_id": "POSCO", "capex_total_bnkrw": 20564.834, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 115.327, "tcar_bnkrw": 36054.525, "p50_bnkrw": 52217.423, "capex_peak_to_ebitda": 1.906, "netdebt_to_ebitda_post": null, "funding_verdict": "피크연도 EBITDA 초과 — 외부조달 필수"}, {"bundle": "disc65", "bundle_label": "할인율 6.5% — 자본비용이 높으면 조기 투자가 더 불리해지는가", "replanned": false, "company_id": "LOTTE", "capex_total_bnkrw": 158.44, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 277.382, "tcar_bnkrw": 1634.224, "p50_bnkrw": 570.636, "capex_peak_to_ebitda": null, "netdebt_to_ebitda_post": null, "funding_verdict": "EBITDA 음수 — 자체 조달 불가"}, {"bundle": "disc65", "bundle_label": "할인율 6.5% — 자본비용이 높으면 조기 투자가 더 불리해지는가", "replanned": false, "company_id": "MCI", "capex_total_bnkrw": 68.544, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 240.433, "tcar_bnkrw": 638.967, "p50_bnkrw": 229.847, "capex_peak_to_ebitda": 0.033, "netdebt_to_ebitda_post": 6.055, "funding_verdict": "피크연도 EBITDA 절반 이내"}, {"bundle": "disc65", "bundle_label": "할인율 6.5% — 자본비용이 높으면 조기 투자가 더 불리해지는가", "replanned": false, "company_id": "NSC", "capex_total_bnkrw": 31665.199, "capex_peak_year": 2040, "cost_per_tco2_thkrw": 163.918, "tcar_bnkrw": 25912.425, "p50_bnkrw": 44030.532, "capex_peak_to_ebitda": 0.505, "netdebt_to_ebitda_post": 15.06, "funding_verdict": "피크연도 EBITDA 1배 이내"}, {"bundle": "disc65", "bundle_label": "할인율 6.5% — 자본비용이 높으면 조기 투자가 더 불리해지는가", "replanned": false, "company_id": "POSCO", "capex_total_bnkrw": 20564.834, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 113.886, "tcar_bnkrw": 20306.992, "p50_bnkrw": 33224.904, "capex_peak_to_ebitda": 1.906, "netdebt_to_ebitda_post": null, "funding_verdict": "피크연도 EBITDA 초과 — 외부조달 필수"}, {"bundle": "elec_high", "bundle_label": "전력 +30% — 계통요금 상승이 기존 설비를 먼저 때린다", "replanned": false, "company_id": "LOTTE", "capex_total_bnkrw": 158.44, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 274.94, "tcar_bnkrw": 2212.785, "p50_bnkrw": 764.125, "capex_peak_to_ebitda": null, "netdebt_to_ebitda_post": null, "funding_verdict": "EBITDA 음수 — 자체 조달 불가"}, {"bundle": "elec_high", "bundle_label": "전력 +30% — 계통요금 상승이 기존 설비를 먼저 때린다", "replanned": false, "company_id": "MCI", "capex_total_bnkrw": 68.544, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 237.188, "tcar_bnkrw": 859.851, "p50_bnkrw": 305.1, "capex_peak_to_ebitda": 0.033, "netdebt_to_ebitda_post": 6.055, "funding_verdict": "피크연도 EBITDA 절반 이내"}, {"bundle": "elec_high", "bundle_label": "전력 +30% — 계통요금 상승이 기존 설비를 먼저 때린다", "replanned": false, "company_id": "NSC", "capex_total_bnkrw": 31665.199, "capex_peak_year": 2040, "cost_per_tco2_thkrw": 174.314, "tcar_bnkrw": 40978.653, "p50_bnkrw": 58168.707, "capex_peak_to_ebitda": 0.505, "netdebt_to_ebitda_post": 15.06, "funding_verdict": "피크연도 EBITDA 1배 이내"}, {"bundle": "elec_high", "bundle_label": "전력 +30% — 계통요금 상승이 기존 설비를 먼저 때린다", "replanned": false, "company_id": "POSCO", "capex_total_bnkrw": 20564.834, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 121.231, "tcar_bnkrw": 30987.301, "p50_bnkrw": 43803.293, "capex_peak_to_ebitda": 1.906, "netdebt_to_ebitda_post": null, "funding_verdict": "피크연도 EBITDA 초과 — 외부조달 필수"}, {"bundle": "h2_cheap", "bundle_label": "수소 −30% — 대규모 수입 수소가 값싸게 들어오면", "replanned": false, "company_id": "LOTTE", "capex_total_bnkrw": 158.44, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 199.968, "tcar_bnkrw": 1554.627, "p50_bnkrw": 555.759, "capex_peak_to_ebitda": null, "netdebt_to_ebitda_post": null, "funding_verdict": "EBITDA 음수 — 자체 조달 불가"}, {"bundle": "h2_cheap", "bundle_label": "수소 −30% — 대규모 수입 수소가 값싸게 들어오면", "replanned": false, "company_id": "MCI", "capex_total_bnkrw": 68.544, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 174.146, "tcar_bnkrw": 601.962, "p50_bnkrw": 224.007, "capex_peak_to_ebitda": 0.033, "netdebt_to_ebitda_post": 6.055, "funding_verdict": "피크연도 EBITDA 절반 이내"}, {"bundle": "h2_cheap", "bundle_label": "수소 −30% — 대규모 수입 수소가 값싸게 들어오면", "replanned": false, "company_id": "NSC", "capex_total_bnkrw": 31665.199, "capex_peak_year": 2040, "cost_per_tco2_thkrw": 155.852, "tcar_bnkrw": 30428.561, "p50_bnkrw": 52007.844, "capex_peak_to_ebitda": 0.505, "netdebt_to_ebitda_post": 15.06, "funding_verdict": "피크연도 EBITDA 1배 이내"}, {"bundle": "h2_cheap", "bundle_label": "수소 −30% — 대규모 수입 수소가 값싸게 들어오면", "replanned": false, "company_id": "POSCO", "capex_total_bnkrw": 20564.834, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 108.188, "tcar_bnkrw": 22448.541, "p50_bnkrw": 39090.622, "capex_peak_to_ebitda": 1.906, "netdebt_to_ebitda_post": null, "funding_verdict": "피크연도 EBITDA 초과 — 외부조달 필수"}, {"bundle": "h2_expensive", "bundle_label": "수소 +30% — 청정수소 프리미엄이 유지되면", "replanned": false, "company_id": "LOTTE", "capex_total_bnkrw": 158.44, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 349.25, "tcar_bnkrw": 2872.683, "p50_bnkrw": 970.652, "capex_peak_to_ebitda": null, "netdebt_to_ebitda_post": null, "funding_verdict": "EBITDA 음수 — 자체 조달 불가"}, {"bundle": "h2_expensive", "bundle_label": "수소 +30% — 청정수소 프리미엄이 유지되면", "replanned": false, "company_id": "MCI", "capex_total_bnkrw": 68.544, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 300.514, "tcar_bnkrw": 1118.063, "p50_bnkrw": 386.559, "capex_peak_to_ebitda": 0.033, "netdebt_to_ebitda_post": 6.055, "funding_verdict": "피크연도 EBITDA 절반 이내"}, {"bundle": "h2_expensive", "bundle_label": "수소 +30% — 청정수소 프리미엄이 유지되면", "replanned": false, "company_id": "NSC", "capex_total_bnkrw": 31665.199, "capex_peak_year": 2040, "cost_per_tco2_thkrw": 172.672, "tcar_bnkrw": 38514.016, "p50_bnkrw": 57620.633, "capex_peak_to_ebitda": 0.505, "netdebt_to_ebitda_post": 15.06, "funding_verdict": "피크연도 EBITDA 1배 이내"}, {"bundle": "h2_expensive", "bundle_label": "수소 +30% — 청정수소 프리미엄이 유지되면", "replanned": false, "company_id": "POSCO", "capex_total_bnkrw": 20564.834, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 121.082, "tcar_bnkrw": 31299.208, "p50_bnkrw": 43749.536, "capex_peak_to_ebitda": 1.906, "netdebt_to_ebitda_post": null, "funding_verdict": "피크연도 EBITDA 초과 — 외부조달 필수"}, {"bundle": "ppa_costly", "bundle_label": "재생 PPA 프리미엄 2배 — 전환 설비의 전력 조달이 비싸지면", "replanned": false, "company_id": "LOTTE", "capex_total_bnkrw": 158.44, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 274.94, "tcar_bnkrw": 2212.785, "p50_bnkrw": 764.125, "capex_peak_to_ebitda": null, "netdebt_to_ebitda_post": null, "funding_verdict": "EBITDA 음수 — 자체 조달 불가"}, {"bundle": "ppa_costly", "bundle_label": "재생 PPA 프리미엄 2배 — 전환 설비의 전력 조달이 비싸지면", "replanned": false, "company_id": "MCI", "capex_total_bnkrw": 68.544, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 237.188, "tcar_bnkrw": 859.851, "p50_bnkrw": 305.1, "capex_peak_to_ebitda": 0.033, "netdebt_to_ebitda_post": 6.055, "funding_verdict": "피크연도 EBITDA 절반 이내"}, {"bundle": "ppa_costly", "bundle_label": "재생 PPA 프리미엄 2배 — 전환 설비의 전력 조달이 비싸지면", "replanned": false, "company_id": "NSC", "capex_total_bnkrw": 31665.199, "capex_peak_year": 2040, "cost_per_tco2_thkrw": 164.468, "tcar_bnkrw": 34288.295, "p50_bnkrw": 54883.129, "capex_peak_to_ebitda": 0.505, "netdebt_to_ebitda_post": 15.06, "funding_verdict": "피크연도 EBITDA 1배 이내"}, {"bundle": "ppa_costly", "bundle_label": "재생 PPA 프리미엄 2배 — 전환 설비의 전력 조달이 비싸지면", "replanned": false, "company_id": "POSCO", "capex_total_bnkrw": 20564.834, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 114.922, "tcar_bnkrw": 26916.312, "p50_bnkrw": 41523.724, "capex_peak_to_ebitda": 1.906, "netdebt_to_ebitda_post": null, "funding_verdict": "피크연도 EBITDA 초과 — 외부조달 필수"}, {"bundle": "retire_free", "bundle_label": "폐쇄 상한 40% — 시장지위 방어 제약을 절반으로 풀면", "replanned": false, "company_id": "LOTTE", "capex_total_bnkrw": 158.44, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 274.94, "tcar_bnkrw": 2212.785, "p50_bnkrw": 764.125, "capex_peak_to_ebitda": null, "netdebt_to_ebitda_post": null, "funding_verdict": "EBITDA 음수 — 자체 조달 불가"}, {"bundle": "retire_free", "bundle_label": "폐쇄 상한 40% — 시장지위 방어 제약을 절반으로 풀면", "replanned": false, "company_id": "MCI", "capex_total_bnkrw": 68.544, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 237.188, "tcar_bnkrw": 859.851, "p50_bnkrw": 305.1, "capex_peak_to_ebitda": 0.033, "netdebt_to_ebitda_post": 6.055, "funding_verdict": "피크연도 EBITDA 절반 이내"}, {"bundle": "retire_free", "bundle_label": "폐쇄 상한 40% — 시장지위 방어 제약을 절반으로 풀면", "replanned": false, "company_id": "NSC", "capex_total_bnkrw": 31665.199, "capex_peak_year": 2040, "cost_per_tco2_thkrw": 164.468, "tcar_bnkrw": 34288.295, "p50_bnkrw": 54883.129, "capex_peak_to_ebitda": 0.505, "netdebt_to_ebitda_post": 15.06, "funding_verdict": "피크연도 EBITDA 1배 이내"}, {"bundle": "retire_free", "bundle_label": "폐쇄 상한 40% — 시장지위 방어 제약을 절반으로 풀면", "replanned": false, "company_id": "POSCO", "capex_total_bnkrw": 20564.834, "capex_peak_year": 2041, "cost_per_tco2_thkrw": 114.922, "tcar_bnkrw": 26916.312, "p50_bnkrw": 41523.724, "capex_peak_to_ebitda": 1.906, "netdebt_to_ebitda_post": null, "funding_verdict": "피크연도 EBITDA 초과 — 외부조달 필수"}], "bundles": [{"id": "base", "label": "기준 — 할인율 5%, 확정 유상할당(2026–30 15%) + 추정 램프", "replanned": false}, {"id": "carbon_fast", "label": "유상할당 가속 — 2040년 전량 유상 (EU CBAM 정합 압력 시나리오)", "replanned": false}, {"id": "carbon_slow", "label": "유상할당 완화 — 2050년까지 60%에 그침 (무상할당 존속 시나리오)", "replanned": false}, {"id": "disc35", "label": "할인율 3.5% — 자본비용이 낮으면(정책금융·장기채) 결론이 유지되는가", "replanned": false}, {"id": "disc65", "label": "할인율 6.5% — 자본비용이 높으면 조기 투자가 더 불리해지는가", "replanned": false}, {"id": "elec_high", "label": "전력 +30% — 계통요금 상승이 기존 설비를 먼저 때린다", "replanned": false}, {"id": "h2_cheap", "label": "수소 −30% — 대규모 수입 수소가 값싸게 들어오면", "replanned": false}, {"id": "h2_expensive", "label": "수소 +30% — 청정수소 프리미엄이 유지되면", "replanned": false}, {"id": "ppa_costly", "label": "재생 PPA 프리미엄 2배 — 전환 설비의 전력 조달이 비싸지면", "replanned": false}, {"id": "retire_free", "label": "폐쇄 상한 40% — 시장지위 방어 제약을 절반으로 풀면", "replanned": false}], "companies": ["POSCO", "NSC", "LOTTE", "MCI"], "coname": {"POSCO": "POSCO", "NSC": "Nippon Steel", "LOTTE": "LOTTE Chemical", "MCI": "Mitsui Chemicals"}, "why_flat": {"carbon_fast": "②는 자원비용 기준이라 탄소지출이 빠져 있다 — 유상할당은 ②를 정의상 못 움직인다. 탄소를 포함한 P50(out/scenarios/summary.csv의 p50_incl_carbon_bnkrw)에서는 크게 움직인다.", "carbon_slow": "위와 같은 이유. 유상할당은 탄소 포함 비용과 폐쇄 의사결정에만 걸린다.", "ppa_costly": "비용최소 계획의 PPA 비중이 0이라 프리미엄이 붙을 대상이 없다. PPA를 쓰는 계획은 경계 위의 다른 점들이다.", "retire_free": "폐쇄 상한은 E2 계획 탐색 단계의 제약이다. 이 실행은 계획 메뉴를 공유하므로 효과가 나타나지 않는다 — `--replan`이 필요하다."}};
+const CO=D.companies, NAME=D.coname;
+const fmt=(v,d=0)=>v==null||isNaN(v)?"—":Number(v).toLocaleString("ko-KR",{maximumFractionDigits:d});
+const get=(b,c)=>D.rows.find(r=>r.bundle===b&&r.company_id===c);
+const pct=(v,b)=>(b==null||v==null||!isFinite(b)||b===0)?null:100*(v-b)/Math.abs(b);
+const dspan=p=>{ if(p==null) return `<span class="dlt flat">—</span>`;
+  const c=Math.abs(p)<0.5?"flat":p>0?"up":"dn";
+  return `<span class="dlt ${c}">${p>0?"+":""}${p.toFixed(1)}%</span>`;};
+const rank=b=>CO.map(c=>[c,get(b,c)?.cost_per_tco2_thkrw])
+              .filter(x=>x[1]!=null).sort((a,b)=>a[1]-b[1]).map(x=>x[0]);
+
+let cur="base";
+
+const sel=document.getElementById("bsel");
+sel.innerHTML=D.bundles.map(b=>
+  `<button data-b="${b.id}" aria-pressed="${b.id===cur}">${b.id}${b.replanned?" ⟳":""}</button>`).join("");
+sel.addEventListener("click",e=>{const b=e.target.closest("button"); if(!b)return;
+  cur=b.dataset.b; [...sel.children].forEach(x=>x.setAttribute("aria-pressed",x.dataset.b===cur)); render();});
+
+function render(){
+  const meta=D.bundles.find(b=>b.id===cur);
+  document.getElementById("qline").innerHTML=`<b>${cur}</b> — ${meta.label}`;
+
+  document.getElementById("cards").innerHTML=CO.map(c=>{
+    const r=get(cur,c), b=get("base",c); if(!r) return "";
+    const pk=r.capex_peak_to_ebitda;
+    return `<div class="card"><div class="co">${NAME[c]}</div>
+      <div class="v">${fmt(r.cost_per_tco2_thkrw)}<span class="u"> 천원/tCO₂</span></div>
+      <div class="row"><span>기준 대비</span>${dspan(pct(r.cost_per_tco2_thkrw,b?.cost_per_tco2_thkrw))}</div>
+      <div class="row"><span>TCaR (조원)</span><span>${fmt(r.tcar_bnkrw/1000,1)} ${
+        dspan(pct(r.tcar_bnkrw,b?.tcar_bnkrw)).replace('class="dlt','class="dlt')}</span></div>
+      <div class="row"><span>피크배수</span><span>${pk==null||isNaN(pk)?"산출 불가":fmt(pk,1)+"×"}</span></div>
+      </div>`;}).join("");
+
+  const r0=rank("base"), r1=rank(cur);
+  const same=r0.join()===r1.join();
+  document.getElementById("verdict").innerHTML= cur==="base"
+    ? `<b>기준</b> — 감축단가 순서: ${r0.map(c=>NAME[c]).join(" < ")}`
+    : D.why_flat[cur]
+      ? `<b>이 묶음은 ②를 구조적으로 움직이지 못한다.</b> ${D.why_flat[cur]}`
+    : same
+      ? `<b>결론 불변.</b> 감축단가 순서가 기준과 같다 (${r1.map(c=>NAME[c]).join(" < ")}).
+         이 가정은 값을 옮기되 지목되는 기업을 바꾸지 않는다.`
+      : `<b>순위 역전.</b> 기준 ${r0.map(c=>NAME[c]).join(" < ")} →
+         ${cur} ${r1.map(c=>NAME[c]).join(" < ")}. 결론이 이 가정에 의존한다 — 해당 파라미터의
+         증거 등급을 먼저 올려야 한다.`;
+
+  drawSlope();
+}
+
+function drawSlope(){
+  const W=760,H=300,P={l:120,r:130,t:18,b:26};
+  const pairs=CO.map(c=>({c, a:get("base",c)?.cost_per_tco2_thkrw, b:get(cur,c)?.cost_per_tco2_thkrw}))
+                .filter(p=>p.a!=null&&p.b!=null);
+  if(!pairs.length){document.getElementById("slope").innerHTML="";return;}
+  const vals=pairs.flatMap(p=>[p.a,p.b]);
+  const lo=Math.min(...vals)*0.9, hi=Math.max(...vals)*1.08;
+  const Y=v=>P.t+(1-(v-lo)/(hi-lo))*(H-P.t-P.b);
+  const x0=P.l, x1=W-P.r;
+  const col=["var(--accent)","#1baf7a","#eda100","#e34948"];
+  let s=`<svg viewBox="0 0 ${W} ${H}">
+    <line x1="${x0}" y1="${P.t}" x2="${x0}" y2="${H-P.b}" class="gridline"/>
+    <line x1="${x1}" y1="${P.t}" x2="${x1}" y2="${H-P.b}" class="gridline"/>
+    <text class="axislab" x="${x0}" y="${H-8}" text-anchor="middle">기준</text>
+    <text class="axislab" x="${x1}" y="${H-8}" text-anchor="middle">${cur}</text>`;
+  pairs.forEach((p,i)=>{
+    const c=col[i%col.length];
+    s+=`<line x1="${x0}" y1="${Y(p.a)}" x2="${x1}" y2="${Y(p.b)}" stroke="${c}" stroke-width="2" opacity=".85"/>
+      <circle cx="${x0}" cy="${Y(p.a)}" r="4" fill="${c}"/><circle cx="${x1}" cy="${Y(p.b)}" r="4" fill="${c}"/>
+      <text class="axis" x="${x0-9}" y="${Y(p.a)+4}" text-anchor="end">${NAME[p.c]} ${fmt(p.a)}</text>
+      <text class="axis" x="${x1+9}" y="${Y(p.b)+4}">${fmt(p.b)}</text>`;});
+  document.getElementById("slope").innerHTML=s+"</svg>";
+}
+
+(()=>{
+  let t=`<tr><th>묶음</th><th>질문</th>${CO.map(c=>`<th>${NAME[c]}</th>`).join("")}</tr>`;
+  for(const b of D.bundles){
+    t+=`<tr><td class="co">${b.id}${b.replanned?" ⟳":""}</td>
+      <td style="text-align:left;white-space:normal;font-size:12.5px;color:var(--ink2)">${b.label}</td>`;
+    for(const c of CO){
+      const r=get(b.id,c), bs=get("base",c);
+      const p=b.id==="base"?null:pct(r?.cost_per_tco2_thkrw,bs?.cost_per_tco2_thkrw);
+      t+=`<td>${fmt(r?.cost_per_tco2_thkrw)}${p==null?"":" "+dspan(p)}</td>`;
+    }
+    const why=D.why_flat[b.id];
+    t+=`</tr>`;
+    if(why) t+=`<tr><td></td><td colspan="${CO.length+1}"
+      style="text-align:left;white-space:normal;font-size:11.5px;color:var(--ink3);
+      padding-bottom:9px">↳ 변화 없음의 이유: ${why}</td></tr>`;
+  }
+  document.getElementById("gtable").innerHTML=t;
+})();
+render();
+</script></body></html>

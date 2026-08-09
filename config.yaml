@@ -16,8 +16,12 @@ simulation:
   convergence_check_n: 2000  # P50/TCaR must match full run within 1%
 
 milp:
-  frontier_points: 12        # epsilon-constraint grid size
-  solver_time_limit_s: 300
+  frontier_points: 10        # epsilon-constraint grid size (중복 제거 후 8~10개 생존)
+  # 대형 인스턴스(NSC 1,110 이진변수)는 최적성 증명에 조합당 40분 이상을 쓴다. E2는
+  # 계획을 '고르는' 것이 아니라 '나열'하는 단계이고 각 계획의 정본 비용·TCaR은 E4
+  # 시뮬레이션이 다시 낸다. 상한에서 얻은 실행가능해도 후보로 채택하며, 그 사실은
+  # plan_index.csv의 solve_status에 남아 감출 수 없다.
+  solver_time_limit_s: 60
   # relative MIP gap. E2's objective is an ordering surrogate — the authoritative
   # cost of every plan comes from the E4 simulation — so proving surrogate
   # optimality to the last basis point costs tens of minutes and changes nothing.
