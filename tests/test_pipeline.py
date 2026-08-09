@@ -3,6 +3,7 @@
 Run: .venv/bin/pytest tests/ -x -q   (~2-4 min, dominated by CBC solves)
 """
 
+import os
 import pathlib
 import sys
 
@@ -21,7 +22,10 @@ def cfg():
     # out_dir MUST differ from the production out/ — the test suite runs the whole
     # pipeline on synthetic data, and sharing out/ silently overwrote real results
     # with fabricated ones (2026-08-09: a published report carried sample numbers).
-    c = C.load(data_dir="data/sample", out_dir="out_test")
+    # pid로 갈라 둔다 — 두 사이클(또는 gate와 손으로 돌린 pytest)이 겹치면 한쪽이 쓰는
+    # 중인 out_test/e2/plans를 다른 쪽이 지우고 다시 써서 FileNotFoundError 10건이 난다.
+    # D11에서 두 번 났고 두 번 다 실재 결함이 아니었다 — 진단을 태우는 잡음이다.
+    c = C.load(data_dir="data/sample", out_dir=f"out_test/{os.getpid()}")
     c["simulation"] = dict(c["simulation"], n_sims=500, n_sims_flex=100)
     c["milp"] = dict(c["milp"], frontier_points=4)
     return c

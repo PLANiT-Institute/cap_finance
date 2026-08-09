@@ -24,15 +24,15 @@
 | key | value | 출처 |
 |---|---|---|
 | m2_posco | 115.0 | out/e5/metrics_company.csv |
-| m2_nsc | 155.8 | out/e5/metrics_company.csv |
+| m2_nsc | 155.6 | out/e5/metrics_company.csv |
 | m2_mci | 241.7 | out/e5/metrics_company.csv |
 | m2_lotte | 279.2 | out/e5/metrics_company.csv |
 | tcar_posco | 26752.6 | out/e5/metrics_company.csv |
-| tcar_nsc | 33047.2 | out/e5/metrics_company.csv |
+| tcar_nsc | 32961.3 | out/e5/metrics_company.csv |
 | tcar_mci | 864.1 | out/e5/metrics_company.csv |
 | tcar_lotte | 2242.2 | out/e5/metrics_company.csv |
-| gap_cost_nsc | 1097.4 | out/e5/gap.csv |
-| gap_risk_nsc | 4038.7 | out/e5/gap.csv |
+| gap_cost_nsc | 1254.5 | out/e5/gap.csv |
+| gap_risk_nsc | 4651.2 | out/e5/gap.csv |
 | gap_cost_mci | 712.5 | out/e5/gap.csv |
 | gap_risk_mci | 969.5 | out/e5/gap.csv |
 | hedge_rate_posco | 2.44 | out/e5/frontier_points.csv |
@@ -43,34 +43,34 @@
 | frontier_groups_total | 16 | out/e5/frontier_points.csv |
 | gap_companies | 2 | out/e5/gap.csv |
 | tcar_param30_posco | 11664.9 | out/uncertainty/decomposition.csv |
-| tcar_param30_nsc | 15605.9 | out/uncertainty/decomposition.csv |
+| tcar_param30_nsc | 15573.9 | out/uncertainty/decomposition.csv |
 | tcar_param30_mci | 229.1 | out/uncertainty/decomposition.csv |
 | tcar_param30_lotte | 590.9 | out/uncertainty/decomposition.csv |
-| param_share30_posco | 40.6 | out/uncertainty/decomposition.csv |
-| param_share30_nsc | 43.8 | out/uncertainty/decomposition.csv |
-| param_share30_mci | 26.6 | out/uncertainty/decomposition.csv |
-| param_share30_lotte | 26.4 | out/uncertainty/decomposition.csv |
-| tcar_co2only_posco | 16510.3 | out/uncertainty/decomposition.csv |
-| co2_increment_posco | 2444.0 | out/uncertainty/decomposition.csv |
-| tcar_co2only_nsc | 15484.6 | out/uncertainty/decomposition.csv |
-| co2_increment_nsc | 1207.3 | out/uncertainty/decomposition.csv |
-| tcar_co2only_mci | 75.0 | out/uncertainty/decomposition.csv |
-| co2_increment_mci | -37.2 | out/uncertainty/decomposition.csv |
-| tcar_co2only_lotte | 162.7 | out/uncertainty/decomposition.csv |
-| co2_increment_lotte | -100.3 | out/uncertainty/decomposition.csv |
+| param_share30_posco | 41.2 | out/uncertainty/decomposition.csv |
+| param_share30_nsc | 44.1 | out/uncertainty/decomposition.csv |
+| param_share30_mci | 26.4 | out/uncertainty/decomposition.csv |
+| param_share30_lotte | 26.2 | out/uncertainty/decomposition.csv |
+| tcar_co2only_posco | 16319.6 | out/uncertainty/decomposition.csv |
+| co2_increment_posco | 3064.0 | out/uncertainty/decomposition.csv |
+| tcar_co2only_nsc | 15285.6 | out/uncertainty/decomposition.csv |
+| co2_increment_nsc | 2158.9 | out/uncertainty/decomposition.csv |
+| tcar_co2only_mci | 72.7 | out/uncertainty/decomposition.csv |
+| co2_increment_mci | -44.4 | out/uncertainty/decomposition.csv |
+| tcar_co2only_lotte | 157.7 | out/uncertainty/decomposition.csv |
+| co2_increment_lotte | -94.3 | out/uncertainty/decomposition.csv |
 | e2_plans_total | 48 | out/e2/plan_index.csv |
-| e2_plans_canonical | 41 | out/e4/summary.csv |
+| e2_plans_canonical | 40 | out/e4/summary.csv |
 | surrogate_argmin_match | 0 | out/e4/summary.csv |
 | surrogate_argmin_groups | 8 | out/e4/summary.csv |
 | surrogate_rho_posco | 0.0 | out/e4/summary.csv |
-| surrogate_rho_nsc | -0.105 | out/e4/summary.csv |
+| surrogate_rho_nsc | -0.564 | out/e4/summary.csv |
 | surrogate_rho_mci | 0.204 | out/e4/summary.csv |
 | surrogate_rho_lotte | 0.725 | out/e4/summary.csv |
 | riskproxy_rho_posco | 0.0 | out/e2/plan_index.csv |
-| riskproxy_rho_nsc | 0.632 | out/e2/plan_index.csv |
+| riskproxy_rho_nsc | 0.553 | out/e2/plan_index.csv |
 | riskproxy_rho_mci | 0.707 | out/e2/plan_index.csv |
 | riskproxy_rho_lotte | 0.783 | out/e2/plan_index.csv |
-| rho_central_p50_min | 0.412 | out/e4/summary.csv |
+| rho_central_p50_min | 0.368 | out/e4/summary.csv |
 | m8_caps_total | 32 | out/m8/tech_epsilon.csv |
 | m8_new_schedules | 32 | out/m8/tech_epsilon.csv |
 | m8_nondominated_headline | 4 | out/m8/tech_epsilon.csv |
@@ -84,7 +84,7 @@
 | g2_bands_added | 3 | out/g2/summary.csv |
 | g2_bands_outside | 1 | out/g2/summary.csv |
 | f3_param_share_steel_band_w15 | 36 | out/uncertainty/decomposition_bands.csv |
-| f3_param_share_steel_conv_w15 | 21 | out/uncertainty/decomposition.csv |
+| f3_param_share_steel_conv_w15 | 22 | out/uncertainty/decomposition.csv |
 | inv_src_registered | 279 | out/m3/summary.csv |
 | inv_src_sentinel | 129 | out/m3/summary.csv |
 | inv_src_eff | 7 | out/m3/summary.csv |
@@ -134,7 +134,7 @@ M5(강건성·한계 절)가 이 표를 그대로 이어받는다.
 | **FC1** | 공시계획은 효율경계 위에 있지 않고, 그 거리는 무시할 수 없다 | NSC `gap_cost` 1,164 / `gap_risk` 4,364, MCI 713 / 969 (십억원) | 같은 예산·제약 아래 공시계획보다 P50과 TCaR이 **동시에** 낮은 계획이 존재하지 않으면(=gap≈0) 무너진다 | `src/cap/e5_metrics.py::_gap`, `out/e5/gap.csv` |
 | **FC2** | 기대값에서 싼 계획이 꼬리에서 비싸다 | NZ15·none에서 최소비용→최소위험 이동이 NSC P50 +8.7% / TCaR −45.9%, POSCO +9.3% / −35.1% | 경계가 사실상 한 점이거나(교환비 ≈ 0) 최소비용 계획이 최소위험 계획과 같으면 무너진다 | `out/e5/frontier_points.csv` |
 | **FC3** | 위험 헤지의 가격은 업종별로 다르고, 철강이 유리하다 | `hedge_rate` 철강 2.44·3.27 대 석화 0.21·0.24 | 전력집약도·계약 가능량을 통제했을 때 차이가 사라지면 업종 효과가 아니라 규모 효과다 | 미작성 — **M5에서 통제 필요** |
-| **FC4** | 우리 TCaR은 정책 위험을 **빼고** 잰 값이다 | **검사 완료 (L2, D6) — 업종별로 답이 갈렸다.** 탄소가격을 확률 축(K-ETS 실측 연변동성 36.3%)으로 옮기면 TCaR 증분은 철강 +2,444 / +1,223, 석화 **−100 / −37** (십억원, 시드 3개 평균) | 철강에서는 반증되지 않았다 — 정책 축만으로도 TCaR 16,510 / 15,465로 파라미터분(11,665 / 15,578)과 같은 자릿수다. 석화에서는 **반증됐다**: 증분이 음수이므로 이 한계는 그쪽에서 실무적으로 무해하다 | `scripts/uncertainty_propagation.py` §4, `out/uncertainty/decomposition.csv` |
+| **FC4** | 우리 TCaR은 정책 위험을 **빼고** 잰 값이다 | **검사 완료 (L2, D6) — 업종별로 답이 갈렸다.** 탄소가격을 확률 축(K-ETS 실측 연변동성 36.3%)으로 옮기면 TCaR 증분은 철강 +3,064 / +2,159, 석화 **−94 / −44** (십억원, 시드 3개 평균) | 철강에서는 반증되지 않았다 — 정책 축만으로도 TCaR 16,320 / 15,286으로 파라미터분(11,665 / 15,574)과 같은 자릿수다. 석화에서는 **반증됐다**: 증분이 음수이므로 이 한계는 그쪽에서 실무적으로 무해하다 | `scripts/uncertainty_propagation.py` §4, `out/uncertainty/decomposition.csv` |
 | **FC5** | 두 독립 구현이 같은 수준을 본다 | FIN ② POSCO 115가 EFF 실행가능 후보 범위 26.6–155.9 안에 든다 | FIN 값이 EFF 실행가능 범위 **밖**으로 나가면 수준 자체가 의심된다 | `docs/cross_model_check.md`, `tests/test_independence.py` |
 
 ## 4. 이 골격이 드러낸 문제 — 경계가 기술 선택이 아니라 계약으로 그려진다
@@ -154,7 +154,7 @@ LOTTE는 후보 기술 일정 자체가 1개라 선택집합이 없다.
    자유도를 없앤다. 그렇다면 결과가 아니라 **모형 경계에 관한 발견**이고 그렇게 써야 한다.
 
 **D7 보강**: 후보집합은 여기 적힌 것보다 더 얇다. E2가 낸 48개 계획 중 정본 평가에서 서로
-다른 것은 41개이고, 사라지는 7개는 **CCfD 체결 여부만 다른 쌍**이다(본문 §3.4). 즉 (1)의
+다른 것은 40개이고, 사라지는 8개는 **CCfD 체결 여부만 다른 쌍**이다(본문 §3.4). 즉 (1)의
 "기업당 1–5개"조차 상한이다.
 
 → 백로그 **M8** 신설: ε-constraint를 기술 일정 축에서도 걸어 계획 다양성을 강제한 뒤
@@ -194,7 +194,7 @@ LOTTE는 후보 기술 일정 자체가 1개라 선택집합이 없다.
    상대적으로 싸지므로, 정책 위험은 '규제 강화'가 아니라 **탄소가격 붕괴에 따른 좌초**로 들어온다.
 6. **개수 단가 200 천원/t의 외부 앵커가 [47, 269]로 5배 폭이다.** 점 추정이 아니라 폭을 전파해야
    한다 (`docs/validation_external.md` §1-1).
-7. **경계를 따라 움직이는 것은 기술 일정이 아니라 계약이다** (M8, D8). 16개 묶음 중 14개에서
+7. **경계를 따라 움직이는 것은 기술 일정이 아니라 계약이다** (M8, D8). 16개 묶음 **전부**에서
    경계 위 점들이 같은 기술 일정을 쓴다는 §4의 진단을, 계약으로는 살 수 없는 축(누적 배출)에
    epsilon-constraint를 걸어 갈랐다. **강제 상한 32개가 전부 실행가능했고 전부 새 기술
    일정이다** — 다른 일정이 없어서 퇴화한 것이 아니다. 그러나 헤드라인 규약에서 그 일정들은
@@ -222,17 +222,25 @@ LOTTE는 후보 기술 일정 자체가 1개라 선택집합이 없다.
    옮기면 `tech.capex`는 [1.000, 3.479], `tech.emission_factor`는 [0.800, 1.000]이다 —
    **두 구간 다 1을 한쪽 끝에 두고 한 방향으로만 열린다.** 규약은 1을 중심으로 대칭
    추첨하므로 폭만 틀린 것이 아니라 **중심이 틀렸다**. 그 구간으로 F3을 다시 돌리면
-   철강의 파라미터 몫이 ±15% 규약 21%에서 **36%**로, TCaR_param이 ×1.75~1.88로
+   철강의 파라미터 몫이 ±15% 규약 22%에서 **36%**로, TCaR_param이 ×1.75~1.88로
    커진다(`docs/tech_band_upgrade.md`). 석유화학은 밴드가 붙은 기술이 없어 무변화다.
    따라서 본문은 파라미터분을 **절대값이 아니라 "±30%를 가정했을 때의 몫"으로만** 인용한다.
    더 중요한 것은 그 옆칸이다: 확률과정 선택이 만드는 폭(한계 8)이 파라미터분과 **같은
    자릿수이거나 더 크고**, 이쪽은 데이터로 줄일 수 없다.
 10. **E2 대리 목적함수는 정본 순위를 보존하지 않는다** (M2, D7). 대리비용과 정본 P50의
-   순위상관이 철강에서 −0.05~0.00이고, 대리가 고른 최저비용 계획이 정본에서도 최저인 묶음은
+   순위상관이 철강에서 −0.56~−0.02이고, 대리가 고른 최저비용 계획이 정본에서도 최저인 묶음은
    **0/8**이다. 우리 설계에서는 E4가 정본이므로 결론에 영향이 없지만, 이는 **동시에
    후보집합 밖의 계획에 대해서는 아무 말도 할 수 없다**는 뜻이다 — 경계는 E2가 우연히 만든
-   43개 중의 파레토 집합이지 진짜 경계가 아니다. 심사자가 여기를 칠 것이고, 우리 답은
+   40개 중의 파레토 집합이지 진짜 경계가 아니다. 심사자가 여기를 칠 것이고, 우리 답은
    "경계가 아니라 **하한 경계**"다. M8이 후보 생성을 강제로 넓혀 이 진술의 폭을 좁힌다.
+
+11. **E2의 후보집합은 재현 가능해진 지 한 사이클 됐다** (D11). `mip_gap_rel = 0.02` 안에는
+   동률에 가까운 최적해가 여럿 있고, 그중 무엇이 돌아오는지는 CBC가 몇 개의 스레드로 탐색했는지에
+   달려 있었다. 같은 커밋·같은 시드의 두 실행이 정본 중복제거 계획 수 41 대 40, 대리 순위상관
+   −0.105 대 −0.564, L2 탄소 증분 NSC +1,207 대 +2,159십억원을 냈다. **부호와 순위는 세 실행
+   모두에서 같았고 헤드라인 ②의 소수 첫째 자리까지 같았다** — 흔들린 것은 후보집합의 내부
+   구성이지 결론이 아니다. `config.milp.solver_threads = 1`로 고정했고 `out/run_manifest.json`이
+   실행 설정을 산출물 옆에 남긴다. 그 이전에 인용된 F3·L2 수치는 이 실행에서 다시 낸 값이다.
 
 ## 7. 타깃 저널 후보
 
@@ -323,9 +331,9 @@ E2의 목적함수는 **정답이 아니라 순서용 대리**다(**A-14**). 위
 | 기업 | 후보 수 | ρ(대리비용, 정본 P50) | ρ(대리위험, 정본 TCaR) |
 |---|---|---|---|
 | POSCO | 3 | **0.00** | **0.00** |
-| Nippon Steel | 4 | **−0.11** | 0.63 |
+| Nippon Steel | 5 | **−0.56** | 0.55 |
 | Mitsui Chemicals | 8 | 0.20 | 0.71 |
-| LOTTE Chemical | 6 | 0.73 | 0.78 |
+| LOTTE Chemical | 6 | 0.72 | 0.78 |
 
 **철강에서 대리 순위는 정본 순위에 대한 정보를 거의 갖지 않는다.** 그리고 8개
 (기업×시나리오) 묶음 전부에서 **대리가 가장 싸다고 한 계획이 정본에서 가장 싼 계획이 아니었다
@@ -333,13 +341,13 @@ E2의 목적함수는 **정답이 아니라 순서용 대리**다(**A-14**). 위
 E2의 해를 "그 기업의 최적 계획"으로 보고했다면 여덟 번 모두 틀린 계획을 보고했을 것이다.
 
 재정렬을 만드는 것이 몬테카를로 잡음이 아니라는 것도 확인했다. 중앙 경로 결정론 비용과
-정본 P50의 순위상관은 여덟 묶음 중 **일곱에서 0.94~1.00**이다(NSC B20만 0.41 — 이 묶음은
-후보 6개 중 CCfD 중복을 빼면 5개라 순위상관이 한 쌍의 교환에도 크게 흔들린다). 즉 순위를 흔드는 것은
+정본 P50의 순위상관은 여덟 묶음 중 **일곱에서 0.94~1.00**이다(NSC B20만 0.37 — 이 묶음은
+후보 5개 중 CCfD 중복을 빼면 4개라 순위상관이 한 쌍의 교환에도 크게 흔들린다). 즉 순위를 흔드는 것은
 불확실성이 아니라 **대리 목적함수 자체의 구조**다: 폐쇄의 마진 상실·잔존가치·계약 프리미엄이
 E2에는 들어가고 E4의 자원비용 계산에는 다르게 들어간다.
 
 같은 대조가 후보집합의 성질도 드러냈다. E2가 낸 48개 계획 중 정본 평가에서 서로 다른 것은
-**41개**뿐이다. 여덟 묶음 중 일곱에서 정확히 한 쌍이 정본 비용·TCaR까지 완전히 같다 — 기술
+**40개**뿐이다. 여덟 묶음 **전부**에서 정확히 한 쌍이 정본 비용·TCaR까지 완전히 같다 — 기술
 일정도 PPA 비중도 같고 **CCfD 체결 여부만 다른** 쌍이다. 지원 `none` 세계에서는 CCfD 행사가가
 정의되지 않아 정본 평가에서 아무 일도 하지 않는데, E2는 그 계약에 프리미엄을 물리고 선형
 위험 공제를 되돌려 준다. 헤드라인(E5)은 이 쌍을 중복 제거하므로 영향이 없지만, **E2가 세는
@@ -374,9 +382,9 @@ $\hat g$는 중앙 경로가 함의하는 성장률, $\nu$는 이력에서 추�
 정책 경로가 시나리오의 **정의**이기 때문이다. 탄소가격을 같은 시나리오 안에서 흔들면 시나리오
 간 비교(지표 ④ 정책 노출)가 의미를 잃는다. 그러나 이 선택은 공짜가 아니고, 그 크기를 쟀다.
 K-ETS 배출권 가격의 실측 연변동성(36.3%, 투입가와 같은 추정기)을 써서 탄소가격을 네 번째
-확률 축으로 올리면, TCaR은 철강에서 POSCO **+2,444**, Nippon Steel **+1,223**십억원 늘고
+확률 축으로 올리면, TCaR은 철강에서 POSCO **+3,064**, Nippon Steel **+2,159**십억원 늘고
 석유화학에서는 오히려 MCI −37, LOTTE −100만큼 **줄어든다**. 정책 축 **하나만**으로 잰 TCaR도
-철강에서는 16,510 / 15,465십억원으로 파라미터 불확실성 전체와 같은 자릿수다
+철강에서는 16,320 / 15,286십억원으로 파라미터 불확실성 전체와 같은 자릿수다
 (`docs/uncertainty_propagation.md` §4).
 
 방향이 통념과 반대인 점을 짚어 둔다. 전환계획은 무대응보다 배출이 적으므로 탄소가격이 오를
@@ -586,5 +594,5 @@ F3(§6-9)의 파라미터 불확실성이 근거 밴드가 아니라 ±30%라는
 
 **결론 영향은 §6-9에 있다.** 밴드를 F3 승수 구간으로 옮기면 두 구간이 모두 한 방향으로만
 열려서(`tech.capex` [1.000, 3.479], `tech.emission_factor` [0.800, 1.000]) ±30% 대칭 규약은
-폭뿐 아니라 **중심**이 틀렸다는 것이 드러난다. 철강 파라미터 몫 21% → **36%**
+폭뿐 아니라 **중심**이 틀렸다는 것이 드러난다. 철강 파라미터 몫 22% → **36%**
 (`docs/tech_band_upgrade.md`).

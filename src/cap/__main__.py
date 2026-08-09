@@ -3,12 +3,32 @@
 from __future__ import annotations
 
 import argparse
+import json
+import pathlib
 import sys
 import time
 
 from . import config as C
 
 STAGES = ["e1", "e2", "e3", "e4", "e5", "render"]
+
+
+def _stamp(cfg, stage: str) -> None:
+    """out/의 각 단계가 **어떤 설정으로** 만들어졌는지 남긴다.
+
+    D10 뒤 out/e2·e4는 `--sims`를 줄인 실행으로 조용히 갈아치워졌고, 정본을 인용하는
+    페이퍼 §0 대장이 어긋났다. 그때 실패 메시지는 "페이퍼가 out/과 다르다"였다 —
+    틀린 것은 페이퍼가 아니라 out/이었는데도. 산출물이 자기 출처를 들고 있지 않으면
+    다음 사이클은 낡은 쪽을 정본으로 착각한다.
+    """
+    p = pathlib.Path(C.out_dir(cfg, stage)).parent / "run_manifest.json"
+    m = json.loads(p.read_text()) if p.exists() else {}
+    m[stage] = {"data_dir": str(cfg.data_dir), "n_sims": int(cfg.simulation["n_sims"]),
+                "n_sims_flex": int(cfg.simulation["n_sims_flex"]),
+                "frontier_points": int(cfg.milp["frontier_points"]),
+                "solver_threads": int(cfg.milp["solver_threads"]),
+                "seed": int(cfg.seed), "finished": time.strftime("%Y-%m-%dT%H:%M:%S")}
+    p.write_text(json.dumps(m, ensure_ascii=False, indent=2, sort_keys=True))
 
 
 def main(argv=None):
@@ -35,6 +55,7 @@ def main(argv=None):
         t0 = time.time()
         print(f"[{s}] running (data={cfg.data_dir}) ...", flush=True)
         fns[s](cfg)
+        _stamp(cfg, s)
         print(f"[{s}] done in {time.time() - t0:.1f}s -> {C.out_dir(cfg, s)}")
     return 0
 

@@ -40,9 +40,11 @@ milp:
   # cost of every plan comes from the E4 simulation — so proving surrogate
   # optimality to the last basis point costs tens of minutes and changes nothing.
   mip_gap_rel: 0.02
-  # CBC defaults to one thread; the NSC instance (1,110 binaries) is the
-  # binding cost of a full run. 0 = solver default.
-  solver_threads: 6
+  # 1 = 재현 가능. 병렬 CBC는 스레드 경합이 탐색 순서를 바꾸므로 mip_gap_rel 안의
+  # **동률 최적해 중 어느 것을 반환하는지**가 실행마다 달라진다. D11에서 같은 커밋·같은
+  # 시드의 두 실행이 48계획 중 정본 중복제거 41 vs 42, surrogate_rho_nsc -0.105 vs -0.400을
+  # 냈다 — 페이퍼 §0 대장이 기계 부하에 따라 흔들린다는 뜻이다. 속도보다 재현성을 산다.
+  solver_threads: 1
   # early conversion writes off the incumbent campaign asset's remaining
   # straight-line book value (D1a incumbent_capex_unit); halfwidth = grace years
   # before a relining anchor that count as on-window

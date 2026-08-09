@@ -7,6 +7,7 @@ test_pipeline.py는 합성 데이터로 "돌아가는가"를 본다. 이 파일�
 Run: .venv/bin/pytest tests/test_consistency.py -q
 """
 
+import json
 import pathlib
 import sys
 
@@ -254,3 +255,24 @@ def test_production_plan_index_matches_plan_files():
                if not (OUT / "e2" / "plans" / f"plan_{p}.csv").exists()]
     assert not missing, (f"plan_index에 있으나 파일이 없는 계획 {len(missing)}개 "
                          f"(예: {missing[:3]}) — out/e2가 다른 실행에 덮어쓰였을 수 있다")
+
+
+def test_canonical_run_is_reproducible_not_load_dependent():
+    """정본 out/은 **같은 커밋·같은 시드면 같은 수를 낸다**고 말할 수 있어야 한다.
+
+    D11에서 같은 커밋·같은 시드의 두 실행이 정본 중복제거 계획 41 vs 42,
+    surrogate_rho_nsc -0.105 vs -0.400을 냈다. 원인은 mip_gap_rel 2% 안의 **동률
+    최적해 중 어느 것을 반환하는가**가 CBC 스레드 경합에 달려 있었던 것이다. 병렬은
+    수치를 틀리게 하지 않는다 — 재현 불가능하게 만든다. 페이퍼 §0 대장이 기계 부하에
+    따라 흔들리면 대장의 검증은 의미가 없다. 그래서 재현성은 성능 설정이 아니라 불변식이다.
+    """
+    cfg = C.load()
+    assert int(cfg.milp["solver_threads"]) == 1, (
+        "milp.solver_threads != 1 — CBC 병렬 탐색은 동률 최적해 선택을 실행마다 바꾼다. "
+        "속도가 필요하면 정본이 아닌 실행(--sims 축소 등)에서만 올려라")
+    p = OUT / "run_manifest.json"
+    if not p.exists():
+        pytest.skip("파이프라인 미실행")
+    m = json.loads(p.read_text())
+    off = {s: v.get("solver_threads") for s, v in m.items() if v.get("solver_threads") != 1}
+    assert not off, f"out/이 병렬 solver로 만들어진 단계가 있다: {off} — `python -m cap all` 재실행"
