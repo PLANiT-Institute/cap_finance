@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "korean_dashboard": {
+    "path": "/Users/jinsu/Documents/cap-efficient/outputs/dashboard.html",
+    "size_bytes": 6042206,
+    "sha256": "9b78c745ed130f1055208850a21081fcca31bc1895a1bb97587dc9b4f3227870"
+  },
+  "english_dashboard": {
+    "path": "/Users/jinsu/Documents/cap-efficient/outputs/dashboard_en.html",
+    "size_bytes": 6060180,
+    "sha256": "8eea6b6df77700cb7d70a3a3c539471059b168775264f2be94388309c0549a9f",
+    "hangul_character_count": 0
+  },
+  "embedded_payload": {
+    "structure_identical": true,
+    "all_non_string_values_identical": true,
+    "leaf_value_count": 154650,
+    "translated_string_value_count": 3894
+  },
+  "required_english_ui_markers": [
+    "<html lang=\"en\">",
+    "Decision efficient frontier",
+    "Asset-level transition execution map",
+    "P50 net economic cost bridge",
+    "Same portfolio across scenarios",
+    "href=\"dashboard.html\">Korean</a>"
+  ]
+}

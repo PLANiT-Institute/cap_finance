@@ -1,0 +1,33 @@
+company_id,scenario_id,year,max_scrap_supply_mt,max_hydrogen_supply_mt,max_incremental_grid_twh,data_status,source_url,source_note
+POSCO_KR,DISCLOSED_PATH,2026,8.0,0.0,2.0,model_estimate,,Illustrative screening envelope; not an official supply forecast
+POSCO_KR,DISCLOSED_PATH,2030,12.0,0.5,7.0,model_estimate,,Illustrative screening envelope; not an official supply forecast
+POSCO_KR,DISCLOSED_PATH,2035,18.0,1.5,15.0,model_estimate,,Illustrative screening envelope; not an official supply forecast
+POSCO_KR,DISCLOSED_PATH,2040,25.0,3.0,25.0,model_estimate,,Illustrative screening envelope; not an official supply forecast
+POSCO_KR,ACCELERATED_15C,2026,8.0,0.1,2.0,model_estimate,,Illustrative accelerated envelope; not GCAM or an official supply forecast
+POSCO_KR,ACCELERATED_15C,2030,15.0,0.8,10.0,model_estimate,,Illustrative accelerated envelope; not GCAM or an official supply forecast
+POSCO_KR,ACCELERATED_15C,2035,23.0,2.2,20.0,model_estimate,,Illustrative accelerated envelope; not GCAM or an official supply forecast
+POSCO_KR,ACCELERATED_15C,2040,30.0,4.0,32.0,model_estimate,,Illustrative accelerated envelope; not GCAM or an official supply forecast
+NIPPON_STEEL_JP,DISCLOSED_PATH,2026,8.0,0.0,2.0,model_estimate,,Illustrative screening envelope; not an official supply forecast
+NIPPON_STEEL_JP,DISCLOSED_PATH,2030,12.0,0.6,7.0,model_estimate,,Illustrative screening envelope; not an official supply forecast
+NIPPON_STEEL_JP,DISCLOSED_PATH,2035,18.0,1.8,15.0,model_estimate,,Illustrative screening envelope; not an official supply forecast
+NIPPON_STEEL_JP,DISCLOSED_PATH,2040,25.0,3.2,25.0,model_estimate,,Illustrative screening envelope; not an official supply forecast
+NIPPON_STEEL_JP,ACCELERATED_15C,2026,8.0,0.1,2.0,model_estimate,,Illustrative accelerated envelope; not GCAM or an official supply forecast
+NIPPON_STEEL_JP,ACCELERATED_15C,2030,15.0,0.9,10.0,model_estimate,,Illustrative accelerated envelope; not GCAM or an official supply forecast
+NIPPON_STEEL_JP,ACCELERATED_15C,2035,23.0,2.5,20.0,model_estimate,,Illustrative accelerated envelope; not GCAM or an official supply forecast
+NIPPON_STEEL_JP,ACCELERATED_15C,2040,30.0,4.5,32.0,model_estimate,,Illustrative accelerated envelope; not GCAM or an official supply forecast
+JFE_STEEL_JP,DISCLOSED_PATH,2026,5.0,0.0,1.5,model_estimate,,Illustrative screening envelope; not an official supply forecast
+JFE_STEEL_JP,DISCLOSED_PATH,2030,8.0,0.4,5.0,model_estimate,,Illustrative screening envelope; not an official supply forecast
+JFE_STEEL_JP,DISCLOSED_PATH,2035,12.0,1.2,10.0,model_estimate,,Illustrative screening envelope; not an official supply forecast
+JFE_STEEL_JP,DISCLOSED_PATH,2040,17.0,2.2,17.0,model_estimate,,Illustrative screening envelope; not an official supply forecast
+JFE_STEEL_JP,ACCELERATED_15C,2026,5.0,0.1,1.5,model_estimate,,Illustrative accelerated envelope; not GCAM or an official supply forecast
+JFE_STEEL_JP,ACCELERATED_15C,2030,10.0,0.6,7.0,model_estimate,,Illustrative accelerated envelope; not GCAM or an official supply forecast
+JFE_STEEL_JP,ACCELERATED_15C,2035,16.0,1.8,14.0,model_estimate,,Illustrative accelerated envelope; not GCAM or an official supply forecast
+JFE_STEEL_JP,ACCELERATED_15C,2040,21.0,3.0,22.0,model_estimate,,Illustrative accelerated envelope; not GCAM or an official supply forecast
+KOBE_STEEL_JP,DISCLOSED_PATH,2026,2.0,0.0,0.8,model_estimate,,Illustrative screening envelope; not an official supply forecast
+KOBE_STEEL_JP,DISCLOSED_PATH,2030,4.0,0.3,3.0,model_estimate,,Illustrative screening envelope; not an official supply forecast
+KOBE_STEEL_JP,DISCLOSED_PATH,2035,4.0,0.4,3.0,model_estimate,,Illustrative screening envelope; not an official supply forecast
+KOBE_STEEL_JP,DISCLOSED_PATH,2040,5.0,0.8,5.0,model_estimate,,Illustrative screening envelope; not an official supply forecast
+KOBE_STEEL_JP,ACCELERATED_15C,2026,2.0,0.2,1.0,model_estimate,,Illustrative accelerated envelope; not GCAM or an official supply forecast
+KOBE_STEEL_JP,ACCELERATED_15C,2030,3.0,0.4,2.5,model_estimate,,Illustrative accelerated envelope; not GCAM or an official supply forecast
+KOBE_STEEL_JP,ACCELERATED_15C,2035,5.0,0.6,4.0,model_estimate,,Illustrative accelerated envelope; not GCAM or an official supply forecast
+KOBE_STEEL_JP,ACCELERATED_15C,2040,6.0,1.0,6.5,model_estimate,,Illustrative accelerated envelope; not GCAM or an official supply forecast

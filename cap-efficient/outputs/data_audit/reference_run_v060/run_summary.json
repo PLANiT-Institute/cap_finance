@@ -1,0 +1,388 @@
+{
+  "model_version": "0.6.0",
+  "data_status": "official_company_totals_plus_explicit_model_estimates",
+  "path_count": 100,
+  "seed": 42,
+  "active_scenario_ids": [
+    "ACCELERATED_15C",
+    "DISCLOSED_PATH"
+  ],
+  "pending_scenario_ids": [
+    "GCAM_15C",
+    "GCAM_2C"
+  ],
+  "generated_candidate_count": 910,
+  "candidate_screening_row_count": 1820,
+  "stochastic_candidate_count": 217,
+  "candidate_path_count": 100,
+  "selected_candidate_counts": {
+    "POSCO_KR": 64,
+    "NIPPON_STEEL_JP": 64,
+    "JFE_STEEL_JP": 64,
+    "KOBE_STEEL_JP": 25
+  },
+  "companies": {
+    "POSCO_KR": {
+      "company_name": "POSCO",
+      "country_code": "KR",
+      "scenarios": {
+        "DISCLOSED_PATH": {
+          "frontier_plan_ids": [
+            "P1"
+          ],
+          "current_plan_gap": {
+            "cost_gap_same_or_lower_risk": 115.57722299999999,
+            "risk_gap_same_or_lower_cost": 17.398222
+          },
+          "current_plan_scenario_feasible": true,
+          "current_plan_first_budget_breach_year": null,
+          "current_plan_max_annual_budget_excess_mtco2": 0.0,
+          "lambda_optimal_plans": {
+            "0.0": {
+              "plan_id": "P1",
+              "objective": 12.007338
+            },
+            "0.5": {
+              "plan_id": "P1",
+              "objective": 15.915874
+            },
+            "1.0": {
+              "plan_id": "P1",
+              "objective": 19.82441
+            },
+            "2.0": {
+              "plan_id": "P1",
+              "objective": 27.641482
+            },
+            "4.0": {
+              "plan_id": "P1",
+              "objective": 43.275626
+            },
+            "8.0": {
+              "plan_id": "P1",
+              "objective": 74.543914
+            },
+            "16.0": {
+              "plan_id": "P1",
+              "objective": 137.08049
+            }
+          }
+        },
+        "ACCELERATED_15C": {
+          "frontier_plan_ids": [
+            "P6"
+          ],
+          "current_plan_gap": {
+            "cost_gap_same_or_lower_risk": 9.174492999999998,
+            "risk_gap_same_or_lower_cost": 23.940596
+          },
+          "current_plan_scenario_feasible": false,
+          "current_plan_first_budget_breach_year": 2030,
+          "current_plan_max_annual_budget_excess_mtco2": 11.573996019999996,
+          "lambda_optimal_plans": {
+            "0.0": {
+              "plan_id": "P6",
+              "objective": 109.18127
+            },
+            "0.5": {
+              "plan_id": "P6",
+              "objective": 110.974356
+            },
+            "1.0": {
+              "plan_id": "P6",
+              "objective": 112.767441
+            },
+            "2.0": {
+              "plan_id": "P6",
+              "objective": 116.353612
+            },
+            "4.0": {
+              "plan_id": "P6",
+              "objective": 123.525954
+            },
+            "8.0": {
+              "plan_id": "P6",
+              "objective": 137.870638
+            },
+            "16.0": {
+              "plan_id": "P6",
+              "objective": 166.560006
+            }
+          }
+        }
+      }
+    },
+    "NIPPON_STEEL_JP": {
+      "company_name": "Nippon Steel",
+      "country_code": "JP",
+      "scenarios": {
+        "DISCLOSED_PATH": {
+          "frontier_plan_ids": [
+            "P1"
+          ],
+          "current_plan_gap": {
+            "cost_gap_same_or_lower_risk": 58.566473,
+            "risk_gap_same_or_lower_cost": 4.356533000000001
+          },
+          "current_plan_scenario_feasible": false,
+          "current_plan_first_budget_breach_year": null,
+          "current_plan_max_annual_budget_excess_mtco2": 0.0,
+          "lambda_optimal_plans": {
+            "0.0": {
+              "plan_id": "P1",
+              "objective": 22.720809
+            },
+            "0.5": {
+              "plan_id": "P1",
+              "objective": 27.879903
+            },
+            "1.0": {
+              "plan_id": "P1",
+              "objective": 33.038996
+            },
+            "2.0": {
+              "plan_id": "P1",
+              "objective": 43.357183
+            },
+            "4.0": {
+              "plan_id": "P1",
+              "objective": 63.993557
+            },
+            "8.0": {
+              "plan_id": "P1",
+              "objective": 105.266305
+            },
+            "16.0": {
+              "plan_id": "P1",
+              "objective": 187.811801
+            }
+          }
+        },
+        "ACCELERATED_15C": {
+          "frontier_plan_ids": [
+            "P5",
+            "P6"
+          ],
+          "current_plan_gap": {
+            "cost_gap_same_or_lower_risk": 0.0,
+            "risk_gap_same_or_lower_cost": 0.0
+          },
+          "current_plan_scenario_feasible": false,
+          "current_plan_first_budget_breach_year": 2035,
+          "current_plan_max_annual_budget_excess_mtco2": 13.889998049999999,
+          "lambda_optimal_plans": {
+            "0.0": {
+              "plan_id": "P5",
+              "objective": 110.816218
+            },
+            "0.5": {
+              "plan_id": "P5",
+              "objective": 115.653321
+            },
+            "1.0": {
+              "plan_id": "P5",
+              "objective": 120.490423
+            },
+            "2.0": {
+              "plan_id": "P5",
+              "objective": 130.164628
+            },
+            "4.0": {
+              "plan_id": "P5",
+              "objective": 149.513038
+            },
+            "8.0": {
+              "plan_id": "P5",
+              "objective": 188.209858
+            },
+            "16.0": {
+              "plan_id": "P6",
+              "objective": 230.545698
+            }
+          }
+        }
+      }
+    },
+    "JFE_STEEL_JP": {
+      "company_name": "JFE Steel",
+      "country_code": "JP",
+      "scenarios": {
+        "DISCLOSED_PATH": {
+          "frontier_plan_ids": [
+            "P3"
+          ],
+          "current_plan_gap": {
+            "cost_gap_same_or_lower_risk": 0.0,
+            "risk_gap_same_or_lower_cost": 0.0
+          },
+          "current_plan_scenario_feasible": false,
+          "current_plan_first_budget_breach_year": null,
+          "current_plan_max_annual_budget_excess_mtco2": 0.0,
+          "lambda_optimal_plans": {
+            "0.0": {
+              "plan_id": "P3",
+              "objective": 109.63883
+            },
+            "0.5": {
+              "plan_id": "P3",
+              "objective": 119.073022
+            },
+            "1.0": {
+              "plan_id": "P3",
+              "objective": 128.507214
+            },
+            "2.0": {
+              "plan_id": "P3",
+              "objective": 147.375598
+            },
+            "4.0": {
+              "plan_id": "P3",
+              "objective": 185.112366
+            },
+            "8.0": {
+              "plan_id": "P3",
+              "objective": 260.585902
+            },
+            "16.0": {
+              "plan_id": "P3",
+              "objective": 411.532974
+            }
+          }
+        },
+        "ACCELERATED_15C": {
+          "frontier_plan_ids": [
+            "P5"
+          ],
+          "current_plan_gap": {
+            "cost_gap_same_or_lower_risk": 0.0,
+            "risk_gap_same_or_lower_cost": 0.0
+          },
+          "current_plan_scenario_feasible": false,
+          "current_plan_first_budget_breach_year": null,
+          "current_plan_max_annual_budget_excess_mtco2": 0.0,
+          "lambda_optimal_plans": {
+            "0.0": {
+              "plan_id": "P5",
+              "objective": 103.126369
+            },
+            "0.5": {
+              "plan_id": "P5",
+              "objective": 107.369917
+            },
+            "1.0": {
+              "plan_id": "P5",
+              "objective": 111.613465
+            },
+            "2.0": {
+              "plan_id": "P5",
+              "objective": 120.100561
+            },
+            "4.0": {
+              "plan_id": "P5",
+              "objective": 137.074753
+            },
+            "8.0": {
+              "plan_id": "P5",
+              "objective": 171.023137
+            },
+            "16.0": {
+              "plan_id": "P5",
+              "objective": 238.919905
+            }
+          }
+        }
+      }
+    },
+    "KOBE_STEEL_JP": {
+      "company_name": "Kobe Steel",
+      "country_code": "JP",
+      "scenarios": {
+        "DISCLOSED_PATH": {
+          "frontier_plan_ids": [
+            "P3"
+          ],
+          "current_plan_gap": {
+            "cost_gap_same_or_lower_risk": 5.861063999999999,
+            "risk_gap_same_or_lower_cost": 1.567037000000001
+          },
+          "current_plan_scenario_feasible": true,
+          "current_plan_first_budget_breach_year": null,
+          "current_plan_max_annual_budget_excess_mtco2": 0.0,
+          "lambda_optimal_plans": {
+            "0.0": {
+              "plan_id": "P3",
+              "objective": 53.148043
+            },
+            "0.5": {
+              "plan_id": "P3",
+              "objective": 58.620615
+            },
+            "1.0": {
+              "plan_id": "P3",
+              "objective": 64.093186
+            },
+            "2.0": {
+              "plan_id": "P3",
+              "objective": 75.038329
+            },
+            "4.0": {
+              "plan_id": "P3",
+              "objective": 96.928615
+            },
+            "8.0": {
+              "plan_id": "P3",
+              "objective": 140.709187
+            },
+            "16.0": {
+              "plan_id": "P3",
+              "objective": 228.270331
+            }
+          }
+        },
+        "ACCELERATED_15C": {
+          "frontier_plan_ids": [
+            "P4",
+            "P7"
+          ],
+          "current_plan_gap": {
+            "cost_gap_same_or_lower_risk": 0.0,
+            "risk_gap_same_or_lower_cost": 0.0
+          },
+          "current_plan_scenario_feasible": false,
+          "current_plan_first_budget_breach_year": 2035,
+          "current_plan_max_annual_budget_excess_mtco2": 0.6138637290849003,
+          "lambda_optimal_plans": {
+            "0.0": {
+              "plan_id": "P4",
+              "objective": 124.234938
+            },
+            "0.5": {
+              "plan_id": "P7",
+              "objective": 125.630026
+            },
+            "1.0": {
+              "plan_id": "P7",
+              "objective": 126.321655
+            },
+            "2.0": {
+              "plan_id": "P7",
+              "objective": 127.704914
+            },
+            "4.0": {
+              "plan_id": "P7",
+              "objective": 130.471432
+            },
+            "8.0": {
+              "plan_id": "P7",
+              "objective": 136.004468
+            },
+            "16.0": {
+              "plan_id": "P7",
+              "objective": 147.07054
+            }
+          }
+        }
+      }
+    }
+  }
+}

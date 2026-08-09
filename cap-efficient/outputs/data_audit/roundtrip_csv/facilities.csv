@@ -1,0 +1,18 @@
+facility_id,company_id,facility_name,region,capacity_mtpa,utilization_rate,baseline_technology_id,baseline_emissions_tco2_per_t,baseline_electricity_mwh_per_t,baseline_fixed_opex_kkrw_per_t,commission_year,reinvestment_year,data_status,source_note
+POS-POH-N,POSCO_KR,포항제철소 BF 블록 A,포항,8.2,0.926829,BF_BOF,2.075734,0.12,29,1981,2028,model_estimate,POSCO 공식 국내 생산·배출 총량에 맞춘 설비 블록 배분; 개별 생산량·재투자연도는 추정
+POS-POH-S,POSCO_KR,포항제철소 BF 블록 B,포항,7.4,0.918919,BF_BOF,2.075734,0.12,29,1983,2031,model_estimate,POSCO 공식 국내 생산·배출 총량에 맞춘 설비 블록 배분; 개별 생산량·재투자연도는 추정
+POS-GWY-W,POSCO_KR,광양제철소 BF 블록 A,광양,10.3,0.92233,BF_BOF,2.075734,0.11,28,1990,2034,model_estimate,POSCO 공식 국내 생산·배출 총량에 맞춘 설비 블록 배분; 개별 생산량·재투자연도는 추정
+POS-GWY-E,POSCO_KR,광양제철소 BF 블록 B,광양,10.3,0.922621,BF_BOF,2.075734,0.11,28,1992,2036,model_estimate,POSCO 공식 국내 생산·배출 총량에 맞춘 설비 블록 배분; 개별 생산량·재투자연도는 추정
+POS-GWY-EAF,POSCO_KR,광양 기존 EAF 블록,광양,1.2,0.945,EAF_BASELINE,0.45,0.62,33,2007,2032,model_estimate,2025 공식 EAF 생산 1.135Mt에 맞춘 모델 블록; 집약도·재투자연도 추정
+NS-EAST,NIPPON_STEEL_JP,East Nippon Works 블록,동일본,8.1,0.888889,BF_BOF,2.116618,0.12,31,1979,2033,model_estimate,Nippon Steel 공식 생산·배출·용량 총량에 맞춘 지역 블록 배분
+NS-NAGOYA,NIPPON_STEEL_JP,Nagoya Works 블록,나고야,7,0.885714,BF_BOF,2.116618,0.12,31,1969,2031,model_estimate,Nippon Steel 공식 생산·배출·용량 총량에 맞춘 지역 블록 배분
+NS-KANSAI,NIPPON_STEEL_JP,Kansai Works 블록,간사이,6.3,0.888889,BF_BOF,2.116618,0.12,31,1965,2035,model_estimate,Nippon Steel 공식 생산·배출·용량 총량에 맞춘 지역 블록 배분
+NS-KYUSHU,NIPPON_STEEL_JP,Kyushu Works Yawata 블록,규슈,10,0.9,BF_BOF,2.116618,0.12,30,1972,2028,model_estimate,Yawata BF→EAF 공시 방향을 반영해 조기 재투자 창을 설정; 블록 생산량 추정
+NS-SETOUCHI,NIPPON_STEEL_JP,Setouchi Works Hirohata 블록,세토우치,7.5,0.84,BF_BOF,2.116618,0.12,31,1970,2037,model_estimate,Hirohata EAF 투자 방향을 반영한 복합 블록; 생산량·재투자연도 추정
+JFE-KURA,JFE_STEEL_JP,West Japan Works Kurashiki,구라시키,7.4,0.918919,BF_BOF,2.115294,0.12,31,1973,2028,model_estimate,2028 혁신 EAF 공시를 반영한 조기 재투자 창; 생산량은 공식 총량에 맞춘 추정
+JFE-FUKU,JFE_STEEL_JP,West Japan Works Fukuyama,후쿠야마,9.8,0.918367,BF_BOF,2.115294,0.12,31,1973,2032,model_estimate,JFE 공식 생산·배출 총량에 맞춘 설비 블록 배분
+JFE-CHIBA,JFE_STEEL_JP,East Japan Works Chiba,치바,6,0.908333,BF_BOF,2.115294,0.12,32,1977,2035,model_estimate,JFE 공식 생산·배출 총량에 맞춘 설비 블록 배분
+JFE-SENDAI,JFE_STEEL_JP,Sendai Works EAF,센다이,0.8,0.875,EAF_BASELINE,0.5,0.66,35,2000,2032,model_estimate,공식 EAF 사업장 존재를 반영; 생산량·집약도·재투자연도 추정
+KOB-BF1,KOBE_STEEL_JP,Kakogawa Works BF 블록 1,가코가와,3.15,0.936508,BF_BOF,2.431741,0.12,33,1983,2028,model_estimate,Kobe Steel 공식 조강·목표경계 배출 총량에 맞춘 블록 배분
+KOB-BF3,KOBE_STEEL_JP,Kakogawa Works BF 블록 3,가코가와,3.05,0.954098,BF_BOF,2.431741,0.12,33,2016,2036,model_estimate,2016년 BF3 개수와 장기 수명주기를 반영한 재투자연도 추정
+KOB-TAKA,KOBE_STEEL_JP,Takasago Works EAF block,다카사고,0.14,0.714286,EAF_BASELINE,0.5,0.66,36,1998,2032,model_estimate,다카사고 포함 공식 조강 총량에 맞춘 소규모 EAF 블록 추정

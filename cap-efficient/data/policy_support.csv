@@ -1,0 +1,17 @@
+country_code,scenario_id,technology_id,capex_subsidy_pct,ccfd_opex_support_pct,data_status,source_note
+KR,DISCLOSED_PATH,BF_RELINE,0.00,0.00,model_estimate,공시경로 정책지원 가정
+KR,DISCLOSED_PATH,SCRAP_EAF,0.15,0.12,model_estimate,한국 저탄소 설비지원 프록시
+KR,DISCLOSED_PATH,H2_DRI_EAF,0.22,0.28,model_estimate,한국 수소환원제철 지원 프록시
+KR,DISCLOSED_PATH,EAF_RENEWABLE,0.10,0.10,model_estimate,한국 전력계통·PPA 지원 프록시
+KR,ACCELERATED_15C,BF_RELINE,0.00,0.00,model_estimate,가속경로 정책지원 가정
+KR,ACCELERATED_15C,SCRAP_EAF,0.20,0.20,model_estimate,가속경로 산업정책 프록시
+KR,ACCELERATED_15C,H2_DRI_EAF,0.30,0.42,model_estimate,가속경로 산업정책 프록시
+KR,ACCELERATED_15C,EAF_RENEWABLE,0.15,0.18,model_estimate,가속경로 산업정책 프록시
+JP,DISCLOSED_PATH,BF_RELINE,0.00,0.00,model_estimate,일본 GX 지원 보수 가정
+JP,DISCLOSED_PATH,SCRAP_EAF,0.25,0.18,model_estimate,JFE 구라시키 EAF 최대 104.5/324.9bn JPY 지원사례보다 보수적 적용
+JP,DISCLOSED_PATH,H2_DRI_EAF,0.28,0.30,model_estimate,GI Fund·GX 지원 공통 프록시
+JP,DISCLOSED_PATH,EAF_RENEWABLE,0.15,0.12,model_estimate,일본 비화석전력 지원 프록시
+JP,ACCELERATED_15C,BF_RELINE,0.00,0.00,model_estimate,가속경로 정책지원 가정
+JP,ACCELERATED_15C,SCRAP_EAF,0.30,0.25,model_estimate,가속경로 GX 지원 프록시
+JP,ACCELERATED_15C,H2_DRI_EAF,0.35,0.45,model_estimate,가속경로 GI Fund·GX 지원 프록시
+JP,ACCELERATED_15C,EAF_RENEWABLE,0.20,0.20,model_estimate,가속경로 비화석전력 지원 프록시

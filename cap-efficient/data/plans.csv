@@ -1,0 +1,12 @@
+company_id,plan_id,plan_name,schedule_shift_years,min_h2_capacity_share,ppa_share,hydrogen_contract_share,fixed_epc_share,ccfd_share,contract_premium_pct,is_disclosed_plan,data_status,source_note
+ALL,P1,지연·현물조달,1,0.00,0.00,0.00,0.10,0.00,0.000,false,model_estimate,저비용·고노출 대안
+ALL,P2,지연·부분헤지,1,0.20,0.15,0.10,0.20,0.10,0.010,false,model_estimate,초기 계약 전환 대안
+ALL,P3,균형형 라이트헤지,1,0.35,0.30,0.25,0.35,0.25,0.015,false,model_estimate,중간 기술·계약 확약
+ALL,P4,균형형 전환,0,0.50,0.50,0.45,0.50,0.40,0.020,false,model_estimate,중앙 대안
+ALL,P5,조기 계약형 전환,0,0.65,0.70,0.65,0.65,0.60,0.025,false,model_estimate,확실성 강화 대안
+ALL,P6,조기 고헤지,-1,0.80,0.90,0.85,0.85,0.80,0.035,false,model_estimate,시장위험 대부분 이전
+ALL,P7,완전 수소·계약형,-2,1.00,1.00,0.95,0.95,0.90,0.045,false,model_estimate,최대 기술·계약 확약
+POSCO_KR,CURRENT,POSCO 공시전략 프록시,-1,0.45,0.20,0.10,0.20,0.15,0.020,true,model_estimate,"광양 2.5Mt EAF·HyREX 실증 방향 반영; 계약비율은 공개부족으로 추정"
+NIPPON_STEEL_JP,CURRENT,Nippon Steel 공시전략 프록시,0,0.30,0.35,0.15,0.35,0.25,0.025,true,model_estimate,"Yawata/Hirohata/Shunan EAF·다경로 기술개발 반영; 계약비율 추정"
+JFE_STEEL_JP,CURRENT,JFE Steel 공시전략 프록시,-1,0.25,0.30,0.15,0.25,0.35,0.025,true,model_estimate,"Kurashiki 혁신 EAF·Chiba DRI 방향과 확정 보조금 사례 반영; 계약비율 추정"
+KOBE_STEEL_JP,CURRENT,Kobe Steel 공시전략 프록시,0,0.15,0.20,0.10,0.20,0.20,0.020,true,model_estimate,"HBI 다량장입·BF 중심 브리지 전략 반영; 장기 EAF 비중과 계약비율 추정"

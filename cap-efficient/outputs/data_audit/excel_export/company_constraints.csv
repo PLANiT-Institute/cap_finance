@@ -1,0 +1,5 @@
+company_id,max_concurrent_construction_projects,max_portfolio_failure_probability,data_status,source_url,source_note
+POSCO_KR,3,0.65,model_estimate,,Screening assumption pending disclosed engineering pipeline and contractor-capacity validation
+NIPPON_STEEL_JP,2,0.65,model_estimate,,Screening assumption pending disclosed engineering pipeline and contractor-capacity validation
+JFE_STEEL_JP,3,0.65,model_estimate,,Screening assumption pending disclosed engineering pipeline and contractor-capacity validation
+KOBE_STEEL_JP,1,0.6,model_estimate,,Smaller portfolio screening assumption pending disclosed engineering pipeline validation

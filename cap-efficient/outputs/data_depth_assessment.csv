@@ -1,0 +1,16 @@
+file,decision_area,row_count,criticality_weight,official_or_derived_rows,mixed_official_model_rows,model_estimate_rows,pending_rows,other_rows,depth_score_pct,priority
+companies.csv,company totals and boundaries,4,8,2,2,0,0,0,77.5,maintain
+company_financials.csv,financial capacity,4,8,4,0,0,0,0,90.0,maintain
+facilities.csv,physical asset registry,17,15,0,0,17,0,0,20.0,P0
+technologies.csv,technology cost and performance,6,15,0,0,6,0,0,20.0,P0
+transition_projects.csv,official project pipeline,9,12,9,0,0,0,0,95.0,maintain
+technology_cost_evidence.csv,observed project-cost evidence,7,12,7,0,0,0,0,90.0,maintain
+company_constraints.csv,company execution capacity,4,8,0,0,4,0,0,20.0,P1
+technology_constraints.csv,technology execution risk,6,8,0,0,6,0,0,20.0,P1
+resource_constraints.csv,company resource availability,32,15,0,0,32,0,0,20.0,P0
+resource_benchmarks.csv,national resource context,11,5,11,0,0,0,0,95.0,maintain
+scenario_anchors.csv,carbon and market pathways,32,12,11,0,21,0,0,45.8,P0
+plans.csv,portfolio and contract choices,11,8,0,0,11,0,0,20.0,P1
+policy_support.csv,policy cash support,16,8,0,0,16,0,0,20.0,P1
+gcam_run_manifest.csv,official GCAM run evidence,2,10,0,0,0,2,0,5.0,P0
+gcam_query_manifest.csv,official GCAM query evidence,20,10,0,0,0,18,2,8.0,P0

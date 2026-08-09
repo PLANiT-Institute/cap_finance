@@ -1,0 +1,76 @@
+{
+  "probe_timestamp_kst": "2026-08-07T12:21:46.164632+09:00",
+  "status": "READY_FOR_CONFIGURED_RUN",
+  "numeric_gcam_results_produced": false,
+  "host": {
+    "machine": "arm64",
+    "platform": "macOS-26.6-arm64-arm-64bit-Mach-O"
+  },
+  "package_dir": "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1",
+  "executable": "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1/exe/gcam",
+  "executable_sha256": "b2ac5520bfaa1fc9e1dde34751cc918215c525f288f6c884f1bb4bfaefc169cd",
+  "configuration": "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1/exe/configuration_policy.xml",
+  "configuration_sha256": "4aa38bf0f229f972a007845940ff2c69215340b144af8c7c2bc3de6ea64a942b",
+  "binary_type": {
+    "command": [
+      "file",
+      "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1/exe/gcam"
+    ],
+    "exit_code": 0,
+    "stdout": "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1/exe/gcam: Mach-O 64-bit executable arm64",
+    "stderr": ""
+  },
+  "dynamic_dependencies": {
+    "command": [
+      "otool",
+      "-L",
+      "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1/exe/gcam"
+    ],
+    "exit_code": 0,
+    "stdout": "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1/exe/gcam:\n\t@rpath/libjvm.dylib (compatibility version 1.0.0, current version 1.0.0)\n\t@rpath/libtbb.12.dylib (compatibility version 12.0.0, current version 12.11.0)\n\t@rpath/libtbbmalloc.2.dylib (compatibility version 2.0.0, current version 2.11.0)\n\t@rpath/libtbbmalloc_proxy.2.dylib (compatibility version 2.0.0, current version 2.11.0)\n\t/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 2100.43.0)\n\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1356.0.0)",
+    "stderr": ""
+  },
+  "system_java_home_probe": {
+    "command": [
+      "/usr/libexec/java_home"
+    ],
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "The operation couldn’t be completed. Unable to locate a Java Runtime.\nPlease visit http://www.java.com for information on installing Java."
+  },
+  "java_runtime": {
+    "java_home": "/Users/jinsu/Documents/cap-efficient/tmp/jdk-portable-17.0.20_8/jdk-17.0.20+8/Contents/Home",
+    "java_version": {
+      "command": [
+        "/Users/jinsu/Documents/cap-efficient/tmp/jdk-portable-17.0.20_8/jdk-17.0.20+8/Contents/Home/bin/java",
+        "-version"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "openjdk version \"17.0.20\" 2026-07-21\nOpenJDK Runtime Environment Temurin-17.0.20+8 (build 17.0.20+8)\nOpenJDK 64-Bit Server VM Temurin-17.0.20+8 (build 17.0.20+8, mixed mode, sharing)"
+    },
+    "libjvm": "/Users/jinsu/Documents/cap-efficient/tmp/jdk-portable-17.0.20_8/jdk-17.0.20+8/Contents/Home/lib/server/libjvm.dylib",
+    "libjvm_exists": true,
+    "gcam_java_link": "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1/libs/java/lib",
+    "gcam_java_link_target": "/Users/jinsu/Documents/cap-efficient/tmp/jdk-portable-17.0.20_8/jdk-17.0.20+8/Contents/Home/lib/server"
+  },
+  "version_probe": {
+    "command": [
+      "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1/exe/gcam",
+      "--version"
+    ],
+    "exit_code": 0,
+    "stdout": "GCAM version 9.1 Revision: gcam-v9.1",
+    "stderr": ""
+  },
+  "version_id_probe": {
+    "command": [
+      "/Users/jinsu/Documents/cap-efficient/tmp/gcam-v9.1/exe/gcam",
+      "--versionID"
+    ],
+    "exit_code": 0,
+    "stdout": "gcam-v9.1",
+    "stderr": ""
+  },
+  "interpretation": "The official GCAM 9.1 binary and JNI runtime are loadable. This is a non-destructive compatibility check only; no model run or numeric result is claimed."
+}

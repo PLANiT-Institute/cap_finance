@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cap-efficient"
+version = "0.8.0"
+description = "Illustrative capital-allocation pathway engine for industrial decarbonization"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+cap-efficient = "cap_efficient.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["cap_efficient*"]

@@ -1,0 +1,44 @@
+{
+  "status": "PASS",
+  "validation_scope": "manifest integrity; not GCAM numerical-result validation",
+  "run_rows": 2,
+  "query_rows": 20,
+  "scenarios": {
+    "GCAM_15C": {
+      "model_version": "9.1",
+      "release_tag": "gcam-v9.1",
+      "release_asset_sha256": "b009e58a9eafdf9b77a02440c50904a95e14f1df29ca28874e90ab90e4d0868a",
+      "target_type": "temperature",
+      "target_value": 1.5,
+      "run_status": "planned_not_run",
+      "query_outputs_verified": 0,
+      "query_outputs_required": 10,
+      "ready_to_activate": false,
+      "blocking_requirements": [
+        "successful official-model target-finder run",
+        "temperature target/baseline verification",
+        "query export with raw-unit metadata",
+        "company disaggregation and electrolyzer-index audit",
+        "database/output SHA256 pinning"
+      ]
+    },
+    "GCAM_2C": {
+      "model_version": "9.1",
+      "release_tag": "gcam-v9.1",
+      "release_asset_sha256": "b009e58a9eafdf9b77a02440c50904a95e14f1df29ca28874e90ab90e4d0868a",
+      "target_type": "temperature",
+      "target_value": 2.0,
+      "run_status": "planned_not_run",
+      "query_outputs_verified": 0,
+      "query_outputs_required": 10,
+      "ready_to_activate": false,
+      "blocking_requirements": [
+        "successful official-model target-finder run",
+        "temperature target/baseline verification",
+        "query export with raw-unit metadata",
+        "company disaggregation and electrolyzer-index audit",
+        "database/output SHA256 pinning"
+      ]
+    }
+  }
+}

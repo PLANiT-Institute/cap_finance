@@ -1,0 +1,93 @@
+{
+  "status": "PASS",
+  "paths": 1000,
+  "seed": 42,
+  "reference_dir": "/Users/jinsu/Documents/cap-efficient/outputs",
+  "roundtrip_dir": "/Users/jinsu/Documents/cap-efficient/outputs/data_audit/model_from_excel",
+  "files": {
+    "plan_metrics.csv": {
+      "status": "PASS",
+      "reference_sha256": "8fab9c512cbe4d6ec9d41429c20532f0c9dacf3eae074040e7622b8e51336a3d",
+      "roundtrip_sha256": "8fab9c512cbe4d6ec9d41429c20532f0c9dacf3eae074040e7622b8e51336a3d",
+      "bytes": 40049
+    },
+    "facility_schedule.csv": {
+      "status": "PASS",
+      "reference_sha256": "54ed60c286f30d76930ab0001be3a69a8ad5c62e5360c58bbc9fe91d774e142d",
+      "roundtrip_sha256": "54ed60c286f30d76930ab0001be3a69a8ad5c62e5360c58bbc9fe91d774e142d",
+      "bytes": 163966
+    },
+    "frontier_membership.csv": {
+      "status": "PASS",
+      "reference_sha256": "b8ed7802d80c78422a81107c9c513f90e0c75b1ad0d0f9091f12fed585313c04",
+      "roundtrip_sha256": "b8ed7802d80c78422a81107c9c513f90e0c75b1ad0d0f9091f12fed585313c04",
+      "bytes": 6453
+    },
+    "scenario_comparison.csv": {
+      "status": "PASS",
+      "reference_sha256": "a843674a8e487526b62ee130ea566bc9ad18cfa51427feb46c067144152f9a8c",
+      "roundtrip_sha256": "a843674a8e487526b62ee130ea566bc9ad18cfa51427feb46c067144152f9a8c",
+      "bytes": 7267
+    },
+    "candidate_portfolios.csv": {
+      "status": "PASS",
+      "reference_sha256": "6675f8f4693303a0682086debfb2014d1c213cd50c4643111e82b4e126b94cf0",
+      "roundtrip_sha256": "6675f8f4693303a0682086debfb2014d1c213cd50c4643111e82b4e126b94cf0",
+      "bytes": 424202
+    },
+    "candidate_screening.csv": {
+      "status": "PASS",
+      "reference_sha256": "fbbe6f68b9936bf65683d916a5090e9f259a4c3735ff8a7a41feee652eaafb7d",
+      "roundtrip_sha256": "fbbe6f68b9936bf65683d916a5090e9f259a4c3735ff8a7a41feee652eaafb7d",
+      "bytes": 428970
+    },
+    "candidate_scenario_metrics.csv": {
+      "status": "PASS",
+      "reference_sha256": "20f9f0cef3ec62b1355f8673db9f5002305c5a38eed945c62989c4b771eee63f",
+      "roundtrip_sha256": "20f9f0cef3ec62b1355f8673db9f5002305c5a38eed945c62989c4b771eee63f",
+      "bytes": 282994
+    },
+    "candidate_robust_summary.csv": {
+      "status": "PASS",
+      "reference_sha256": "e173b4b3ffe6ab69329a493417978be9ac1a585ff8d6916a405f7edb16c09f40",
+      "roundtrip_sha256": "e173b4b3ffe6ab69329a493417978be9ac1a585ff8d6916a405f7edb16c09f40",
+      "bytes": 30398
+    },
+    "candidate_scenario_comparison.csv": {
+      "status": "PASS",
+      "reference_sha256": "3e506e2b0904518971bb6ea71d4671cb9eaeaf917ede54d0c965d8fb01af48a2",
+      "roundtrip_sha256": "3e506e2b0904518971bb6ea71d4671cb9eaeaf917ede54d0c965d8fb01af48a2",
+      "bytes": 42141
+    },
+    "refined_candidate_scenario_metrics.csv": {
+      "status": "PASS",
+      "reference_sha256": "62ece1be775b85ba701111980b9a25ef4c9a60e2765416a0bfd75604e19b51b1",
+      "roundtrip_sha256": "62ece1be775b85ba701111980b9a25ef4c9a60e2765416a0bfd75604e19b51b1",
+      "bytes": 64649
+    },
+    "refined_candidate_robust_summary.csv": {
+      "status": "PASS",
+      "reference_sha256": "30f3f647ed06d4279513ea7f09f5701e11091e16ebeb97a0ea90500064d7510b",
+      "roundtrip_sha256": "30f3f647ed06d4279513ea7f09f5701e11091e16ebeb97a0ea90500064d7510b",
+      "bytes": 5408
+    },
+    "refined_candidate_scenario_comparison.csv": {
+      "status": "PASS",
+      "reference_sha256": "11dfa2d26ff62a41b148f3b0ea85bed719d802f1e74d2aaf8e54ccbfac8d4544",
+      "roundtrip_sha256": "11dfa2d26ff62a41b148f3b0ea85bed719d802f1e74d2aaf8e54ccbfac8d4544",
+      "bytes": 7551
+    },
+    "refined_candidate_facility_schedule.csv": {
+      "status": "PASS",
+      "reference_sha256": "5789b77bf52cbf8caecd01d53179300cf82a4ac601d9efcde7df90bbf8e611a3",
+      "roundtrip_sha256": "5789b77bf52cbf8caecd01d53179300cf82a4ac601d9efcde7df90bbf8e611a3",
+      "bytes": 206125
+    },
+    "refined_candidate_resource_profile.csv": {
+      "status": "PASS",
+      "reference_sha256": "4219957847cd595e514ad98f2f502bf582c4375fed69a88b8b1b55d0e9d09bb9",
+      "roundtrip_sha256": "4219957847cd595e514ad98f2f502bf582c4375fed69a88b8b1b55d0e9d09bb9",
+      "bytes": 437619
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "paths": 250,
+  "seed": 42,
+  "reference_dir": "/Users/jinsu/Documents/cap-efficient/outputs/data_audit/parity_reference",
+  "roundtrip_dir": "/Users/jinsu/Documents/cap-efficient/outputs/data_audit/parity_roundtrip",
+  "files": {
+    "plan_metrics.csv": {
+      "status": "PASS",
+      "reference_sha256": "592ad9505dd2580215b628660479d28343a9b0fadc1b533a3f948a8593c82866",
+      "roundtrip_sha256": "592ad9505dd2580215b628660479d28343a9b0fadc1b533a3f948a8593c82866",
+      "bytes": 40071
+    },
+    "facility_schedule.csv": {
+      "status": "PASS",
+      "reference_sha256": "54ed60c286f30d76930ab0001be3a69a8ad5c62e5360c58bbc9fe91d774e142d",
+      "roundtrip_sha256": "54ed60c286f30d76930ab0001be3a69a8ad5c62e5360c58bbc9fe91d774e142d",
+      "bytes": 163966
+    },
+    "frontier_membership.csv": {
+      "status": "PASS",
+      "reference_sha256": "81381cfe73baa14de8ebc89bf47ce85f6bd069c011308095c49e81103f2c4a56",
+      "roundtrip_sha256": "81381cfe73baa14de8ebc89bf47ce85f6bd069c011308095c49e81103f2c4a56",
+      "bytes": 6455
+    },
+    "scenario_comparison.csv": {
+      "status": "PASS",
+      "reference_sha256": "7c3fd8fb1bedfe31b2076c898bdd140f627089d2c44a339e0185544d5d814ce8",
+      "roundtrip_sha256": "7c3fd8fb1bedfe31b2076c898bdd140f627089d2c44a339e0185544d5d814ce8",
+      "bytes": 7255
+    }
+  }
+}
