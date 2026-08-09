@@ -69,22 +69,55 @@ def main():
                 else round((r.p50 - prev.p50) / (prev.tcar - r.tcar), 3)))
     pd.DataFrame(rungs).to_csv(OUT / "frontier_ladder.csv", index=False)
 
-    # 3. 정책 wedge — NZ15 최소비용 계획을 B20이 실현될 때 들고 있는 후회비용.
-    #    같은 계획을 두 시나리오에서 평가한 것(pw)과, 각 시나리오의 최적 계획(m)의 차.
+    # 3. 정책 wedge — 잘못된 시나리오의 계획을 들고 있을 때의 후회비용, 양방향.
+    #
+    #    D12까지는 한 방향뿐이었다 (NZ15 계획 × B20 실현). 역방향을 넣자 두 가지가 드러난다.
+    #
+    #    (a) **기준이 시나리오 간에는 비교 불가였다.** 다른 산출표와 맞추려고 `p50`은 탄소지출을
+    #        뺀 자원비용 기준인데, 덜 감축하는 계획일수록 내야 할 탄소요금이 빠지므로 싸 보인다.
+    #        시나리오를 가로지르는 비교는 `p50_incl_carbon`으로 해야 한다. D12가 §5.3에 적은
+    #        후회비용 28,636.4는 자원비용 기준이고, 총비용 기준으로는 22,100.1이다.
+    #    (b) **총비용 기준의 역방향 후회비용은 음수다.** B20 계획을 들고 NZ15가 와도 돈은 덜 든다
+    #        — 예산을 초과하고 탄소요금을 내면 그만이기 때문이다. 역방향에서 실제로 다른 것은
+    #        돈이 아니라 **예산 초과량**이다 (`budget_gap_tco2`).
+    #
+    #    그래서 초과 1톤을 얼마로 보면 역방향 후회가 0이 되는지(`breakeven_thkrw_per_tco2`)를
+    #    같이 낸다. E2는 이 초과를 `max(2×탄소가격, 300천원/tCO2)`로 벌하지만 그 300은
+    #    config의 모형 가정이지 실측이 아니다 — 조기 행동의 근거가 가격 전망이 아니라
+    #    **예산을 수량으로 강제하는가**에 달려 있다는 것이 이 표의 요지다.
     reg = []
     for co, d in m[m.support == SUPP].groupby("company_id"):
-        nz_plan = fp[(fp.company_id == co) & (fp.scenario == SCEN) & (fp.support == SUPP)
-                     & fp.on_frontier].sort_values("p50").iloc[0]
-        w = pw[(pw.company_id == co) & (pw.plan_id == nz_plan.plan_id)].set_index("scen_eval")
-        b20_opt = float(d[d.scenario == "B20"].p50_bnkrw.iloc[0])
+        w = pw[pw.company_id == co]
+
+        def _opt(scen):  # 그 시나리오 경계 위 최소비용 계획을 wedge에서 집는다
+            pid = (fp[(fp.company_id == co) & (fp.scenario == scen) & (fp.support == SUPP)
+                      & fp.on_frontier].sort_values("p50").plan_id.iloc[0])
+            return pid, w[(w.plan_id == pid) & (w.scen_eval == scen)].iloc[0]
+
+        nz_pid, nz_at_nz = _opt(SCEN)
+        b20_pid, b20_at_b20 = _opt("B20")
+        nz_at_b20 = w[(w.plan_id == nz_pid) & (w.scen_eval == "B20")].iloc[0]
+        b20_at_nz = w[(w.plan_id == b20_pid) & (w.scen_eval == SCEN)].iloc[0]
+
+        # 초과 1톤당 몇 천원이면 역방향 후회가 0인가.
+        # (십억원 → 천원 = ×1e6), 분모는 NZ15에서의 초과량 차이
+        d_money = float(b20_at_nz.p50_incl_carbon) - float(nz_at_nz.p50_incl_carbon)
+        d_over = float(b20_at_nz.budget_gap_tco2) - float(nz_at_nz.budget_gap_tco2)
         reg.append(dict(
-            company_id=co, plan_id=nz_plan.plan_id,
-            p50_nz15=round(float(w.loc["NZ15", "p50"]), 1),
-            p50_b20=round(float(w.loc["B20", "p50"]), 1),
-            tcar_nz15=round(float(w.loc["NZ15", "tcar"]), 1),
-            tcar_b20=round(float(w.loc["B20", "tcar"]), 1),
-            b20_optimal_p50=round(b20_opt, 1),
-            regret_bnkrw=round(float(w.loc["B20", "p50"]) - b20_opt, 1)))
+            company_id=co, nz15_plan_id=nz_pid, b20_plan_id=b20_pid,
+            # 순방향: NZ15 계획을 들고 B20이 실현
+            fwd_regret_resource=round(float(nz_at_b20.p50) - float(b20_at_b20.p50), 1),
+            fwd_regret_total=round(float(nz_at_b20.p50_incl_carbon)
+                                   - float(b20_at_b20.p50_incl_carbon), 1),
+            # 역방향: B20 계획을 들고 NZ15가 실현
+            rev_regret_total=round(d_money, 1),
+            rev_budget_gap_tco2=round(d_over, 1),
+            # 역방향 후회가 이미 양수면(MCI) 초과를 값매길 필요가 없으므로 비운다
+            breakeven_thkrw_per_tco2=(round(-d_money * 1e6 / d_over, 1)
+                                      if d_money < 0 and d_over > 0 else None),
+            # 그림 6이 쓰는 꼬리위험 (자원비용 기준, D12와 동일)
+            tcar_nz15=round(float(nz_at_nz.tcar), 1),
+            tcar_b20=round(float(nz_at_b20.tcar), 1)))
     reg = pd.DataFrame(reg)
     reg.to_csv(OUT / "regret.csv", index=False)
 
@@ -104,8 +137,13 @@ def main():
             == list(m[(m.support == SUPP) & (m.scenario == "B20")]
                     .sort_values("cost_per_tco2_thkrw").company_id)),
     }
+    # 역방향 후회가 총비용 기준으로 음수인 기업 수 — 4면 "돈만 보면 지연이 이긴다"
+    rows["m4_rev_regret_negative"] = int((reg.rev_regret_total < 0).sum())
     for r in reg.itertuples():
-        rows[f"m4_regret_{r.company_id.lower()}"] = round(r.regret_bnkrw, 1)
+        rows[f"m4_regret_{r.company_id.lower()}"] = round(r.fwd_regret_resource, 1)
+        rows[f"m4_regret_total_{r.company_id.lower()}"] = round(r.fwd_regret_total, 1)
+        rows[f"m4_rev_regret_{r.company_id.lower()}"] = round(r.rev_regret_total, 1)
+        rows[f"m4_breakeven_{r.company_id.lower()}"] = r.breakeven_thkrw_per_tco2
     # ②의 B20 열 — §0 대장은 NZ15만 들고 있는데 §5 첫 표는 두 시나리오를 나란히 놓는다
     for r in m[(m.support == SUPP) & (m.scenario == "B20")].itertuples():
         rows[f"m4_m2_b20_{r.company_id.lower()}"] = round(r.cost_per_tco2_thkrw, 1)

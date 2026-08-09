@@ -156,7 +156,7 @@ def run(cfg: C.Config):
 
     frontier_rows, gap_rows, decomp_rows, metric_rows, path_rows, dist_rows, lam_rows = \
         [], [], [], [], [], [], []
-    wedge_store: dict[str, list] = {}  # company -> [(vid, sched_df, ppa, epc)] from 1st-scenario frontier
+    wedge_store: dict[str, list] = {}  # company -> [(vid, scen_origin, sched_df, ppa, epc)], every scenario's frontier
     # contract grid: contracts don't affect budget feasibility, so each distinct
     # tech schedule from E2 is expanded into PPA x EPC variants and revalued —
     # this traces the 설계서 P1(지연·스팟) → P6(조기·계약화) journey the MILP's
@@ -232,15 +232,18 @@ def run(cfg: C.Config):
         fr = _frontier(pts[~pts.is_disclosed & pts.budget_ok])
         frontier_rows.append(pts.assign(on_frontier=pts.plan_id.isin(fr.plan_id)))
 
-        # reference plan set for the policy wedge (그림 6): first scenario's frontier
-        if scen == cfg.scenarios[0] and supp == cfg.support_scenarios[0]:
+        # reference plan set for the policy wedge (그림 6): EVERY scenario's frontier.
+        # Only the 1st scenario's was kept until D13, which made the regret table
+        # one-directional — "hold the NZ15 plan and B20 happens" was priced, the
+        # reverse was not, and an asymmetry you can't see reads as "delay is free".
+        if supp == cfg.support_scenarios[0]:
             ref = []
             df_by_pid = {sc_["pid"]: sc_["df"] for sc_ in scheds.values()}
             for vid in fr.plan_id:
                 bid, ck = vid.split(".c")
                 ppa_v, epc_v = CONTRACT_GRID[int(ck)]
-                ref.append((vid, df_by_pid[bid], ppa_v, epc_v))
-            wedge_store[company] = ref
+                ref.append((vid, scen, df_by_pid[bid], ppa_v, epc_v))
+            wedge_store.setdefault(company, []).extend(ref)
 
         # decomposition by COST CHANNEL — frontier & disclosed plans only
         for vid in pts[pts.plan_id.isin(fr.plan_id) | pts.is_disclosed].plan_id:
@@ -308,9 +311,17 @@ def run(cfg: C.Config):
     # schedule+contracts fixed) revalued under every scenario's prices and baseline —
     # the per-plan gap between the two evaluations is exposure to policy STRINGENCY,
     # not stochastic price risk (metric ④ at plan level).
+    # `p50` keeps the resource-cost basis used everywhere else (carbon expenditure
+    # stripped) so 그림 6 stays comparable with the frontier. That basis is NOT
+    # comparable ACROSS scenarios, though: a plan that abates less looks cheaper
+    # precisely because the carbon bill it pays has been removed. Regret in either
+    # direction therefore reads off `p50_incl_carbon`, and `budget_gap_tco2` says
+    # whether the plan even meets the evaluating scenario's budget (a B20 plan under
+    # NZ15 usually does not — that overshoot is the thing money can't buy back).
     wedge_rows = []
     supp0 = cfg.support_scenarios[0]
     sp0 = support_params(d5, supp0, years)
+    budgets = pd.read_csv(C.out_dir(cfg, "e1") / "constraints.csv")
     for company, ref in wedge_store.items():
         region = COMPANY_REGION[company]
         for scen in cfg.scenarios:
@@ -318,14 +329,21 @@ def run(cfg: C.Config):
             base_prof = build_profile(_empty_plan(company), fac, d3, px, years, cfg)
             base_sims = simulate_cost(base_prof, px, shocks, sp0, cfg)
             carb_base = _carbon_npv(base_prof, px, disc_v, auc_v)
-            for vid, sched_df, ppa_v, epc_v in ref:
+            bud = (budgets.query("company_id == @company and scenario == @scen")
+                   .set_index("year").company_budget_tco2.reindex(years).to_numpy())
+            for vid, scen_origin, sched_df, ppa_v, epc_v in ref:
                 prof = replace(build_profile(sched_df, fac, d3, px, years, cfg),
                                ppa=ppa_v, epc=epc_v, ccfd=0)
                 sims = simulate_cost(prof, px, shocks, sp0, cfg)
-                inc = sims - base_sims - (_carbon_npv(prof, px, disc_v, auc_v) - carb_base)
+                inc_tot = sims - base_sims
+                inc = inc_tot - (_carbon_npv(prof, px, disc_v, auc_v) - carb_base)
                 p50w, p90w = float(np.median(inc)), float(np.percentile(inc, 90))
-                wedge_rows.append([company, vid, scen, round(p50w, 1), round(p90w - p50w, 1)])
-    pd.DataFrame(wedge_rows, columns=["company_id", "plan_id", "scen_eval", "p50", "tcar"]
+                over = float(np.maximum(prof.emissions - bud, 0.0).sum())
+                wedge_rows.append([company, vid, scen_origin, scen,
+                                   round(p50w, 1), round(p90w - p50w, 1),
+                                   round(float(np.median(inc_tot)), 1), round(over, 1)])
+    pd.DataFrame(wedge_rows, columns=["company_id", "plan_id", "scen_origin", "scen_eval",
+                                      "p50", "tcar", "p50_incl_carbon", "budget_gap_tco2"]
                  ).to_csv(odir / "policy_wedge.csv", index=False)
 
     frontier = pd.concat(frontier_rows, ignore_index=True)

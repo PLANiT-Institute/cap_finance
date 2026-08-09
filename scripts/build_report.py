@@ -40,6 +40,9 @@ ep = pd.read_csv(e5 / "emissions_pathway.csv")
 cdist = pd.read_csv(e5 / "cost_distribution.csv")
 lam = pd.read_csv(e5 / "lambda_tangency.csv")
 wedge = pd.read_csv(e5 / "policy_wedge.csv")
+# 그림 6은 "NZ15 경계 계획을 두 시나리오에서 평가한" 선다발이다. D13에서 B20 경계 계획도
+# wedge에 들어왔으므로(역방향 후회비용) 그림에는 NZ15 출신만 남긴다.
+wedge = wedge[wedge.scen_origin == "NZ15"].drop(columns=["scen_origin"])
 conv = pd.read_csv(C.out_dir(cfg, "e4") / "convergence.csv")
 
 fac, d3, _cal = _prep_company(cfg, C.data_dir(cfg))

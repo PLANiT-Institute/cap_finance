@@ -297,3 +297,40 @@ def test_support_axis_is_empty_and_the_paper_says_so():
         "D5의 지원 수단 유무와 support 축의 작동이 어긋난다 — "
         f"subsidy/ccfd 행 {int(d5.instrument.isin(['subsidy_capex', 'ccfd']).sum())}개, "
         f"축 작동={not inert}. 페이퍼 §5.4를 같이 고쳐라")
+
+
+def test_regret_is_two_directional_and_its_sign_is_conditional():
+    """§5.3.1 — 후회비용은 양방향이어야 하고, 역방향의 부호는 벌칙 가정에 조건부다.
+
+    D12까지 `policy_wedge.csv`는 1차 시나리오 경계 계획만 담아 후회를 한 방향으로만
+    쟀다. 그 상태에서 §5.3은 "지연의 대가 28.6조"로 읽혔는데, 역방향을 넣자 총비용
+    기준으로 부호가 뒤집혔다 — B20 계획을 들고 NZ15가 와도 예산을 초과하고 탄소요금을
+    내면 돈은 덜 든다. 세 가지를 박아 둔다.
+
+    1. wedge가 두 시나리오 출신 계획을 **모두** 담는가 (한 방향으로 되돌아가면 깨진다).
+    2. `budget_gap_tco2`가 E2의 `budget_slack_tco2`를 재현하는가 (독립 교차검산).
+    3. 역방향 후회의 손익분기가 E2의 벌칙 바닥값보다 **낮은가** — 낮은 동안만 §5.3의
+       정책 진술이 모형 안에서 성립한다. 벌칙을 실측으로 바꾸는 날(한계 13) 다시 본다.
+    """
+    cfg = C.load()
+    pw = pd.read_csv(C.out_dir(cfg, "e5") / "policy_wedge.csv")
+    idx = pd.read_csv(C.out_dir(cfg, "e2") / "plan_index.csv").set_index("plan_id")
+
+    assert set(pw.scen_origin) == set(cfg.scenarios), (
+        f"policy_wedge가 담은 계획 출신 시나리오 {sorted(set(pw.scen_origin))} != "
+        f"{sorted(cfg.scenarios)} — 후회비용이 다시 한 방향이 됐다 (§5.3.1)")
+
+    # 자기 출신 시나리오에서 평가한 초과량은 E2가 푼 slack과 같아야 한다
+    own = pw[pw.scen_origin == pw.scen_eval]
+    for r in own.itertuples():
+        want = float(idx.loc[r.plan_id.split(".c")[0]].budget_slack_tco2)
+        assert abs(r.budget_gap_tco2 - want) <= 1.0, (
+            f"{r.plan_id}@{r.scen_eval} 예산초과 {r.budget_gap_tco2} != E2 slack {want}")
+
+    reg = pd.read_csv(pathlib.Path(__file__).resolve().parents[1] / "out/m4/regret.csv")
+    floor = cfg.milp.get("budget_violation_floor_thkrw", 300)
+    be = reg.breakeven_thkrw_per_tco2.dropna()
+    assert len(be), "역방향 후회가 어느 기업에서도 음수가 아니다 — §5.3.1 표를 다시 써라"
+    assert (be < floor).all(), (
+        f"역방향 후회의 손익분기 {list(be)}천원/tCO2가 E2 벌칙 바닥 {floor}을 넘었다 — "
+        "모형 안에서도 지연이 이긴다. §5.3.1의 결론과 한계 13을 다시 써라")
