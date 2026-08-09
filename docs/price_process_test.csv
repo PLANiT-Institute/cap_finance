@@ -1,0 +1,9 @@
+series_id,n_obs,obs_per_year,sigma_step,sigma_annual,adf_tau_mu,adf_crit5_finite_sample,reject_unit_root_5pct,power_vs_ou_hl10y,hurst_rs,hurst_rs_null_median
+smp_monthly,19,11.78,0.0728,0.2499,-1.156,-3.06,False,0.049,0.719,0.796
+smp_krw_mwh,11,1.0,0.3217,0.3219,-1.513,-3.229,False,0.052,1.172,0.879
+usdkrw,11,1.0,0.0466,0.0466,0.118,-3.243,False,0.052,0.902,0.865
+indus_tariff,10,1.0,0.0916,0.0916,1.121,-3.284,False,0.054,0.956,0.913
+kau_krw,9,1.0,0.3631,0.3632,-1.335,-3.362,False,0.051,0.95,0.914
+ethylene_naphtha_spread,7,1.0,0.1749,0.175,-1.089,-3.622,False,0.053,,
+jepx_spot,7,1.0,0.3857,0.3858,-2.489,-3.667,False,0.05,,
+steel_margin_krw_t,7,1.0,0.9546,0.9549,-2.852,-3.654,False,0.049,,
