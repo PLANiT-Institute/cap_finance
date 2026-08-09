@@ -105,6 +105,10 @@ def _computed() -> dict[str, float]:
     got["m8_groups_nondominated_l2"] = float(
         m8.groupby(["company_id", "scenario"]).nondominated_l2.any().sum())
 
+    # §4 데이터 절 (M3): 출처·등급·무결성은 원자료에서 다시 센다
+    for r in _out("m3", "summary").itertuples():
+        got[r.key] = float(r.value)
+
     # §4 경계 퇴화: 경계 위 점들이 한 기술 일정만 쓰는 묶음 수
     per_group = fp[fp.on_frontier].groupby(
         ["company_id", "scenario", "support"]).base_plan_id.nunique()
@@ -135,3 +139,14 @@ def test_body_quotes_only_ledger_keys():
     total, canon = int(led["e2_plans_total"]), int(led["e2_plans_canonical"])
     assert f"{total}개 계획 중 정본 평가에서 서로 다른 것은\n**{canon}개**" in body, \
         "§3.4의 후보 중복 서술이 §0 대장과 어긋난다"
+
+    # 본문 §4 — 데이터 절의 세 표. 여기가 낡으면 출처 주장이 거짓말을 한다.
+    assert f"| **계** | **{int(led['inv_rows'])}** | **{int(led['inv_banded'])}** |" in body, \
+        "§4.2 등급 표 합계가 §0 대장과 어긋난다"
+    assert f"열 중 {int(led['top10_t3plus'])}개만 규약을 만족한다" in body, \
+        "§4.3의 상위 10 등급 서술이 §0 대장과 어긋난다"
+    for label, key in ((r"등록부(`source_register.csv`)", "inv_src_registered"),
+                       ("표식 — 출처 아님", "inv_src_sentinel"),
+                       ("EFF 이름공간", "inv_src_eff")):
+        assert f"| {label} | {int(led[key])} |" in body, \
+            f"§4.4 무결성 표의 '{label}' 행이 §0 대장과 어긋난다"
