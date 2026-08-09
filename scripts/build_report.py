@@ -731,7 +731,7 @@ document.getElementById("qlist").innerHTML=[
 "<b>섹터 예산·가격:</b> EST_v0 잠정 + 예산 단조성 결함(B20&lt;NZ15 구간) — 재추정 대상. 기업 예산은 <b>기업 자체 base 배출에 앵커</b>되고 섹터 경로는 형태만 제공하므로, 한국(직접배출)·일본(구매전력 포함) 예산 정의 차이는 수준에 영향을 주지 않는다.",
 "<b>배출 경계:</b> 모형은 <b>Scope 1</b>만 계상한다. 기업 보고 Scope 2는 D1b에 보존돼 있으나(NSC 11.9 MtCO₂ = Scope 1의 19%) 지표 산정에 넣지 않았다 — 전환설비는 재생 PPA로 Scope 2가 0이 되는 구조라 넣으면 전기화가 더 유리해지는 방향이며, 구조 대안으로 별도 검증 대상.",
 "<b>석화 원료:</b> D1b <code>energy_naphtha</code>가 전량 미수집(0/69) — NCC 주 원료비가 기존설비 비용에서 빠져 있다. 마진(<code>margin_kthou_t</code>)이 영업이익 기준이라 이중계상은 없으나, 원료가격 변동 노출은 과소평가된다.",
-"<b>MILP 품질:</b> E2는 계획 <b>순서</b>를 정하는 대리목적함수이고 정본 비용은 E4 시뮬레이션이 낸다. 상대갭 2%·시간상한 300초, 상한에서 얻은 실행가능해도 후보로 채택하며 각 계획의 <code>solve_status</code>가 <code>out/e2/plan_index.csv</code>에 기록된다."
+"<b>MILP 품질:</b> E2는 후보 계획을 <b>나열</b>하는 대리목적함수이고 정본 비용·TCaR은 E4 시뮬레이션이 다시 낸다. 상대갭 2%·시간상한 60초·경계 격자 10점. 상한에서 얻은 실행가능해도 후보로 채택하며, 각 계획의 <code>solve_status</code>가 <code>out/e2/plan_index.csv</code>에 기록되므로 품질을 산출물에서 확인할 수 있다."
 ].map(q=>`<li>${q}</li>`).join("");
 renderFac("POSCO");
 </script>"""
