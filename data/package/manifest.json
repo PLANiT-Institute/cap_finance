@@ -49,7 +49,7 @@
     {
       "name": "D1b_company_panel.csv",
       "rows": 12,
-      "sha256": "2a110c1bba5d960e7a949c869abda81ead100c460b3ffe157f7a9dbf2827333a"
+      "sha256": "c53ee301716d6efa6362c674826ce8bd4d77de29f7c10b2348587b34243139b9"
     },
     {
       "name": "D2a_scenario_budget.csv",
@@ -94,27 +94,27 @@
     {
       "name": "result_affordability.csv",
       "rows": 16,
-      "sha256": "a7e3d2b279b0d0c73a27c8d64a70f37ab2f9181de881faf7ab4a2c3b1a26500f"
+      "sha256": "dc824d88a8851332db6334b6df24535ca13f7dec930e7e14fcdd3ea26854adb6"
     },
     {
       "name": "result_emissions_pathway.csv",
       "rows": 520,
-      "sha256": "391739ad74007e74f35075714327068158178d02d921d9e4e47d894f0cc42586"
+      "sha256": "a2392044bfd609ee5d1d8b05a9aae446ada54cfa3b9adde868a96ba7e0d7d5be"
     },
     {
       "name": "result_gap.csv",
       "rows": 8,
-      "sha256": "721939b3de5c9f87254adbe10a3dd93a31d17cfbb32a7c8b6114b5fd1462da45"
+      "sha256": "64fe5074e724a6385590063d227b09fea5b9a36e11247f010d2a041819115d23"
     },
     {
       "name": "result_metrics_company.csv",
       "rows": 16,
-      "sha256": "c177f56057447da842aa6ad6d685569fff8a3dbce2612db8b55302b278fd73d2"
+      "sha256": "919fa429710d70d71383d088a2db68ac56f6d11274eb1f80b961dd178691ee16"
     },
     {
       "name": "source_register.csv",
-      "rows": 77,
-      "sha256": "62bd242d4ef661ee7b2c15d3489448b145d41196310952d985b2045bb6678d16"
+      "rows": 78,
+      "sha256": "423d965c75f8c4e9c92aee55c9acd88b1eb2796a498dd4afbb1c65e014a16964"
     }
   ]
 }
