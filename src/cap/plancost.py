@@ -133,9 +133,22 @@ def build_profile(plan_df: pd.DataFrame, fac: pd.DataFrame, techs: pd.DataFrame,
                 else:
                     tk = tk_idx.loc[a.tech_id]
                     base = tk.capex_unit * fr.capacity
-                    amt = base + stranded_cost_k(fr, ta, cfg)
-                    capex[i] += amt
-                    capex_by_tech.setdefault(a.tech_id, np.zeros(T))[i] += amt
+                    # EPC drawdown: construction spend spreads evenly across the
+                    # build, it is not a lump at FID. Charging it in one year
+                    # overstated the peak-year funding need by up to build_years×
+                    # — which is exactly what ① 자본 피크 and 조달부담(⑥) measure.
+                    bv = tk.get("build_years", 1)
+                    nb = max(int(bv) if pd.notna(bv) else 1, 1)
+                    by_tech = capex_by_tech.setdefault(a.tech_id, np.zeros(T))
+                    for j in range(nb):
+                        if i + j < T:
+                            capex[i + j] += base / nb
+                            by_tech[i + j] += base / nb
+                    # the incumbent's book write-off is an accounting event at
+                    # conversion, not construction spend — stays a lump at ta
+                    stranded = stranded_cost_k(fr, ta, cfg)
+                    capex[i] += stranded
+                    by_tech[i] += stranded
                     # horizon-end salvage of the new asset (deterministic credit;
                     # capex shocks not applied to salvage — second-order)
                     other[T - 1] -= base * salvage_fraction(tk, int(a.op_year), int(years[-1]))

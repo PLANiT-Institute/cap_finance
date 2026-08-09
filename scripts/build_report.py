@@ -30,6 +30,8 @@ fr = fr[fr.support == "none"]
 idx = pd.read_csv(e2d / "plan_index.csv")
 metrics = pd.read_csv(e5 / "metrics_company.csv")
 metrics = metrics[metrics.support == "none"]
+afford = pd.read_csv(e5 / "affordability.csv")
+afford = afford[(afford.support == "none") & (afford.scenario == "NZ15")]
 gap = pd.read_csv(e5 / "gap.csv")
 gap = gap[gap.support == "none"].drop_duplicates(["company_id", "scenario"])
 dec = pd.read_csv(e5 / "variance_decomp.csv")
@@ -130,6 +132,9 @@ D = dict(
     lam=lam.to_dict("records"),
     wedge=wedge.to_dict("records"),
     facilities=fac_rows,
+    # to_json (not to_dict) so missing financials arrive as null, not NaN —
+    # a float column cannot hold None in pandas, and NaN==null is false in JS
+    afford=json.loads(afford.round(2).to_json(orient="records")),
     convergence_max_pct=round(float(conv[["p50_reldiff", "tcar_reldiff"]].max().max()) * 100, 2),
     n_plans=int(len(idx)),
 )
@@ -149,27 +154,27 @@ HTML = r"""<title>CAP 진단 보고서 — 전환비용·TCaR·효율경계</tit
   --surface:#FBFBF9; --panel:#FFFFFF; --panel2:#F4F4F0; --ink:#191C24; --ink2:#565B66; --ink3:#8B909C;
   --line:#E4E4DE; --line2:#EEEEE8; --accent:#2a78d6;
   --s-elec:#2a78d6; --s-h2:#1baf7a; --s-capex:#eda100; --s-disc:#e34948;
-  --s-nz:#2a78d6; --s-b20:#1baf7a; --warn-bg:#FBF3E2; --warn-line:#E5C878;
+  --s-nz:#2a78d6; --s-b20:#1baf7a; --warn-bg:#FBF3E2; --warn-line:#E5C878; --bad-bg:#FCEDEA; --bad-ink:#B22C1B;
 }
 @media (prefers-color-scheme: dark){
   :root:where(:not([data-theme="light"])){
     --surface:#15171C; --panel:#1C1F26; --panel2:#22252D; --ink:#EDEEF0; --ink2:#A8ADB8; --ink3:#747A87;
     --line:#2E323B; --line2:#262A32; --accent:#3987e5;
     --s-elec:#3987e5; --s-h2:#199e70; --s-capex:#c98500; --s-disc:#e66767;
-    --s-nz:#3987e5; --s-b20:#199e70; --warn-bg:#2A2517; --warn-line:#6B5A2A;
+    --s-nz:#3987e5; --s-b20:#199e70; --warn-bg:#2A2517; --warn-line:#6B5A2A; --bad-bg:#2E1A17; --bad-ink:#F08C7A;
   }
 }
 :root[data-theme="dark"]{
   --surface:#15171C; --panel:#1C1F26; --panel2:#22252D; --ink:#EDEEF0; --ink2:#A8ADB8; --ink3:#747A87;
   --line:#2E323B; --line2:#262A32; --accent:#3987e5;
   --s-elec:#3987e5; --s-h2:#199e70; --s-capex:#c98500; --s-disc:#e66767;
-  --s-nz:#3987e5; --s-b20:#199e70; --warn-bg:#2A2517; --warn-line:#6B5A2A;
+  --s-nz:#3987e5; --s-b20:#199e70; --warn-bg:#2A2517; --warn-line:#6B5A2A; --bad-bg:#2E1A17; --bad-ink:#F08C7A;
 }
 :root[data-theme="light"]{
   --surface:#FBFBF9; --panel:#FFFFFF; --panel2:#F4F4F0; --ink:#191C24; --ink2:#565B66; --ink3:#8B909C;
   --line:#E4E4DE; --line2:#EEEEE8; --accent:#2a78d6;
   --s-elec:#2a78d6; --s-h2:#1baf7a; --s-capex:#eda100; --s-disc:#e34948;
-  --s-nz:#2a78d6; --s-b20:#1baf7a; --warn-bg:#FBF3E2; --warn-line:#E5C878;
+  --s-nz:#2a78d6; --s-b20:#1baf7a; --warn-bg:#FBF3E2; --warn-line:#E5C878; --bad-bg:#FCEDEA; --bad-ink:#B22C1B;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--surface);color:var(--ink);
@@ -191,6 +196,8 @@ th{font-size:11.5px;color:var(--ink2);font-weight:650;text-align:right;padding:9
 th:first-child,td:first-child{text-align:left}
 td{padding:7.5px 10px;border-bottom:1px solid var(--line2);text-align:right;white-space:nowrap}
 tr:last-child td{border-bottom:none}
+td.warn{background:var(--warn-bg);font-weight:640}
+td.bad{background:var(--bad-bg);color:var(--bad-ink);font-weight:660}
 .tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:8px 12px}
 .co{font-weight:700}
 .scen{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:7px}
@@ -258,7 +265,15 @@ ul.tight li b{color:var(--ink)}
 ③ TCaR = P90−P50, 전력·수소·설비비 가격 변동에서만 발생. ④ = NZ15−B20. ⑤ = 경로별 계획 전환 가치(하한).</p>
 <div class="tblwrap"><table id="mtable"></table></div></section>
 
-<section><h2><span class="secno">2</span>배출 경로 — 전환은 계단으로 온다</h2>
+<section><h2><span class="secno">2</span>조달 부담 — 비용을 물을 수 있는가, 감당할 수 있는가</h2>
+<p class="secnote">전환비용(②)은 <b>얼마 드는가</b>를, 이 절은 <b>그 돈이 어디서 나오는가</b>를 묻는다. 기준이익 = 최근 3개 회계연도
+EBITDA 평균(경기 평활 — 석화는 저점 구간이라 단년으로 보면 결론이 뒤집힌다). 피크배수 = 피크연도 CAPEX ÷ 기준 EBITDA.
+사후 순차입배수는 <b>전액 차입 가정의 상한</b>이며 조달 구성 예측이 아니다. CAPEX는 기술별 공사기간(D3 build_years)에
+균등 분산 — 이것을 채택연도 일시 계상하면 피크가 최대 공사기간 배수만큼 과대해진다.</p>
+<div class="tblwrap"><table id="atable"></table></div>
+<div id="abars" style="margin-top:14px"></div></section>
+
+<section><h2><span class="secno">3</span>배출 경로 — 전환은 계단으로 온다</h2>
 <p class="secnote">시설 단위 결정이라 감축이 연속이 아니라 <b>가동 연도의 계단</b>으로 발생. 파랑 = 비용최소 계획,
 빨강 = 공시 계획, 점선 = 기업 탄소예산, 회색 = 무전환 기준선. 예산 아래로 못 내려간 구간은 잔여 미달분
 (소프트 페널티 300천원/tCO₂ 이상으로 계상).</p>
@@ -347,6 +362,8 @@ P90−P50 = TCaR. 빨간 외곽선 = 공시 계획의 분포 — 오른쪽·넓�
 <div class="tip" id="tip"></div>
 <script>
 const D=__DATA__;
+// section numbers follow document order — inserting a section never renumbers by hand
+document.querySelectorAll(".secno").forEach((e,i)=>e.textContent=i+1);
 const fmt=(v,d=1)=>v==null||isNaN(v)?"—":Number(v).toLocaleString("ko-KR",{maximumFractionDigits:d});
 const jo=(v,d=1)=>fmt(v/1000,d);
 const CO=["POSCO","NSC","LOTTE","MCI"];
@@ -388,6 +405,48 @@ for(const co of CO) for(const sc of ["NZ15","B20"]){
   <td>${sc==="NZ15"?jo(m.policy_exposure_bnkrw):"—"}</td><td>${jo(m.flex_value_bnkrw)}</td></tr>`;
 }
 document.getElementById("mtable").innerHTML=rows;
+
+// 2. affordability (NZ15, support=none)
+(()=>{
+ const A=D.afford||[]; if(!A.length) return;
+ const x=v=>v==null||isNaN(v)?"—":fmt(v,1)+"×";
+ let r=`<tr><th>기업</th><th>총 CAPEX (조원)</th><th>피크연도</th><th>피크 CAPEX (조원)</th>
+ <th>기준 EBITDA (조원)</th><th>피크배수</th><th>총 CAPEX/EBITDA</th><th>순차입/EBITDA 현재→사후</th><th>판정</th></tr>`;
+ for(const co of CO){
+  const a=A.find(x=>x.company_id===co); if(!a) continue;
+  const risk=a.ebitda_ref_bnkrw==null||a.ebitda_ref_bnkrw<0?"bad":a.capex_peak_to_ebitda>1?"warn":"";
+  const nd=a.netdebt_to_ebitda_now==null||isNaN(a.netdebt_to_ebitda_now)?"공시 미확보"
+    :`${fmt(a.netdebt_to_ebitda_now,1)} → ${fmt(a.netdebt_to_ebitda_post,1)}`;
+  r+=`<tr><td class="co">${CONAME[co]}</td><td>${jo(a.capex_total_bnkrw)}</td><td>${a.capex_peak_year??"—"}</td>
+  <td>${jo(a.capex_peak_bnkrw)}</td>
+  <td data-tip="기준연도 ${a.ebitda_years||"—"}">${jo(a.ebitda_ref_bnkrw)}</td>
+  <td class="${risk}">${x(a.capex_peak_to_ebitda)}</td>
+  <td>${x(a.capex_total_to_ebitda)}</td>
+  <td>${nd}</td><td style="text-align:left">${a.funding_verdict}</td></tr>`;
+ }
+ document.getElementById("atable").innerHTML=r;
+
+ // peak-year CAPEX against one year of earnings — the bar the company must clear
+ const vals=A.filter(a=>a.capex_peak_to_ebitda!=null).map(a=>a.capex_peak_to_ebitda);
+ const vmax=Math.max(2,...vals)*1.12, W=760, H=26, L=118;
+ let s=`<svg viewBox="0 0 ${W} ${A.length*(H+12)+26}" style="width:100%;height:auto">`;
+ A.forEach((a,i)=>{
+   const y=i*(H+12), v=a.capex_peak_to_ebitda;
+   s+=`<text class="axis" x="${L-8}" y="${y+H*0.68}" text-anchor="end">${CONAME[a.company_id]}</text>`;
+   if(v==null){
+     s+=`<text class="axis" x="${L+6}" y="${y+H*0.68}" fill="var(--s-disc)">EBITDA 음수 — 자체 조달 불가</text>`;
+   }else{
+     const w=(W-L-70)*Math.min(v,vmax)/vmax;
+     s+=`<rect x="${L}" y="${y+4}" width="${w}" height="${H-8}" rx="2"
+       fill="${v>1?"var(--s-disc)":"var(--s-nz)"}" opacity="${v>1?.9:.75}"/>
+       <text class="axis" x="${L+w+8}" y="${y+H*0.68}">${v.toFixed(1)}×</text>`;
+   }
+ });
+ const x1=L+(W-L-70)/vmax;   // the 1.0× line = one year of earnings
+ s+=`<line x1="${x1}" y1="0" x2="${x1}" y2="${A.length*(H+12)}" stroke="var(--ink3)" stroke-dasharray="3 3"/>
+ <text class="axis" x="${x1+4}" y="${A.length*(H+12)+16}">연간 EBITDA 1배</text></svg>`;
+ document.getElementById("abars").innerHTML=s;
+})();
 
 // 2. emissions pathway
 const pp=document.getElementById("ppanels");

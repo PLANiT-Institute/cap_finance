@@ -81,6 +81,50 @@ def _gap(frontier: pd.DataFrame, point) -> tuple[float, float]:
     return dcost, drisk
 
 
+def _affordability(metrics: pd.DataFrame, d6: pd.DataFrame) -> pd.DataFrame:
+    """지표 ⑥ 조달 부담 — 전환 CAPEX를 기업 재무능력에 견준다 (D6 실적 소비).
+
+    The frontier says what the transition costs; this says whether the balance
+    sheet can carry it. Reference earnings = mean EBITDA of the last 3 reported
+    years (cycle-smoothing; petrochemicals are mid-trough so a single year would
+    read as either impossible or free). Negative reference EBITDA is reported as
+    such rather than as an infinite ratio — it is the finding, not an error.
+    `netdebt_to_ebitda_post` is the debt-financed upper bound (전액 차입 가정):
+    it is a ceiling on leverage impact, not a forecast of the funding mix.
+    """
+    d6 = d6.sort_values("year")
+    fin = []
+    for cid, g in d6.groupby("company_id"):
+        ebitda = g.ebitda.dropna()
+        nd = g.dropna(subset=["net_debt"])
+        rev = g.revenue.dropna()
+        fin.append(dict(
+            company_id=cid,
+            ebitda_ref_bnkrw=float(ebitda.tail(3).mean()) if len(ebitda) else np.nan,
+            ebitda_years=";".join(str(int(y)) for y in g.year[g.ebitda.notna()].tail(3)),
+            revenue_latest_bnkrw=float(rev.iloc[-1]) if len(rev) else np.nan,
+            net_debt_bnkrw=float(nd.net_debt.iloc[-1]) if len(nd) else np.nan,
+        ))
+    m = metrics.merge(pd.DataFrame(fin), on="company_id", how="left")
+
+    e = m.ebitda_ref_bnkrw
+    pos = e > 0                                    # ratios are meaningless on a loss
+    m["capex_peak_to_ebitda"] = np.where(pos, m.capex_peak_bnkrw / e, np.nan)
+    m["capex_total_to_ebitda"] = np.where(pos, m.capex_total_bnkrw / e, np.nan)
+    m["capex_total_to_revenue_pct"] = 100 * m.capex_total_bnkrw / m.revenue_latest_bnkrw
+    m["netdebt_to_ebitda_now"] = np.where(pos, m.net_debt_bnkrw / e, np.nan)
+    m["netdebt_to_ebitda_post"] = np.where(pos, (m.net_debt_bnkrw + m.capex_total_bnkrw) / e, np.nan)
+    m["funding_verdict"] = np.select(
+        [~pos, m.capex_peak_to_ebitda <= 0.5, m.capex_peak_to_ebitda <= 1.0],
+        ["EBITDA 음수 — 자체 조달 불가", "피크연도 EBITDA 절반 이내", "피크연도 EBITDA 1배 이내"],
+        default="피크연도 EBITDA 초과 — 외부조달 필수")
+    return m[["company_id", "scenario", "support", "capex_total_bnkrw", "capex_peak_bnkrw",
+              "capex_peak_year", "ebitda_ref_bnkrw", "ebitda_years", "revenue_latest_bnkrw",
+              "net_debt_bnkrw", "capex_peak_to_ebitda", "capex_total_to_ebitda",
+              "capex_total_to_revenue_pct", "netdebt_to_ebitda_now", "netdebt_to_ebitda_post",
+              "funding_verdict"]]
+
+
 def run(cfg: C.Config):
     ddir = C.data_dir(cfg)
     odir = C.out_dir(cfg, "e5")
@@ -175,6 +219,7 @@ def run(cfg: C.Config):
                              budget_ok=ok or isd, budget_slack_tco2=slack,
                              abated_tco2_disc=abated, is_disclosed=isd,
                              capex_total=float(prof.capex_k.sum() * 1e-6),
+                             capex_peak=float(prof.capex_k.max() * 1e-6),
                              capex_peak_year=int(years[prof.capex_k.argmax()]) if prof.capex_k.any() else None))
 
         pts = pd.DataFrame(rows)
@@ -305,13 +350,13 @@ def run(cfg: C.Config):
         m2 = best.p50 * 1e6 / best.abated_tco2_disc if best.abated_tco2_disc > 0 else np.nan
         f5 = flex[(flex.company_id == company) & (flex.scenario == scen) & (flex.support == supp)]
         metric_rows.append([company, scen, supp,
-                            best.capex_total, best.capex_peak_year,       # ①
+                            best.capex_total, best.capex_peak, best.capex_peak_year,   # ①
                             best.p50, m2,                                  # ② (자원비용 bn KRW, 천원/tCO2 disc)
                             best.tcar,                                     # ③
                             f5.flex_value_mean.iloc[0] if len(f5) else np.nan,  # ⑤ (mean; p50 degenerates to 0)
                             best.p50_incl_carbon, best.carbon_delta])
     metrics = pd.DataFrame(metric_rows, columns=[
-        "company_id", "scenario", "support", "capex_total_bnkrw", "capex_peak_year",
+        "company_id", "scenario", "support", "capex_total_bnkrw", "capex_peak_bnkrw", "capex_peak_year",
         "p50_bnkrw", "cost_per_tco2_thkrw", "tcar_bnkrw", "flex_value_bnkrw",
         "p50_incl_carbon_bnkrw", "carbon_delta_bnkrw"])
     # ④ policy exposure: scenarios[0] − scenarios[1] within support (config-driven)
@@ -322,6 +367,8 @@ def run(cfg: C.Config):
         metrics = metrics.merge(piv[["policy_exposure_bnkrw"]].reset_index(),
                                 on=["company_id", "support"], how="left")
     metrics.to_csv(odir / "metrics_company.csv", index=False)
+    _affordability(metrics, load_input(ddir, "D6_company_financials")).to_csv(
+        odir / "affordability.csv", index=False)
 
     # spec checks: frontier monotone, gaps non-negative (NaN = point outside frontier range, allowed)
     for _, fgrp in frontier[frontier.on_frontier].groupby(["company_id", "scenario", "support"]):

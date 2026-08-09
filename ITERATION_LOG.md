@@ -74,3 +74,22 @@
 **한 일**: `scripts/build_evidence_page.py` → `web/evidence.html`. 3개 차트: ① 우선순위 매트릭스(가로 영향력 × 세로 증거등급, 위험구역 음영) ② 토네이도(LCOA/TCaR 영향 이중 막대, 등급별 색) ③ 등급 분포(FIN vs EFF 누적). build_site.py에 통합돼 사이트에서 도달 가능.
 **설계 근거**: 등급은 순서형이라 단일 색상 램프를 쓰되 T4/T5는 상태색(경고/위험)으로 분기 — "증거가 약하다"는 상태 정보를 색으로 전달. 매트릭스 우하단이 위험구역.
 **다음**: C10 = H1 내부 일관성 테스트.
+
+## Cycle 10 (데이터 진위·활용 감사 + 조달부담 지표 ⑥) — 사용자 5개 점검 체제 시작
+**한 일**
+1. `scripts/audit_data.py` — 입력 9파일 88컬럼을 (a) 채움률 (b) 엔진 참조 여부 (c) 출처 해소 여부로 전수 판정. `docs/data_audit.csv` + `.md`. 합성 샘플과 바이트 동일하면 실패 종료(가짜 주입 게이트).
+2. **config 기본값 결함**: `data_dir: data/raw`인데 파이프라인은 `D*.csv`(=`data/prepared`)를 읽어 `python -m cap` 무인자 실행이 SchemaError로 죽었다. `data/prepared`로 수정 — "한 명령 재현"이 실제로 성립.
+3. **CAPEX 시점 결함(근본)**: `plancost.build_profile`이 CAPEX 전액을 채택연도 1년에 계상, `build_years`는 가동개시만 이동시켰다. 공사기간 균등 분산으로 수정. 피크가 최대 공사기간 배수만큼 과대였음.
+4. **지표 ⑥ 조달부담 신설**: D6 재무 6개 컬럼(revenue/ebitda/total_debt/net_debt/interest/cash)이 **전량 미사용**이던 것을 소비 → `out/e5/affordability.csv` + 보고서 2절(표+피크배수 막대).
+
+**검증(수치)**
+- 감사 판정: ok 70 / UNUSED 15 / CONSTANT 3 / EMPTY 0 / 합성누출 0 / 미해소 출처 0 / 추정라벨 4(EST_D2A_V0·EST_D2B_V0·PREP_ALLOC·PREP_BOTTOMUP).
+- CAPEX 분산 전후 피크(NZ15, none): POSCO 18.6조→**5.6조**, NSC 23.8조→**8.6조**, LOTTE 0.75→0.71, MCI 0.34→0.32.
+- 헤드라인 ②(천원/tCO₂) 전후: POSCO 130→128, NSC 173→170, LOTTE 257→251, MCI 264→258. **결론 불변**(할인시점 이동분만).
+- 테스트 14/14 그린.
+
+**결론 영향(신규)**: 조달부담이 순위를 뒤집는다. 비용/tCO₂로는 POSCO(128)가 가장 싸지만 피크배수 3.1×·총 CAPEX/EBITDA 12.2×로 부담은 최대. LOTTE는 CAPEX 1.4조로 최소지만 **기준 EBITDA가 음수(−0.72조)라 자체 조달 자체가 불가**. MCI만 피크 0.3×로 여유. → "얼마 드는가"와 "감당 가능한가"가 다른 기업을 지목한다.
+
+**데이터 공백(정직 기록)**: POSCO·LOTTE의 net_debt/total_debt 공시 미확보 → 사후 레버리지 미산출. D6 보강 대상.
+**백로그 신규**: 미사용 15컬럼 중 실질 3건 — `D1b.emissions_s2`(전 행 0, Scope2 미모형화), `D3.capex_uncertainty`(기술별 불확실성 미전파 → F3), `D5.param_type`(유상할당 비율이 데이터에 있는데 config 하드코딩 사용, 2030년 값 데이터 50% vs config 15% **충돌**).
+**다음**: C11 = D5 유상할당 충돌 해소(데이터를 정본으로) + H1 내부 일관성 테스트.

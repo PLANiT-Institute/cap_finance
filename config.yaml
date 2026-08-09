@@ -1,5 +1,5 @@
 # CAP v2 pipeline configuration — REDESIGN_SPEC.md §6 확정값
-data_dir: data/raw          # real CSVs from Excel; tests use data/sample
+data_dir: data/prepared     # prepare_raw.py output (D*.csv); tests use data/sample
 out_dir: out
 seed: 20260806
 
