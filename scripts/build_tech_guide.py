@@ -255,8 +255,61 @@ def gen_headline():
     return head + note
 
 
+# bundle -> (assumption it varies, English gloss). Bundles absent from this map still
+# render, so a bundle added to run_scenarios.py cannot be dropped from the guide silently.
+AXIS = {
+    "carbon_fast": ("A-07", "full auctioning by 2040 (CBAM-alignment pressure)"),
+    "carbon_slow": ("A-07", "auction share reaches only 60% by 2050"),
+    "disc35": ("—", "discount rate 3.5%"),
+    "disc65": ("—", "discount rate 6.5%"),
+    "elec_high": ("—", "grid and PPA electricity prices +30%"),
+    "h2_cheap": ("A-05", "hydrogen price −30%"),
+    "h2_expensive": ("A-05", "hydrogen price +30%"),
+    "penalty_none": ("A-11", "budget-violation floor 300 → 0"),
+    "ppa_costly": ("A-15", "renewable PPA premium doubled"),
+    "reline_cheap": ("A-13", "BF replacement cost ×0.235, at the disclosed Kobe actual"),
+    "retire_free": ("A-09", "early-retirement cap 20% → 40%"),
+}
+
+
+def gen_axis_impact():
+    p = ROOT / "out" / "m5" / "bundle_matrix.csv"
+    if not p.exists():
+        return "_No bundle sweep in `out/m5`. Run `python -m cap m5`._"
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from run_scenarios import REPLAN_REQUIRED
+    b = pd.read_csv(p).sort_values("d_tcar_pct", ascending=False)
+    rows = [[f"`{r.bundle}`", AXIS.get(r.bundle, ("—", "—"))[0],
+             AXIS.get(r.bundle, ("—", r.bundle))[1],
+             ("yes" if r.replanned else
+              "**no — required**" if r.bundle in REPLAN_REQUIRED else "not needed"),
+             f"{r.d_m2_pct:.1f}%", f"{r.d_tcar_pct:.1f}%"]
+            for r in b.itertuples()]
+    head = _md(rows, ["Bundle", "Assumption", "What it varies", "Re-planned",
+                      "Δ② (max, %)", "Δ③ (max, %)"])
+    stale = sorted(set(b[~b.replanned].bundle) & REPLAN_REQUIRED)
+    note = (
+        f"\n\nLargest mover on ③ is `{b.iloc[0].bundle}` ({b.iloc[0].d_tcar_pct:.1f}%); "
+        f"on ② it is `{b.loc[b.d_m2_pct.idxmax()].bundle}` ({b.d_m2_pct.max():.1f}%) — "
+        f"not the same bundle, so no single axis dominates both metrics.")
+    if stale:
+        note += (
+            f"\n\n**Read {', '.join('`' + s + '`' for s in stale)} as unmeasured, not as flat.** "
+            f"Those axes are read only inside E2, so with the plan menu held fixed they can "
+            f"re-price a plan but not change it; their Δ② / Δ③ are an artefact of that. "
+            f"Re-planning each costs about ten minutes of solver time and has not been spent.")
+    r = ROOT / "out" / "sensitivity" / "ranking.csv"
+    if r.exists():
+        s = pd.read_csv(r).head(5)
+        note += ("\n\nOne-at-a-time parameter screening, top 5 by worst-metric move: "
+                 + ", ".join(f"`{t.base_param}` ({t.tier}, {t.score:.0f}%)"
+                             for t in s.itertuples()) + ".")
+    return head + note
+
+
 BLOCKS = {
     "stamp": gen_stamp,
+    "axis_impact": gen_axis_impact,
     "dataset_inventory": gen_dataset_inventory,
     "vocab": gen_vocab,
     "price_series": gen_price_series,

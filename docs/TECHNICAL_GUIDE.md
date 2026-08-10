@@ -417,8 +417,13 @@ confidential by design and are excluded from the package.
 
 ## 4. Key assumptions
 
-The full ledger with equations lives in [`METHODOLOGY.md`](../METHODOLOGY.md) §8. Reproduced here are
-the assumptions that **move the conclusions**, ordered by how much they move them.
+The full ledger with equations lives in [`METHODOLOGY.md`](../METHODOLOGY.md) §8, which carries all
+24 identifiers **A-01 – A-24**. Reproduced here are the ones that move the conclusions. Every A-id in
+that ledger appears somewhere in this guide; §4.4 lists where the minor ones are.
+
+An "impact" grade below is one of two different things, and the difference matters more than the
+grade: either an axis we **re-solved** and can therefore quote a number for, or a judgement we have
+**not** measured. §4.1 says which for each row, and the measured axes are tabulated in §4.3.
 
 ### 4.1 The ones that decide the answer
 
@@ -427,10 +432,11 @@ the assumptions that **move the conclusions**, ordered by how much they move the
 | **A-02** | Facility emissions = firm-reported total, distributed by capacity × route emission factor (steel); bottom-up (petchem) | Per-facility measured emissions are not publicly issued in Korea | **Largest single parameter — rank 1 in sensitivity screening, evidence tier T5.** Moves abatement cost by up to 86% | Back-test; for Japan, replaced by T1 site disclosure (EEGS) — see §5.1 |
 | **A-17** | Factors with too few observations use prior volatility (h₂ 0.25, capex 0.06, identity correlation) | D4 has 1–19 observations per series | **Large — sets the level of metric ③.** Mean-reversion instead of GBM cuts TCaR by 41–48% | `docs/process_alternative.md`; D4 is too short to discriminate statistically, and we say so rather than reporting a test we have no power for |
 | **A-24** | Price shocks normalised so **E[shock] = 1** | D2b does not state whether its central path is a mean or a median | **Large — petrochemical metric ② moves +71–73% under the median convention.** Log-normal skew drags the median down: at σ=0.25 over 25 years the 2050 median is 0.47× the central path | `docs/process_alternative.md` §3 |
-| **A-07** | Auction share follows the confirmed K-ETS Phase 4 allocation plan (15% non-power, 2026–2030), then an assumed ramp to 100% by 2050 | Post-2030 allocation is not decided | **Large.** At 100% auctioning, carbon cost reaches ~10× product margin and full closure becomes "optimal" | `test_auction_share_follows_confirmed_allocation_plan`; the `carbon_fast` bundle measures it — **+19.7% on ② and +61.5% on ③, the largest of any axis tested** |
+| **A-07** | Auction share follows the confirmed K-ETS Phase 4 allocation plan (15% non-power, 2026–2030), then an assumed ramp to 100% by 2050 | Post-2030 allocation is not decided | **Large, measured.** `carbon_fast` (full auctioning by 2040) is the largest mover on ③ of any axis we have re-solved; on ② it is third, behind both hydrogen-price bundles. The looser direction, `carbon_slow`, has **not** been re-planned and its 0.0% is not a finding — §4.3 | `test_auction_share_follows_confirmed_allocation_plan`; §4.3 |
+| **A-03** | Energy and emission intensities are injected route standards (BF 2.15 tCO₂/t and similar), **with no range** | Firms do not disclose per-route intensities | **Small for steel, large for petrochemicals.** Steel intensities are rescaled to the firm's reported total, so an error in the injected value cancels; petrochemical intensities are not rescaled, so the injected number *is* the level of ② | Steel: the rescaling residual in E1. Petrochemicals: nothing — this is an open weakness, not a checked one |
 | **A-05** | Hydrogen is procured externally at a market price | Design decision (spec §5-1); the electrolyser formulation was discarded | Large — 30–42% of TCaR | `test_hydrogen_priced_from_data_not_structural_fallback` |
 | **A-19** | Metric ② is a **resource cost**: carbon expenditure delta is subtracted | If carbon avoidance dominates, "transition is free" and the capital-allocation question disappears | Large on ②, none on ③ | `test_resource_cost_is_total_minus_carbon` |
-| **A-13** | Stranding cost = residual straight-line book value of the campaign asset; ±1 year grace around a relining anchor | Spec §2 | Large on investment timing | **Fails external validation: the injected blast-furnace replacement cost is 4.2× a disclosed actual (Kobe, 47 thousand KRW/t).** Over-penalises early conversion. The `reline_cheap` bundle bounds the effect |
+| **A-13** | Stranding cost = residual straight-line book value of the campaign asset; ±1 year grace around a relining anchor. Replacement cost is injected **per unit type, not per asset** — 200 thousand KRW/t for all 17 blast furnaces, 150 NCC, 250 EAF, 300 FINEX | Spec §2 | Large on investment timing | **Fails external validation: the injected blast-furnace replacement cost is 4.2× a disclosed actual (Kobe, 47 thousand KRW/t).** Over-penalises early conversion. The `reline_cheap` bundle bounds the effect |
 
 ### 4.2 Structural choices that are visible, not hidden
 
@@ -438,15 +444,61 @@ the assumptions that **move the conclusions**, ordered by how much they move the
 |---|---|---|
 | **A-06** | Firm budget = own base emissions × sector path ratio | Level from the firm, shape from the scenario. No inter-firm allocation of abatement — who abates when is E2's decision |
 | **A-10** | Blast-furnace conversion is hydrogen-DRI only; CCUS and efficiency are retrofits; wholesale BF→EAF conversion is disallowed | User-confirmed scope decision. **This is why POSCO has no disclosed coordinate** — its Gwangyang EAF cannot be represented (§6.4) |
-| **A-09** | At most 20% of firm production may be retired early | Demand / market-position proxy. Without it, NZ15 carbon prices dwarf margins and full closure wins |
-| **A-11** | Budget-violation penalty floored at 300 thousand KRW/tCO₂ | Without a floor the optimiser buys violations instead of transitions — demonstrated in the first run |
+| **A-09** | At most 20% of firm production may be retired early | Demand / market-position proxy. Without it, NZ15 carbon prices dwarf margins and full closure wins — an observation from the first unconstrained run, **not** a re-solved result: the `retire_free` bundle (cap raised to 40%) has never been re-planned, so its 0.0% measures nothing (§4.3) |
+| **A-11** | Budget-violation penalty floored at 300 thousand KRW/tCO₂ | Without a floor the optimiser buys violations instead of transitions. Registered T5 with a `[150, 600]` band whose `source_id` is `MODEL_CHOICE` — i.e. **the band has no external basis**. The floor is far above where it needs to be: early action stops winning only below ≈39 thousand KRW/tCO₂, and at a floor of 0 three of four firms flip while at 50 none do (`out/m5/penalty_axis.csv`) |
+| **A-04** | Margin is operating profit per tonne, lost on closure | One value per sector, not per facility or per product — the closure decision therefore cannot distinguish a marginal cracker from a profitable one |
+| **A-08** | Missing price anchors are dropped and flat-extrapolated **with a warning**, never silently | The failure mode being blocked is a quiet model retreat to a shorter horizon. Enforced by `test_central_price_paths_are_complete_and_finite` |
+| **A-16** | If a disclosure carries no enforceable commitment, **no coordinate is produced** and the reason is recorded | An empty "fix" is a second unconstrained optimisation, which would manufacture a gap of exactly zero. Reasons are split into "disclosure too coarse" and "we excluded the technology" — §6.4 |
+| **A-20** | Reference earnings for ⑥ = 3-year mean EBITDA | Smooths the cycle. Petrochemicals sit at a trough, so this is the assumption that decides whether ⑥ reads as "unaffordable" — and the underlying column is currency-mixed (§3.7) |
 | **A-14** | E2 is an ordering surrogate at a 2% relative gap | Cheap because E4 is authoritative — **but see §2: had we trusted the surrogate we would have been wrong in 8 of 8 bundles** |
-| **A-15** | Hedges enter the surrogate as a plan-independent linear deduction at the median | Avoids bilinearity. Conservative; E4 applies contracts non-linearly |
+| **A-15** | Hedges enter the surrogate as a plan-independent linear deduction at the median | Avoids bilinearity. Conservative; E4 applies contracts non-linearly. The `ppa_costly` bundle that would bound it has also not been re-planned (§4.3) |
 | **A-18** | CAPEX spread evenly across `build_years` | Charging it at adoption overstated peak funding need by up to `build_years`× |
 | **A-01** | Capacity = published, else inner volume × 913 t/m³·yr | Sensitivity rank 8. A 12% discrepancy against the independent implementation is open (workstream G3) |
 | **A-21** | Emission boundary = Scope 1 | Level-neutral given A-06; Scope 2 preserved but not charged |
 
-### 4.3 Evidence grading
+### 4.3 What we actually re-solved
+
+Each bundle changes one assumption and re-runs the pipeline. Δ② and Δ③ are the largest move across
+the twelve firm × scenario × support cells, against the `base` bundle.
+
+The column to read first is **Re-planned**. Five axes are read only inside the plan optimiser (E2);
+running them without re-planning re-prices a plan that the assumption should have changed, and the
+result is a row of small or zero deltas that looks like robustness and is not. Two of those five have
+been re-planned. The other three are marked, and their numbers should be read as absent.
+
+<!-- GEN:axis_impact -->
+| Bundle | Assumption | What it varies | Re-planned | Δ② (max, %) | Δ③ (max, %) |
+|---|---|---|---|---|---|
+| `carbon_fast` | A-07 | full auctioning by 2040 (CBAM-alignment pressure) | yes | 19.7% | 61.5% |
+| `disc35` | — | discount rate 3.5% | yes | 6.1% | 39.2% |
+| `h2_cheap` | A-05 | hydrogen price −30% | not needed | 27.0% | 30.4% |
+| `h2_expensive` | A-05 | hydrogen price +30% | not needed | 26.9% | 29.9% |
+| `disc65` | — | discount rate 6.5% | yes | 3.6% | 26.4% |
+| `elec_high` | — | grid and PPA electricity prices +30% | not needed | 5.9% | 19.3% |
+| `penalty_none` | A-11 | budget-violation floor 300 → 0 | yes | 1.5% | 5.9% |
+| `reline_cheap` | A-13 | BF replacement cost ×0.235, at the disclosed Kobe actual | not needed | 2.0% | 0.3% |
+| `carbon_slow` | A-07 | auction share reaches only 60% by 2050 | **no — required** | 0.0% | 0.0% |
+| `ppa_costly` | A-15 | renewable PPA premium doubled | **no — required** | 0.0% | 0.0% |
+| `retire_free` | A-09 | early-retirement cap 20% → 40% | **no — required** | 0.0% | 0.0% |
+
+Largest mover on ③ is `carbon_fast` (61.5%); on ② it is `h2_cheap` (27.0%) — not the same bundle, so no single axis dominates both metrics.
+
+**Read `carbon_slow`, `ppa_costly`, `retire_free` as unmeasured, not as flat.** Those axes are read only inside E2, so with the plan menu held fixed they can re-price a plan but not change it; their Δ② / Δ③ are an artefact of that. Re-planning each costs about ten minutes of solver time and has not been spent.
+
+One-at-a-time parameter screening, top 5 by worst-metric move: `fac.ef_inc` (T5, 86%), `tech.emission_factor` (T3, 86%), `cfg.discount` (T5, 42%), `vol.h2` (T5, 42%), `tech.h2_intensity` (T3, 31%).
+<!-- /GEN:axis_impact -->
+
+### 4.4 The rest of the ledger
+
+Three identifiers are not discussed above because they change reported precision or a second-order
+term rather than a conclusion: **A-12** (closure adds back the model's own energy saving, so closure
+is not rewarded twice), **A-22** (CAPEX shock amplitude scaled per technology by D3
+`capex_uncertainty`, worth about 1% of variance), **A-23** (metric ⑤ re-optimisation subsample raised
+300 → 1,500, which fixed a 15% coefficient of variation on ⑤ and nothing else). **A-02, A-03, A-13,
+A-17, A-24** are treated in §4.1; **A-01, A-04, A-06, A-08–A-11, A-14–A-16, A-18–A-21** in §4.2;
+dataset-level consequences of **A-01, A-03, A-20** also appear in §3.
+
+### 4.5 Evidence grading
 
 Every parameter carries an evidence tier. T5 (our own estimate) additionally requires a
 `[low, high]` range.
