@@ -8,7 +8,9 @@ Every quantitative claim below is either generated from the live repository or c
 the file that produces it. Generated passages are delimited by `<!-- GEN:name -->` … `<!-- /GEN:name -->`
 in this markdown file — invisible when the markdown is rendered, so the web version
 (`web/guide.html`, built by `scripts/build_guide_page.py`) labels each one instead. Where the
-evidence is weak, this document says so in the same sentence as the number.
+evidence is weak, this document says so in the same sentence as the number. A reader with limited
+time should read §3 for what the data is, §4.1 for the assumptions that decide the answer, and
+**§9 for the objections we think are strongest against our own results**.
 
 **Companion documents.** [`METHODOLOGY.md`](../METHODOLOGY.md) states the model in equations and
 holds the assumption ledger (`A-01` … `A-24`). [`REDESIGN_SPEC.md`](../REDESIGN_SPEC.md) is the
@@ -16,7 +18,7 @@ design narrative. [`docs/data_gap_registry.md`](data_gap_registry.md) records wh
 collect and where we were blocked. `paper/working_paper.md` is the manuscript.
 
 <!-- GEN:stamp -->
-> **Repository state.** Last commit to code, inputs or results: `bdb8b5f` (2026-08-10). Results in this document come from the pipeline run finished `2026-08-10T10:00:24`. Regenerate the generated blocks with `python3 scripts/build_tech_guide.py`.
+> **Repository state.** Last commit to code, inputs or results: `4b44202` (2026-08-11). Results in this document come from the pipeline run finished `2026-08-10T10:00:24`. Regenerate the generated blocks with `python3 scripts/build_tech_guide.py`.
 <!-- /GEN:stamp -->
 
 ---
@@ -942,7 +944,9 @@ prior is wrong, all seeds are consistently wrong.
 ### 6.2 What is robust and what is not
 
 **Ranking is robust.** It survives discount rates of 3.5/5/6.5%, GBM vs. mean reversion, both shock
-normalisations, and all scenario bundles tested — zero rank reversals.
+normalisations, and all scenario bundles tested — zero rank reversals. Read that for what it is: the
+ranking is over **four firms**, and four items are hard to reorder. It is evidence that the pipeline
+is not chaotic, not evidence that the ordering would survive a fifth firm (§9, O1).
 
 **Levels are not.** TCaR moves 41–48% on the price-process choice alone, and petrochemical ② moves
 71–73% on the shock-normalisation choice. Any use of these numbers as absolute magnitudes needs the
@@ -1085,6 +1089,52 @@ summary, package manifest. Facility-level detail is refused by default. See
    from the currency alone, in a known direction, before the profit-definition difference is
    counted. Found 2026-08-11 while checking this document against the data; not yet fixed, because
    the fix is a re-run rather than an edit.
+
+---
+
+## 9. The objections we expect
+
+§8 lists what we decline to claim. This section is the other half: the questions a hostile reader
+should ask, asked in their sharpest form, with our answer next to each. Where the honest answer is
+"you are right", it says so and gives the size of the problem rather than a reassurance.
+
+| # | The objection | Our answer |
+|---|---|---|
+| **O1** | *"Four firms is not a sample."* | Correct, and CAP does not use it as one. Every quantity is within-firm — a plan is compared to the same firm's own opportunity set (§1), so nothing here is an estimate over a population and nothing generalises to a fifth firm. The one sentence that broke that rule was §6.2's "ranking is robust": a ranking of **four** items that never reverses under twelve perturbations is a weak test, and §6.2 now says so |
+| **O2** | *"Your headline deliverable exists for half the sample, and you present it as a result."* | It exists for 2 of 4 firms and the reason is our model boundary, not their disclosure (§6.4) — but the sharper version of this objection is O3, which we had not stated before this section existed |
+| **O3** | *"Each of those two coordinates is built from one commitment row."* | True, and it is the most important limitation in the document. Of the 12 rows in D7, exactly **2 become a forced decision** — Nippon Steel's Kimitsu H₂ injection and Mitsui's Osaka H₂ fuel switch, one per firm (§3.8). So every disclosed coordinate CAP has ever computed is a single-commitment coordinate, and the gap it produces is the distance from *that one decision* to the frontier, not from the firm's transition plan to the frontier |
+| **O4** | *"Distance to what? How many plans is your frontier?"* | Single digits, per firm × scenario — the counts are generated in §9.1. The gap is a nearest-point distance to that handful, and in the thinnest case that carries a gap it is a distance to two plans |
+| **O5** | *"Two of three risk factors have no market evidence — why quote ③ at all?"* | We quote its **ordering and decomposition, not its level**, and §8 claim 3 says the level depends on an untestable choice. The full force of the objection is worse than we had written: the factor carrying the largest share of cost variance is hydrogen, and hydrogen's volatility is the prior. The number is under the table below |
+| **O6** | *"Metric ⑥ mixes currencies and you still publish it."* | The guide's headline table (§6) deliberately carries ①②③ and **not** ⑥, for exactly this reason. But `out/e5/affordability.csv` and the MCP `get_affordability` tool do carry it, uncorrected, and a reader who takes the artefact rather than the document gets the uncorrected number with no warning attached. The warning lives in §3.7 and §8 claim 8 and not in the file |
+| **O7** | *"The `support` axis is a column with no signal."* | Yes — `current` and `none` return the same object (§3.6), and it is visible in the outputs: `out/e5/gap.csv` has 8 rows that are **4 distinct gaps duplicated across the axis**. The axis is kept because the day a subsidy row lands in D5 a test fails and the prose has to change; it is a wired-up placeholder, not a finding |
+| **O8** | *"Three of your twelve sensitivity axes were never re-run properly."* | Stated in §4.3 with the three named, and their 0.0% deltas marked as unmeasured rather than flat. Re-planning them costs about ten minutes of solver time each and has not been spent |
+| **O9** | *"The emissions pathway you ship covers one support scenario."* | `result_emissions_pathway.csv` is computed under the first support scenario only (`src/cap/e5_metrics.py:290`) and carries **no `support` column at all**, so a question about the emissions path under `support=current` has no answer in the package and nothing in the file says a support scenario was chosen. Given O7 the two would be identical today — but that is an accident of D5's contents, not a property of the code |
+| **O10** | *"Your public package cannot be traced back to sources."* | Two of its files cannot: the firm-level aggregates destroy `source_id` (§3.10). The other twelve keep it |
+
+### 9.1 What the frontier gap is a distance to
+
+<!-- GEN:frontier_shape -->
+| Firm | Scenario | Candidate plans | On frontier | Gap cost / risk (bn KRW) |
+|---|---|---|---|---|
+| LOTTE Chemical | B20 | 10 | 2 | **no coordinate** |
+| LOTTE Chemical | NZ15 | 10 | 6 | **no coordinate** |
+| Mitsui Chemicals | B20 | 11 | 2 | 836 / 1,326 |
+| Mitsui Chemicals | NZ15 | 21 | 8 | 713 / 969 |
+| Nippon Steel | B20 | 31 | 6 | 5,529 / 7,441 |
+| Nippon Steel | NZ15 | 21 | 5 | 1,255 / 4,651 |
+| POSCO | B20 | 10 | 4 | **no coordinate** |
+| POSCO | NZ15 | 20 | 5 | **no coordinate** |
+
+The efficient frontier is **2 to 8 plans** per firm × scenario, out of 10–31 candidates. A frontier gap is a distance to that set, so it is a distance to a handful of points, not to a curve. The thinnest case that carries a gap is Mitsui Chemicals under B20: **2 non-dominated plans**, and the reported 836 / 1,326 bn KRW is the distance to them.
+
+And the axis that gap is measured on is the one with no market evidence: hydrogen carries 64%–77% of cost variance across the four firms, while its volatility is the prior of 0.25, not an estimate (§3.5). Tail-risk *levels*, and therefore `gap_risk` levels, inherit that.
+<!-- /GEN:frontier_shape -->
+
+Two consequences for anyone quoting a gap number. It is a **nearest-point distance to a small
+finite set**, so it moves discontinuously when one plan enters or leaves the non-dominated set —
+unlike a distance to a fitted curve, which would move smoothly. And it is reported to the nearest
+billion KRW in §6.4 while resting on a set that small; the digits are exact arithmetic on the
+outputs, not a precision claim about the world.
 
 ---
 

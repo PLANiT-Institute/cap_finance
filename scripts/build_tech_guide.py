@@ -32,6 +32,7 @@ GUIDE = ROOT / "docs" / "TECHNICAL_GUIDE.md"
 sys.path.insert(0, str(ROOT / "src"))
 
 from cap.schemas import SCHEMAS  # noqa: E402
+from cap.calibration import FALLBACK_VOL  # noqa: E402
 
 # D-code -> (human name, grain). Order is the order they appear in the guide.
 DATASETS = {
@@ -690,9 +691,58 @@ def gen_axis_impact():
     return head + note
 
 
+def gen_frontier_shape():
+    """How wide the frontier is that every gap number is a distance to.
+
+    §6.3 says the frontier is thin in aggregate ("4 of 32 forced schedules survive").
+    That is a statement about the technology sweep, not about the object the gap is
+    measured against — which is the per-bundle non-dominated set, and is smaller
+    still. A reviewer asking "distance to what, exactly?" gets no answer from the
+    guide's prose, so the answer is generated here from the same file §6.4 quotes.
+    """
+    fp = ROOT / "out" / "e5" / "frontier_points.csv"
+    if not fp.exists():
+        return "_No pipeline run in `out/`. Run `python -m cap all`._"
+    f = pd.read_csv(fp)
+    f = f[f.support == "none"]          # the support axis duplicates every row (§3.6)
+    gap = ROOT / "out" / "e5" / "gap.csv"
+    g = pd.read_csv(gap) if gap.exists() else pd.DataFrame(columns=["company_id", "scenario"])
+    g = g[g.support == "none"] if "support" in g.columns else g
+    rows = []
+    for (co, sc), d in f.groupby(["company_id", "scenario"]):
+        hit = g[(g.company_id == co) & (g.scenario == sc)]
+        rows.append([COMPANY_NAME.get(co, co), sc, len(d), int(d.on_frontier.sum()),
+                     f"{hit.iloc[0].gap_cost_bnkrw:,.0f} / {hit.iloc[0].gap_risk_bnkrw:,.0f}"
+                     if len(hit) else "**no coordinate**"])
+    rows.sort(key=lambda r: (r[0], r[1]))
+    head = _md(rows, ["Firm", "Scenario", "Candidate plans", "On frontier",
+                      "Gap cost / risk (bn KRW)"])
+    lo, hi = min(r[3] for r in rows), max(r[3] for r in rows)
+    thin = [r for r in rows if r[4] != "**no coordinate**"]
+    worst = min(thin, key=lambda r: r[3]) if thin else None
+    note = (f"\n\nThe efficient frontier is **{lo} to {hi} plans** per firm × scenario, out of "
+            f"{min(r[2] for r in rows)}–{max(r[2] for r in rows)} candidates. A frontier gap is a "
+            f"distance to that set, so it is a distance to a handful of points, not to a curve.")
+    if worst:
+        note += (f" The thinnest case that carries a gap is {worst[0]} under {worst[1]}: "
+                 f"**{worst[3]} non-dominated plans**, and the reported "
+                 f"{worst[4]} bn KRW is the distance to them.")
+    vd = ROOT / "out" / "e5" / "variance_decomp.csv"
+    if vd.exists():
+        v = pd.read_csv(vd)
+        v = v[v.factor == "h2"].groupby("company_id").variance_share.mean()
+        note += (f"\n\nAnd the axis that gap is measured on is the one with no market evidence: "
+                 f"hydrogen carries {v.min():.0%}–{v.max():.0%} of cost variance across the four "
+                 f"firms, while its volatility is the prior of {FALLBACK_VOL['h2']:.2f}, "
+                 f"not an estimate "
+                 f"(§3.5). Tail-risk *levels*, and therefore `gap_risk` levels, inherit that.")
+    return head + note
+
+
 BLOCKS = {
     "stamp": gen_stamp,
     "axis_impact": gen_axis_impact,
+    "frontier_shape": gen_frontier_shape,
     "dataset_inventory": gen_dataset_inventory,
     "vocab": gen_vocab,
     "register_filter": gen_register_filter,

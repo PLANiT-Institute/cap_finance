@@ -90,3 +90,27 @@ def test_data_dictionary_describes_what_ships():
     assert not described - shipped, f"싣지 않는 것을 기술한 행: {sorted(described - shipped)}"
     blank = [(r["file"], r["column"]) for r in rows if not r["definition"].strip()]
     assert not blank, f"정의가 빈 행: {blank}"
+
+
+def test_section9_hand_written_counts_still_hold():
+    """§9는 생성 블록 밖의 산문에 두 개의 수를 박아 두었다 — 그 둘이 이 절의 논지다.
+
+    ① 공시 12행 중 **2행**만 강제 결정이 되고, 그래서 회사당 확약이 하나뿐이다(O3).
+    ② `out/e5/gap.csv`의 8행은 support 축을 따라 복제된 **4개**의 서로 다른 gap이다(O7).
+
+    둘 다 산문이라 생성기가 갱신하지 않는다. 파이프라인이 바뀌어 수가 달라지면 이 절은
+    조용히 거짓이 되므로, 산출물에서 다시 세어 대조한다.
+    """
+    import csv
+
+    text = GUIDE.read_text(encoding="utf-8")
+    gap = ROOT / "out" / "e5" / "gap.csv"
+    if not gap.exists():
+        pytest.skip("no pipeline run in out/")
+    rows = list(csv.DictReader(gap.open()))
+    distinct = {(r["company_id"], r["scenario"]) for r in rows}
+    assert len(rows) == 8 and len(distinct) == 4, (
+        f"§9 O7이 '8행 = 4개 gap의 복제'라고 적었는데 지금은 {len(rows)}행 / {len(distinct)}개다")
+    # 회사당 강제된 공시 확약이 하나뿐이라는 O3의 주장
+    assert len({c for c, _ in distinct}) == 2, "§9 O3은 좌표를 가진 회사가 둘이라고 적었다"
+    assert "**2 become a forced decision**" in text, "§9 O3의 강제 확약 수가 사라졌다"
