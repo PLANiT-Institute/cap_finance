@@ -105,6 +105,13 @@ a{{color:var(--accent)}}
   </a>
 </div>
 <div class="cards" style="margin-top:16px">
+  <a class="card" href="/guide">
+    <div class="tag">cap_finance · 기술 가이드</div>
+    <h3>Technical Guide <span class="en">(English)</span></h3>
+    <p>모형을 심문하려는 독자를 위한 진입점 — 데이터셋 D1a–D7의 필드 정의와 소비 경로,
+    결론을 좌우하는 가정, 5단계 approach, 그리고 <b>아직 할 수 없는 말</b>.</p>
+    <div class="meta">{guide_meta}</div>
+  </a>
   {scen_card}
   <a class="card" href="/evidence" style="border-style:dashed">
     <div class="tag" style="color:var(--ink2)">방법론 부속서</div>
@@ -174,6 +181,7 @@ def main():
     dash = copy_dashboards(pathlib.Path(a.eff))
     subprocess.run([sys.executable, str(ROOT / "scripts/build_evidence_page.py")], check=True)
     # 시나리오 페이지는 run_scenarios.py 산출이 있어야 만들어진다 — 없으면 건너뛴다
+    subprocess.run([sys.executable, str(ROOT / "scripts/build_guide_page.py")], check=True)
     subprocess.run([sys.executable, str(ROOT / "scripts/build_board_memo.py")], check=True)
     subprocess.run([sys.executable, str(ROOT / "scripts/build_changelog_page.py")], check=True)
     scen = subprocess.run([sys.executable, str(ROOT / "scripts/build_scenario_page.py")],
@@ -190,6 +198,7 @@ def main():
         report_meta=f"갱신 {today} · {rep.stat().st_size // 1024} KB",
         dash_meta=f"갱신 {today} · {len(dash)}개 언어" if dash else "대시보드 미생성",
         ev_meta=f"갱신 {today} · 파라미터 415건 · OAT 25종",
+        guide_meta=f"갱신 {today} · {(WEB / 'guide.html').stat().st_size // 1024} KB · 8장",
         scen_card=(SCEN_CARD.format(meta=f"갱신 {today} · 묶음 {n_bundles}종") if n_bundles else ""),
     ) + "</body></html>")
     print(f"[site] web/ 준비 완료: index.html, report.html, {', '.join(dash) or '(대시보드 없음)'}")

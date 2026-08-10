@@ -4,9 +4,11 @@
 answers, what data it runs on, what it assumes, and what it cannot yet claim. It is written for
 someone who intends to interrogate the model, not to be reassured by it.
 
-Every quantitative claim below is either generated from the live repository (blocks marked
-*generated*) or carries a pointer to the file that produces it. Where the evidence is weak, this
-document says so in the same sentence as the number.
+Every quantitative claim below is either generated from the live repository or carries a pointer to
+the file that produces it. Generated passages are delimited by `<!-- GEN:name -->` … `<!-- /GEN:name -->`
+in this markdown file — invisible when the markdown is rendered, so the web version
+(`web/guide.html`, built by `scripts/build_guide_page.py`) labels each one instead. Where the
+evidence is weak, this document says so in the same sentence as the number.
 
 **Companion documents.** [`METHODOLOGY.md`](../METHODOLOGY.md) states the model in equations and
 holds the assumption ledger (`A-01` … `A-24`). [`REDESIGN_SPEC.md`](../REDESIGN_SPEC.md) is the

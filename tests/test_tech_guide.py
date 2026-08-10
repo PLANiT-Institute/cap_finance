@@ -51,3 +51,15 @@ def test_every_generated_marker_is_closed():
     opens = text.count("<!-- GEN:")
     closes = text.count("<!-- /GEN:")
     assert opens == closes > 0, f"GEN 마커 짝이 맞지 않는다: {opens} open, {closes} close"
+
+
+def test_html_render_loses_nothing():
+    """웹 판이 md의 부분집합이 되면 안 된다.
+
+    렌더러는 가이드가 실제로 쓰는 마크다운 부분집합만 안다. 원고에 새 구문이 들어오면
+    HTML에서 조용히 사라지는 것이 기본 실패 모드이므로, 표 행·코드블록·제목이 전부
+    페이지에 도달했는지를 렌더러가 스스로 세게 하고 그 판정을 테스트로 삼는다.
+    """
+    p = subprocess.run([sys.executable, str(ROOT / "scripts" / "build_guide_page.py"), "--check"],
+                       cwd=ROOT, capture_output=True, text=True)
+    assert p.returncode == 0, f"{p.stdout.strip()}\n{p.stderr.strip()}"
