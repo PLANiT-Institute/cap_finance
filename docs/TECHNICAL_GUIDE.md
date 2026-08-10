@@ -113,6 +113,15 @@ from the outputs rather than asserted here.
 frontier. `gap_cost` is how much more the firm could have spent at the same risk; `gap_risk` is how
 much tail risk it could have removed at the same cost.
 
+Those three objects — the candidate set, the frontier it collapses to, and the disclosed
+coordinate's distance from it — are the whole method in one picture:
+
+<!-- GEN:gap_figure -->
+![Efficient frontier, disclosed coordinate and frontier gap, per firm and scenario](figures/frontier_gap.svg)
+
+Each panel is one firm under one scenario, on its own axes. The dashed legs are the two gap numbers, and where they end is the point of the figure: `_gap` (`src/cap/e5_metrics.py:61`) interpolates along the frontier only while the disclosed point lies within the frontier's span on the axis being measured, and otherwise clamps to the endpoint. Of the 4 distinct gaps in `out/e5/gap.csv`, **4 of 4 cost legs and 3 of 4 risk legs are clamped**: every disclosed plan sits above the frontier's whole tail-risk span — by 1.01× to 477× the tail risk of the riskiest plan on its own frontier — so a cost leg is never an interpolated distance, it is the distance to the frontier's riskiest endpoint. Clamped legs are lower bounds by construction: that endpoint reaches the same cost saving with *less* risk than an interpolated point would have. 8 rows appear in the file because the `support` axis duplicates each one (§3.6, O7).
+<!-- /GEN:gap_figure -->
+
 ---
 
 ## 3. Datasets
@@ -1126,7 +1135,7 @@ should ask, asked in their sharpest form, with our answer next to each. Where th
 | **O1** | *"Four firms is not a sample."* | Correct, and CAP does not use it as one. Every quantity is within-firm — a plan is compared to the same firm's own opportunity set (§1), so nothing here is an estimate over a population and nothing generalises to a fifth firm. The one sentence that broke that rule was §6.2's "ranking is robust": a ranking of **four** items that never reverses under twelve perturbations is a weak test, and §6.2 now says so |
 | **O2** | *"Your headline deliverable exists for half the sample, and you present it as a result."* | It exists for 2 of 4 firms and the reason is our model boundary, not their disclosure (§6.4) — but the sharper version of this objection is O3, which we had not stated before this section existed |
 | **O3** | *"Each of those two coordinates is built from one commitment row."* | True, and it is the most important limitation in the document. Of the 12 rows in D7, exactly **2 become a forced decision** — Nippon Steel's Kimitsu H₂ injection and Mitsui's Osaka H₂ fuel switch, one per firm (§3.8). So every disclosed coordinate CAP has ever computed is a single-commitment coordinate, and the gap it produces is the distance from *that one decision* to the frontier, not from the firm's transition plan to the frontier |
-| **O4** | *"Distance to what? How many plans is your frontier?"* | Single digits, per firm × scenario — the counts are generated in §9.1. The gap is a nearest-point distance to that handful, and in the thinnest case that carries a gap it is a distance to two plans |
+| **O4** | *"Distance to what? How many plans is your frontier?"* | Single digits, per firm × scenario — the counts are generated in §9.1, and the thinnest case that carries a gap has two non-dominated plans. Worse than the count: every disclosed plan lies above its frontier's whole tail-risk range, so each cost leg is a distance to the frontier's riskiest **endpoint**, not to a point on the frontier's interior (§2 figure). That makes the reported gaps lower bounds |
 | **O5** | *"Two of three risk factors have no market evidence — why quote ③ at all?"* | We quote its **ordering and decomposition, not its level**, and §8 claim 3 says the level depends on an untestable choice. The full force of the objection is worse than we had written: the factor carrying the largest share of cost variance is hydrogen, and hydrogen's volatility is the prior. The number is under the table below |
 | **O6** | *"Metric ⑥ mixes currencies and you still publish it."* | The guide's headline table (§6) deliberately carries ①②③ and **not** ⑥, for exactly this reason. But `out/e5/affordability.csv` and the MCP `get_affordability` tool do carry it, uncorrected, and a reader who takes the artefact rather than the document gets the uncorrected number with no warning attached. The warning lives in §3.7 and §8 claim 8 and not in the file |
 | **O7** | *"The `support` axis is a column with no signal."* | Yes — `current` and `none` return the same object (§3.6), and it is visible in the outputs: `out/e5/gap.csv` has 8 rows that are **4 distinct gaps duplicated across the axis**. The axis is kept because the day a subsidy row lands in D5 a test fails and the prose has to change; it is a wired-up placeholder, not a finding |
@@ -1153,11 +1162,14 @@ The efficient frontier is **2 to 8 plans** per firm × scenario, out of 10–31 
 And the axis that gap is measured on is the one with no market evidence: hydrogen carries 64%–77% of cost variance across the four firms, while its volatility is the prior of 0.25, not an estimate (§3.5). Tail-risk *levels*, and therefore `gap_risk` levels, inherit that.
 <!-- /GEN:frontier_shape -->
 
-Two consequences for anyone quoting a gap number. It is a **nearest-point distance to a small
-finite set**, so it moves discontinuously when one plan enters or leaves the non-dominated set —
-unlike a distance to a fitted curve, which would move smoothly. And it is reported to the nearest
-billion KRW in §6.4 while resting on a set that small; the digits are exact arithmetic on the
-outputs, not a precision claim about the world.
+Two consequences for anyone quoting a gap number. **It is not a nearest-point distance.** It is two
+axis-aligned distances measured against the piecewise-linear interpolant of that handful of points —
+and in the current run it is not even that, because every disclosed plan sits above the entire
+tail-risk span of its own frontier, so all four cost legs are measured against the frontier's
+riskiest *endpoint* (the figure in §2 shows where the legs land, with the counts). The consequence
+is direction, not size: a clamped leg is a lower bound, so the reported gaps understate. And the
+numbers are reported to the nearest billion KRW in §6.4 while resting on a set that small; the
+digits are exact arithmetic on the outputs, not a precision claim about the world.
 
 ---
 

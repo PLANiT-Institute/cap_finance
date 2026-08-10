@@ -77,6 +77,9 @@ article blockquote{margin:14px 0;padding:12px 16px;background:var(--panel);
   border-left:3px solid var(--accent);border-radius:0 10px 10px 0;font-size:13.5px;color:var(--ink2)}
 article hr{border:0;border-top:1px solid var(--line);margin:30px 0}
 article h1{display:none}
+article figure{margin:18px 0;background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;padding:12px 10px}
+article figure svg{width:100%;height:auto;display:block}
 article .gen{border-left:2px solid var(--line);padding-left:16px;margin:16px 0}
 article .gen .genlab{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--ink3);font-weight:700;margin-bottom:4px}
@@ -125,6 +128,253 @@ is hand-written prose that points at the file behind it.</p>
 <h3 id="metrics">Metrics</h3>
 <div class="tblwrap"><table><thead><tr><th>Metric</th><th>Definition</th></tr></thead><tbody><tr><td>① Capital scale and timing</td><td>Σ CAPEX; the year of peak CAPEX</td></tr><tr><td>② Expected transition cost</td><td>P50 of the incremental NPV vs. the incumbent plan, <b>net of carbon expenditure</b> (see A-19), and per tonne abated</td></tr><tr><td>③ <b>TCaR</b> (Transition Cost at Risk)</td><td>P90 − P50 of that same distribution</td></tr><tr><td>④ Policy exposure</td><td>P50 under NZ15 − P50 under B20</td></tr><tr><td>⑤ Flexibility value</td><td>Lower bound on the value of re-optimising per path</td></tr><tr><td>⑥ Financing burden</td><td>Peak CAPEX ÷ 3-year mean EBITDA; total CAPEX ÷ EBITDA; post-hoc net-debt multiple</td></tr></tbody></table></div>
 <p><b>Efficient frontier</b> = the Pareto non-dominated set in the (P50, TCaR) plane. <b>Frontier gap</b> = horizontal and vertical distance from the disclosed plan&#x27;s coordinate to that frontier. <code>gap_cost</code> is how much more the firm could have spent at the same risk; <code>gap_risk</code> is how much tail risk it could have removed at the same cost.</p>
+<p>Those three objects — the candidate set, the frontier it collapses to, and the disclosed coordinate&#x27;s distance from it — are the whole method in one picture:</p>
+<div class="gen"><div class="genlab">generated · gap_figure</div>
+<figure role="img" aria-label="Efficient frontier, disclosed coordinate and frontier gap, per firm and scenario"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 574" width="1000" height="574" role="img" aria-label="Efficient frontier, disclosed plan coordinate and frontier gap, by firm and scenario"><style>
+  .bg{fill:none}
+  .ttl{font:600 12px system-ui,sans-serif;fill:#191C24}
+  .sub{font:11px system-ui,sans-serif;fill:#8B909C}
+  .tick{font:9.5px system-ui,sans-serif;fill:#8B909C}
+  .ax{fill:none;stroke:#C9CAC4;stroke-width:1}
+  .cand{fill:#8B909C;opacity:.5}
+  .fr{fill:none;stroke:#2a78d6;stroke-width:1.6}
+  .frp{fill:#2a78d6}
+  .disc{fill:#e34948}
+  .gap{stroke:#e34948;stroke-width:1.2;stroke-dasharray:3 3}
+  .gapend{fill:none;stroke:#e34948;stroke-width:1.2}
+  .glab{font:9.5px system-ui,sans-serif;fill:#e34948}
+  @media (prefers-color-scheme:dark){
+    .ttl{fill:#EDEEF0} .ax{stroke:#3A3F49}
+    .fr{stroke:#3987e5} .frp{fill:#3987e5}
+    .disc{fill:#e66767} .gap,.gapend{stroke:#e66767} .glab{fill:#e66767}}
+</style><text class="sub" transform="translate(14,287.0) rotate(-90)" text-anchor="middle">TCaR (bn KRW) →</text><text class="ttl" x="52" y="16">POSCO · NZ15</text>
+<path class="ax" d="M52 40 V228 H234"/>
+<text class="tick" x="47" y="231.0" text-anchor="end">16,270</text>
+<text class="tick" x="47" y="43.0" text-anchor="end">29,398</text>
+<text class="tick" x="52.0" y="242" text-anchor="start">40,867</text>
+<text class="tick" x="234.0" y="242" text-anchor="end">49,291</text>
+<text class="sub" x="52" y="258">P50 →</text>
+<circle class="cand" cx="86.0" cy="76.8" r="2.8"/>
+<circle class="cand" cx="107.5" cy="133.5" r="2.8"/>
+<circle class="cand" cx="124.3" cy="189.9" r="2.8"/>
+<circle class="cand" cx="136.0" cy="208.4" r="2.8"/>
+<circle class="cand" cx="169.3" cy="209.1" r="2.8"/>
+<circle class="cand" cx="115.7" cy="55.9" r="2.8"/>
+<circle class="cand" cx="134.4" cy="55.7" r="2.8"/>
+<circle class="cand" cx="136.7" cy="114.3" r="2.8"/>
+<circle class="cand" cx="156.9" cy="113.0" r="2.8"/>
+<circle class="cand" cx="155.5" cy="171.4" r="2.8"/>
+<circle class="cand" cx="174.5" cy="172.6" r="2.8"/>
+<circle class="cand" cx="167.5" cy="194.8" r="2.8"/>
+<circle class="cand" cx="186.5" cy="193.7" r="2.8"/>
+<circle class="cand" cx="199.7" cy="198.6" r="2.8"/>
+<circle class="cand" cx="218.8" cy="195.1" r="2.8"/>
+<polyline class="fr" points="150.3,212.3 118.8,210.1 106.5,187.4 88.1,131.6 67.2,77.9"/>
+<circle class="frp" cx="150.3" cy="212.3" r="3.2"/>
+<circle class="frp" cx="118.8" cy="210.1" r="3.2"/>
+<circle class="frp" cx="106.5" cy="187.4" r="3.2"/>
+<circle class="frp" cx="88.1" cy="131.6" r="3.2"/>
+<circle class="frp" cx="67.2" cy="77.9" r="3.2"/>
+<text class="sub" x="143.0" y="54" text-anchor="middle">no disclosed coordinate (§6.4)</text>
+<text class="ttl" x="302" y="16">Nippon Steel · NZ15</text>
+<path class="ax" d="M302 40 V228 H484"/>
+<text class="tick" x="297" y="231.0" text-anchor="end">16,237</text>
+<text class="tick" x="297" y="43.0" text-anchor="end">34,860</text>
+<text class="tick" x="302.0" y="242" text-anchor="start">52,715</text>
+<text class="tick" x="484.0" y="242" text-anchor="end">59,797</text>
+<text class="sub" x="302" y="258">P50 →</text>
+<circle class="cand" cx="321.2" cy="58.3" r="2.8"/>
+<circle class="cand" cx="355.2" cy="55.7" r="2.8"/>
+<circle class="cand" cx="363.7" cy="116.3" r="2.8"/>
+<circle class="cand" cx="395.3" cy="116.0" r="2.8"/>
+<circle class="cand" cx="392.8" cy="160.0" r="2.8"/>
+<circle class="cand" cx="427.4" cy="163.6" r="2.8"/>
+<circle class="cand" cx="418.2" cy="203.7" r="2.8"/>
+<circle class="cand" cx="446.2" cy="204.0" r="2.8"/>
+<circle class="cand" cx="440.6" cy="211.6" r="2.8"/>
+<circle class="cand" cx="468.8" cy="208.8" r="2.8"/>
+<circle class="cand" cx="351.8" cy="57.2" r="2.8"/>
+<circle class="cand" cx="391.4" cy="116.2" r="2.8"/>
+<circle class="cand" cx="423.3" cy="164.2" r="2.8"/>
+<circle class="cand" cx="441.8" cy="204.3" r="2.8"/>
+<circle class="cand" cx="464.7" cy="209.1" r="2.8"/>
+<polyline class="fr" points="436.8,212.3 414.2,204.5 388.8,161.0 359.7,116.8 317.2,59.2"/>
+<circle class="frp" cx="436.8" cy="212.3" r="3.2"/>
+<circle class="frp" cx="414.2" cy="204.5" r="3.2"/>
+<circle class="frp" cx="388.8" cy="161.0" r="3.2"/>
+<circle class="frp" cx="359.7" cy="116.8" r="3.2"/>
+<circle class="frp" cx="317.2" cy="59.2" r="3.2"/>
+<line class="gap" x1="349.4" y1="56.0" x2="317.2" y2="56.0"/>
+<circle class="gapend" cx="317.2" cy="56.0" r="3"/>
+<line class="gap" x1="349.4" y1="56.0" x2="349.4" y2="102.9"/>
+<circle class="gapend" cx="349.4" cy="102.9" r="3"/>
+<text class="glab" x="333.3" y="50.0" text-anchor="middle">1,255</text>
+<text class="glab" x="354.4" y="79.5">4,651</text>
+<rect class="disc" x="345.8" y="52.4" width="7.2" height="7.2" transform="rotate(45 349.4 56.0)"/>
+<text class="ttl" x="552" y="16">LOTTE Chemical · NZ15</text>
+<path class="ax" d="M552 40 V228 H734"/>
+<text class="tick" x="547" y="231.0" text-anchor="end">2,118</text>
+<text class="tick" x="547" y="43.0" text-anchor="end">2,254</text>
+<text class="tick" x="552.0" y="242" text-anchor="start">729</text>
+<text class="tick" x="734.0" y="242" text-anchor="end">1,291</text>
+<text class="sub" x="552" y="258">P50 →</text>
+<circle class="cand" cx="589.7" cy="89.0" r="2.8"/>
+<circle class="cand" cx="626.5" cy="92.7" r="2.8"/>
+<circle class="cand" cx="672.3" cy="120.5" r="2.8"/>
+<circle class="cand" cx="718.8" cy="189.2" r="2.8"/>
+<polyline class="fr" points="717.1,212.3 670.2,141.1 624.5,97.4 587.8,97.4 568.2,63.7 567.2,55.7"/>
+<circle class="frp" cx="717.1" cy="212.3" r="3.2"/>
+<circle class="frp" cx="670.2" cy="141.1" r="3.2"/>
+<circle class="frp" cx="624.5" cy="97.4" r="3.2"/>
+<circle class="frp" cx="587.8" cy="97.4" r="3.2"/>
+<circle class="frp" cx="568.2" cy="63.7" r="3.2"/>
+<circle class="frp" cx="567.2" cy="55.7" r="3.2"/>
+<text class="sub" x="643.0" y="54" text-anchor="middle">no disclosed coordinate (§6.4)</text>
+<text class="ttl" x="802" y="16">Mitsui Chemicals · NZ15</text>
+<path class="ax" d="M802 40 V228 H984"/>
+<text class="tick" x="797" y="231.0" text-anchor="end">731</text>
+<text class="tick" x="797" y="43.0" text-anchor="end">1,895</text>
+<text class="tick" x="802.0" y="242" text-anchor="start">240</text>
+<text class="tick" x="984.0" y="242" text-anchor="end">1,095</text>
+<text class="sub" x="802" y="258">P50 →</text>
+<circle class="cand" cx="831.4" cy="208.1" r="2.8"/>
+<circle class="cand" cx="842.7" cy="209.3" r="2.8"/>
+<circle class="cand" cx="838.6" cy="174.0" r="2.8"/>
+<circle class="cand" cx="838.9" cy="173.3" r="2.8"/>
+<circle class="cand" cx="843.0" cy="173.2" r="2.8"/>
+<circle class="cand" cx="843.8" cy="172.6" r="2.8"/>
+<circle class="cand" cx="850.9" cy="174.2" r="2.8"/>
+<circle class="cand" cx="851.6" cy="174.5" r="2.8"/>
+<circle class="cand" cx="860.6" cy="174.7" r="2.8"/>
+<circle class="cand" cx="861.3" cy="174.7" r="2.8"/>
+<circle class="cand" cx="871.7" cy="176.7" r="2.8"/>
+<circle class="cand" cx="872.1" cy="175.9" r="2.8"/>
+<polyline class="fr" points="854.0,212.3 853.3,212.2 842.3,209.8 830.7,208.2 822.7,207.7 822.1,207.6 817.4,207.2 817.2,206.5"/>
+<circle class="frp" cx="854.0" cy="212.3" r="3.2"/>
+<circle class="frp" cx="853.3" cy="212.2" r="3.2"/>
+<circle class="frp" cx="842.3" cy="209.8" r="3.2"/>
+<circle class="frp" cx="830.7" cy="208.2" r="3.2"/>
+<circle class="frp" cx="822.7" cy="207.7" r="3.2"/>
+<circle class="frp" cx="822.1" cy="207.6" r="3.2"/>
+<circle class="frp" cx="817.4" cy="207.2" r="3.2"/>
+<circle class="frp" cx="817.2" cy="206.5" r="3.2"/>
+<line class="gap" x1="968.8" y1="55.7" x2="817.2" y2="55.7"/>
+<circle class="gapend" cx="817.2" cy="55.7" r="3"/>
+<line class="gap" x1="968.8" y1="55.7" x2="968.8" y2="212.3"/>
+<circle class="gapend" cx="968.8" cy="212.3" r="3"/>
+<text class="glab" x="893.0" y="49.7" text-anchor="middle">713</text>
+<text class="glab" x="973.8" y="134.0">969</text>
+<rect class="disc" x="965.2" y="52.1" width="7.2" height="7.2" transform="rotate(45 968.8 55.7)"/>
+<text class="ttl" x="52" y="288">POSCO · B20</text>
+<path class="ax" d="M52 312 V500 H234"/>
+<text class="tick" x="47" y="503.0" text-anchor="end">1,593</text>
+<text class="tick" x="47" y="315.0" text-anchor="end">3,422</text>
+<text class="tick" x="52.0" y="514" text-anchor="start">11,770</text>
+<text class="tick" x="234.0" y="514" text-anchor="end">14,875</text>
+<text class="sub" x="52" y="530">P50 →</text>
+<circle class="cand" cx="123.8" cy="429.1" r="2.8"/>
+<circle class="cand" cx="148.6" cy="462.0" r="2.8"/>
+<circle class="cand" cx="160.3" cy="382.7" r="2.8"/>
+<circle class="cand" cx="183.1" cy="410.8" r="2.8"/>
+<circle class="cand" cx="196.0" cy="327.7" r="2.8"/>
+<circle class="cand" cx="218.8" cy="346.7" r="2.8"/>
+<polyline class="fr" points="110.4,484.3 88.4,459.6 80.4,440.1 67.2,434.0"/>
+<circle class="frp" cx="110.4" cy="484.3" r="3.2"/>
+<circle class="frp" cx="88.4" cy="459.6" r="3.2"/>
+<circle class="frp" cx="80.4" cy="440.1" r="3.2"/>
+<circle class="frp" cx="67.2" cy="434.0" r="3.2"/>
+<text class="sub" x="143.0" y="326" text-anchor="middle">no disclosed coordinate (§6.4)</text>
+<text class="ttl" x="302" y="288">Nippon Steel · B20</text>
+<path class="ax" d="M302 312 V500 H484"/>
+<text class="tick" x="297" y="503.0" text-anchor="end">4,194</text>
+<text class="tick" x="297" y="315.0" text-anchor="end">13,123</text>
+<text class="tick" x="302.0" y="514" text-anchor="start">19,836</text>
+<text class="tick" x="484.0" y="514" text-anchor="end">26,470</text>
+<text class="sub" x="302" y="530">P50 →</text>
+<circle class="cand" cx="334.0" cy="395.0" r="2.8"/>
+<circle class="cand" cx="348.0" cy="395.7" r="2.8"/>
+<circle class="cand" cx="348.6" cy="429.7" r="2.8"/>
+<circle class="cand" cx="361.2" cy="433.2" r="2.8"/>
+<circle class="cand" cx="360.7" cy="462.2" r="2.8"/>
+<circle class="cand" cx="373.9" cy="463.2" r="2.8"/>
+<circle class="cand" cx="371.2" cy="469.9" r="2.8"/>
+<circle class="cand" cx="389.1" cy="475.7" r="2.8"/>
+<circle class="cand" cx="389.3" cy="468.6" r="2.8"/>
+<circle class="cand" cx="413.2" cy="479.0" r="2.8"/>
+<circle class="cand" cx="333.9" cy="394.8" r="2.8"/>
+<circle class="cand" cx="348.0" cy="395.7" r="2.8"/>
+<circle class="cand" cx="348.6" cy="429.1" r="2.8"/>
+<circle class="cand" cx="361.2" cy="433.2" r="2.8"/>
+<circle class="cand" cx="360.7" cy="462.0" r="2.8"/>
+<circle class="cand" cx="374.0" cy="463.2" r="2.8"/>
+<circle class="cand" cx="371.1" cy="469.7" r="2.8"/>
+<circle class="cand" cx="389.1" cy="475.7" r="2.8"/>
+<circle class="cand" cx="389.3" cy="468.4" r="2.8"/>
+<circle class="cand" cx="413.2" cy="479.0" r="2.8"/>
+<circle class="cand" cx="330.4" cy="403.4" r="2.8"/>
+<circle class="cand" cx="343.6" cy="440.7" r="2.8"/>
+<circle class="cand" cx="356.0" cy="469.9" r="2.8"/>
+<circle class="cand" cx="371.0" cy="472.0" r="2.8"/>
+<polyline class="fr" points="395.4,484.3 371.7,481.7 353.2,474.4 342.8,467.9 330.8,436.5 317.2,404.3"/>
+<circle class="frp" cx="395.4" cy="484.3" r="3.2"/>
+<circle class="frp" cx="371.7" cy="481.7" r="3.2"/>
+<circle class="frp" cx="353.2" cy="474.4" r="3.2"/>
+<circle class="frp" cx="342.8" cy="467.9" r="3.2"/>
+<circle class="frp" cx="330.8" cy="436.5" r="3.2"/>
+<circle class="frp" cx="317.2" cy="404.3" r="3.2"/>
+<line class="gap" x1="468.8" y1="327.7" x2="317.2" y2="327.7"/>
+<circle class="gapend" cx="317.2" cy="327.7" r="3"/>
+<line class="gap" x1="468.8" y1="327.7" x2="468.8" y2="484.3"/>
+<circle class="gapend" cx="468.8" cy="484.3" r="3"/>
+<text class="glab" x="393.0" y="321.7" text-anchor="middle">5,529</text>
+<text class="glab" x="473.8" y="406.0">7,441</text>
+<rect class="disc" x="465.2" y="324.1" width="7.2" height="7.2" transform="rotate(45 468.8 327.7)"/>
+<text class="ttl" x="552" y="288">LOTTE Chemical · B20</text>
+<path class="ax" d="M552 312 V500 H734"/>
+<text class="tick" x="547" y="503.0" text-anchor="end">-52</text>
+<text class="tick" x="547" y="315.0" text-anchor="end">574</text>
+<text class="tick" x="552.0" y="514" text-anchor="start">79</text>
+<text class="tick" x="734.0" y="514" text-anchor="end">542</text>
+<text class="sub" x="552" y="530">P50 →</text>
+<circle class="cand" cx="603.8" cy="444.7" r="2.8"/>
+<circle class="cand" cx="608.7" cy="445.2" r="2.8"/>
+<circle class="cand" cx="640.7" cy="405.7" r="2.8"/>
+<circle class="cand" cx="645.4" cy="406.0" r="2.8"/>
+<circle class="cand" cx="677.4" cy="366.8" r="2.8"/>
+<circle class="cand" cx="682.1" cy="366.8" r="2.8"/>
+<circle class="cand" cx="714.1" cy="327.8" r="2.8"/>
+<circle class="cand" cx="718.8" cy="327.7" r="2.8"/>
+<polyline class="fr" points="572.0,484.3 567.2,479.2"/>
+<circle class="frp" cx="572.0" cy="484.3" r="3.2"/>
+<circle class="frp" cx="567.2" cy="479.2" r="3.2"/>
+<text class="sub" x="643.0" y="326" text-anchor="middle">no disclosed coordinate (§6.4)</text>
+<text class="ttl" x="802" y="288">Mitsui Chemicals · B20</text>
+<path class="ax" d="M802 312 V500 H984"/>
+<text class="tick" x="797" y="503.0" text-anchor="end">-133</text>
+<text class="tick" x="797" y="315.0" text-anchor="end">1,459</text>
+<text class="tick" x="802.0" y="514" text-anchor="start">-26</text>
+<text class="tick" x="984.0" y="514" text-anchor="end">977</text>
+<text class="sub" x="802" y="530">P50 →</text>
+<circle class="cand" cx="824.1" cy="477.7" r="2.8"/>
+<circle class="cand" cx="825.2" cy="477.7" r="2.8"/>
+<circle class="cand" cx="830.9" cy="471.1" r="2.8"/>
+<circle class="cand" cx="832.1" cy="471.1" r="2.8"/>
+<circle class="cand" cx="837.9" cy="464.5" r="2.8"/>
+<circle class="cand" cx="839.0" cy="464.6" r="2.8"/>
+<circle class="cand" cx="844.8" cy="457.9" r="2.8"/>
+<circle class="cand" cx="845.9" cy="458.0" r="2.8"/>
+<polyline class="fr" points="818.2,484.3 817.2,484.0"/>
+<circle class="frp" cx="818.2" cy="484.3" r="3.2"/>
+<circle class="frp" cx="817.2" cy="484.0" r="3.2"/>
+<line class="gap" x1="968.8" y1="327.7" x2="817.2" y2="327.7"/>
+<circle class="gapend" cx="817.2" cy="327.7" r="3"/>
+<line class="gap" x1="968.8" y1="327.7" x2="968.8" y2="484.3"/>
+<circle class="gapend" cx="968.8" cy="484.3" r="3"/>
+<text class="glab" x="893.0" y="321.7" text-anchor="middle">836</text>
+<text class="glab" x="973.8" y="406.0">1,326</text>
+<rect class="disc" x="965.2" y="324.1" width="7.2" height="7.2" transform="rotate(45 968.8 327.7)"/><g transform="translate(520,564)"><circle class="cand" cx="6" cy="-4" r="2.8"/><text class="sub" x="14" y="0">candidate plan</text><circle class="frp" cx="112" cy="-4" r="3.2"/><text class="sub" x="120" y="0">efficient frontier</text><rect class="disc" x="234" y="-7.6" width="7.2" height="7.2" transform="rotate(45 237.6 -4)"/><text class="sub" x="248" y="0">disclosed plan</text><line class="gap" x1="350" y1="-4" x2="372" y2="-4"/><text class="sub" x="378" y="0">gap (bn KRW)</text></g></svg></figure>
+<p>Each panel is one firm under one scenario, on its own axes. The dashed legs are the two gap numbers, and where they end is the point of the figure: <code>_gap</code> (<code>src/cap/e5_metrics.py:61</code>) interpolates along the frontier only while the disclosed point lies within the frontier&#x27;s span on the axis being measured, and otherwise clamps to the endpoint. Of the 4 distinct gaps in <code>out/e5/gap.csv</code>, <b>4 of 4 cost legs and 3 of 4 risk legs are clamped</b>: every disclosed plan sits above the frontier&#x27;s whole tail-risk span — by 1.01× to 477× the tail risk of the riskiest plan on its own frontier — so a cost leg is never an interpolated distance, it is the distance to the frontier&#x27;s riskiest endpoint. Clamped legs are lower bounds by construction: that endpoint reaches the same cost saving with <i>less</i> risk than an interpolated point would have. 8 rows appear in the file because the <code>support</code> axis duplicates each one (§3.6, O7).</p>
+</div>
 <hr>
 <h2 id="3-datasets">3. Datasets</h2>
 <p>Seven input datasets, <code>D1</code>–<code>D7</code>, mirroring the sheets of the collection workbook. Schemas are enforced in code at load time (<code>src/cap/schemas.py</code>); a missing column or a non-numeric value in a numeric column stops the run rather than propagating.</p>
@@ -343,14 +593,14 @@ gas_int_inc  = energy_gas   / production / 54.0     # GJ/t → t gas  per t of o
 <hr>
 <h2 id="9-the-objections-we-expect">9. The objections we expect</h2>
 <p>§8 lists what we decline to claim. This section is the other half: the questions a hostile reader should ask, asked in their sharpest form, with our answer next to each. Where the honest answer is &quot;you are right&quot;, it says so and gives the size of the problem rather than a reassurance.</p>
-<div class="tblwrap"><table><thead><tr><th>#</th><th>The objection</th><th>Our answer</th></tr></thead><tbody><tr><td><b>O1</b></td><td><i>&quot;Four firms is not a sample.&quot;</i></td><td>Correct, and CAP does not use it as one. Every quantity is within-firm — a plan is compared to the same firm&#x27;s own opportunity set (§1), so nothing here is an estimate over a population and nothing generalises to a fifth firm. The one sentence that broke that rule was §6.2&#x27;s &quot;ranking is robust&quot;: a ranking of <b>four</b> items that never reverses under twelve perturbations is a weak test, and §6.2 now says so</td></tr><tr><td><b>O2</b></td><td><i>&quot;Your headline deliverable exists for half the sample, and you present it as a result.&quot;</i></td><td>It exists for 2 of 4 firms and the reason is our model boundary, not their disclosure (§6.4) — but the sharper version of this objection is O3, which we had not stated before this section existed</td></tr><tr><td><b>O3</b></td><td><i>&quot;Each of those two coordinates is built from one commitment row.&quot;</i></td><td>True, and it is the most important limitation in the document. Of the 12 rows in D7, exactly <b>2 become a forced decision</b> — Nippon Steel&#x27;s Kimitsu H₂ injection and Mitsui&#x27;s Osaka H₂ fuel switch, one per firm (§3.8). So every disclosed coordinate CAP has ever computed is a single-commitment coordinate, and the gap it produces is the distance from <i>that one decision</i> to the frontier, not from the firm&#x27;s transition plan to the frontier</td></tr><tr><td><b>O4</b></td><td><i>&quot;Distance to what? How many plans is your frontier?&quot;</i></td><td>Single digits, per firm × scenario — the counts are generated in §9.1. The gap is a nearest-point distance to that handful, and in the thinnest case that carries a gap it is a distance to two plans</td></tr><tr><td><b>O5</b></td><td><i>&quot;Two of three risk factors have no market evidence — why quote ③ at all?&quot;</i></td><td>We quote its <b>ordering and decomposition, not its level</b>, and §8 claim 3 says the level depends on an untestable choice. The full force of the objection is worse than we had written: the factor carrying the largest share of cost variance is hydrogen, and hydrogen&#x27;s volatility is the prior. The number is under the table below</td></tr><tr><td><b>O6</b></td><td><i>&quot;Metric ⑥ mixes currencies and you still publish it.&quot;</i></td><td>The guide&#x27;s headline table (§6) deliberately carries ①②③ and <b>not</b> ⑥, for exactly this reason. But <code>out/e5/affordability.csv</code> and the MCP <code>get_affordability</code> tool do carry it, uncorrected, and a reader who takes the artefact rather than the document gets the uncorrected number with no warning attached. The warning lives in §3.7 and §8 claim 8 and not in the file</td></tr><tr><td><b>O7</b></td><td><i>&quot;The <code>support</code> axis is a column with no signal.&quot;</i></td><td>Yes — <code>current</code> and <code>none</code> return the same object (§3.6), and it is visible in the outputs: <code>out/e5/gap.csv</code> has 8 rows that are <b>4 distinct gaps duplicated across the axis</b>. The axis is kept because the day a subsidy row lands in D5 a test fails and the prose has to change; it is a wired-up placeholder, not a finding</td></tr><tr><td><b>O8</b></td><td><i>&quot;Three of your twelve sensitivity axes were never re-run properly.&quot;</i></td><td>Stated in §4.3 with the three named, and their 0.0% deltas marked as unmeasured rather than flat. Re-planning them costs about ten minutes of solver time each and has not been spent</td></tr><tr><td><b>O9</b></td><td><i>&quot;The emissions pathway you ship covers one support scenario.&quot;</i></td><td><code>result_emissions_pathway.csv</code> is computed under the first support scenario only (<code>src/cap/e5_metrics.py:290</code>) and carries <b>no <code>support</code> column at all</b>, so a question about the emissions path under <code>support=current</code> has no answer in the package and nothing in the file says a support scenario was chosen. Given O7 the two would be identical today — but that is an accident of D5&#x27;s contents, not a property of the code</td></tr><tr><td><b>O10</b></td><td><i>&quot;Your public package cannot be traced back to sources.&quot;</i></td><td>Two of its files cannot: the firm-level aggregates destroy <code>source_id</code> (§3.10). The other twelve keep it</td></tr></tbody></table></div>
+<div class="tblwrap"><table><thead><tr><th>#</th><th>The objection</th><th>Our answer</th></tr></thead><tbody><tr><td><b>O1</b></td><td><i>&quot;Four firms is not a sample.&quot;</i></td><td>Correct, and CAP does not use it as one. Every quantity is within-firm — a plan is compared to the same firm&#x27;s own opportunity set (§1), so nothing here is an estimate over a population and nothing generalises to a fifth firm. The one sentence that broke that rule was §6.2&#x27;s &quot;ranking is robust&quot;: a ranking of <b>four</b> items that never reverses under twelve perturbations is a weak test, and §6.2 now says so</td></tr><tr><td><b>O2</b></td><td><i>&quot;Your headline deliverable exists for half the sample, and you present it as a result.&quot;</i></td><td>It exists for 2 of 4 firms and the reason is our model boundary, not their disclosure (§6.4) — but the sharper version of this objection is O3, which we had not stated before this section existed</td></tr><tr><td><b>O3</b></td><td><i>&quot;Each of those two coordinates is built from one commitment row.&quot;</i></td><td>True, and it is the most important limitation in the document. Of the 12 rows in D7, exactly <b>2 become a forced decision</b> — Nippon Steel&#x27;s Kimitsu H₂ injection and Mitsui&#x27;s Osaka H₂ fuel switch, one per firm (§3.8). So every disclosed coordinate CAP has ever computed is a single-commitment coordinate, and the gap it produces is the distance from <i>that one decision</i> to the frontier, not from the firm&#x27;s transition plan to the frontier</td></tr><tr><td><b>O4</b></td><td><i>&quot;Distance to what? How many plans is your frontier?&quot;</i></td><td>Single digits, per firm × scenario — the counts are generated in §9.1, and the thinnest case that carries a gap has two non-dominated plans. Worse than the count: every disclosed plan lies above its frontier&#x27;s whole tail-risk range, so each cost leg is a distance to the frontier&#x27;s riskiest <b>endpoint</b>, not to a point on the frontier&#x27;s interior (§2 figure). That makes the reported gaps lower bounds</td></tr><tr><td><b>O5</b></td><td><i>&quot;Two of three risk factors have no market evidence — why quote ③ at all?&quot;</i></td><td>We quote its <b>ordering and decomposition, not its level</b>, and §8 claim 3 says the level depends on an untestable choice. The full force of the objection is worse than we had written: the factor carrying the largest share of cost variance is hydrogen, and hydrogen&#x27;s volatility is the prior. The number is under the table below</td></tr><tr><td><b>O6</b></td><td><i>&quot;Metric ⑥ mixes currencies and you still publish it.&quot;</i></td><td>The guide&#x27;s headline table (§6) deliberately carries ①②③ and <b>not</b> ⑥, for exactly this reason. But <code>out/e5/affordability.csv</code> and the MCP <code>get_affordability</code> tool do carry it, uncorrected, and a reader who takes the artefact rather than the document gets the uncorrected number with no warning attached. The warning lives in §3.7 and §8 claim 8 and not in the file</td></tr><tr><td><b>O7</b></td><td><i>&quot;The <code>support</code> axis is a column with no signal.&quot;</i></td><td>Yes — <code>current</code> and <code>none</code> return the same object (§3.6), and it is visible in the outputs: <code>out/e5/gap.csv</code> has 8 rows that are <b>4 distinct gaps duplicated across the axis</b>. The axis is kept because the day a subsidy row lands in D5 a test fails and the prose has to change; it is a wired-up placeholder, not a finding</td></tr><tr><td><b>O8</b></td><td><i>&quot;Three of your twelve sensitivity axes were never re-run properly.&quot;</i></td><td>Stated in §4.3 with the three named, and their 0.0% deltas marked as unmeasured rather than flat. Re-planning them costs about ten minutes of solver time each and has not been spent</td></tr><tr><td><b>O9</b></td><td><i>&quot;The emissions pathway you ship covers one support scenario.&quot;</i></td><td><code>result_emissions_pathway.csv</code> is computed under the first support scenario only (<code>src/cap/e5_metrics.py:290</code>) and carries <b>no <code>support</code> column at all</b>, so a question about the emissions path under <code>support=current</code> has no answer in the package and nothing in the file says a support scenario was chosen. Given O7 the two would be identical today — but that is an accident of D5&#x27;s contents, not a property of the code</td></tr><tr><td><b>O10</b></td><td><i>&quot;Your public package cannot be traced back to sources.&quot;</i></td><td>Two of its files cannot: the firm-level aggregates destroy <code>source_id</code> (§3.10). The other twelve keep it</td></tr></tbody></table></div>
 <h3 id="9-1-what-the-frontier-gap-is-a-distance-to">9.1 What the frontier gap is a distance to</h3>
 <div class="gen"><div class="genlab">generated · frontier_shape</div>
 <div class="tblwrap"><table><thead><tr><th>Firm</th><th>Scenario</th><th>Candidate plans</th><th>On frontier</th><th>Gap cost / risk (bn KRW)</th></tr></thead><tbody><tr><td>LOTTE Chemical</td><td>B20</td><td>10</td><td>2</td><td><b>no coordinate</b></td></tr><tr><td>LOTTE Chemical</td><td>NZ15</td><td>10</td><td>6</td><td><b>no coordinate</b></td></tr><tr><td>Mitsui Chemicals</td><td>B20</td><td>11</td><td>2</td><td>836 / 1,326</td></tr><tr><td>Mitsui Chemicals</td><td>NZ15</td><td>21</td><td>8</td><td>713 / 969</td></tr><tr><td>Nippon Steel</td><td>B20</td><td>31</td><td>6</td><td>5,529 / 7,441</td></tr><tr><td>Nippon Steel</td><td>NZ15</td><td>21</td><td>5</td><td>1,255 / 4,651</td></tr><tr><td>POSCO</td><td>B20</td><td>10</td><td>4</td><td><b>no coordinate</b></td></tr><tr><td>POSCO</td><td>NZ15</td><td>20</td><td>5</td><td><b>no coordinate</b></td></tr></tbody></table></div>
 <p>The efficient frontier is <b>2 to 8 plans</b> per firm × scenario, out of 10–31 candidates. A frontier gap is a distance to that set, so it is a distance to a handful of points, not to a curve. The thinnest case that carries a gap is Mitsui Chemicals under B20: <b>2 non-dominated plans</b>, and the reported 836 / 1,326 bn KRW is the distance to them.</p>
 <p>And the axis that gap is measured on is the one with no market evidence: hydrogen carries 64%–77% of cost variance across the four firms, while its volatility is the prior of 0.25, not an estimate (§3.5). Tail-risk <i>levels</i>, and therefore <code>gap_risk</code> levels, inherit that.</p>
 </div>
-<p>Two consequences for anyone quoting a gap number. It is a <b>nearest-point distance to a small finite set</b>, so it moves discontinuously when one plan enters or leaves the non-dominated set — unlike a distance to a fitted curve, which would move smoothly. And it is reported to the nearest billion KRW in §6.4 while resting on a set that small; the digits are exact arithmetic on the outputs, not a precision claim about the world.</p>
+<p>Two consequences for anyone quoting a gap number. <b>It is not a nearest-point distance.</b> It is two axis-aligned distances measured against the piecewise-linear interpolant of that handful of points — and in the current run it is not even that, because every disclosed plan sits above the entire tail-risk span of its own frontier, so all four cost legs are measured against the frontier&#x27;s riskiest <i>endpoint</i> (the figure in §2 shows where the legs land, with the counts). The consequence is direction, not size: a clamped leg is a lower bound, so the reported gaps understate. And the numbers are reported to the nearest billion KRW in §6.4 while resting on a set that small; the digits are exact arithmetic on the outputs, not a precision claim about the world.</p>
 <hr>
 <p><i>Corrections to this document are welcome and should be sent as issues against the repository. Where this document and the code disagree, the code is authoritative and this document is defective.</i></p></article>
 </div>

@@ -1,0 +1,243 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 574" width="1000" height="574" role="img" aria-label="Efficient frontier, disclosed plan coordinate and frontier gap, by firm and scenario"><style>
+  .bg{fill:none}
+  .ttl{font:600 12px system-ui,sans-serif;fill:#191C24}
+  .sub{font:11px system-ui,sans-serif;fill:#8B909C}
+  .tick{font:9.5px system-ui,sans-serif;fill:#8B909C}
+  .ax{fill:none;stroke:#C9CAC4;stroke-width:1}
+  .cand{fill:#8B909C;opacity:.5}
+  .fr{fill:none;stroke:#2a78d6;stroke-width:1.6}
+  .frp{fill:#2a78d6}
+  .disc{fill:#e34948}
+  .gap{stroke:#e34948;stroke-width:1.2;stroke-dasharray:3 3}
+  .gapend{fill:none;stroke:#e34948;stroke-width:1.2}
+  .glab{font:9.5px system-ui,sans-serif;fill:#e34948}
+  @media (prefers-color-scheme:dark){
+    .ttl{fill:#EDEEF0} .ax{stroke:#3A3F49}
+    .fr{stroke:#3987e5} .frp{fill:#3987e5}
+    .disc{fill:#e66767} .gap,.gapend{stroke:#e66767} .glab{fill:#e66767}}
+</style><text class="sub" transform="translate(14,287.0) rotate(-90)" text-anchor="middle">TCaR (bn KRW) →</text><text class="ttl" x="52" y="16">POSCO · NZ15</text>
+<path class="ax" d="M52 40 V228 H234"/>
+<text class="tick" x="47" y="231.0" text-anchor="end">16,270</text>
+<text class="tick" x="47" y="43.0" text-anchor="end">29,398</text>
+<text class="tick" x="52.0" y="242" text-anchor="start">40,867</text>
+<text class="tick" x="234.0" y="242" text-anchor="end">49,291</text>
+<text class="sub" x="52" y="258">P50 →</text>
+<circle class="cand" cx="86.0" cy="76.8" r="2.8"/>
+<circle class="cand" cx="107.5" cy="133.5" r="2.8"/>
+<circle class="cand" cx="124.3" cy="189.9" r="2.8"/>
+<circle class="cand" cx="136.0" cy="208.4" r="2.8"/>
+<circle class="cand" cx="169.3" cy="209.1" r="2.8"/>
+<circle class="cand" cx="115.7" cy="55.9" r="2.8"/>
+<circle class="cand" cx="134.4" cy="55.7" r="2.8"/>
+<circle class="cand" cx="136.7" cy="114.3" r="2.8"/>
+<circle class="cand" cx="156.9" cy="113.0" r="2.8"/>
+<circle class="cand" cx="155.5" cy="171.4" r="2.8"/>
+<circle class="cand" cx="174.5" cy="172.6" r="2.8"/>
+<circle class="cand" cx="167.5" cy="194.8" r="2.8"/>
+<circle class="cand" cx="186.5" cy="193.7" r="2.8"/>
+<circle class="cand" cx="199.7" cy="198.6" r="2.8"/>
+<circle class="cand" cx="218.8" cy="195.1" r="2.8"/>
+<polyline class="fr" points="150.3,212.3 118.8,210.1 106.5,187.4 88.1,131.6 67.2,77.9"/>
+<circle class="frp" cx="150.3" cy="212.3" r="3.2"/>
+<circle class="frp" cx="118.8" cy="210.1" r="3.2"/>
+<circle class="frp" cx="106.5" cy="187.4" r="3.2"/>
+<circle class="frp" cx="88.1" cy="131.6" r="3.2"/>
+<circle class="frp" cx="67.2" cy="77.9" r="3.2"/>
+<text class="sub" x="143.0" y="54" text-anchor="middle">no disclosed coordinate (§6.4)</text>
+<text class="ttl" x="302" y="16">Nippon Steel · NZ15</text>
+<path class="ax" d="M302 40 V228 H484"/>
+<text class="tick" x="297" y="231.0" text-anchor="end">16,237</text>
+<text class="tick" x="297" y="43.0" text-anchor="end">34,860</text>
+<text class="tick" x="302.0" y="242" text-anchor="start">52,715</text>
+<text class="tick" x="484.0" y="242" text-anchor="end">59,797</text>
+<text class="sub" x="302" y="258">P50 →</text>
+<circle class="cand" cx="321.2" cy="58.3" r="2.8"/>
+<circle class="cand" cx="355.2" cy="55.7" r="2.8"/>
+<circle class="cand" cx="363.7" cy="116.3" r="2.8"/>
+<circle class="cand" cx="395.3" cy="116.0" r="2.8"/>
+<circle class="cand" cx="392.8" cy="160.0" r="2.8"/>
+<circle class="cand" cx="427.4" cy="163.6" r="2.8"/>
+<circle class="cand" cx="418.2" cy="203.7" r="2.8"/>
+<circle class="cand" cx="446.2" cy="204.0" r="2.8"/>
+<circle class="cand" cx="440.6" cy="211.6" r="2.8"/>
+<circle class="cand" cx="468.8" cy="208.8" r="2.8"/>
+<circle class="cand" cx="351.8" cy="57.2" r="2.8"/>
+<circle class="cand" cx="391.4" cy="116.2" r="2.8"/>
+<circle class="cand" cx="423.3" cy="164.2" r="2.8"/>
+<circle class="cand" cx="441.8" cy="204.3" r="2.8"/>
+<circle class="cand" cx="464.7" cy="209.1" r="2.8"/>
+<polyline class="fr" points="436.8,212.3 414.2,204.5 388.8,161.0 359.7,116.8 317.2,59.2"/>
+<circle class="frp" cx="436.8" cy="212.3" r="3.2"/>
+<circle class="frp" cx="414.2" cy="204.5" r="3.2"/>
+<circle class="frp" cx="388.8" cy="161.0" r="3.2"/>
+<circle class="frp" cx="359.7" cy="116.8" r="3.2"/>
+<circle class="frp" cx="317.2" cy="59.2" r="3.2"/>
+<line class="gap" x1="349.4" y1="56.0" x2="317.2" y2="56.0"/>
+<circle class="gapend" cx="317.2" cy="56.0" r="3"/>
+<line class="gap" x1="349.4" y1="56.0" x2="349.4" y2="102.9"/>
+<circle class="gapend" cx="349.4" cy="102.9" r="3"/>
+<text class="glab" x="333.3" y="50.0" text-anchor="middle">1,255</text>
+<text class="glab" x="354.4" y="79.5">4,651</text>
+<rect class="disc" x="345.8" y="52.4" width="7.2" height="7.2" transform="rotate(45 349.4 56.0)"/>
+<text class="ttl" x="552" y="16">LOTTE Chemical · NZ15</text>
+<path class="ax" d="M552 40 V228 H734"/>
+<text class="tick" x="547" y="231.0" text-anchor="end">2,118</text>
+<text class="tick" x="547" y="43.0" text-anchor="end">2,254</text>
+<text class="tick" x="552.0" y="242" text-anchor="start">729</text>
+<text class="tick" x="734.0" y="242" text-anchor="end">1,291</text>
+<text class="sub" x="552" y="258">P50 →</text>
+<circle class="cand" cx="589.7" cy="89.0" r="2.8"/>
+<circle class="cand" cx="626.5" cy="92.7" r="2.8"/>
+<circle class="cand" cx="672.3" cy="120.5" r="2.8"/>
+<circle class="cand" cx="718.8" cy="189.2" r="2.8"/>
+<polyline class="fr" points="717.1,212.3 670.2,141.1 624.5,97.4 587.8,97.4 568.2,63.7 567.2,55.7"/>
+<circle class="frp" cx="717.1" cy="212.3" r="3.2"/>
+<circle class="frp" cx="670.2" cy="141.1" r="3.2"/>
+<circle class="frp" cx="624.5" cy="97.4" r="3.2"/>
+<circle class="frp" cx="587.8" cy="97.4" r="3.2"/>
+<circle class="frp" cx="568.2" cy="63.7" r="3.2"/>
+<circle class="frp" cx="567.2" cy="55.7" r="3.2"/>
+<text class="sub" x="643.0" y="54" text-anchor="middle">no disclosed coordinate (§6.4)</text>
+<text class="ttl" x="802" y="16">Mitsui Chemicals · NZ15</text>
+<path class="ax" d="M802 40 V228 H984"/>
+<text class="tick" x="797" y="231.0" text-anchor="end">731</text>
+<text class="tick" x="797" y="43.0" text-anchor="end">1,895</text>
+<text class="tick" x="802.0" y="242" text-anchor="start">240</text>
+<text class="tick" x="984.0" y="242" text-anchor="end">1,095</text>
+<text class="sub" x="802" y="258">P50 →</text>
+<circle class="cand" cx="831.4" cy="208.1" r="2.8"/>
+<circle class="cand" cx="842.7" cy="209.3" r="2.8"/>
+<circle class="cand" cx="838.6" cy="174.0" r="2.8"/>
+<circle class="cand" cx="838.9" cy="173.3" r="2.8"/>
+<circle class="cand" cx="843.0" cy="173.2" r="2.8"/>
+<circle class="cand" cx="843.8" cy="172.6" r="2.8"/>
+<circle class="cand" cx="850.9" cy="174.2" r="2.8"/>
+<circle class="cand" cx="851.6" cy="174.5" r="2.8"/>
+<circle class="cand" cx="860.6" cy="174.7" r="2.8"/>
+<circle class="cand" cx="861.3" cy="174.7" r="2.8"/>
+<circle class="cand" cx="871.7" cy="176.7" r="2.8"/>
+<circle class="cand" cx="872.1" cy="175.9" r="2.8"/>
+<polyline class="fr" points="854.0,212.3 853.3,212.2 842.3,209.8 830.7,208.2 822.7,207.7 822.1,207.6 817.4,207.2 817.2,206.5"/>
+<circle class="frp" cx="854.0" cy="212.3" r="3.2"/>
+<circle class="frp" cx="853.3" cy="212.2" r="3.2"/>
+<circle class="frp" cx="842.3" cy="209.8" r="3.2"/>
+<circle class="frp" cx="830.7" cy="208.2" r="3.2"/>
+<circle class="frp" cx="822.7" cy="207.7" r="3.2"/>
+<circle class="frp" cx="822.1" cy="207.6" r="3.2"/>
+<circle class="frp" cx="817.4" cy="207.2" r="3.2"/>
+<circle class="frp" cx="817.2" cy="206.5" r="3.2"/>
+<line class="gap" x1="968.8" y1="55.7" x2="817.2" y2="55.7"/>
+<circle class="gapend" cx="817.2" cy="55.7" r="3"/>
+<line class="gap" x1="968.8" y1="55.7" x2="968.8" y2="212.3"/>
+<circle class="gapend" cx="968.8" cy="212.3" r="3"/>
+<text class="glab" x="893.0" y="49.7" text-anchor="middle">713</text>
+<text class="glab" x="973.8" y="134.0">969</text>
+<rect class="disc" x="965.2" y="52.1" width="7.2" height="7.2" transform="rotate(45 968.8 55.7)"/>
+<text class="ttl" x="52" y="288">POSCO · B20</text>
+<path class="ax" d="M52 312 V500 H234"/>
+<text class="tick" x="47" y="503.0" text-anchor="end">1,593</text>
+<text class="tick" x="47" y="315.0" text-anchor="end">3,422</text>
+<text class="tick" x="52.0" y="514" text-anchor="start">11,770</text>
+<text class="tick" x="234.0" y="514" text-anchor="end">14,875</text>
+<text class="sub" x="52" y="530">P50 →</text>
+<circle class="cand" cx="123.8" cy="429.1" r="2.8"/>
+<circle class="cand" cx="148.6" cy="462.0" r="2.8"/>
+<circle class="cand" cx="160.3" cy="382.7" r="2.8"/>
+<circle class="cand" cx="183.1" cy="410.8" r="2.8"/>
+<circle class="cand" cx="196.0" cy="327.7" r="2.8"/>
+<circle class="cand" cx="218.8" cy="346.7" r="2.8"/>
+<polyline class="fr" points="110.4,484.3 88.4,459.6 80.4,440.1 67.2,434.0"/>
+<circle class="frp" cx="110.4" cy="484.3" r="3.2"/>
+<circle class="frp" cx="88.4" cy="459.6" r="3.2"/>
+<circle class="frp" cx="80.4" cy="440.1" r="3.2"/>
+<circle class="frp" cx="67.2" cy="434.0" r="3.2"/>
+<text class="sub" x="143.0" y="326" text-anchor="middle">no disclosed coordinate (§6.4)</text>
+<text class="ttl" x="302" y="288">Nippon Steel · B20</text>
+<path class="ax" d="M302 312 V500 H484"/>
+<text class="tick" x="297" y="503.0" text-anchor="end">4,194</text>
+<text class="tick" x="297" y="315.0" text-anchor="end">13,123</text>
+<text class="tick" x="302.0" y="514" text-anchor="start">19,836</text>
+<text class="tick" x="484.0" y="514" text-anchor="end">26,470</text>
+<text class="sub" x="302" y="530">P50 →</text>
+<circle class="cand" cx="334.0" cy="395.0" r="2.8"/>
+<circle class="cand" cx="348.0" cy="395.7" r="2.8"/>
+<circle class="cand" cx="348.6" cy="429.7" r="2.8"/>
+<circle class="cand" cx="361.2" cy="433.2" r="2.8"/>
+<circle class="cand" cx="360.7" cy="462.2" r="2.8"/>
+<circle class="cand" cx="373.9" cy="463.2" r="2.8"/>
+<circle class="cand" cx="371.2" cy="469.9" r="2.8"/>
+<circle class="cand" cx="389.1" cy="475.7" r="2.8"/>
+<circle class="cand" cx="389.3" cy="468.6" r="2.8"/>
+<circle class="cand" cx="413.2" cy="479.0" r="2.8"/>
+<circle class="cand" cx="333.9" cy="394.8" r="2.8"/>
+<circle class="cand" cx="348.0" cy="395.7" r="2.8"/>
+<circle class="cand" cx="348.6" cy="429.1" r="2.8"/>
+<circle class="cand" cx="361.2" cy="433.2" r="2.8"/>
+<circle class="cand" cx="360.7" cy="462.0" r="2.8"/>
+<circle class="cand" cx="374.0" cy="463.2" r="2.8"/>
+<circle class="cand" cx="371.1" cy="469.7" r="2.8"/>
+<circle class="cand" cx="389.1" cy="475.7" r="2.8"/>
+<circle class="cand" cx="389.3" cy="468.4" r="2.8"/>
+<circle class="cand" cx="413.2" cy="479.0" r="2.8"/>
+<circle class="cand" cx="330.4" cy="403.4" r="2.8"/>
+<circle class="cand" cx="343.6" cy="440.7" r="2.8"/>
+<circle class="cand" cx="356.0" cy="469.9" r="2.8"/>
+<circle class="cand" cx="371.0" cy="472.0" r="2.8"/>
+<polyline class="fr" points="395.4,484.3 371.7,481.7 353.2,474.4 342.8,467.9 330.8,436.5 317.2,404.3"/>
+<circle class="frp" cx="395.4" cy="484.3" r="3.2"/>
+<circle class="frp" cx="371.7" cy="481.7" r="3.2"/>
+<circle class="frp" cx="353.2" cy="474.4" r="3.2"/>
+<circle class="frp" cx="342.8" cy="467.9" r="3.2"/>
+<circle class="frp" cx="330.8" cy="436.5" r="3.2"/>
+<circle class="frp" cx="317.2" cy="404.3" r="3.2"/>
+<line class="gap" x1="468.8" y1="327.7" x2="317.2" y2="327.7"/>
+<circle class="gapend" cx="317.2" cy="327.7" r="3"/>
+<line class="gap" x1="468.8" y1="327.7" x2="468.8" y2="484.3"/>
+<circle class="gapend" cx="468.8" cy="484.3" r="3"/>
+<text class="glab" x="393.0" y="321.7" text-anchor="middle">5,529</text>
+<text class="glab" x="473.8" y="406.0">7,441</text>
+<rect class="disc" x="465.2" y="324.1" width="7.2" height="7.2" transform="rotate(45 468.8 327.7)"/>
+<text class="ttl" x="552" y="288">LOTTE Chemical · B20</text>
+<path class="ax" d="M552 312 V500 H734"/>
+<text class="tick" x="547" y="503.0" text-anchor="end">-52</text>
+<text class="tick" x="547" y="315.0" text-anchor="end">574</text>
+<text class="tick" x="552.0" y="514" text-anchor="start">79</text>
+<text class="tick" x="734.0" y="514" text-anchor="end">542</text>
+<text class="sub" x="552" y="530">P50 →</text>
+<circle class="cand" cx="603.8" cy="444.7" r="2.8"/>
+<circle class="cand" cx="608.7" cy="445.2" r="2.8"/>
+<circle class="cand" cx="640.7" cy="405.7" r="2.8"/>
+<circle class="cand" cx="645.4" cy="406.0" r="2.8"/>
+<circle class="cand" cx="677.4" cy="366.8" r="2.8"/>
+<circle class="cand" cx="682.1" cy="366.8" r="2.8"/>
+<circle class="cand" cx="714.1" cy="327.8" r="2.8"/>
+<circle class="cand" cx="718.8" cy="327.7" r="2.8"/>
+<polyline class="fr" points="572.0,484.3 567.2,479.2"/>
+<circle class="frp" cx="572.0" cy="484.3" r="3.2"/>
+<circle class="frp" cx="567.2" cy="479.2" r="3.2"/>
+<text class="sub" x="643.0" y="326" text-anchor="middle">no disclosed coordinate (§6.4)</text>
+<text class="ttl" x="802" y="288">Mitsui Chemicals · B20</text>
+<path class="ax" d="M802 312 V500 H984"/>
+<text class="tick" x="797" y="503.0" text-anchor="end">-133</text>
+<text class="tick" x="797" y="315.0" text-anchor="end">1,459</text>
+<text class="tick" x="802.0" y="514" text-anchor="start">-26</text>
+<text class="tick" x="984.0" y="514" text-anchor="end">977</text>
+<text class="sub" x="802" y="530">P50 →</text>
+<circle class="cand" cx="824.1" cy="477.7" r="2.8"/>
+<circle class="cand" cx="825.2" cy="477.7" r="2.8"/>
+<circle class="cand" cx="830.9" cy="471.1" r="2.8"/>
+<circle class="cand" cx="832.1" cy="471.1" r="2.8"/>
+<circle class="cand" cx="837.9" cy="464.5" r="2.8"/>
+<circle class="cand" cx="839.0" cy="464.6" r="2.8"/>
+<circle class="cand" cx="844.8" cy="457.9" r="2.8"/>
+<circle class="cand" cx="845.9" cy="458.0" r="2.8"/>
+<polyline class="fr" points="818.2,484.3 817.2,484.0"/>
+<circle class="frp" cx="818.2" cy="484.3" r="3.2"/>
+<circle class="frp" cx="817.2" cy="484.0" r="3.2"/>
+<line class="gap" x1="968.8" y1="327.7" x2="817.2" y2="327.7"/>
+<circle class="gapend" cx="817.2" cy="327.7" r="3"/>
+<line class="gap" x1="968.8" y1="327.7" x2="968.8" y2="484.3"/>
+<circle class="gapend" cx="968.8" cy="484.3" r="3"/>
+<text class="glab" x="893.0" y="321.7" text-anchor="middle">836</text>
+<text class="glab" x="973.8" y="406.0">1,326</text>
+<rect class="disc" x="965.2" y="324.1" width="7.2" height="7.2" transform="rotate(45 968.8 327.7)"/><g transform="translate(520,564)"><circle class="cand" cx="6" cy="-4" r="2.8"/><text class="sub" x="14" y="0">candidate plan</text><circle class="frp" cx="112" cy="-4" r="3.2"/><text class="sub" x="120" y="0">efficient frontier</text><rect class="disc" x="234" y="-7.6" width="7.2" height="7.2" transform="rotate(45 237.6 -4)"/><text class="sub" x="248" y="0">disclosed plan</text><line class="gap" x1="350" y1="-4" x2="372" y2="-4"/><text class="sub" x="378" y="0">gap (bn KRW)</text></g></svg>

@@ -143,3 +143,41 @@ def test_seed_sweep_staleness_is_described_as_it_is():
     assert drift == {"NSC"}, (
         f"§6.1은 시드 스윕이 NSC에서만 현재 실행과 어긋난다고 적었는데 지금 어긋나는 것은 {drift or '없다'}"
         " — 문단을 고치거나 지워라")
+
+
+def test_gap_legs_are_clamped_as_the_figure_and_prose_say():
+    """§2 그림·§9.1·O4는 "모든 비용 다리가 경계 끝점까지의 거리"라고 적는다.
+
+    이것은 `_gap`의 클램프 분기가 실제로 타지는가에 달린 사실이고, 공시 좌표나 경계가
+    움직이면 조용히 거짓이 된다(보간 분기로 넘어가면 gap은 더 이상 하한이 아니다).
+    캡션의 수는 생성되지만 §9.1과 O4의 산문은 손으로 쓴 것이므로 여기서 다시 센다.
+    """
+    import csv
+
+    fp = ROOT / "out" / "e5" / "frontier_points.csv"
+    if not fp.exists():
+        pytest.skip("no pipeline run in out/")
+    rows = [r for r in csv.DictReader(fp.open()) if r["support"] == "none"]
+    cost_clamped = risk_clamped = n = 0
+    for co, sc in {(r["company_id"], r["scenario"]) for r in rows}:
+        d = [r for r in rows if r["company_id"] == co and r["scenario"] == sc]
+        disc = [r for r in d if r["is_disclosed"] == "True"]
+        fr = [r for r in d if r["on_frontier"] == "True"]
+        if not disc or not fr:
+            continue
+        n += 1
+        p = disc[0]
+        cost_clamped += float(p["tcar"]) > max(float(r["tcar"]) for r in fr)
+        risk_clamped += float(p["p50"]) > max(float(r["p50"]) for r in fr)
+    assert (n, cost_clamped, risk_clamped) == (4, 4, 3), (
+        f"가이드는 gap 4개 중 비용 다리 4개·위험 다리 3개가 끝점 클램프라고 적었는데 "
+        f"지금은 {n}개 중 {cost_clamped}·{risk_clamped}다 — §9.1과 O4의 산문을 고쳐라")
+    text = GUIDE.read_text(encoding="utf-8")
+    assert "It is not a nearest-point distance" in text, "§9.1의 정정 문장이 사라졌다"
+
+
+def test_figure_is_built_and_referenced():
+    fig = ROOT / "docs" / "figures" / "frontier_gap.svg"
+    assert fig.exists(), "§2 그림 파일이 없다 — scripts/build_tech_guide.py 를 돌려라"
+    assert "figures/frontier_gap.svg" in GUIDE.read_text(encoding="utf-8")
+    assert fig.read_text(encoding="utf-8").startswith("<svg")

@@ -64,6 +64,7 @@ def slug(text: str) -> str:
     return re.sub(r"[\s.]+", "-", s)
 
 
+IMG = re.compile(r"^!\[([^\]]*)\]\(([^)]+\.svg)\)$")
 ROW = re.compile(r"^\s*\|")
 SEP = re.compile(r"^\s*\|[\s:|-]+\|\s*$")
 ITEM = re.compile(r"^([-*]|\d+\.)\s+(.*)$")
@@ -123,6 +124,14 @@ def render(md: str) -> tuple[str, list[tuple[int, str, str]]]:
                 j += 1
             out.append(f'<blockquote>{inline(" ".join(body))}</blockquote>')
             i = j
+        elif IMG.match(s):                                            # figure — inline the SVG
+            alt, src = IMG.match(s).groups()
+            svg = (GUIDE.parent / src)
+            if not svg.exists():
+                raise ValueError(f"line {i + 1}: figure {src} is referenced but not built")
+            out.append(f'<figure role="img" aria-label="{html.escape(alt)}">'
+                       f'{svg.read_text(encoding="utf-8")}</figure>')
+            i += 1
         elif ROW.match(ln):                                           # table
             j = i
             while j < len(lines) and ROW.match(lines[j]):
@@ -177,6 +186,9 @@ def check(md: str, page: str) -> list[str]:
     src_fences = sum(1 for ln in md.splitlines() if ln.strip().startswith("```")) // 2
     if src_fences != page.count("<pre>"):
         problems.append(f"code blocks {src_fences} vs {page.count('<pre>')}")
+    src_figs = sum(1 for ln in md.splitlines() if IMG.match(ln.strip()))
+    if src_figs != page.count("<figure"):
+        problems.append(f"figures {src_figs} in markdown vs {page.count('<figure')} in HTML")
     for ln in md.splitlines():
         s = ln.strip()
         if s.startswith("#"):
@@ -220,6 +232,9 @@ article blockquote{margin:14px 0;padding:12px 16px;background:var(--panel);
   border-left:3px solid var(--accent);border-radius:0 10px 10px 0;font-size:13.5px;color:var(--ink2)}
 article hr{border:0;border-top:1px solid var(--line);margin:30px 0}
 article h1{display:none}
+article figure{margin:18px 0;background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;padding:12px 10px}
+article figure svg{width:100%;height:auto;display:block}
 article .gen{border-left:2px solid var(--line);padding-left:16px;margin:16px 0}
 article .gen .genlab{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--ink3);font-weight:700;margin-bottom:4px}

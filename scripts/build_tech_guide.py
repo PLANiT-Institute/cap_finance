@@ -804,8 +804,170 @@ def gen_frontier_shape():
     return head + note
 
 
+FIGURE = ROOT / "docs" / "figures" / "frontier_gap.svg"
+
+# Panel geometry, in the figure's own user units. Four firms across, two scenarios down.
+PW, PH, COLS = 250, 272, 4
+PAD_L, PAD_R, PAD_T, PAD_B = 52, 16, 40, 44
+
+SVG_STYLE = """
+  .bg{fill:none}
+  .ttl{font:600 12px system-ui,sans-serif;fill:#191C24}
+  .sub{font:11px system-ui,sans-serif;fill:#8B909C}
+  .tick{font:9.5px system-ui,sans-serif;fill:#8B909C}
+  .ax{fill:none;stroke:#C9CAC4;stroke-width:1}
+  .cand{fill:#8B909C;opacity:.5}
+  .fr{fill:none;stroke:#2a78d6;stroke-width:1.6}
+  .frp{fill:#2a78d6}
+  .disc{fill:#e34948}
+  .gap{stroke:#e34948;stroke-width:1.2;stroke-dasharray:3 3}
+  .gapend{fill:none;stroke:#e34948;stroke-width:1.2}
+  .glab{font:9.5px system-ui,sans-serif;fill:#e34948}
+  @media (prefers-color-scheme:dark){
+    .ttl{fill:#EDEEF0} .ax{stroke:#3A3F49}
+    .fr{stroke:#3987e5} .frp{fill:#3987e5}
+    .disc{fill:#e66767} .gap,.gapend{stroke:#e66767} .glab{fill:#e66767}}
+"""
+
+
+def _x(v):
+    """A ratio, read as a multiple — 1.01x must not print as the 1x that hides it."""
+    return f"{v:,.0f}×" if v >= 10 else f"{v:.2f}×"
+
+
+def _panel(x0, y0, d, gaprow, title):
+    """One (P50, TCaR) panel: candidates, frontier, disclosed coordinate, both gap legs."""
+    lo_x, hi_x = d.p50.min(), d.p50.max()
+    lo_y, hi_y = d.tcar.min(), d.tcar.max()
+    px, py = (hi_x - lo_x) * .10 or 1.0, (hi_y - lo_y) * .10 or 1.0
+    lo_x, hi_x, lo_y, hi_y = lo_x - px, hi_x + px, lo_y - py, hi_y + py
+    w, h = PW - PAD_L - PAD_R, PH - PAD_T - PAD_B
+
+    def X(v):
+        return x0 + PAD_L + (v - lo_x) / (hi_x - lo_x) * w
+
+    def Y(v):
+        return y0 + PAD_T + h - (v - lo_y) / (hi_y - lo_y) * h
+
+    s = [f'<text class="ttl" x="{x0 + PAD_L}" y="{y0 + 16}">{title}</text>',
+         f'<path class="ax" d="M{x0 + PAD_L} {y0 + PAD_T} V{y0 + PAD_T + h} '
+         f'H{x0 + PAD_L + w}"/>']
+    for v, lab in ((lo_y, f"{lo_y:,.0f}"), (hi_y, f"{hi_y:,.0f}")):
+        s.append(f'<text class="tick" x="{x0 + PAD_L - 5}" y="{Y(v) + 3}" '
+                 f'text-anchor="end">{lab}</text>')
+    for v, anc in ((lo_x, "start"), (hi_x, "end")):
+        s.append(f'<text class="tick" x="{X(v)}" y="{y0 + PAD_T + h + 14}" '
+                 f'text-anchor="{anc}">{v:,.0f}</text>')
+    s.append(f'<text class="sub" x="{x0 + PAD_L}" y="{y0 + PAD_T + h + 30}">P50 →</text>')
+
+    for r in d[~d.on_frontier & ~d.is_disclosed].itertuples():
+        s.append(f'<circle class="cand" cx="{X(r.p50):.1f}" cy="{Y(r.tcar):.1f}" r="2.8"/>')
+    fr = d[d.on_frontier].sort_values("tcar")
+    s.append('<polyline class="fr" points="'
+             + " ".join(f"{X(a):.1f},{Y(b):.1f}" for a, b in zip(fr.p50, fr.tcar)) + '"/>')
+    for a, b in zip(fr.p50, fr.tcar):
+        s.append(f'<circle class="frp" cx="{X(a):.1f}" cy="{Y(b):.1f}" r="3.2"/>')
+
+    disc = d[d.is_disclosed]
+    if disc.empty:
+        s.append(f'<text class="sub" x="{x0 + PAD_L + w / 2}" y="{y0 + PAD_T + 14}" '
+                 f'text-anchor="middle">no disclosed coordinate (§6.4)</text>')
+        return "\n".join(s)
+    p = disc.iloc[0]
+    dx, dy = X(p.p50), Y(p.tcar)
+    if gaprow is not None:
+        tx, ty = X(p.p50 - gaprow.gap_cost_bnkrw), Y(p.tcar - gaprow.gap_risk_bnkrw)
+        s += [f'<line class="gap" x1="{dx:.1f}" y1="{dy:.1f}" x2="{tx:.1f}" y2="{dy:.1f}"/>',
+              f'<circle class="gapend" cx="{tx:.1f}" cy="{dy:.1f}" r="3"/>',
+              f'<line class="gap" x1="{dx:.1f}" y1="{dy:.1f}" x2="{dx:.1f}" y2="{ty:.1f}"/>',
+              f'<circle class="gapend" cx="{dx:.1f}" cy="{ty:.1f}" r="3"/>',
+              f'<text class="glab" x="{(dx + tx) / 2:.1f}" y="{dy - 6:.1f}" '
+              f'text-anchor="middle">{gaprow.gap_cost_bnkrw:,.0f}</text>',
+              f'<text class="glab" x="{dx + 5:.1f}" y="{(dy + ty) / 2:.1f}">'
+              f'{gaprow.gap_risk_bnkrw:,.0f}</text>']
+    s.append(f'<rect class="disc" x="{dx - 3.6:.1f}" y="{dy - 3.6:.1f}" width="7.2" '
+             f'height="7.2" transform="rotate(45 {dx:.1f} {dy:.1f})"/>')
+    return "\n".join(s)
+
+
+def gen_gap_figure():
+    """The figure Arc asked for: frontier, disclosed coordinate, gap, in one screen.
+
+    Drawing it is also a check on the prose. `_gap` in `src/cap/e5_metrics.py` measures
+    two axis-aligned distances and clamps to the frontier's endpoint when the disclosed
+    point sits outside the frontier's span on the axis being measured — so the leg does
+    not end on the frontier at all in that case, which no amount of prose had made
+    visible. The caption counts the clamped legs rather than asserting anything.
+    """
+    fp = ROOT / "out" / "e5" / "frontier_points.csv"
+    if not fp.exists():
+        return "_No pipeline run in `out/`. Run `python -m cap all`._"
+    f = pd.read_csv(fp)
+    f = f[f.support == "none"]          # the support axis duplicates every row (§3.6)
+    g_all = pd.read_csv(ROOT / "out" / "e5" / "gap.csv")
+    g = g_all[g_all.support == "none"]
+
+    panels, clamp_cost, clamp_risk, overshoot = [], 0, 0, []
+    for row, scen in enumerate(["NZ15", "B20"]):
+        for col, co in enumerate(["POSCO", "NSC", "LOTTE", "MCI"]):
+            d = f[(f.company_id == co) & (f.scenario == scen)]
+            if d.empty:
+                continue
+            hit = g[(g.company_id == co) & (g.scenario == scen)]
+            gaprow = hit.iloc[0] if len(hit) else None
+            panels.append(_panel(col * PW, row * PH, d, gaprow,
+                                 f"{COMPANY_NAME.get(co, co)} · {scen}"))
+            if gaprow is None:
+                continue
+            fr = d[d.on_frontier]
+            p = d[d.is_disclosed].iloc[0]
+            if p.tcar > fr.tcar.max():
+                clamp_cost += 1
+                overshoot.append(p.tcar / fr.tcar.max() if fr.tcar.max() else float("inf"))
+            if p.p50 > fr.p50.max():
+                clamp_risk += 1
+
+    w, h = PW * COLS, PH * 2 + 30
+    legend = (f'<g transform="translate({PW * COLS - 480},{h - 10})">'
+              f'<circle class="cand" cx="6" cy="-4" r="2.8"/>'
+              f'<text class="sub" x="14" y="0">candidate plan</text>'
+              f'<circle class="frp" cx="112" cy="-4" r="3.2"/>'
+              f'<text class="sub" x="120" y="0">efficient frontier</text>'
+              f'<rect class="disc" x="234" y="-7.6" width="7.2" height="7.2" '
+              f'transform="rotate(45 237.6 -4)"/>'
+              f'<text class="sub" x="248" y="0">disclosed plan</text>'
+              f'<line class="gap" x1="350" y1="-4" x2="372" y2="-4"/>'
+              f'<text class="sub" x="378" y="0">gap (bn KRW)</text></g>')
+    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" '
+           f'height="{h}" role="img" aria-label="Efficient frontier, disclosed plan '
+           f'coordinate and frontier gap, by firm and scenario">'
+           f'<style>{SVG_STYLE}</style>'
+           f'<text class="sub" transform="translate(14,{h / 2}) rotate(-90)" '
+           f'text-anchor="middle">TCaR (bn KRW) →</text>'
+           + "\n".join(panels) + legend + "</svg>")
+    FIGURE.parent.mkdir(parents=True, exist_ok=True)
+    FIGURE.write_text(svg, encoding="utf-8")
+
+    return (f"![Efficient frontier, disclosed coordinate and frontier gap, "
+            f"per firm and scenario](figures/frontier_gap.svg)\n\n"
+            f"Each panel is one firm under one scenario, on its own axes. The dashed legs are the "
+            f"two gap numbers, and where they end is the point of the figure: `_gap` "
+            f"(`src/cap/e5_metrics.py:61`) interpolates along the frontier only while the disclosed "
+            f"point lies within the frontier's span on the axis being measured, and otherwise "
+            f"clamps to the endpoint. Of the {len(g)} distinct gaps in `out/e5/gap.csv`, "
+            f"**{clamp_cost} of {len(g)} cost legs and {clamp_risk} of {len(g)} risk legs are "
+            f"clamped**: every disclosed plan sits above the frontier's whole tail-risk span — by "
+            f"{_x(min(overshoot))} to {_x(max(overshoot))} the tail risk of the riskiest plan on "
+            f"its own frontier — so a cost leg is never an interpolated distance, it is the "
+            f"distance to the frontier's riskiest endpoint. Clamped legs are lower bounds by "
+            f"construction: that endpoint reaches the same cost saving with *less* risk than an "
+            f"interpolated point would have. {len(g_all)} rows appear in the file because the "
+            f"`support` axis duplicates each one (§3.6, O7).")
+
+
 BLOCKS = {
     "stamp": gen_stamp,
+    "gap_figure": gen_gap_figure,
     "axis_impact": gen_axis_impact,
     "surrogate": gen_surrogate,
     "plan_distinct": gen_plan_distinct,
