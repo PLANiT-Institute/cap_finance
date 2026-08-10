@@ -312,3 +312,75 @@ def test_landing_card_counts_are_counted_not_typed():
     bundles = {r["bundle"] for r in csv.DictReader(summary.open(encoding="utf-8"))} - {"base"}
     assert f"묶음 {len(bundles)}종" in html, (
         f"시나리오 카드가 가정 묶음을 {len(bundles)}종으로 세지 않는다 — base를 세고 있지 않은가")
+
+
+def test_epsilon_diagnostic_counts_are_the_ones_in_6_3():
+    """§6.3의 32 / 4 / 25는 파이프라인이 아니라 별도 진단 실행에서 나온다 (F15).
+
+    F15까지 §6.3은 이 세 수를 출처 없이 적고 있었다 — 가이드 머리말이 "모든 정량 주장은
+    생성되었거나 그것을 만드는 파일을 가리킨다"고 약속한 바로 그 규칙을 §6.3이 어기고 있었고,
+    수를 만드는 `out/m8/summary.csv`는 가이드 어디에도 이름이 없었다. 게다가 비지배 4개가
+    **한 묶음에 몰려 있다**는 사실(나머지 일곱에서는 0개)이 §1 P1과 §6.3 어디에도 없었다.
+    진단을 다시 돌리면 이 테스트가 세 수와 묶음 분포를 다시 대조한다.
+    """
+    import csv
+
+    s = ROOT / "out" / "m8" / "summary.csv"
+    if not s.exists():
+        pytest.skip("M8 진단 미실행 — scripts/frontier_tech_epsilon.py")
+    rows = list(csv.DictReader(s.open(encoding="utf-8")))
+    caps = sum(int(r["caps_tried"]) for r in rows)
+    head = [int(r["nondominated_headline"]) for r in rows]
+    l2 = [int(r["nondominated_l2"]) for r in rows]
+    text = " ".join(GUIDE.read_text(encoding="utf-8").split())   # 줄바꿈에 걸리지 않게
+
+    assert f"all {caps} caps are feasible" in text, f"§6.3의 강제 상한 수가 {caps}와 다르다"
+    assert f"{sum(l2)} of the same {caps}" in text, f"§6.3의 L2 비지배 수가 {sum(l2)}와 다르다"
+    assert f"technology axis returns in {sum(v > 0 for v in l2)} of {len(rows)}" in text
+    assert f"the other **{sum(v == 0 for v in head)} of {len(rows)}** bundles" in text, (
+        "§6.3이 '나머지 묶음에서는 0개'를 더 이상 정확히 세지 않는다")
+    assert sum(head) == 4 and sum(v > 0 for v in head) == 1, (
+        f"헤드라인 비지배가 {sum(head)}개·{sum(v > 0 for v in head)}묶음으로 바뀌었다 "
+        "— §1 P1과 §6.3의 '4개가 전부 한 묶음'을 다시 써라")
+    assert "out/m8/summary.csv" in text, "§6.3이 수를 만드는 파일을 더 이상 가리키지 않는다"
+
+
+def test_hydrogen_share_in_the_ledger_is_reproducible():
+    """A-05의 임팩트 값은 METHODOLOGY(정본)와 가이드 §4.1이 공유하는데 재현되지 않았다 (F15).
+
+    양쪽이 "TCaR 30~42%"라고 적고 있었다. 현행 `out/e5/variance_decomp.csv` 어느 절단으로도
+    그 구간이 나오지 않고, 애초에 TCaR은 분위수 차이라 요인별로 가법 분해되지 않는다
+    (`docs/uncertainty_propagation.md` §1이 같은 이유로 상호작용 잔차를 남긴다). 지금은 양쪽이
+    NZ15 비용최소 계획의 분산 몫을 적는다 — 그 계획이 바뀌면 이 테스트가 먼저 실패한다.
+    """
+    import csv
+
+    vd = ROOT / "out" / "e5" / "variance_decomp.csv"
+    fp = ROOT / "out" / "e5" / "frontier_points.csv"
+    if not (vd.exists() and fp.exists()):
+        pytest.skip("파이프라인 미실행")
+
+    elig = [r for r in csv.DictReader(fp.open(encoding="utf-8"))
+            if r["scenario"] == "NZ15" and r["support"] == "none"
+            and r["is_disclosed"] in ("False", "0") and r["budget_ok"] in ("True", "1")]
+    cheapest = {}
+    for r in elig:
+        c = r["company_id"]
+        if c not in cheapest or float(r["p50"]) < float(cheapest[c]["p50"]):
+            cheapest[c] = r
+    want = {(c, r["plan_id"]) for c, r in cheapest.items()}
+    share = [float(v["variance_share"]) for v in csv.DictReader(vd.open(encoding="utf-8"))
+             if v["factor"] == "h2" and v["scenario"] == "NZ15" and v["support"] == "none"
+             and (v["company_id"], v["plan_id"]) in want]
+    assert len(share) == len(want) == 4, "비용최소 계획을 기업마다 하나씩 찾지 못했다"
+
+    lo, hi = f"{min(share):.0%}", f"{max(share):.0%}"
+    for path in (GUIDE, ROOT / "METHODOLOGY.md"):
+        text = " ".join(path.read_text(encoding="utf-8").split())
+        assert "30–42% of TCaR" not in text and "TCaR 30~42%" not in text, (
+            f"{path.name}에 재현되지 않는 A-05 임팩트가 되살아났다")
+        anchor = next(a for a in ("Hydrogen is procured externally", "수소 = 외부 조달")
+                      if a in text)
+        row = text[text.index(anchor):][:900]          # A-05 행 하나만 본다
+        assert lo in row and hi in row, (
+            f"{path.name}의 A-05 수소 분산 몫이 실제 {lo}–{hi}와 다르다")

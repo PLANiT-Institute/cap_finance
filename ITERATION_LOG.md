@@ -3358,3 +3358,85 @@ README가 가이드 링크를 잃거나 `config.yaml`의 `n_sims`와 어긋나�
   gate의 `out/ vs data/raw`가 STALE로 뒤집힌다.
 - **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
   미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).
+
+## F15 (08:49) — 링크·경로·행 번호는 전부 살아 있었고, 무너진 것은 출처가 아예 없던 두 문단이었다
+
+**한 일.** 지도의 F15대로 가이드를 전수 교정했다. 링크·파일 경로·코드 행 번호를 하나씩 열어
+확인했고, **거기서는 결함이 거의 나오지 않았다**(29개 코드 행 인용 중 1개가 한 줄 어긋남).
+결함은 다른 곳에 있었다 — 가이드 머리말이 "모든 정량 주장은 생성되었거나 그것을 만드는 파일을
+가리킨다"고 약속하는데, **그 약속을 어기는 문단이 둘 있었고 둘 다 P1·A-05를 떠받치고 있었다.**
+
+### 전수 확인 결과 (결함 없음)
+
+| 확인 대상 | 방법 | 결과 |
+|---|---|---|
+| 마크다운 링크 6개 | 파일 존재 확인 | 6/6 OK |
+| 인용된 저장소 경로 (파일 60여 개 + 디렉터리 9개) | 존재 확인 | 전부 OK |
+| 타 문서 절 번호 인용 (`robustness_structural.md §3-1`, `process_alternative.md §3`, `data_gap_registry.md` F1) | 대상 문서 제목 대조 | 3/3 실재 |
+| 가이드 내부 `§N.M` 참조 30종 | 자체 제목 대조 | 전부 실재 |
+| 코드 행 번호 인용 29개 | 해당 행 열람 | 28 정확, 1 어긋남 (아래 #3) |
+
+### 가이드에서 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | §6.3 전체 (그리고 그것을 인용하는 §1 P1) | 32 / 4 / 25라는 세 수가 **출처 한 줄 없이** 서 있었다 | 이 수는 파이프라인 산출이 아니라 **별도 진단 실행**에서 나온다. `scripts/frontier_tech_epsilon.py` → `out/m8/summary.csv`(`caps_tried`, `nondominated_headline`, `nondominated_l2`), 서술은 `docs/frontier_degeneracy.md`. 그 파일 이름이 **가이드 어디에도 없었다** — Arc가 "그 32는 어디서 나왔나"고 물으면 문서 안에 답이 없었다 | `out/m8/summary.csv` |
+| 2 | §6.3 · §1 P1 | "헤드라인 규약에서 32개 중 **4개**만 비지배로 살아남는다" | 맞지만 **가장 중요한 부분이 빠져 있었다. 그 4개는 전부 한 묶음(LOTTE NZ15)에 있다.** 나머지 **7개 묶음에서는 0개**다. 4/32는 "간신히 살아남았다"로 읽히고 실제는 "여덟 중 일곱에서 기술 축이 통째로 죽는다"이다 — 같은 데이터인데 P1의 강도가 다르다 | `out/m8/summary.csv`의 `nondominated_headline` = [4,0,0,0,0,0,0,0] |
+| 3 | §3.10 표 · §9 O9 | `src/cap/e5_metrics.py:290` | **289다.** 290은 `constraints.csv`를 읽는 첫 줄이고, 주장("배출경로는 첫 support에서만 계산된다")을 만드는 `if supp == cfg.support_scenarios[0]:` 가드는 289다. 같은 파일에 그 가드가 넷(239·259·270·289) 있어 한 줄 어긋나면 다른 가드로 읽힌다 | `src/cap/e5_metrics.py:289` |
+| 4 | §4.1 A-05 **그리고 `METHODOLOGY.md` A-05** | "대 — TCaR의 30~42%" | **현행 실행의 어떤 절단으로도 재현되지 않는다.** 그리고 애초에 성립하지 않는 종류의 진술이다 — TCaR은 분위수 차이라 요인별로 가법 분해되지 않는다(`docs/uncertainty_propagation.md` §1이 같은 이유로 상호작용 잔차를 남긴다). 실제로 잴 수 있는 것은 분산 몫이고, NZ15 비용최소 계획에서 **34%~100%**(NSC 34, POSCO 52, 석화 두 곳 100)다. 같은 가이드 §9.1이 이미 64~77%(전 계획 평균)를 적고 있어 **한 문서가 수소 비중을 두 값으로 팔고 있었다** | `out/e5/variance_decomp.csv` × `out/e5/frontier_points.csv` |
+
+### 부속 문서에서 고친 것
+
+- `docs/frontier_degeneracy.md` §1이 "16개 묶음 중 **14개**에서 경계 점이 같은 기술 일정을
+  공유한다"로 시작하는데, 현행 실행에서는 **16개 전부**다(`out/e5/frontier_points.csv`의
+  `on_frontier` 점 `base_plan_id` nunique가 16칸 모두 1). D3 시점의 계획 메뉴에서 나온 수이고
+  그 뒤 메뉴가 한 번 움직였다. #1에서 이 파일을 가이드가 가리키게 만들었으므로, 가리키기 전에
+  그 전제를 고쳤다 — 안 고쳤으면 가이드 §6.3이 §9.1(8/8)과 어긋나는 문서를 가리키게 된다.
+- `METHODOLOGY.md` A-05 (#4, 정본 우선).
+
+### 검증
+
+```
+.venv/bin/python scripts/build_tech_guide.py     # 21 blocks, 112,185 chars (111,189 → )
+.venv/bin/python scripts/build_guide_page.py     # 38 sections, 383 table rows
+.venv/bin/python scripts/build_site.py
+.venv/bin/python scripts/gate.py                 # gate: OK (pytest 72 passed, audit ok 68/PARTIAL 4 불변)
+```
+
+수치 출처: 32/4/25 = `out/m8/summary.csv` · 수소 분산 몫 = `out/e5/variance_decomp.csv` ×
+`out/e5/frontier_points.csv`(NZ15·none·비공시·budget_ok 중 p50 최소) · 경계 일정 수 =
+`out/e5/frontier_points.csv` · 가드 행 = `src/cap/e5_metrics.py:289`.
+
+테스트 2개 추가(70 → 72). `test_epsilon_diagnostic_counts_are_the_ones_in_6_3`은 진단을 다시
+돌려 32/4/25나 "4개가 한 묶음"이 바뀌면 실패한다. `test_hydrogen_share_in_the_ledger_is_reproducible`은
+비용최소 계획이 바뀌어 34~100%가 움직이거나, 재현되지 않는 "30~42%"가 어느 쪽 문서로든 되살아나면
+실패한다 — 가이드와 METHODOLOGY 양쪽을 같이 본다.
+
+**생성 블록은 손대지 않았다.** 바뀐 1,000자는 전부 손으로 쓴 산문이다(§1 P1, §4.1 A-05 행,
+§6.3 두 문단, §3.10·O9의 행 번호).
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | 유지 | gate audit `ok 68, PARTIAL 4` 불변 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | 유지 | 11 가정 묶음 + base, 묶음당 16칸 (3묶음 미재계획 — F2) |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선** | P1의 상태가 "4/32 생존"에서 "여덟 중 일곱에서 기술 축이 죽는다"로 정확해졌다. 약한 쪽으로 정확해진 것이지만, Arc가 `out/m8/summary.csv`를 열면 어차피 보이는 수다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | 유지 | `scripts/gate.py` 8항목. MCP 표면 변화 없음 |
+| ⑤ 산출물 — 다른 형식이 있는가 | 유지 | md / HTML(38절 383행) / SVG / 데이터 패키지 |
+
+### 인계 (F16은 창 마감 — 아래는 다음 창으로)
+
+- **미인용 부속 문서 9개**(신규 관측): 가이드가 이름을 부르지 않는 `docs/` 문서가
+  `cross_model_check.md`, `literature_map.md`, `price_process_test.md`, `seed_stability.md`,
+  `tech_band_upgrade.md`, `tech_cost_reconciliation.md`, `validation_backtest.md`,
+  `validation_external.md`, `data_audit.md`로 아홉이다. §7이 검증 세 겹을 **서술만** 하고
+  그것을 담은 파일을 가리키지 않는다 — F15가 §6.3에서 고친 것과 같은 결함이 §7에 남아 있다.
+  다음 창의 첫 후보.
+- **CCfD를 시험 가능하게 만드는 일**(백로그 유지, F13): D5에 행사가 행 + E5 격자에 `ccfd` 축.
+- **§6.1 시드 스윕 재실행**(백로그 유지): E3–E5 × 5시드. §6.1이 "스윕이 현행 실행보다 낡았다"고
+  이미 적고 있다.
+- **MCI 사업소 상한 검증**(백로그 유지, O13): `prepare_raw.py` 석화 분기에 경고 한 줄.
+- **③ 번호 오기**(백로그 유지, F13): 파이프라인 재실행 사이클에 같이 넣어라.
+- **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).

@@ -225,7 +225,7 @@ $$\text{P50} = \operatorname{med}_\omega\big[\mathcal C^{tot}(P,\omega)-\mathcal
 | A-02 | 시설 배출 = 회사 실측을 능력×루트EF 가중 배분(철강) / 상향식(석화) | 시설별 실측 미확보 | **최대** (민감도 1위, T5). 철강은 회사 총량이 맞고 **시설 간 분포**가 미검증, 석화는 총량부터 미검증 | `validation_backtest.md` |
 | A-03 | 에너지·배출 원단위 = 루트 표준값 주입 (BF 2.15 tCO₂/t 등, **범위 없음**) | 기업 공시 부재 | 철강 **소**(총량 재척도로 상쇄) / 석유화학 **대**(재척도 없음 = 곧 수준) | H2 §0 |
 | A-04 | 마진은 톤당 영업이익, 폐쇄 시 상실 | D6 | 중(폐쇄 결정) | — |
-| A-05 | 수소 = 외부 조달 상품 (전해조 구조식 폐기) | 설계서 §5-1 | 대 (TCaR 30~42%) | `test_hydrogen_priced_from_data_not_structural_fallback` |
+| A-05 | 수소 = 외부 조달 상품 (전해조 구조식 폐기) | 설계서 §5-1 | **대.** NZ15 비용최소 계획에서 수소가 모의 비용분산의 **34%~100%**(NSC 34%, POSCO 52%, 석화 두 곳 100%) — `out/e5/variance_decomp.csv`. 전 계획 평균은 64~77%(가이드 §9.1). **분산 몫이지 TCaR 몫이 아니다** — 분위수는 요인별로 가법 분해되지 않는다(`docs/uncertainty_propagation.md` §1이 같은 이유로 상호작용 잔차를 남긴다) | `test_hydrogen_priced_from_data_not_structural_fallback`; `out/e5/variance_decomp.csv` |
 | A-06 | 기업 예산 = 자체 base × 섹터 경로 비율 | 설계서 §3 | 대 | E1 잔차 검사 |
 | A-07 | 유상할당 = 확정 할당계획(2026–30 발전외 15%) 우선, 이후 추정 램프 | KETS_P4_CONFIRM_2025 | **대** (전량 부과 시 전 설비 폐쇄가 최적해) | `test_auction_share_follows_confirmed_allocation_plan` |
 | A-08 | 결측 가격 앵커는 제거·평탄 외삽하고 경고 | — | 대 (조용한 모형 후퇴 차단) | `test_central_price_paths_are_complete_and_finite` |
