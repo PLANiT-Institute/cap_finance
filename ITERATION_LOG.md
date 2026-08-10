@@ -2778,3 +2778,72 @@ innerWidth`(1280) — 가로 스크롤 없음. 표는 `.tblwrap`이 자체 스�
   전 페이지를 만든다는 사실을 적는다).
 - **미해결 코드 수정 4건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
   미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES`의 부재 계열 정리(F5).
+
+## F7 (04:33) — 데이터 사전 통합: 사전은 싣지 않는 파일을 기술하고 실은 열의 55%를 기술하지 않았다
+
+**한 일.** 지도대로 `data/package/data_dictionary.csv`와 가이드 §3의 필드 정의를 하나로 묶었다.
+**가이드가 정본이고 사전은 그 투영**이다 — `scripts/build_data_package.py`가 §3의 필드 표를
+파싱해 실제로 쓴 파일의 헤더에 맞춰 사전을 낸다. 정의가 없는 열이 하나라도 실리면 빌드가 죽는다.
+
+### 가이드·사전에서 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | `data_dictionary.csv` | `SCHEMAS`를 그대로 찍은 85행 | **패키지에 없는 두 파일을 기술하고 있었다.** `D1a_facility_static`·`D1b_facility_panel`은 패키지에 존재하지 않는다 — 실리는 것은 `D1a_company_capacity`·`D1b_company_panel` 집계본이다. 반대로 실린 134개 열 중 **73개가 사전에 없었다**: 집계 2파일 13열, result 4파일 43열, `source_register` 16열, `D3.retrofit` 1열 | `build_data_package.py` 대 `data/package/*.csv` 헤더 |
+| 2 | 같은 곳 | (경계 위반) | 사전이 기술하던 24개 열에 `facility_id`·`site`·`unit_name`·`commissioning_year`가 들어 있다. **`manifest.json`이 "시설 단위 절대값은 포함하지 않는다"고 선언한 바로 그 필드들**이다. 값은 나가지 않았지만 스키마는 나갔다 | `manifest.json:boundary` |
+| 3 | §3.9 | "manifest.json ... **a merged data dictionary**" | 병합된 것이 없었다. 무엇과 무엇을 병합했다는 것인지 문장이 가리키는 대상이 존재하지 않는다. 지금은 사전이 무엇에서 파생되는지를 §3.10이 적는다 | `TECHNICAL_GUIDE.md:651` |
+| 4 | §3.3 D2 표 | `year` 행 없음 | D2a·D2b 둘 다 `year`가 스키마 필수인데 필드 표에 없었다. **새 빌드가 이것을 잡아 죽었다** — 사전을 낼 수 없다고. 5-앵커 보간이라는 사실을 같이 적어 넣었다 | 빌드 실패 메시지 |
+| 5 | §3.5 D4 | 필드 표 없음 | 5열을 산문에서 이름만 부르고 정의가 없었다. 표 신설. `unit`이 **파싱되지 않는 자유 텍스트**이고 어느 단계도 그것으로 환산하지 않는다는 사실을 열 정의에 넣었다 | `calibration.py:24-26` |
+| 6 | §3.7 D6 | 필드 표 없음 | 10열이 GEN 커버리지 표에만 있었고(그나마 `company_id`·`year`·`source_id` 3열은 그 표에도 없다) 정의가 없었다. 표 신설 + **통화 주의** 명문화: 환율이 어디에도 적용되지 않으므로 한국 행은 bn KRW, 일본 행은 億円이다(§8 주장 8). `capex_total`이 result 파일의 동명 열과 **다른 양**이라는 것도 열 정의에 적었다 | `D6_company_financials.csv`; `e5_metrics.py:104-131` |
+| 7 | §3.10 (신설) | 없음 | **집계가 `source_id`를 파괴한다.** §3.9의 "모든 데이터 행이 `source_register`로의 외래키를 갖는다"는 그대로 실리는 7개 입력 파일에만 성립하고, 패키지의 두 집계 파일에는 성립하지 않는다. 패키지만 받은 독자는 그 두 파일의 출처를 추적할 수 없다 | `build_data_package.py:main` |
+| 8 | §3.10 (신설) | 없음 | `result_emissions_pathway`에 `support` 열이 없는 이유 — 경로는 **첫 번째 지원 시나리오에서만** 계산되고 나머지는 재실행되지 않는다. gap 파일에 POSCO·LOTTE 행이 없는 것도 같은 자리에서 밝힌다 | `e5_metrics.py:290`; `result_gap.csv` 8행 = MCI·NSC뿐 |
+
+### 생성기로 만든 것
+
+- `scripts/build_data_package.py::guide_fields` — §3의 두 가지 표 머리(`| Field | Definition | ...`와
+  §3.10의 `| File | Field | ...`)를 파싱한다. 한 셀에 여러 열 이름(`` `a`, `b` ``), `**[req]**`
+  꼬리표, `(D2a)` 한정자를 처리한다. `dictionary()`가 그 정의를 **실제 파일 헤더**에 맞춰
+  붙이고, 붙지 않는 열이 있으면 `SystemExit`.
+- `GEN:package` — 패키지 파일별 종류·행·열·정의 위치. 파일 목록은 `manifest.json`,
+  열 수는 생성된 사전에서 읽는다. 빌드가 쓰지 않은 파일을 주장할 수 없다.
+- `tests/test_tech_guide.py::test_data_dictionary_describes_what_ships` — 산출물 자체를 검사한다.
+  실린 열 ⊆ 기술된 열, 기술된 열 ⊆ 실린 열, 정의 빈 행 0. (pytest 59 → 60)
+
+### 검증
+
+```
+.venv/bin/python scripts/build_data_package.py   # 15개 파일, 사전 134행
+.venv/bin/python scripts/build_tech_guide.py     # 16 blocks (package 신설)
+.venv/bin/python scripts/build_guide_page.py     # 35 sections, 344 table rows (271 → 344)
+.venv/bin/python scripts/build_site.py
+.venv/bin/python scripts/gate.py                 # gate: OK (pytest 60 passed, audit ok 68/PARTIAL 4 불변)
+```
+
+수치 출처: 사전 134행 = `data/package/*.csv` 14개 파일의 헤더 합(빌드가 계산) ·
+이전 사전 85행 = `src/cap/schemas.py::SCHEMAS` 열 수 · 미기술 73열은 헤더 대 이전 사전 차집합 ·
+패키지 행수는 `data/package/manifest.json` · `result_gap` 8행/2사는 그 파일 · 경로의 지원 축
+부재는 `src/cap/e5_metrics.py:290`(`supp == cfg.support_scenarios[0]` 가드) · D6 통화는
+`data/prepared/D6_company_financials.csv`(NSC 2024 revenue 86,955 = 億円, LOTTE 2025 18,483 = bn KRW).
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | 유지 | gate audit `ok 68, PARTIAL 4` 불변. 이 사이클은 수치를 만들지 않았다. 다만 F5가 연 "감사 시야 밖" 목록에 **네 번째 종류**가 붙는다 — 감사는 `data/prepared/`를 보고 `data/package/`를 보지 않으므로, 패키지가 무엇을 싣는지는 아무도 검사하지 않고 있었다 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | 유지 | `out/scenarios/summary.csv` 12묶음(3묶음 미재계획 — F2) |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선** | Arc가 데이터를 받아 열어 보면 열 하나하나에 정의·단위·정본 위치가 붙는다. "데이터셋 정의를 자세히"라는 요구가 문서에서 산출물까지 이어진다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | 유지 | `scripts/gate.py` 8항목. `get_data_package_manifest`가 내주는 매니페스트의 해시가 이번에 전부 바뀌었다(사전 재생성) |
+| ⑤ 산출물 — 다른 형식이 있는가 | **개선** | md + HTML + **자기기술적 데이터 패키지**. 사전이 코드에서 파생되던 것이 문서에서 파생되는 것으로 바뀌어, 산출물이 문서를 배신할 수 없다 |
+
+### 인계
+
+- **F8(적대적 검토 1)** 목록에 세 줄 추가:
+  ① "패키지의 집계 파일은 출처를 추적할 수 없다"(§3.10이 먼저 말한다),
+  ② "⑥의 통화 혼재가 §3.7 열 정의에도 이제 적혀 있는데, 그러면 ⑥ 국가 간 비교를 왜 아직 싣는가",
+  ③ "`result_emissions_pathway`는 지원 축 1개만 계산한다 — 나머지 축의 경로를 묻는 질문에 답이 없다".
+- **F9(숫자 추적성)**: 이번에 만든 `defined_in` 열이 그 작업의 절반이다. 남은 절반은 **가이드 산문의**
+  수치이고, `GEN` 밖 문장에 박힌 숫자를 세는 쪽이 빠르다.
+- **가이드 렌더 부하**: 표 행이 271 → 344로 늘었다. `build_guide_page.py --check`가 전부 세고 있으므로
+  누락은 자동으로 잡히지만, §3.10이 길어져 웹 판 §3이 무거워졌다. F15 교정 때 §3.10을 접을지 판단.
+- **미해결 코드 수정 4건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES`의 부재 계열 정리(F5).
