@@ -87,16 +87,23 @@ def _span(df, col):
     return f"{lo}" if lo == hi else f"{lo}–{hi}"
 
 
+# Substantive state = code, inputs, config, results. Deliberately not HEAD: stamping
+# HEAD makes the guide stale the instant it is committed, because the commit that
+# writes the stamp becomes a commit the stamp does not name. That is what left the
+# gate red at the start of the F window, and it is a property of the stamp, not of
+# the cycle that hit it. A prose-only commit now leaves the stamp alone.
+STATE_PATHS = ["src", "data", "config.yaml", "out"]
+
+
 def gen_stamp():
-    sha = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT,
-                         capture_output=True, text=True).stdout.strip()
-    when = subprocess.run(["git", "log", "-1", "--format=%cs"], cwd=ROOT,
-                          capture_output=True, text=True).stdout.strip()
+    sha, when = subprocess.run(
+        ["git", "log", "-1", "--format=%h %cs", "--", *STATE_PATHS],
+        cwd=ROOT, capture_output=True, text=True).stdout.strip().split(maxsplit=1)
     man = ROOT / "out" / "run_manifest.json"
     run = json.loads(man.read_text())["e5"]["finished"] if man.exists() else "no run recorded"
-    return (f"> **Repository state.** Commit `{sha}` ({when}). Results in this document come from the "
-            f"pipeline run finished `{run}`. Regenerate the generated blocks with "
-            f"`python3 scripts/build_tech_guide.py`.")
+    return (f"> **Repository state.** Last commit to code, inputs or results: `{sha}` ({when}). "
+            f"Results in this document come from the pipeline run finished `{run}`. Regenerate the "
+            f"generated blocks with `python3 scripts/build_tech_guide.py`.")
 
 
 def gen_dataset_inventory():
