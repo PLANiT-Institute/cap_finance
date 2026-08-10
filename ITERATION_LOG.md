@@ -2709,3 +2709,72 @@ D7 판정 12행은 `_disclosed_fixed`를 `out/e1/tech_availability.csv`와 함�
 - **미해결 코드 수정 4건**(창 밖): D6 통화 환산(F1), 광양 2고로 능력(F3), 미등록 `facility_id`
   조용한 탈락(F4), `FACTOR_SERIES`의 부재 계열 정리(F5). **F4·F5 두 건은 재실행이 필요 없다** —
   수치를 바꾸지 않고 사실을 드러내기만 한다. 코드 창이 열리면 이 둘부터.
+
+## F6 (04:03) — 기술 가이드 HTML 판: 웹에서 죽는 링크 5종, md에서 안 보이는 생성 블록 15개
+
+**한 일.** 지도대로 `docs/TECHNICAL_GUIDE.md`를 `web/guide.html`로 렌더하는
+`scripts/build_guide_page.py`를 만들고 `scripts/build_site.py`의 기존 파이프라인에 붙였다.
+새 빌드 체계는 없다 — `_style.py`의 CSS를 그대로 쓰고, `build_evidence_page.py`·
+`build_changelog_page.py`와 같은 자리에서 같은 명령으로 만들어진다.
+
+### 가이드에서 고친 사실 오류
+
+| # | 어디 | 가이드가 적었던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | 머리말 | "Every quantitative claim … (blocks marked *generated*)" | **거짓이었다.** 마커는 `<!-- GEN:x -->` **HTML 주석**이라 GitHub이 md를 렌더하면 아무 표시도 남지 않는다. 외부 독자는 어디까지가 손으로 쓴 산문이고 어디부터가 저장소에서 나온 수치인지 구분할 방법이 없었다. 웹 판이 15개 블록에 `generated · <이름>` 라벨을 붙이고, 머리말은 그 사실을 그대로 적는다 | `docs/TECHNICAL_GUIDE.md:7-10` |
+| 2 | 링크 5종 | `../METHODOLOGY.md`·`../REDESIGN_SPEC.md`·`../data/manifests/estimation_notes_D2_v0.md`·`data_gap_registry.md`·`mcp_server.md` | md 안에서는 맞지만 **웹에서는 전부 404**다. 렌더러가 `docs/` 기준 상대경로를 GitHub blob URL로 다시 쓴다 | `build_guide_page.py:link_target` |
+
+새 수치는 하나도 넣지 않았다. 이 창의 규칙대로 렌더는 원고를 바꾸지 않는다.
+
+### 렌더러가 조용히 지지 않게 한 것
+
+가이드가 실제로 쓰는 마크다운 부분집합만 아는 렌더러다(제목 h1–h4·표·펜스코드·인용·
+번호/불릿 목록의 lazy continuation·인라인 code/bold/italic/link). **원고에 새 구문이 들어오면
+HTML에서 조용히 사라지는 것이 기본 실패 모드**이므로 두 겹의 방어를 넣었다.
+
+- `--check`가 원문의 **표 행(271)·코드블록(4)·제목(35)**이 전부 페이지에 도달했는지 세고,
+  하나라도 잃으면 0이 아닌 코드로 죽는다. `tests/test_tech_guide.py::test_html_render_loses_nothing`이
+  그 판정을 부른다(pytest 58 → 59).
+- 표 행의 열 수가 헤더와 다르면 렌더가 **예외**를 던진다. 실제로 한 번 걸렸다 — §3.1
+  `source_id` 행의 `; \| + /`가 이스케이프된 파이프여서 셀이 하나 더 쪼개졌다. `cells()`가
+  이스케이프되지 않은 파이프로만 나눈다.
+
+### 검증
+
+```
+.venv/bin/python scripts/build_tech_guide.py    # 15 blocks
+.venv/bin/python scripts/build_guide_page.py    # 34 sections, 271 table rows, 105 KB
+.venv/bin/python scripts/build_site.py          # index/report/guide/evidence/memo/changelog + EFF 2
+.venv/bin/python scripts/gate.py                # gate: OK (pytest 59 passed, audit ok 68/PARTIAL 4 불변)
+```
+
+브라우저에서 실제로 확인한 것(로컬 `http.server`): h2 8 · table 28 · tr 271 · pre 4 ·
+`.gen` 15 · TOC 34개 링크가 **전부 실재 앵커를 가리킨다**(끊긴 앵커 0). `body.scrollWidth ==
+innerWidth`(1280) — 가로 스크롤 없음. 표는 `.tblwrap`이 자체 스크롤한다.
+
+수치 출처: 표 행·제목·블록 수는 `docs/TECHNICAL_GUIDE.md` 스캔에서 계산(`build_guide_page.check`),
+랜딩 카드의 KB는 `web/guide.html` 파일 크기, 커밋 스탬프는 `GEN:stamp` 블록에서 정규식으로 읽는다.
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | 유지 | `gate` audit `ok 68, PARTIAL 4` 불변. 이 사이클은 수치를 만들지 않았다 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | 유지 | `out/scenarios/summary.csv` 12묶음(3묶음 미재계획 — F2) |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선** | Arc가 저장소를 클론하지 않고 URL 하나로 네 질문을 다 읽는다. 생성 블록에 라벨이 붙어 **손으로 쓴 주장과 기계가 쓴 수치가 눈으로 갈린다** |
+| ④ GitHub·MCP — 도구로 작동하는가 | 유지 | `scripts/gate.py` 8항목 |
+| ⑤ 산출물 — 다른 형식이 있는가 | **충족** | md뿐이던 것이 md + HTML(`/guide`) + 랜딩 카드. 데이터 패키지는 F7 |
+
+### 인계
+
+- **F7(데이터 사전)**: `data/package/data_dictionary.csv`가 준비본의 **열 존재**만 기술한다.
+  F5가 만든 "이 열/계열을 어느 단계가 읽는가"(D6 4열·D4 11계열 무소비)를 사전에 넣을지 판단.
+  가이드 §3이 정본이면 사전이 가이드에서 파생돼야 한다.
+- **F10(그림)**: 이제 붙일 자리가 있다 — `guide.html`의 §6.4 근처에 인라인 SVG를 넣으면
+  md 판에는 없고 웹 판에만 있는 그림이 된다. 그러면 두 판이 갈리므로, 그림을 md에도 두려면
+  `build_tech_guide.py`가 SVG를 GEN 블록으로 쓰게 하는 쪽이 낫다.
+- **F14(README)**: 저장소 첫 화면에서 `docs/TECHNICAL_GUIDE.md`와 `/guide` 둘 다로 가야 한다.
+  `web/README.md`는 이번에 고쳤다(랜딩=보고서라고 적혀 있었고, 지금은 `build_site.py`가
+  전 페이지를 만든다는 사실을 적는다).
+- **미해결 코드 수정 4건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES`의 부재 계열 정리(F5).
