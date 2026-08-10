@@ -106,6 +106,20 @@ def sha(path: pathlib.Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()[:12]
 
 
+def source_parts(sid: str) -> list[str]:
+    """The register keys carried by one `source_id` cell.
+
+    A cell is not a bare key: it may name several sources and append a free-text
+    derivation qualifier —
+        "VOGL_2018 (ex-electrolyser, 광석공통분 제외)", "KR_PPA_2026/REI_JP_PPA_2025"
+    The qualifier is dropped and the rest split. Exported because the technical
+    guide reports the same resolution; two copies of this rule would let the
+    guide call a row sourced that the audit calls dangling.
+    """
+    return [p.strip() for p in re.split(r"[;|+/]", re.sub(r"\s*\(.*", "", str(sid)))
+            if p.strip()]
+
+
 def audit() -> tuple[pd.DataFrame, list[str]]:
     code = engine_text()
     known_sources = set()
@@ -176,12 +190,7 @@ def audit() -> tuple[pd.DataFrame, list[str]]:
         if "source_id" in df.columns:
             ids = set(df["source_id"].dropna().astype(str).str.strip()) - {"", "nan"}
             for sid in sorted(ids):
-                # a cell may carry several ids plus a free-text qualifier:
-                #   "VOGL_2018 (ex-electrolyser, 광석공통분 제외)", "KR_PPA_2026/REI_JP_PPA_2025"
-                for part in re.split(r"[;|+/]", re.sub(r"\s*\(.*", "", sid)):
-                    part = part.strip()
-                    if not part:
-                        continue
+                for part in source_parts(sid):
                     if part.startswith(("EST_", "PENDING_", "PREP_")):
                         notes.append(f"UNSOURCED: {name} uses '{part}' (model estimate / not received)")
                     elif known_sources and part not in known_sources:

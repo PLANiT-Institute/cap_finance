@@ -236,6 +236,121 @@ def gen_d1b_intensity():
                       "coal GJ/t", "gas GJ/t", "elec MWh/t"]) + note
 
 
+def gen_d2_provenance():
+    """Which scenario rows carry an external anchor and which are our own line.
+
+    §3.3 said only the interpolated rows are labelled `EST_*`, which reads as if
+    anchors were the common case. They are not, and the split is not uniform
+    across variables — one price path has no anchored row at all. Resolution uses
+    `audit_data.source_parts` rather than a second copy of the splitting rule.
+    """
+    d = prepared()
+    reg = ROOT / "data" / "raw" / "source_register.csv"
+    if not reg.exists():
+        return "_source_register.csv not available._"
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from audit_data import source_parts
+    known = set(pd.read_csv(reg, dtype=str, encoding="utf-8-sig").source_id.str.strip())
+
+    def split(df):
+        anchored, est = [], []
+        for sid in df.source_id.fillna(""):
+            ps = source_parts(sid)
+            (est if any(p.startswith(("EST_", "PENDING_", "PREP_")) for p in ps)
+             else anchored).append(sid)
+        return anchored, est
+
+    rows = []
+    a = pd.read_csv(d / "D2a_scenario_budget.csv")
+    for reg_name, g in a.groupby("region"):
+        anc, est = split(g)
+        rows.append([f"**D2a** budgets", f"`{reg_name}`", len(g), len(anc),
+                     ", ".join(sorted({s for s in anc})) or "**none**"])
+    b = pd.read_csv(d / "D2b_scenario_prices.csv")
+    for (reg_name, var), g in b.groupby(["region", "variable"]):
+        anc, est = split(g)
+        rows.append([f"D2b `{var}`", f"`{reg_name}`", len(g), len(anc),
+                     ", ".join(sorted({s.split(" (")[0] for s in anc})) or "**none**"])
+    # scenario differentiation: does NZ15 differ from B20 anywhere in the path?
+    p = b.pivot_table(index=["region", "variable", "year"], columns="scenario", values="value")
+    same = (p.NZ15 == p.B20).groupby(level=["region", "variable"]).all()
+    flat = [f"{r} `{v}`" for (r, v), ok in same.items() if ok]
+    note = (f"\n\n{len(split(a)[1])} of {len(a)} budget rows and "
+            f"{len(split(b)[1])} of {len(b)} price rows are "
+            "our own construction (`EST_D2A_V0` / `EST_D2B_V0`); the rest carry a register key. "
+            "Rows with a key are the anchors the line is drawn between, so a variable showing "
+            "**none** was drawn without one.")
+    if flat:
+        note += ("\n\nIdentical under both scenarios in every year: "
+                 + ", ".join(flat) + ". `re_price` is flat by construction (**A-05**), but a "
+                 "differentiated variable that does not differentiate is an input the scenario "
+                 "cannot reach — electrification economics in that region see the same power "
+                 "price at 1.5 °C and at 2 °C.")
+    return _md(rows, ["Series", "Region", "Rows", "Anchored", "Anchor source"]) + note
+
+
+def gen_d3_reach():
+    """Which technologies any facility can actually take.
+
+    E2 matches on `applies_to_unit == unit_type` exactly (`e2_milp.py:148`), so a
+    measure whose target unit type is absent from the register — or is the literal
+    `NONE` — is priced in D3 and never offered. Generated because both sides of
+    the match are data.
+    """
+    d = prepared()
+    t = pd.read_csv(d / "D3_tech_options.csv")
+    f = pd.read_csv(d / "D1a_facility_static.csv")
+    units = sorted(set(t.applies_to_unit) | set(f.unit_type))
+    rows = []
+    for u in units:
+        techs = sorted(t[t.applies_to_unit == u].tech_id)
+        n_fac = int((f.unit_type == u).sum())
+        rows.append([f"`{u}`", n_fac, f"{f[f.unit_type == u].capacity.sum() / 1e6:.1f}",
+                     len(techs),
+                     ", ".join(f"`{x}`" for x in techs) if techs else "**none**"])
+    orphan_tech = sorted(t[~t.applies_to_unit.isin(f.unit_type)].tech_id)
+    orphan_fac = sorted(f[~f.unit_type.isin(t.applies_to_unit)].facility_id)
+    note = (f"\n\nThe two ends of this table are the ones to read. Measures targeting a unit type "
+            f"no facility has, and so never adoptable: {len(orphan_tech)} of {len(t)} "
+            f"({', '.join('`' + x + '`' for x in orphan_tech)}). Facilities offered no measure at "
+            f"all, able only to run on or retire: {len(orphan_fac)} of {len(f)} "
+            f"({', '.join('`' + x + '`' for x in orphan_fac)}). "
+            "Both follow from the same exact-string match and neither is an error the schema "
+            "or the audit can see — every row is present, typed and sourced.")
+    return _md(rows, ["Unit type", "Facilities", "Capacity (Mt/yr)", "Measures", "Which"]) + note
+
+
+def gen_d3b_bands():
+    """Every evidence band, and where the central value sits in it."""
+    d = prepared()
+    t = pd.read_csv(d / "D3_tech_options.csv").set_index("tech_id")
+    b = pd.read_csv(d / "D3b_tech_bands.csv")
+    rows, outside = [], []
+    for r in b.itertuples():
+        v = float(t.loc[r.tech_id, r.field])
+        pos = ("**below band**" if v < r.value_low else "**above band**" if v > r.value_high
+               else "at lower bound" if v == r.value_low
+               else "at upper bound" if v == r.value_high else "interior")
+        if "band" in pos:
+            outside.append(f"`{r.tech_id}.{r.field}`")
+        rows.append([f"`{r.tech_id}`", f"`{r.field}`", f"{v:g}",
+                     f"{r.value_low:g} – {r.value_high:g}", pos, r.evidence_tier])
+    banded = b.groupby("tech_id").size()
+    note = (f"\n\n**{len(b)} bands over {len(banded)} of {len(t)} technologies and "
+            f"{b.field.nunique()} of {t.select_dtypes('number').shape[1]} numeric fields** — "
+            "this is a spot check "
+            "on two steel CAPEX values, not a band layer over the option set. Every other "
+            "central value in D3 is a point with a source and no stated range, which is why "
+            "CAPEX dispersion enters the model through `capex_uncertainty` (**A-22**) instead. "
+            "No central value sits strictly inside its band: two sit on a bound and "
+            f"{len(outside)} sits outside ({', '.join(outside)}). That is deliberate and tested — "
+            "`steel_eaf` at 240 is POSCO's Gwangyang project on a reused site, below a "
+            "literature band built from greenfield builds "
+            "(`data/manifests/estimation_notes_D2_v0.md`), and it is the evidence that the "
+            "central values were not quietly snapped to the literature.")
+    return _md(rows, ["Tech", "Field", "Central", "Band", "Position", "Tier"]) + note
+
+
 def gen_price_series():
     d = prepared() / "D4_price_history.csv"
     if not d.exists():
@@ -398,6 +513,9 @@ BLOCKS = {
     "vocab": gen_vocab,
     "register_filter": gen_register_filter,
     "d1b_intensity": gen_d1b_intensity,
+    "d2_provenance": gen_d2_provenance,
+    "d3_reach": gen_d3_reach,
+    "d3b_bands": gen_d3b_bands,
     "price_series": gen_price_series,
     "tier_distribution": gen_tier_distribution,
     "config": gen_config,

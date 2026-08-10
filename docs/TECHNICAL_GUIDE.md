@@ -291,8 +291,9 @@ level-neutral.
 
 `D2a` carries sector carbon budgets, `D2b` carries price paths. Both are stated on 5-year anchors
 (2025, 2030 … 2050) that E1 interpolates annually — **with one exception**: `re_price` is already
-annual, and flat. It is a single procurement price held constant to 2050 (Korea 175,000 KRW/MWh),
-so the renewable-PPA channel has a level but no path, while every other price does.
+annual, and flat. It is a single procurement price held constant to 2050 (Korea 175,000, Japan
+198,000 KRW/MWh), so the renewable-PPA channel has a level but no path, while every other price
+does.
 
 | Field | Definition |
 |---|---|
@@ -303,7 +304,7 @@ so the renewable-PPA channel has a level but no path, while every other price do
 | `gcam_version` (D2a) | Provenance tag of the pathway — see the caveat below |
 | `variable` (D2b) | `elec_price`, `re_price`, `h2_price`, `coal_price`, `gas_price`, `co2_price` |
 | `value`, `unit` (D2b) | The price and its unit (`KRW/MWh`, `KRW/kg`, `KRW/t`, `KRW/tCO₂`) |
-| `source_id` | Foreign key into `source_register`, per row |
+| `source_id` | One or more keys into `source_register`, optionally followed by a free-text derivation note in parentheses. A cell is not a bare key: `KR_PPA_2026/REI_JP_PPA_2025` names two, and the qualifier is where the transformation is recorded. Resolution splits on `; \| + /` and drops the parenthetical (`scripts/audit_data.py:source_parts`) |
 
 Only the **ratio** to the base year is used (**A-06**), so the Korea/Japan boundary difference
 survives only in path shape, not level. Electricity is deliberately split in two: incumbent
@@ -312,23 +313,55 @@ consumption is priced at grid tariff, transition technologies at a renewable PPA
 **Provenance caveat — these are not GCAM output.** They are provisional in-house pathways built to
 exercise the structure until the GCAM-KAIST solved output arrives; the `gcam_version` column says so
 in the data (`EST_v0 (비GCAM 잠정)`). The construction is documented anchor by anchor in
-[`data/manifests/estimation_notes_D2_v0.md`](../data/manifests/estimation_notes_D2_v0.md): budgets
-are piecewise-linear between government targets, carbon prices interpolate central-bank and IEA
-anchors, electricity comes from an LCOE study rather than a wholesale market. Provenance is
-**mixed at row level**, not uniform — rows carrying an anchor keep the real `source_id`
-(`IEA_GECM_DOC_2025`, `MOTIE_H2_PLAN_2021`, `KETS_P4_CONFIRM_2025` …) and only the interpolated
-rows are labelled `EST_D2A_V0` / `EST_D2B_V0`, which are the rows to be replaced wholesale on
-receipt.
+[`data/manifests/estimation_notes_D2_v0.md`](../data/manifests/estimation_notes_D2_v0.md). Every
+`source_id` resolves — the audit reports no dangling key in either file — but resolving is not the
+same as being anchored, and the split is uneven enough to be worth stating row by row.
 
-Three consequences a reader should carry:
+<!-- GEN:d2_provenance -->
+| Series | Region | Rows | Anchored | Anchor source |
+|---|---|---|---|---|
+| **D2a** budgets | `Japan` | 24 | 0 | **none** |
+| **D2a** budgets | `Korea` | 24 | 2 | KR_NETZERO_2050 |
+| D2b `co2_price` | `Japan` | 12 | 6 | IEA_GECM_CO2PRICE, IEA_GECM_DOC_2025 |
+| D2b `coal_price` | `Japan` | 12 | 4 | IEA_GECM_DOC_2025 |
+| D2b `elec_price` | `Japan` | 12 | 0 | **none** |
+| D2b `gas_price` | `Japan` | 12 | 5 | IEA_GECM_DOC_2025 |
+| D2b `h2_price` | `Japan` | 12 | 2 | JP_H2_STRATEGY_2023 |
+| D2b `re_price` | `Japan` | 52 | 52 | KR_PPA_2026/REI_JP_PPA_2025 |
+| D2b `co2_price` | `Korea` | 12 | 10 | IEA_GECM_DOC_2025, KETS_P4_CONFIRM_2025 |
+| D2b `coal_price` | `Korea` | 12 | 4 | IEA_GECM_DOC_2025 |
+| D2b `elec_price` | `Korea` | 12 | 0 | **none** |
+| D2b `gas_price` | `Korea` | 12 | 5 | IEA_GECM_DOC_2025 |
+| D2b `h2_price` | `Korea` | 12 | 2 | MOTIE_H2_PLAN_2021 |
+| D2b `re_price` | `Korea` | 52 | 52 | KR_PPA_2026/REI_JP_PPA_2025 |
 
+46 of 48 budget rows and 82 of 224 price rows are our own construction (`EST_D2A_V0` / `EST_D2B_V0`); the rest carry a register key. Rows with a key are the anchors the line is drawn between, so a variable showing **none** was drawn without one.
+
+Identical under both scenarios in every year: Japan `elec_price`, Japan `re_price`, Korea `re_price`. `re_price` is flat by construction (**A-05**), but a differentiated variable that does not differentiate is an input the scenario cannot reach — electrification economics in that region see the same power price at 1.5 °C and at 2 °C.
+<!-- /GEN:d2_provenance -->
+
+Read the **Anchored** column as the count of rows that pin the line; everything else is the line
+drawn between them, labelled `EST_D2A_V0` / `EST_D2B_V0` and due to be replaced wholesale on
+receipt of the solved output. Four things in that table should be said in words:
+
+- **Japanese budgets have no anchor row at all.** The Korean budget path is pinned by two
+  `KR_NETZERO_2050` rows; the Japanese one is entirely ours.
+- **`elec_price` carries no register key in either region.** The construction note is explicit
+  about what stands behind it, and it is not a market: Japan is a simple average of METI new-build
+  LCOEs and is **scenario-undifferentiated**, Korea is a three-year average generation cost (110.2
+  KRW/kWh) extrapolated to an SNU 2050 scenario **in which the nuclear share is used as the proxy
+  for scenario stringency**. The gap between the Korean NZ15 and B20 power paths is therefore a
+  nuclear-share assumption, not an abatement cost.
 - **`coal_price` is thermal coal**, not the coking coal a blast furnace consumes. A coking-coal
   scenario path has not been obtained (§6.5).
-- **Korean `h2_price` for 2025 is blank** — no verified current price was found — so the hydrogen
-  path starts from the 2030 target anchor.
-- The central paths do not state whether they are means or medians, which is the whole reason A-24
-  exists (§4). Series definitions are also mixed across scenarios: Korean NZ15 carbon price is a
-  central-bank shadow price, Japanese NZ15 is IEA NZE, B20 is IEA STEPS.
+- **Korean `h2_price` for 2025 is blank** — the only two missing values in D2b — because no
+  verified current price was found, so the Korean hydrogen path starts from the 2030 target anchor
+  (3,500 KRW/kg NZ15). Japan's 2025 value is present and is 10,240 KRW/kg, so the two regions'
+  hydrogen paths are not comparable at the near end.
+
+One further caveat: the central paths do not state whether they are means or medians, which is the
+whole reason A-24 exists (§4). Series definitions are also mixed across scenarios — Korean NZ15
+carbon price is a central-bank shadow price, Japanese NZ15 is IEA NZE, B20 is IEA STEPS.
 
 ### 3.4 D3 — technology options
 
@@ -345,7 +378,7 @@ incumbent process or **replace** it.
 |---|---|---|
 | `tech_id` **[req]** | e.g. `steel_h2dri`, `petchem_ecracker` | — |
 | `sector` **[req]** | `steel` (7 rows) or `petchem` (6) — the measure is only offered to firms in that sector | — |
-| `applies_to_unit` **[req]** | Which single `unit_type` it can be applied to; `NONE` marks a greenfield measure applicable to no existing unit (`steel_eaf`) | — |
+| `applies_to_unit` **[req]** | Which single `unit_type` it can be applied to, matched **as an exact string** against `D1a.unit_type` (`src/cap/e2_milp.py:148`); `NONE` marks a greenfield measure applicable to no existing unit (`steel_eaf`) | — |
 | `capex_unit` **[req]** | Unit capital cost | thousand KRW / t capacity |
 | `opex_fixed` / `opex_var` **[req]** | Fixed / variable operating cost — fixed is charged on `capacity`, variable on `production` | thousand KRW per t capacity·yr / per t |
 | `elec_intensity` **[req]** | Electricity requirement, priced at `re_price` | MWh/t |
@@ -358,13 +391,55 @@ incumbent process or **replace** it.
 | `source_id` **[req]** | Foreign key into `source_register` | — |
 | `retrofit` **[extra]** | 1 = keeps the incumbent process running and adds the measure's intensities on top; 0 = swaps the process energy out. 9 of 13 rows are retrofits | 0/1 |
 
-`D3b_tech_bands.csv` carries `[value_low, value_high]` evidence bands per (tech, field) from the
-literature. The bands are **asymmetric**, and at least one D3 point value sits outside its own band —
-that is deliberate and tested, because it is the evidence that the central values were not quietly
-snapped to the band.
+#### Which measures a facility can actually take
+
+The `applies_to_unit` match is exact and one-sided, so the option set a facility sees is the
+intersection of two data columns rather than a modelling choice — and the intersection is empty at
+both ends of the table below.
+
+<!-- GEN:d3_reach -->
+| Unit type | Facilities | Capacity (Mt/yr) | Measures | Which |
+|---|---|---|---|---|
+| `BF` | 17 | 77.5 | 5 | `steel_eff`, `steel_h2dri`, `steel_h2inj`, `steel_hbi`, `steel_scrap` |
+| `EAF` | 1 | 2.5 | 0 | **none** |
+| `FINEX` | 1 | 2.0 | 1 | `steel_hyrex` |
+| `NCC` | 4 | 3.3 | 6 | `petchem_bio`, `petchem_ecracker`, `petchem_ecracker_hybrid`, `petchem_eff`, `petchem_h2fuel`, `petchem_hp_whr` |
+| `NONE` | 0 | 0.0 | 1 | `steel_eaf` |
+
+The two ends of this table are the ones to read. Measures targeting a unit type no facility has, and so never adoptable: 1 of 13 (`steel_eaf`). Facilities offered no measure at all, able only to run on or retire: 1 of 23 (`POSCO_GWY_EAF1`). Both follow from the same exact-string match and neither is an error the schema or the audit can see — every row is present, typed and sourced.
+<!-- /GEN:d3_reach -->
+
+The `steel_eaf` row is the consequential one, because the disclosed-plan file is not silent about
+it: D7 carries **three `high`-resolution EAF commitments** (POSCO Gwangyang, Nippon Steel Yawata
+and Hirohata). None of them can be enforced. Gwangyang's is dropped with a stated reason —
+`e2_milp.py:332` classifies it as a model-boundary exclusion, not a disclosure-quality one — and
+the two Nippon Steel units are dropped one line earlier, at `e2_milp.py:325`, because those
+facility IDs are not in the register at all; that path prints nothing and adds nothing to the
+dropped list. **The only disclosed commitment in D7 that states an investment figure — ¥630.2bn
+plus ¥140bn for 2.5 Mt/yr of EAF conversion at the two Nippon Steel sites — is therefore invisible
+to the frontier-gap comparison in §6.4**, and invisible without leaving a trace. It is
+recorded as gap F4 in [`docs/data_gap_registry.md`](data_gap_registry.md); the fix is a register
+addition, not a model change.
+
+#### Evidence bands
+
+`D3b_tech_bands.csv` carries `[value_low, value_high]` evidence bands from the literature. The
+guide previously described these as bands "per (tech, field)", which overstates what is there:
+
+<!-- GEN:d3b_bands -->
+| Tech | Field | Central | Band | Position | Tier |
+|---|---|---|---|---|---|
+| `steel_h2dri` | `capex_unit` | 863 | 863 – 1095 | at lower bound | T3 |
+| `steel_eaf` | `capex_unit` | 240 | 370 – 835 | **below band** | T3 |
+| `steel_eaf` | `emission_factor` | 0.05 | 0.04 – 0.05 | at upper bound | T3 |
+
+**3 bands over 2 of 13 technologies and 2 of 11 numeric fields** — this is a spot check on two steel CAPEX values, not a band layer over the option set. Every other central value in D3 is a point with a source and no stated range, which is why CAPEX dispersion enters the model through `capex_uncertainty` (**A-22**) instead. No central value sits strictly inside its band: two sit on a bound and 1 sits outside (`steel_eaf.capex_unit`). That is deliberate and tested — `steel_eaf` at 240 is POSCO's Gwangyang project on a reused site, below a literature band built from greenfield builds (`data/manifests/estimation_notes_D2_v0.md`), and it is the evidence that the central values were not quietly snapped to the literature.
+<!-- /GEN:d3b_bands -->
 
 **Hydrogen is an externally procured commodity**, not an electrolyser built inside the model
-(**A-05**). The earlier structural formulation was discarded.
+(**A-05**). The earlier structural formulation was discarded. The `steel_h2dri` CAPEX band is
+stated on the same ex-electrolyser boundary, which is why its lower bound and our central value
+coincide rather than merely agreeing.
 
 ### 3.5 D4 — price history
 
@@ -704,6 +779,14 @@ Earlier iterations of this project recorded these as "resolution too low". That 
 corrected here and in the board memo. Reasons are attached per row in
 `out/e2/disclosed_skipped.csv`.
 
+**A third firm has a coordinate that is incomplete rather than absent.** Nippon Steel's gap is
+computed (NZ15: 1,255 bn KRW on cost, 4,651 bn on risk — `out/e5/gap.csv`) from its Kimitsu
+hydrogen-injection commitment alone. Its two announced EAF conversions are dropped upstream because
+those facility IDs are not in the register (§3.4), and unlike the POSCO and LOTTE exclusions **that
+drop leaves no row in `disclosed_skipped.csv`** — the file above contains four rows, none of them
+NSC. The disclosed coordinate is therefore lower than NSC's actual announcements and its gap
+correspondingly wider, by an amount this pipeline does not currently quantify.
+
 ### 6.5 Open data gaps
 
 | Gap | Status |
@@ -714,6 +797,7 @@ corrected here and in the board memo. Reasons are attached per row in
 | Petrochemical naphtha feedstock | Open — `D1b.energy_naphtha` is 0/69 |
 | Facility energy intensities | **Open, and larger than it looks.** All three energy columns are route constants, not measurements (§3.2). Nothing in the model distinguishes one blast furnace's fuel intensity from another's |
 | Gwangyang BF2 | Open. An operating furnace excluded from the register because its published name carries no inner-volume figure to estimate capacity from (§3.1) |
+| New-build units in the register | **Open.** D1a lists existing units only, so the two announced Nippon Steel EAFs have no row and their commitments are dropped without a trace (§3.4, §6.4). The fix is a register convention for under-construction capacity, not a model change |
 | Petrochemical production volumes | **Not disclosed by either firm.** Emission intensity level is confirmed by one primary source (Mitsui's Mizushima closure implies 1.020 tCO₂/t-ethylene against our 0.95, −6.9%) but the utilisation time series cannot be checked |
 
 Full record with attempted access paths: [`docs/data_gap_registry.md`](data_gap_registry.md).
