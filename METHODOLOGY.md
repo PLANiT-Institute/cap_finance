@@ -291,6 +291,12 @@ $$\text{P50} = \operatorname{med}_\omega\big[\mathcal C^{tot}(P,\omega)-\mathcal
    규약에서는 같은 32개 중 **25개**가 비지배가 되고 여덟 묶음 중 일곱에서 기술 축이 돌아온다.
    `emis_cap` 인자는 진단 전용이고 기본값 None에서 헤드라인 경로는 불변이다
    (`docs/frontier_degeneracy.md`, `scripts/frontier_tech_epsilon.py`).
+   퇴화의 **크기**는 헤드라인 산출물에서 직접 읽힌다: `out/e5/frontier_points.csv`의
+   여덟 묶음 전부에서 비지배 점들의 `base_plan_id`가 **하나**이고, 점들은 PPA 비중과
+   고정가 EPC 여부로만 갈린다(현행 실행의 경계 점 중 CCfD를 서명한 것은 없다). 즉 보고되는
+   경계는 기술 축에서 한 점이고 계약 축에서만 기울며, frontier gap은 그 사실 위에서 읽어야
+   한다 — "더 나은 계획을 고를 수 있었나"가 아니라 "같은 계획을 더 낫게 계약할 수 있었나"다.
+   그 한 계획은 E2 대리 비용 순위에서 **여덟 중 다섯에서 꼴찌**, **여덟 중 일곱에서 하위 절반**이다.
 
 ---
 

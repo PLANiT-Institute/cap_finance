@@ -628,14 +628,19 @@ def gen_headline():
     if gap.exists():
         g = pd.read_csv(gap)
         n_gap = g.company_id.nunique()
-    bundles = 0
+    bundles, cells = 0, 0
     sc = ROOT / "out" / "scenarios" / "summary.csv"
     if sc.exists():
-        bundles = pd.read_csv(sc).bundle.nunique()
+        s = pd.read_csv(sc)
+        # `base` is the reference the others are differenced against, not an assumption bundle.
+        # F12 found it counted as one here, and the inflated 12 copied into §4.3 and O8.
+        bundles = s[s.bundle != "base"].bundle.nunique()
+        cells = int(s[s.bundle == "base"].shape[0])
     note = (f"\n\nScenario NZ15, `support=none`. Read TCaR to two significant figures (§6.1).\n\n"
             f"A frontier gap is computed for **{n_gap} of {m.company_id.nunique()} firms**; "
             f"§6.4 explains why the other two are not a disclosure failure. "
-            f"{bundles} assumption bundles have been evaluated.")
+            f"{bundles} assumption bundles have been evaluated against the `base` run, "
+            f"each over {cells} firm × scenario × support cells.")
     return head + note
 
 
@@ -773,17 +778,26 @@ def gen_frontier_shape():
     gap = ROOT / "out" / "e5" / "gap.csv"
     g = pd.read_csv(gap) if gap.exists() else pd.DataFrame(columns=["company_id", "scenario"])
     g = g[g.support == "none"] if "support" in g.columns else g
-    rows = []
+    pi = pd.read_csv(ROOT / "out" / "e2" / "plan_index.csv")
+    rows, one_sched, last_ranked, bottom_half = [], 0, 0, 0
     for (co, sc), d in f.groupby(["company_id", "scenario"]):
         hit = g[(g.company_id == co) & (g.scenario == sc)]
-        rows.append([COMPANY_NAME.get(co, co), sc, len(d), int(d.on_frontier.sum()),
+        fr = d[d.on_frontier & ~d.is_disclosed]
+        sched = fr.base_plan_id.nunique()
+        one_sched += int(sched == 1)
+        # where the frontier's schedule sits in the surrogate's own cost ordering
+        p = pi[(pi.company_id == co) & (pi.scenario == sc)]
+        rank = p.npv_cost_bnkrw.rank()[p.plan_id.isin(set(fr.base_plan_id))]
+        last_ranked += int(rank.max() == len(p))
+        bottom_half += int(rank.min() > len(p) / 2)
+        rows.append([COMPANY_NAME.get(co, co), sc, len(d), int(d.on_frontier.sum()), sched,
                      f"{hit.iloc[0].gap_cost_bnkrw:,.0f} / {hit.iloc[0].gap_risk_bnkrw:,.0f}"
                      if len(hit) else "**no coordinate**"])
     rows.sort(key=lambda r: (r[0], r[1]))
     head = _md(rows, ["Firm", "Scenario", "Candidate plans", "On frontier",
-                      "Gap cost / risk (bn KRW)"])
+                      "Distinct schedules on frontier", "Gap cost / risk (bn KRW)"])
     lo, hi = min(r[3] for r in rows), max(r[3] for r in rows)
-    thin = [r for r in rows if r[4] != "**no coordinate**"]
+    thin = [r for r in rows if r[5] != "**no coordinate**"]
     worst = min(thin, key=lambda r: r[3]) if thin else None
     note = (f"\n\nThe efficient frontier is **{lo} to {hi} plans** per firm × scenario, out of "
             f"{min(r[2] for r in rows)}–{max(r[2] for r in rows)} candidates. A frontier gap is a "
@@ -791,7 +805,19 @@ def gen_frontier_shape():
     if worst:
         note += (f" The thinnest case that carries a gap is {worst[0]} under {worst[1]}: "
                  f"**{worst[3]} non-dominated plans**, and the reported "
-                 f"{worst[4]} bn KRW is the distance to them.")
+                 f"{worst[5]} bn KRW is the distance to them.")
+    note += (
+        f"\n\nThe column to read first is *Distinct schedules on frontier*. In **{one_sched} of "
+        f"{len(rows)}** bundles every non-dominated point is a contract variant of a **single** "
+        f"technology schedule — same facilities, same technologies, same years, same total CAPEX — "
+        f"differing only in PPA share and the fixed-price EPC flag (no frontier point in the "
+        f"current run signs a CCfD). The frontier therefore slopes along the *financing* axis and "
+        f"is a single point on the *technology* axis, so a frontier gap answers \"could this firm "
+        f"have contracted its programme better\" and not \"could it have chosen a better "
+        f"programme\". And that schedule is not one the surrogate liked: it is the surrogate's "
+        f"most expensive plan in **{last_ranked} of {len(rows)}** bundles and in its bottom half in "
+        f"**{bottom_half} of {len(rows)}**, which is the same failure §2 measures, seen from the "
+        f"frontier's side (O11).")
     vd = ROOT / "out" / "e5" / "variance_decomp.csv"
     if vd.exists():
         v = pd.read_csv(vd)

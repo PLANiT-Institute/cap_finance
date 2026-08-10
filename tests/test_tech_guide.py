@@ -204,3 +204,41 @@ def test_no_facility_carries_a_measured_emission():
     assert unused == {"MCI_ICH_CR", "MCI_OSK_CR"}, (
         f"사업소 실측이 있는데 상향식으로 남은 시설이 {sorted(unused)}로 바뀌었다 "
         "— §8 주장 1의 마지막 문장을 고쳐라")
+
+
+def test_frontier_is_one_schedule_per_bundle():
+    """O11·P1은 "8묶음 전부에서 경계 점들이 한 기술계획의 계약 변형"이라고 단정한다.
+
+    F12가 찾은 사실이다. 경계에 두 번째 base_plan_id가 생기면 그 단정이 거짓이 되고,
+    §9.1 생성문·O11·P1 상태칸을 다시 써야 한다. CCfD를 서명한 경계 점이 생겨도 같다.
+    """
+    import csv
+
+    rows = [r for r in csv.DictReader((ROOT / "out" / "e5" / "frontier_points.csv").open())
+            if r["support"] == "none" and r["on_frontier"] == "True"
+            and r["is_disclosed"] != "True"]
+    bundles = {(r["company_id"], r["scenario"]) for r in rows}
+    for co, sc in bundles:
+        base = {r["base_plan_id"] for r in rows
+                if r["company_id"] == co and r["scenario"] == sc}
+        assert len(base) == 1, (
+            f"{co} {sc} 경계에 기술계획이 {len(base)}개다 — O11·P1의 '한 계획'이 거짓이다")
+    assert len(bundles) == 8, f"묶음이 8개가 아니라 {len(bundles)}개다 — §9.1 표를 다시 읽어라"
+    assert {r["ccfd"] for r in rows} == {"0"}, "경계 점이 CCfD를 서명했다 — O11 문장을 고쳐라"
+
+
+def test_base_is_not_counted_as_an_assumption_bundle():
+    """§4.3·§6·O8의 '열한 개'와 '열여섯 칸'은 base를 빼고 센 수다 (F12).
+
+    F12 이전에는 생성기가 base를 포함해 12로 세었고, 그 12가 §4.3과 O8에 복사되어
+    "twelve sensitivity axes"라는 틀린 문장이 되었다.
+    """
+    import csv
+
+    rows = list(csv.DictReader((ROOT / "out" / "scenarios" / "summary.csv").open()))
+    bundles = {r["bundle"] for r in rows} - {"base"}
+    cells = sum(r["bundle"] == "base" for r in rows)
+    assert (len(bundles), cells) == (11, 16), (
+        f"가정 묶음 {len(bundles)}개 · 칸 {cells}개로 바뀌었다 — §4.3·O8의 손으로 쓴 수를 고쳐라")
+    text = GUIDE.read_text(encoding="utf-8")
+    assert "twelve sensitivity axes" not in text and "twelve firm × scenario" not in text

@@ -3141,3 +3141,84 @@ D1b에 배분·상향식이 아닌 출처가 생기거나, 사업소 실측이 �
 - **§6.1 시드 스윕 재실행**(백로그 유지): E3–E5 × 5시드. 지금 CV는 NSC 옛 계획 위의 값이다.
 - **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
   미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).
+
+## F12 (07:15) — 적대적 검토 2: 경계는 한 기술계획의 계약 변형이었고, 그 계획은 대리가 꼴찌로 매긴 것이다. 그리고 문서의 "twelve"는 세 곳에서 base를 묶음으로 잘못 센 수였다
+
+**한 일.** 지도의 F12대로 §9 반론 목록(O1–O10)을 산출물과 다시 대조하고, 새 구멍 셋을
+O11–O13으로 추가했다. 대조 과정에서 **세는 수가 틀린 곳 셋**과 **문서가 한 번도 하지 않은
+가장 센 반론 하나**가 나왔다.
+
+### 가이드에서 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | §6 헤드라인 `GEN:headline` | "**12** assumption bundles have been evaluated" | **11개다.** 생성기가 `summary.csv`의 `bundle.nunique()`를 셌는데 그중 `base`는 가정 묶음이 아니라 나머지 열하나를 차분하는 **기준**이다. 생성기를 고쳐 `base`를 빼고, 칸 수(16)를 같은 문장에 붙였다 | `out/scenarios/summary.csv` (12묶음 = 11 + base, 묶음당 16행) |
+| 2 | §4.3 첫 단락 | "the **twelve** firm × scenario × support cells" | **16칸이다** (4사 × 2시나리오 × 2 support). 오류 1의 12가 여기로 복사됐다 | 같은 파일, `base` 16행 |
+| 3 | §9 O8 | "Three of your **twelve** sensitivity axes" | **열한 축이다.** 같은 12의 세 번째 복사본. 반론 제목 자체가 틀린 수를 들고 있었다 | 같은 파일 |
+| 4 | §9 O1 | 순위가 "**twelve** perturbations"에서 안 뒤집힌다 | **열셋이다** — 가정 묶음 11(`rank_preserved = 1` 11/11) + 평균회귀 + 중앙값 정규화. 12는 우연히 맞는 수가 아니라 오류 1의 네 번째 복사본이었다 | `out/m5/bundle_matrix.csv` × `out/process/{gbm,ou,gbm_median}/e5/metrics_company.csv` (② 순서 세 실행 모두 동일) |
+| 5 | §6.2 "Ranking is robust" | 출처 없음 | 같은 자리에 파일을 붙였다. "GBM vs 평균회귀·양쪽 정규화"를 뒷받침하는 파일이 문서 어디에도 없었고, 이번에 세 실행의 ② 순서를 직접 대조해 확인했다 | 위와 같음 |
+| 6 | §1 P1 상태칸 | "약하게 성립: 강제 기술일정 32개 중 4개만 비지배" | 축이 다르다. **보고된 실행에서 여덟 묶음 전부의 비지배 점이 한 기술계획의 계약 변형**이다. 경계가 기울어지는 이유는 기술이 아니라 계약이다 | `out/e5/frontier_points.csv` (`base_plan_id` nunique = 1, 8/8) |
+
+### 새 반론 셋
+
+- **O11 — "경계가 한 계획의 계약 변형이고, 그 계획은 최적화기가 꼴찌로 매긴 것 아닌가."**
+  맞다. 8/8 묶음에서 비지배 점의 `base_plan_id`가 하나이고(시설·기술·연도·총 CAPEX 동일),
+  점들은 PPA 비중과 고정가 EPC 여부로만 갈린다 — 현행 실행에서 CCfD를 서명한 경계 점은 없다.
+  그래서 frontier gap은 "더 나은 **계획**을 고를 수 있었나"가 아니라 "같은 계획을 더 낫게
+  **계약**할 수 있었나"를 잰다. 게다가 그 계획은 E2 대리 비용 순위에서 **여덟 중 다섯에서
+  꼴찌**, **여덟 중 일곱에서 하위 절반**이다 — §2가 이미 측정한 대리 실패를 경계 쪽에서 본 것이다.
+  수는 `GEN:frontier_shape`에 새 열(`Distinct schedules on frontier`)과 문장으로 생성된다.
+- **O12 — "gap 넷 중 둘은 자기 경계 밖 수백 배인데 그게 비교인가."** MCI B20은 자기 경계
+  최대 꼬리위험의 **477×** 위다. 나머지 셋은 1.01×·1.42×·2.08×로 비교가 성립한다. §8 주장 9는
+  방향(하한)만 말했고, 방향으로 부족한 칸이 하나 있다는 말은 없었다.
+- **O13 — "상향식으로 추정한 그 공장에 실측이 있는데 왜 원자료 폴더에 두는가."** MCI 두 기다.
+  `jp_site_emissions.csv`의 FY2023 사업소 총량(市原 1,107,038 · 大阪 1,454,608 tCO₂)에 대해
+  D1b의 상향식 NCC 추정은 각각 **49%·31%**다 — 사업소 행은 만족되는 **상한**이고 아무도 확인한
+  적이 없다. 대체재는 아니다(사업소 행은 다공장 사업소의 에너지 CO₂ Scope 1+2, 모형 단위는
+  크래커 하나). 상한 검증으로 쓰는 데는 비용이 안 드는데 하지 않는다. F11 인계의 답이다.
+
+### 검증
+
+```
+.venv/bin/python scripts/build_tech_guide.py     # 21 blocks, 101,987 chars
+.venv/bin/python scripts/build_guide_page.py     # 37 sections, 383 table rows (380 → 383), figure 1
+.venv/bin/python scripts/build_site.py
+.venv/bin/python scripts/gate.py                 # gate: OK (pytest 67 passed, audit ok 68/PARTIAL 4 불변)
+```
+
+수치 출처: 경계 구성 = `out/e5/frontier_points.csv`(`support=none`, `on_frontier`, `base_plan_id`·
+`ppa_share`·`epc`·`ccfd`) · 대리 순위 = `out/e2/plan_index.csv:npv_cost_bnkrw` · 묶음·칸 수 =
+`out/scenarios/summary.csv` · 순위 불변 = `out/m5/bundle_matrix.csv:rank_preserved` +
+`out/process/{gbm,ou,gbm_median}/e5/metrics_company.csv` · 초과 배수 = `frontier_points.csv` ×
+`out/e5/gap.csv` · MCI 사업소 = `data/raw/jp_site_emissions.csv` × `data/prepared/D1b_facility_panel.csv`.
+
+테스트 2개 추가(65 → 67). `test_frontier_is_one_schedule_per_bundle`은 경계에 두 번째
+기술계획이나 CCfD 점이 생기면 실패한다 — 그때 O11·P1·§9.1 생성문을 다시 써야 한다.
+`test_base_is_not_counted_as_an_assumption_bundle`은 11·16이 바뀌거나 "twelve sensitivity axes"
+문자열이 되돌아오면 실패한다.
+
+**METHODOLOGY.md도 고쳤다.** §9-6 항목 10(경계 퇴화)은 "원인은 후보 생성이 아니라 위험 규약"까지만
+적고 있었고, 퇴화의 **크기**(8/8 한 계획, 계약 축만 기움, 대리 꼴찌 5/8)가 정본에 없었다.
+가이드가 정본을 앞서지 않도록 같은 사실을 정본에 먼저 적었다.
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | **문제 재확인** | audit `ok 68, PARTIAL 4` 불변. MCI 사업소 실측 미사용을 O13으로 문서에 올렸다(수정은 아직) |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | 유지 | 11 가정 묶음 + base, 묶음당 16칸 (3묶음 미재계획 — F2) |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선** | Arc가 "그래서 gap이 무엇의 거리냐"고 물으면 O11 한 줄이 답이다. 팔기 나쁜 답이지만 사실이고, 먼저 말하는 쪽이 낫다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | 유지 | `scripts/gate.py` 8항목. MCP 표면 변화 없음 |
+| ⑤ 산출물 — 다른 형식이 있는가 | 유지 | md / HTML(37절 383행) / SVG / 데이터 패키지 |
+
+### 인계
+
+- **F13(용어집)**: O11이 용어 부담을 늘렸다 — `base_plan_id`(기술계획)와 계약 변형의 구분이
+  이제 P1·§9.1·O11 세 곳에서 쓰인다. 용어집 첫 항목 후보.
+- **경계 그림 확장**(선택): §2 그림의 경계 점들이 전부 한 계획의 계약 변형이라는 사실은
+  그림에 안 보인다. `_panel`에 계약 라벨(PPA 비중)을 붙이면 O11이 그림이 된다.
+- **MCI 사업소 상한 검증**(백로그, 코드): O13이 제안한 검증은 `prepare_raw.py` 석화 분기에
+  경고 한 줄이면 된다(사업소 총량 초과 시 실패). 재실행이 필요해 창 안에서 시작하지 않았다.
+- **§6.1 시드 스윕 재실행**(백로그 유지): E3–E5 × 5시드.
+- **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).
