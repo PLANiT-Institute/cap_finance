@@ -50,9 +50,9 @@ E4 `e4_revalue.py`, E5 `e5_metrics.py`, 공용 원가 `plancost.py`).
 | $Q_f$ | 연간 생산 | t/yr | D1b 최근 3개년 평균 |
 | $\mathrm{cap}_f$ | 설비 능력 | t/yr | D1a (**A-01**) |
 | $e_f$ | 기존 배출 원단위 | tCO₂/t | $E^{s1}_f / Q_f$ (**A-02**) |
-| $\eta^{el}_f,\ \eta^{coal}_f,\ \eta^{gas}_f$ | 기존 에너지 원단위 | MWh/t, t/t, t/t | D1b ÷ $Q_f$ (**A-03**) |
-| $y^{re}_f,\ L_f$ | 다음 재투자 연도, 개수 주기 | yr | D1a |
-| $\mu_f$ | 톤당 영업마진 | 천원/t | D6 배분 (**A-04**) |
+| $\eta^{el}_f,\ \eta^{coal}_f,\ \eta^{gas}_f$ | 기존 에너지 원단위 | MWh/t, t/t, t/t | D1b ÷ $Q_f$, 단 석탄·가스는 **D1b가 GJ/yr**이므로 각각 ÷28.0, ÷54.0 GJ/t로 톤 환산 (`e2_milp.py:54-55`) (**A-03**) |
+| $y^{re}_f,\ L_f$ | 다음 재투자 연도, 개수 주기 | yr | D1a. 결측 시 $y^{re}_f=\max(\text{commissioning}+20,\ 2030)$, $L_f=20$으로 보정 (`prepare_raw.py:64-68`) |
+| $\mu_f$ | 톤당 영업마진 | 천원/t | **D1a.`margin_kthou_t`** — D6에는 마진 열이 없다. 섹터 상수(철강 70·석화 290)를 prepare 단계에서 주입한다 (`prepare_raw.py:80`) (**A-04**) |
 
 ### 2-2. 기술 (D3)
 

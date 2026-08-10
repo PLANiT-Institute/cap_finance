@@ -145,7 +145,7 @@ behaviour are called out where they appear.
 | `D7.item_type` | 3 | `tech_commit` (7), `target` (3), `timing` (2) |
 | `D7.resolution` | 2 | `high` (7), `mid` (5) |
 
-These are the values that **occur**, not the values the schema permits — `load_input` checks that a column exists and is numeric where required, never what it contains. Three of these fields are documentation rather than input and no stage branches on them: `D1a.status`, `D1a.capacity_unit` and `D7.resolution`. Nor is any `D5` row read — see §3.6. The rest decide behaviour.
+These are the values that **occur**, not the values the schema permits — `load_input` checks that a column exists and is numeric where required, never what it contains. Three of these fields are documentation to every *modelling* stage — no stage branches on `D1a.status`, `D1a.capacity_unit` or `D7.resolution`. `status` carries one exception that sits upstream of this table: `prepare_raw.py` drops a row whose status contains `폐쇄예정` before writing the prepared file, which is why no such value appears above (§3.1). Nor is any `D5` row read — see §3.6. The rest decide behaviour.
 <!-- /GEN:vocab -->
 
 ### 3.1 D1a — facility register (static)
@@ -167,10 +167,10 @@ row here.
 | `last_reline_year` **[req]** | Most recent campaign renewal | year | Blast furnaces only |
 | `reinvest_cycle_yr` **[req]** | Campaign length | yr | Sets the reinvestment window |
 | `next_reinvest_year` **[req]** | Next campaign anchor | year | Early conversion before this anchor writes off residual book value (**A-13**) |
-| `status` **[req]** | Operating state, free Korean text as published (§3.0) | — | Not parsed and not branched on: **no row is excluded on `status`**, including the two units whose text says closure or transfer is planned |
+| `status` **[req]** | Operating state, free Korean text as published (§3.0) | — | No *modelling* stage branches on it. One prep-time test does — see the register filter below |
 | `source_id` **[req]** | Foreign key into `source_register` | — | Mandatory |
-| `incumbent_capex_unit` **[extra]** | Replacement cost of the incumbent asset | thousand KRW/t | Used only for the stranding write-off. One value per `unit_type`, not per asset: BF 200, EAF 250, FINEX 300, NCC 150. The BF figure is the one A-13 fails external validation on, at 4.2× |
-| `margin_kthou_t` **[extra]** | Operating margin per tonne of output | thousand KRW/t | Closure forfeits it (**A-04**). Also one value per sector, not per asset: steel 70, petchem 290. E2 enables the retirement decision **only if every facility of that firm has a positive value** — one blank switches closure off for the whole firm rather than making closure free. All 23 rows are currently populated, so retirement is live for all four firms |
+| `incumbent_capex_unit` **[extra]** | Replacement cost of the incumbent asset | thousand KRW/t | Used only for the stranding write-off. Not collected: written at prep from a `unit_type` lookup (`prepare_raw.py:73`) — BF 200, EAF 250, FINEX 300, NCC 150. The BF figure is the one A-13 fails external validation on, at 4.2× |
+| `margin_kthou_t` **[extra]** | Operating margin per tonne of output | thousand KRW/t | Closure forfeits it (**A-04**). Also written at prep, from a `sector` lookup (`prepare_raw.py:80`): steel 70, petchem 290. E2 enables the retirement decision **only if every facility of that firm has a positive value** — one blank switches closure off for the whole firm rather than making closure free. All 23 rows are currently populated, so retirement is live for all four firms |
 
 **Unit caution.** `capacity` is not commensurate across rows: a blast furnace is stated in tonnes of
 hot metal, an NCC in tonnes of ethylene, and one unit in tonnes of crude steel. Nothing in the model
@@ -181,6 +181,33 @@ carries, so a technology's `capex_unit` is only comparable within a `unit_type`.
 while decisions are made per *unit*. That mismatch is where the model's largest assumption lives —
 see A-02 in §4.
 
+**How `capacity` is filled.** Where a published capacity exists it is used unchanged. Where it does
+not — 16 of the 23 rows, all blast furnaces — it is estimated as inner volume × 913.3 t/m³·yr,
+where the multiplier is fixed by a **single calibration point** (Gwangyang BF1, 6,000 m³ =
+5.48 Mt/yr; `prepare_raw.py:43-51`). Those rows are marked in `capacity_unit` as
+`t용선/yr (내용적 추정)` and carry rank information rather than a defensible absolute (**A-01**).
+Two further fields are repaired the same way: a missing `next_reinvest_year` becomes
+`commissioning_year + 20`, floored at 2030, and a missing `last_reline_year` becomes
+`commissioning_year` (`prepare_raw.py:64-69`). The first of those feeds the stranding write-off
+directly, so a repaired reinvestment anchor is a repaired A-13 cost.
+
+#### Which units the model never sees
+
+<!-- GEN:register_filter -->
+| Facility | Site | Unit | Raw `status` | Excluded because |
+|---|---|---|---|---|
+| `POSCO_GWY_BF2` | 광양 | BF | 개수중 | no `capacity`, and `unit_name` carries no `m³` token to estimate one from |
+| `POSCO_POH_FINEX2` | 포항 | FINEX | 폐쇄예정(2025말) | `status` contains the literal `폐쇄예정` |
+| `NSC_YAW_EAF1` | 八幡 | EAF | 건설중(2029년도 下期) | `commissioning_year` 2029 > 2026 (not yet operating) |
+| `NSC_HIR_EAF2` | 広畑 | EAF | 건설중(2029년도 下期) | `commissioning_year` 2029 > 2026 (not yet operating) |
+| `LOTTE_ULS_AROM` | 울산 | 방향족 공정(가열로군) | 부분 가동중단(PIA 1·3라인) | no `capacity`, and `unit_name` carries no `m³` token to estimate one from |
+
+28 rows collected, 23 reach the model. The three tests are applied in `scripts/prepare_raw.py:54-62`, before the prepared file is written, so an excluded unit is invisible to every later stage and to the schema check. Two of them are worth stating plainly: the closure test is a **substring match on one Korean string**, so the units whose status says `휴지예정` or `가동중단 계획` stay in the model; and a capacity that has to be estimated is estimated from a `m³` figure parsed out of the unit's *name*, so an operating furnace whose name happens not to carry that token is excluded by a text format, not by a decision.
+<!-- /GEN:register_filter -->
+
+None of these exclusions is reversible downstream: the prepared file is the model's universe, and
+the schema check in `load_input` validates what survived, not what was collected.
+
 ### 3.2 D1b — facility panel (time-varying)
 
 One row per facility-year. Production and energy define the incumbent baseline that every plan is
@@ -188,26 +215,73 @@ measured against.
 
 All nine columns are schema-required.
 
-| Field | Definition | Unit |
-|---|---|---|
-| `facility_id`, `year` | Composite key | — |
-| `production` | Physical output — on the same basis as `D1a.capacity_unit` for that facility | t/yr |
-| `emissions_s1` | Scope 1 | tCO₂/yr |
-| `emissions_s2` | Scope 2 (purchased electricity) | tCO₂/yr |
-| `energy_coal` | Coal / coke input | t/yr |
-| `energy_gas` | Gas input | t/yr |
-| `energy_elec` | Electricity input | MWh/yr |
-| `energy_naphtha` | Naphtha feedstock | t/yr |
-| `source_id` | Foreign key into `source_register` | — |
+| Field | Definition | Unit | Read by |
+|---|---|---|---|
+| `facility_id`, `year` | Composite key | — | |
+| `production` | Physical output — on the same basis as `D1a.capacity_unit` for that facility | t/yr | E2 (denominator of every intensity, and the quantity every per-tonne cost multiplies) |
+| `emissions_s1` | Scope 1 | tCO₂/yr | E2, E1 company base |
+| `emissions_s2` | Scope 2 (purchased electricity) | tCO₂/yr | **nothing** — preserved, never joined into the model frame |
+| `energy_coal` | Coal / coke input | **GJ/yr** | E2, converted to tonnes at 28.0 GJ/t |
+| `energy_gas` | Gas input | **GJ/yr** | E2, converted to tonnes at 54.0 GJ/t |
+| `energy_elec` | Electricity input | MWh/yr | E2 |
+| `energy_naphtha` | Naphtha feedstock | t/yr | **nothing** — and empty in all 69 rows |
+| `source_id` | Foreign key into `source_register` | — | Its value records the derivation: `PREP_ALLOC` (57 rows, top-down from a company disclosure) or `PREP_BOTTOMUP` (12 rows) |
 
-Derived quantities: incumbent output `Q_f` is the 3-year mean of `production`; incumbent emission
-intensity `e_f = emissions_s1 / Q_f`; energy intensities likewise. The panel holds exactly
-2022–2024, so "3-year mean" is the whole panel, not a trailing window — a fourth year would change
-the baseline of every result.
+**The two energy columns are stated in GJ, not tonnes.** An earlier version of this table said
+t/yr for both, which would make the model's `/ 28.0` and `/ 54.0` conversions wrong by their own
+factor. They are gigajoules; the conversion produces the tonnes of fuel that the `coal_price` and
+`gas_price` paths are charged against (`src/cap/e2_milp.py:36-37,54-55`).
 
-**Known hole:** `energy_naphtha` is empty for all 69 rows — the column is blank, not zero.
-Petrochemical feedstock exposure is therefore understated. Because margin is taken on an
-operating-profit basis there is no double-count, but the naphtha price channel is absent.
+#### Derivation
+
+`_prep_company` (`src/cap/e2_milp.py:49-55`) reduces the panel to one row per facility and forms
+every incumbent coefficient from it:
+
+```
+recent = panel[year >= max(year) - 2].groupby(facility_id).mean()   # → Q_f, and the 3-yr means
+ef_inc       = emissions_s1 / production            # tCO₂ per t of output
+elec_int_inc = energy_elec  / production            # MWh/t
+coal_int_inc = energy_coal  / production / 28.0     # GJ/t → t coal per t of output
+gas_int_inc  = energy_gas   / production / 54.0     # GJ/t → t gas  per t of output
+```
+
+The panel holds exactly 2022–2024 and every facility has all three rows, so the "3-year mean" is
+the whole panel rather than a trailing window — a fourth year would move the baseline of every
+result. `mean()` skips nulls silently, so a facility with a gap would be averaged over the years it
+has, with no warning; that case does not currently arise.
+
+<!-- GEN:d1b_intensity -->
+| Unit type | Facilities | Q (Mt/yr) | `ef_inc` tCO₂/t | coal GJ/t | gas GJ/t | elec MWh/t |
+|---|---|---|---|---|---|---|
+| `BF` | 17 | 65.31 | 1.72–2.34 | 13.5 | 0.4 | 0.08 |
+| `EAF` | 1 | 2.33 | 0.44 | 0.0 | 1.0 | 0.55 |
+| `FINEX` | 1 | 1.86 | 2.01 | 13.0 | 0.4 | 0.10 |
+| `NCC` | 4 | 3.00 | 0.95 | 0.0 | 8.0 | 0.35 |
+
+Columns 4–7 are the coefficients `_prep_company` builds (`src/cap/e2_milp.py:49-55`) over the 23 facilities carrying 72.5 Mt/yr of incumbent output. A single value in a range column means every facility of that unit type carries the identical number: the three energy columns are **not observations**. They were absent from the collected panel and are written as `production × ROUTE[unit_type]` in `scripts/prepare_raw.py:100-107,190,211`, so `energy_x / production` returns the route constant by construction and no facility-level energy information exists in the model. `ef_inc` is the one incumbent coefficient that varies within a unit type, and only for steel — petrochemical Scope 1 is itself `production × ROUTE[NCC][0]`, which is why the injected 0.95 tCO₂/t *is* the petrochemical level rather than an input to it (**A-03**).
+<!-- /GEN:d1b_intensity -->
+
+#### Missing and zero handling
+
+There is no imputation inside the model — gaps are either repaired at prep (§3.1) or they stop the
+run. The rules, in the order they bite:
+
+- **NaN in a model coefficient stops the solve.** `production`, `ef_inc`, the three energy
+  intensities, `capacity`, `next_reinvest_year` and `reinvest_cycle_yr` are checked per company and
+  a null in any of them raises before the LP is built (`e2_milp.py:111-118`), because CBC's
+  behaviour on a NaN coefficient is undefined rather than merely wrong.
+- **Zero production is not checked.** Every intensity divides by `production`, so a zero would
+  produce `inf` rather than NaN and pass the guard above. No row is currently zero, and this is a
+  gap in the check, not a property of the data.
+- **A blank `margin_kthou_t` disables retirement for the whole firm**, rather than making
+  retirement free — see §3.1.
+- **Columns nothing reads are not filled.** `energy_naphtha` is blank in all 69 rows and
+  `emissions_s2` is never joined into the model frame, so neither can fail loudly; both are
+  recorded here instead.
+
+**Known hole:** the absent `energy_naphtha` means petrochemical feedstock exposure is understated.
+Because margin is taken on an operating-profit basis there is no double-count, but the naphtha
+price channel is absent.
 
 **Emission boundary:** Scope 1 only (**A-21**). `emissions_s2` is non-zero in 63 of 69 rows and is
 preserved but never charged, because budgets are anchored to the firm's own base and the choice is
@@ -638,6 +712,8 @@ corrected here and in the board memo. Reasons are attached per row in
 | Japanese per-site emissions | **Closed at T1.** EEGS discloses by site from FY2021. Nippon Steel 27 sites and Mitsui Chemicals 8 sites obtained for FY2023; site totals reconcile to −2.6% and −1.9% against firm disclosure |
 | Monthly price series | Partly closed. Volatility still rests on 1–19 annual observations for most factors |
 | Petrochemical naphtha feedstock | Open — `D1b.energy_naphtha` is 0/69 |
+| Facility energy intensities | **Open, and larger than it looks.** All three energy columns are route constants, not measurements (§3.2). Nothing in the model distinguishes one blast furnace's fuel intensity from another's |
+| Gwangyang BF2 | Open. An operating furnace excluded from the register because its published name carries no inner-volume figure to estimate capacity from (§3.1) |
 | Petrochemical production volumes | **Not disclosed by either firm.** Emission intensity level is confirmed by one primary source (Mitsui's Mizushima closure implies 1.020 tCO₂/t-ethylene against our 0.95, −6.9%) but the utilisation time series cannot be checked |
 
 Full record with attempted access paths: [`docs/data_gap_registry.md`](data_gap_registry.md).

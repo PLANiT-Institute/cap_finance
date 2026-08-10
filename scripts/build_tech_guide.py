@@ -146,10 +146,94 @@ def gen_vocab():
         rows.append([f"`{stem.split('_')[0]}.{col}`", s.nunique(), vals])
     note = ("\n\nThese are the values that **occur**, not the values the schema permits — "
             "`load_input` checks that a column exists and is numeric where required, never what "
-            "it contains. Three of these fields are documentation rather than input and no stage "
-            "branches on them: `D1a.status`, `D1a.capacity_unit` and `D7.resolution`. Nor is any "
-            "`D5` row read — see §3.6. The rest decide behaviour.")
+            "it contains. Three of these fields are documentation to every *modelling* stage — "
+            "no stage branches on `D1a.status`, `D1a.capacity_unit` or `D7.resolution`. `status` "
+            "carries one exception that sits upstream of this table: `prepare_raw.py` drops a row "
+            "whose status contains `폐쇄예정` before writing the prepared file, which is why no "
+            "such value appears above (§3.1). Nor is any `D5` row read — see §3.6. The rest "
+            "decide behaviour.")
     return _md(rows, ["Field", "Distinct", "Values (count)"]) + note
+
+
+def gen_register_filter():
+    """Which raw facility rows never reach the model, and on what test.
+
+    Deliberately a *diff* of raw against prepared, not a re-implementation of
+    `prepare_raw.py`'s exclusion logic: a copy of that logic here would agree with
+    the guide and disagree with the pipeline the moment either moved. The reason
+    column is attributed, not recomputed.
+    """
+    raw = ROOT / "data" / "raw" / "facility_static.csv"
+    prep = prepared() / "D1a_facility_static.csv"
+    if not (raw.exists() and prep.exists()):
+        return "_D1a not available._"
+    r = pd.read_csv(raw, dtype=str)
+    keep = set(pd.read_csv(prep, dtype=str).facility_id)
+    rows = []
+    for t in r.itertuples():
+        if t.facility_id in keep:
+            continue
+        status = str(t.status or "")
+        year = pd.to_numeric(pd.Series([t.commissioning_year]), errors="coerce").iloc[0]
+        has_vol = bool(re.search(r"[\d,]+\s*m³", str(t.unit_name or "")))
+        cap = pd.to_numeric(pd.Series([t.capacity]), errors="coerce").iloc[0]
+        if "폐쇄예정" in status:
+            why = "`status` contains the literal `폐쇄예정`"
+        elif pd.notna(year) and year > 2026:
+            why = f"`commissioning_year` {int(year)} > 2026 (not yet operating)"
+        elif pd.isna(cap) and not has_vol:
+            why = "no `capacity`, and `unit_name` carries no `m³` token to estimate one from"
+        else:
+            why = "dropped — reason not reproducible from the raw row"
+        rows.append([f"`{t.facility_id}`", t.site, t.unit_type, status or "—", why])
+    note = (f"\n\n{len(r)} rows collected, {len(keep)} reach the model. The three tests are "
+            "applied in `scripts/prepare_raw.py:54-62`, before the prepared file is written, "
+            "so an excluded unit is invisible to every later stage and to the schema check. "
+            "Two of them are worth stating plainly: the closure test is a **substring match on "
+            "one Korean string**, so the units whose status says `휴지예정` or `가동중단 계획` "
+            "stay in the model; and a capacity that has to be estimated is estimated from a "
+            "`m³` figure parsed out of the unit's *name*, so an operating furnace whose name "
+            "happens not to carry that token is excluded by a text format, not by a decision.")
+    if not rows:
+        return "_No raw facility row is excluded._" + note
+    return _md(rows, ["Facility", "Site", "Unit", "Raw `status`", "Excluded because"]) + note
+
+
+def gen_d1b_intensity():
+    """The incumbent coefficients E2 actually builds, and where they vary."""
+    d = prepared()
+    p, q = d / "D1b_facility_panel.csv", d / "D1a_facility_static.csv"
+    if not (p.exists() and q.exists()):
+        return "_D1b not available._"
+    d1b = pd.read_csv(p)
+    d1a = pd.read_csv(q)
+    recent = d1b[d1b.year >= d1b.year.max() - 2].groupby("facility_id").mean(numeric_only=True)
+    f = d1a.set_index("facility_id").join(recent)
+    f["ef_inc"] = f.emissions_s1 / f.production
+    f["coal_gj_t"] = f.energy_coal / f.production
+    f["gas_gj_t"] = f.energy_gas / f.production
+    f["elec_mwh_t"] = f.energy_elec / f.production
+    rows = []
+    for ut, g in f.groupby("unit_type"):
+        def rng(col, dp=2):
+            lo, hi = g[col].min(), g[col].max()
+            return f"{lo:.{dp}f}" if abs(hi - lo) < 10 ** -dp else f"{lo:.{dp}f}–{hi:.{dp}f}"
+        rows.append([f"`{ut}`", len(g), f"{g.production.sum() / 1e6:.2f}",
+                     rng("ef_inc"), rng("coal_gj_t", 1), rng("gas_gj_t", 1), rng("elec_mwh_t")])
+    note = (f"\n\nColumns 4–7 are the coefficients `_prep_company` builds "
+            f"(`src/cap/e2_milp.py:49-55`) over the {len(f)} facilities carrying "
+            f"{f.production.sum() / 1e6:.1f} Mt/yr of incumbent output. A single value in a range "
+            "column means every facility of that unit type carries the identical number: the "
+            "three energy columns are **not observations**. They were absent from the collected "
+            "panel and are written as `production × ROUTE[unit_type]` in "
+            "`scripts/prepare_raw.py:100-107,190,211`, so `energy_x / production` returns the "
+            "route constant by construction and no facility-level energy information exists in "
+            "the model. `ef_inc` is the one incumbent coefficient that varies within a unit "
+            "type, and only for steel — petrochemical Scope 1 is itself `production × "
+            "ROUTE[NCC][0]`, which is why the injected 0.95 tCO₂/t *is* the petrochemical "
+            "level rather than an input to it (**A-03**).")
+    return _md(rows, ["Unit type", "Facilities", "Q (Mt/yr)", "`ef_inc` tCO₂/t",
+                      "coal GJ/t", "gas GJ/t", "elec MWh/t"]) + note
 
 
 def gen_price_series():
@@ -312,6 +396,8 @@ BLOCKS = {
     "axis_impact": gen_axis_impact,
     "dataset_inventory": gen_dataset_inventory,
     "vocab": gen_vocab,
+    "register_filter": gen_register_filter,
+    "d1b_intensity": gen_d1b_intensity,
     "price_series": gen_price_series,
     "tier_distribution": gen_tier_distribution,
     "config": gen_config,
