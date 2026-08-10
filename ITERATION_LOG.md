@@ -3290,3 +3290,71 @@ O11–O13으로 추가했다. 대조 과정에서 **세는 수가 틀린 곳 셋
 - **MCI 사업소 상한 검증**(백로그 유지, O13): `prepare_raw.py` 석화 분기에 경고 한 줄.
 - **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
   미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).
+
+## F14 (08:12) — README에서 가이드로 가는 길을 냈더니, 첫 화면 요약이 정본과 세 곳에서 어긋나 있었다
+
+**한 일.** 지도의 F14대로 저장소 첫 화면에서 `docs/TECHNICAL_GUIDE.md`에 도달 가능하게 했다.
+링크는 한 줄이었지만, **링크가 없는 동안 외부 독자가 대신 읽던 README 요약**을 정본과 대조하니
+사실 오류 셋이 나왔다. 랜딩 카드에서 둘 더 나왔다.
+
+### 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | README 방법 요약 2 · `docs/literature_map.md` §2 | 상관 몬테카를로 "**N=5,000**" | **10,000이다.** 5,000은 `REDESIGN_SPEC.md:249`의 기본값이고, 그 수에서 P50/TCaR 수렴 검사가 2.6% 이탈해 스펙의 상향 조항을 따라 올린 값이 정본이다. 두 문서가 설계 기본값을 실행값으로 적고 있었다 | `config.yaml:14-15` (`simulation.n_sims: 10000` + 상향 사유 주석), gate의 `out/ 실행 설정` 줄 |
+| 2 | README 방법 요약 3 | "선택 가능한 계획 **전체**를 (기대비용, TCaR) 평면에 놓고 **ε-constraint로 frontier 추적**" | 보고되는 경계는 E2가 ε-constraint로 열거한 계획 위가 **아니다**. E5가 E2 계획을 (시설·기술·연도) 기술일정으로 중복 제거한 뒤 고정 계약 격자(PPA 5 × EPC 2)를 재부여하고 `ccfd=0`을 강제한 **재구성 집합** 위의 좌하 포락선이다. README가 대리 열거 단계와 정본 재평가를 한 문장에 뭉개고 있었다 — 가이드 §2가 "가장 중요한 구조적 사실"이라 부르는 바로 그 구분이다 | `src/cap/e5_metrics.py:184-201`(격자 재부여), `:50-58`(`_frontier` 포락선), 가이드 §2·§6.3 |
+| 3 | README 방법 요약 2 | "P50 = 기대비용, TCaR = P90−P50"까지만 | 무엇 위의 P50인지가 빠졌다. 둘 다 **무전환 기준선 대비 증분**이고 **탄소지출 차감 후**(자원비용 기준)다. 탄소 처리가 다른 연구와 비교하려면 이 조건이 있어야 한다 | `src/cap/e5_metrics.py:1-6` 독스트링, `:210-217` |
+| 4 | `web/index.html` 가이드 카드 (`build_site.py:201`) | "· **8장**" | **10장이다.** F13이 §10 용어집을 붙인 뒤에도 상수 "8장"이 그대로였다. 이제 가이드의 `## ` 제목을 세서 쓴다 | `docs/TECHNICAL_GUIDE.md` |
+| 5 | `web/index.html` 시나리오 카드 (`build_site.py:193`) | "묶음 **12종**" | **11종이다.** `bundle.nunique()`가 `base`를 가정 묶음으로 셌다 — **F12가 가이드 네 곳에서 고친 그 오류의 다섯 번째 사본**이고, 문서가 아니라 사이트 빌더에 남아 있었다. 이제 `- {"base"}` 한다 | `out/scenarios/summary.csv` (12묶음 = 11 + base) |
+
+### 새로 붙인 것
+
+- **README 상단 진입 블록**: 가이드 링크 + 어느 절을 읽을지(§3 데이터셋 / §4.1 결론을 좌우하는
+  가정 / §6 결과가 선 자리 / §8 못 하는 말 / §9 가장 센 반론 / §10 용어집) + `<!-- GEN:x -->`
+  블록을 손으로 고치지 말라는 규칙 + 웹 판 위치.
+- **부속 도구 표에 3행 추가**: `scripts/gate.py`(매 사이클 돌리는 도구인데 README에 없었다),
+  `scripts/build_tech_guide.py`, `scripts/build_guide_page.py`.
+- **실행 절 검증 블록에 `scripts/gate.py`** 한 줄.
+
+### 검증
+
+```
+.venv/bin/python scripts/build_tech_guide.py     # 21 blocks, 111,189 chars (불변)
+.venv/bin/python scripts/build_site.py           # guide 38 sections; 카드 "10장" · "묶음 11종"
+.venv/bin/python scripts/gate.py                 # gate: OK (pytest 70 passed, audit ok 68/PARTIAL 4 불변)
+```
+
+수치 출처: 표본 수 = `config.yaml:15` · 경계 구성 = `src/cap/e5_metrics.py:50-58,184-201` ·
+장 수 = `docs/TECHNICAL_GUIDE.md`의 `## ` 제목 · 묶음 수 = `out/scenarios/summary.csv`.
+
+테스트 2개 추가(68 → 70). `test_repo_front_door_reaches_the_guide_and_agrees_with_config`는
+README가 가이드 링크를 잃거나 `config.yaml`의 `n_sims`와 어긋나면 실패한다.
+`test_landing_card_counts_are_counted_not_typed`는 카드의 두 수가 다시 상수가 되거나
+`base`를 묶음으로 세면 실패한다.
+
+**가이드 본문은 건드리지 않았다.** F14는 도달 경로 작업이고, 가이드 수치는 F9·F12·F13에서
+이미 대조했다. 생성 블록 21개는 바이트 단위로 불변이다.
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | 유지 | gate audit `ok 68, PARTIAL 4` 불변 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | **표기 정정** | 11 가정 묶음 + base. 사이트가 12로 팔고 있던 것을 11로 고쳤다 (3묶음 미재계획 — F2) |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선** | Arc가 GitHub 링크만 받아도 3초 안에 가이드에 닿는다. 그전에는 `docs/`를 뒤져야 했다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | **개선** | `scripts/gate.py`가 README에 올라왔다 — 클론한 사람이 "아직 작동하는가"를 한 명령으로 물을 수 있다 |
+| ⑤ 산출물 — 다른 형식이 있는가 | 유지 | md / HTML(38절 383행) / SVG / 데이터 패키지 |
+
+### 인계
+
+- **F15(최종 교정)**: 영어 문장·표 정합·링크 전수. 이번에 확인한 것은 README → 가이드 방향뿐이다.
+  가이드 → 외부(`METHODOLOGY.md`·`data_gap_registry.md`·`mcp_server.md`) 링크는 테스트가 있지만
+  §3·§9의 파일 경로 인용(예: `docs/robustness_structural.md §3-1`)은 절 번호까지 확인한 적이 없다.
+- **`web/README.md`**(사소, 미수정): 가이드를 "8장"이 아니라 장 수 없이 기술하는지 확인 안 했다.
+- **CCfD를 시험 가능하게 만드는 일**(백로그 유지, F13): D5에 행사가 행 + E5 격자에 `ccfd` 축.
+- **§6.1 시드 스윕 재실행**(백로그 유지): E3–E5 × 5시드.
+- **MCI 사업소 상한 검증**(백로그 유지, O13): `prepare_raw.py` 석화 분기에 경고 한 줄.
+- **③ 번호 오기**(백로그 유지, F13): 파이프라인 재실행 사이클에 같이 넣어라 — 주석만 고쳐도
+  gate의 `out/ vs data/raw`가 STALE로 뒤집힌다.
+- **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).
