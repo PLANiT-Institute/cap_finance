@@ -7,11 +7,18 @@
 기준 문서: [`REDESIGN_SPEC.md`](REDESIGN_SPEC.md) — 데이터셋(D1–D7)·엔진(E1–E5)·지표(①–⑤) 정의. ⑥ 조달부담은 v2.2 추가.
 기존 v1(cost-gap 설계)은 `archive/cap_kj_v1/`. 형식 명세: [`METHODOLOGY.md`](METHODOLOGY.md).
 
+**모형을 심문하려는 독자는 여기부터**: [`docs/TECHNICAL_GUIDE.md`](docs/TECHNICAL_GUIDE.md) (영어)
+— 데이터셋 D1a–D7의 필드 정의와 소비 경로(§3) · 결론을 좌우하는 가정(§4.1) · 현재 결과가 무엇 위에
+서 있는가(§6) · **아직 할 수 없는 말**(§8) · 우리가 우리 결과에 대해 아는 가장 센 반론(§9) ·
+용어집(§10). 수치는 전부 `out/`·`config.yaml`·`docs/*.csv`에서 생성되며 `<!-- GEN:x -->` 블록으로
+표시된다 — 손으로 고치지 말고 `scripts/build_tech_guide.py`를 고쳐 다시 돌린다.
+웹 판은 `web/guide.html`([`scripts/build_guide_page.py`](scripts/build_guide_page.py) 렌더).
+
 ## 방법 요약
 
 1. **제약만 내려받기** — NGFS-GCAM 시나리오에서 섹터 탄소예산·가격 경로만 추출 (감축량 안분 금지). 누가 언제 감축할지는 시설 단위 MILP가 결정하며, 설비 재투자 창이 투자 타이밍을 내생적으로 결정.
-2. **불확실성을 원화로** — 전력·수소·CAPEX 상관 몬테카를로(N=5,000)로 비용 분포 산출. P50 = 기대비용, **TCaR = P90−P50**. 수소가격은 수소 = f(전력, 전해조 CAPEX) 구조식으로 파생.
-3. **기업 내 효율 경계** — 선택 가능한 계획 전체를 (기대비용, TCaR) 평면에 놓고 ε-constraint로 frontier 추적. 공시 계획과 경계의 거리(**frontier gap**)가 진단 결과. 기업 간 순위표 없음.
+2. **불확실성을 원화로** — 전력·수소·CAPEX 상관 몬테카를로 **N=10,000**(`config.yaml: simulation.n_sims`. 설계서 기본값은 5,000이었으나 그 수에서 P50/TCaR 수렴 검사가 2.6% 이탈해 스펙의 상향 조항을 따랐다)로 비용 분포 산출. P50 = 기대비용, **TCaR = P90−P50**. 둘 다 무전환 기준선 대비 **증분**이고 탄소지출 차감 후(자원비용 기준)다. 수소가격은 수소 = f(전력, 전해조 CAPEX) 구조식으로 파생.
+3. **기업 내 효율 경계** — 보고되는 경계는 E2가 ε-constraint로 열거한 계획 위가 **아니라**, E5가 다시 만든 후보 집합 위에서 (기대비용, TCaR)의 좌하 포락선으로 계산된다. E5는 E2 계획을 (시설·기술·연도) 기술일정으로 중복 제거한 뒤 고정 계약 격자(PPA 5수준 × EPC 2)를 재부여하고 `ccfd=0`을 강제한다 — 즉 ε-constraint는 후보를 **열거**하는 대리 단계이고 보고 수치가 아니다(가이드 §2·§6.3, `src/cap/e5_metrics.py:184-201`). 공시 계획과 경계의 거리(**frontier gap**)가 진단 결과. 기업 간 순위표 없음.
 
 ## 실행
 
@@ -47,6 +54,7 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 # 검증
 .venv/bin/pytest tests/ -q                       # 합성 데이터 end-to-end (~2분)
 .venv/bin/pytest tests/test_consistency.py -q    # 실산출물 내부 일관성 (즉시)
+.venv/bin/python scripts/gate.py                 # 8항목 종합 게이트 (테스트·감사·MCP·out 정합)
 ```
 
 단계별로 보려면 `.venv/bin/python -m cap e1` … `e5`, `render`. 합성 데이터로만 돌리려면
@@ -81,6 +89,9 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 | `scripts/build_data_package.py` | 재현 패키지(기업 집계 + SHA256 manifest) | `data/package/` |
 | `scripts/build_board_memo.py` | A4 1페이지 이사회 메모 | `web/memo.html` |
 | `scripts/build_scenario_page.py` | 대화형 시나리오 화면 | `web/scenarios.html` |
+| `scripts/build_tech_guide.py` | 기술 가이드의 `<!-- GEN:x -->` 블록과 §2 그림을 산출물에서 생성 (`--check`로 낡음 판정) | [`docs/TECHNICAL_GUIDE.md`](docs/TECHNICAL_GUIDE.md), `docs/figures/frontier_gap.svg` |
+| `scripts/build_guide_page.py` | 가이드 웹 판 렌더 (생성 블록을 눈에 보이게 표시) | `web/guide.html` |
+| `scripts/gate.py` | "도구로 아직 작동하는가" 8항목 — 테스트·데이터 감사·MCP·`out/` 정합·푸쉬 여부 | 표준출력 `gate: OK` |
 
 ## 데이터
 

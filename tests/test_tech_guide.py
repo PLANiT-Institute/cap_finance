@@ -270,3 +270,45 @@ def test_ccfd_cannot_reach_the_frontier():
     plans = list(csv.DictReader((ROOT / "out" / "e2" / "plan_index.csv").open()))
     assert any(r["ccfd"] == "1" for r in plans), (
         "E2가 더 이상 CCfD를 서명하지 않는다 — '대리만 서명한다'는 대비가 사라졌다")
+
+
+def test_repo_front_door_reaches_the_guide_and_agrees_with_config():
+    """README는 저장소의 첫 화면이고, F14까지 가이드로 가는 링크가 한 줄도 없었다.
+
+    링크가 없으면 외부 독자는 우리가 가장 공들인 문서에 도달하지 못하고, 그 대신 README의
+    요약을 읽는다 — 그래서 그 요약이 정본과 어긋나면 안 된다. README는 몬테카를로 표본 수를
+    N=5,000으로 적고 있었는데 `config.yaml`은 10,000이다(수렴 검사 이탈로 상향한 값). 링크와
+    표본 수 둘 다 조용히 낡을 수 있으므로 여기서 잡는다.
+    """
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "docs/TECHNICAL_GUIDE.md" in readme, "README에서 기술 가이드로 가는 링크가 사라졌다"
+
+    from cap import config as C  # noqa: E402  (src/ is on the path via conftest)
+    n = int(C.load().simulation["n_sims"])
+    assert f"N={n:,}" in readme, (
+        f"README의 몬테카를로 표본 수가 config.yaml의 {n:,}과 다르다 — 방법 요약 2번을 고쳐라")
+
+
+def test_landing_card_counts_are_counted_not_typed():
+    """랜딩 카드의 두 수는 손으로 박혀 있었고 둘 다 틀렸다 (F14).
+
+    가이드 장 수는 §10 용어집이 붙은 뒤에도 "8장"이었고, 시나리오 묶음 수는 `base`를 묶음으로
+    세어 12종이었다 — F12가 가이드에서 고친 것과 같은 오류의 다섯 번째 사본이다. 지금은 둘 다
+    세어서 쓰므로, 이 테스트는 누군가 다시 상수로 되돌리면 실패한다.
+    """
+    import csv
+    import re
+
+    idx = ROOT / "web" / "index.html"
+    if not idx.exists():
+        pytest.skip("사이트 미빌드 — scripts/build_site.py")
+    html = idx.read_text(encoding="utf-8")
+    n_ch = sum(1 for ln in GUIDE.read_text(encoding="utf-8").splitlines() if ln.startswith("## "))
+    assert re.search(rf"· {n_ch}장", html), f"가이드 카드의 장 수가 실제 {n_ch}장과 다르다"
+
+    summary = ROOT / "out" / "scenarios" / "summary.csv"
+    if not summary.exists():
+        return
+    bundles = {r["bundle"] for r in csv.DictReader(summary.open(encoding="utf-8"))} - {"base"}
+    assert f"묶음 {len(bundles)}종" in html, (
+        f"시나리오 카드가 가정 묶음을 {len(bundles)}종으로 세지 않는다 — base를 세고 있지 않은가")

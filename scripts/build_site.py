@@ -190,15 +190,19 @@ def main():
     if scen.returncode == 0:
         import csv as _csv
         with (ROOT / "out/scenarios/summary.csv").open(encoding="utf-8") as f:
-            n_bundles = len({r["bundle"] for r in _csv.DictReader(f)})
+            # base는 가정 묶음이 아니라 나머지를 차분하는 기준이다 — 세면 12종이 된다
+            n_bundles = len({r["bundle"] for r in _csv.DictReader(f)} - {"base"})
     else:
         print(f"[site] 시나리오 페이지 생략: {scen.stderr.strip().splitlines()[-1:]}")
     today = dt.date.today().isoformat()
+    # 가이드 장 수는 세어서 쓴다 — 손으로 박아 둔 "8장"은 §10 용어집이 붙은 뒤에도 8장이었다
+    n_guide_ch = sum(1 for ln in (ROOT / "docs/TECHNICAL_GUIDE.md")
+                     .read_text(encoding="utf-8").splitlines() if ln.startswith("## "))
     (WEB / "index.html").write_text(DOCTYPE + LANDING.format(
         report_meta=f"갱신 {today} · {rep.stat().st_size // 1024} KB",
         dash_meta=f"갱신 {today} · {len(dash)}개 언어" if dash else "대시보드 미생성",
         ev_meta=f"갱신 {today} · 파라미터 415건 · OAT 25종",
-        guide_meta=f"갱신 {today} · {(WEB / 'guide.html').stat().st_size // 1024} KB · 8장",
+        guide_meta=f"갱신 {today} · {(WEB / 'guide.html').stat().st_size // 1024} KB · {n_guide_ch}장",
         scen_card=(SCEN_CARD.format(meta=f"갱신 {today} · 묶음 {n_bundles}종") if n_bundles else ""),
     ) + "</body></html>")
     print(f"[site] web/ 준비 완료: index.html, report.html, {', '.join(dash) or '(대시보드 없음)'}")
