@@ -691,6 +691,71 @@ def gen_axis_impact():
     return head + note
 
 
+def _e4_base_plans():
+    """E4 authoritative results joined to E2's surrogate ordering, one row per base plan.
+
+    `support=none` only: the axis duplicates every row (§3.6). Returns None if the
+    pipeline has not been run.
+    """
+    s = ROOT / "out" / "e4" / "summary.csv"
+    pi = ROOT / "out" / "e2" / "plan_index.csv"
+    if not (s.exists() and pi.exists()):
+        return None
+    d = pd.read_csv(s).query("support == 'none'")
+    return d.merge(pd.read_csv(pi)[["plan_id", "risk_proxy"]], on="plan_id")
+
+
+def _rho(a, b):
+    """Rank correlation without scipy — rank, then Pearson (ties get the mean rank)."""
+    return float(a.rank().corr(b.rank()))
+
+
+def gen_surrogate():
+    """How badly E2's linear surrogate orders plans against E4's authoritative result.
+
+    F9 found this stated as a hand-written sector range that was wrong by an order
+    of magnitude on the steel side ("−0.05 to 0.00"; NSC is −0.564), and stated
+    without saying it covered one scenario. Both failures come from writing a range
+    by hand, so the per-bundle numbers are generated instead.
+    """
+    d = _e4_base_plans()
+    if d is None:
+        return "_No pipeline run in `out/`. Run `python -m cap all`._"
+    rows, match = [], 0
+    for (co, sc), g in d.groupby(["company_id", "scenario"]):
+        cheapest = g.loc[g.e2_surrogate_cost.idxmin(), "plan_id"] == g.loc[g.p50.idxmin(), "plan_id"]
+        match += int(cheapest)
+        rows.append([COMPANY_NAME.get(co, co), sc, len(g),
+                     f"{_rho(g.e2_surrogate_cost, g.p50):+.2f}",
+                     f"{_rho(g.risk_proxy, g.tcar):+.2f}",
+                     "yes" if cheapest else "**no**"])
+    rows.sort(key=lambda r: (r[0], r[1]))
+    head = _md(rows, ["Firm", "Scenario", "Plans", "ρ(surrogate cost, P50)",
+                      "ρ(risk proxy, TCaR)", "Surrogate's cheapest = authoritative cheapest"])
+    n = len(rows)
+    return head + (
+        f"\n\nThe surrogate's cheapest plan is the authoritative cheapest in **{match} of {n}** "
+        f"(firm × scenario) bundles. Rank correlation runs from "
+        f"{min(float(r[3]) for r in rows):+.2f} to {max(float(r[3]) for r in rows):+.2f} on cost — "
+        f"it is not a sector split, and the worst cell is a steel one.")
+
+
+def gen_plan_distinct():
+    """Enumerated plans vs. plans that are actually different once E4 prices them."""
+    d = _e4_base_plans()
+    if d is None:
+        return "_No pipeline run in `out/`. Run `python -m cap all`._"
+    grp = d.groupby(["company_id", "scenario"])
+    distinct = int(grp.central_cost.apply(lambda x: x.round(6).nunique()).sum())
+    collapsed = sum(len(g) - g.central_cost.round(6).nunique() == 1 for _, g in grp)
+    how_many = ("Every one of the" if collapsed == grp.ngroups else f"{collapsed} of the")
+    return (f"Separately, of {len(d)} enumerated plans only **{distinct}** are distinct under "
+            f"authoritative evaluation. {how_many} {grp.ngroups} bundles collapses "
+            f"exactly one pair, which differs only in whether a CCfD is signed — under "
+            f"`support=none` the CCfD strike is undefined, so the two plans are numerically "
+            f"identical downstream while the surrogate charges a premium and prices them apart.")
+
+
 def gen_frontier_shape():
     """How wide the frontier is that every gap number is a distance to.
 
@@ -742,6 +807,8 @@ def gen_frontier_shape():
 BLOCKS = {
     "stamp": gen_stamp,
     "axis_impact": gen_axis_impact,
+    "surrogate": gen_surrogate,
+    "plan_distinct": gen_plan_distinct,
     "frontier_shape": gen_frontier_shape,
     "dataset_inventory": gen_dataset_inventory,
     "vocab": gen_vocab,

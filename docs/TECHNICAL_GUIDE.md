@@ -48,7 +48,7 @@ The model is built so that each of these can be shown false. Current status is s
 | ID | Claim | Status |
 |---|---|---|
 | **P1** | A plan that is cheap in expectation is expensive in the tail — the frontier slopes, it does not collapse to a point. | Holds, but **weakly**: only 4 of 32 forced technology schedules survive as non-dominated under the headline risk convention. See §6.3. |
-| **P2** | Contract instruments (renewable PPA, fixed-price EPC, CCfD) raise expected cost and lower tail risk. | Not rejected for steel. **In petrochemicals an even hedge covers 0% of the variance** — the instrument set has no hydrogen hedge. That is a gap in the instrument set, not a counterexample. |
+| **P2** | Contract instruments (renewable PPA, fixed-price EPC, CCfD) raise expected cost and lower tail risk. | Not rejected for steel. **In petrochemicals the hedge a risk-averse criterion actually picks — fixed-price EPC — covers 0% of that firm's tail variance**, because the tail is essentially all hydrogen and the instrument set has no hydrogen hedge (`docs/robustness_structural.md` §3-1). That is a gap in the instrument set, not a counterexample. |
 | **P3** | Underspending is itself an energy-price risk position, i.e. the disclosed plan has `gap_risk > 0`. | Holds where a disclosed coordinate can be computed. It cannot be computed for 2 of 4 firms — see §6.4, and note the reason is a model boundary, not corporate disclosure failure. |
 | **P4** | The ranking by abatement cost and the ranking by financing burden do not coincide. | Holds. This is why metric ⑥ exists. |
 
@@ -75,9 +75,22 @@ data/raw ──prepare_raw──▶ data/prepared ──▶ E1 ──▶ E2 ─�
 ### Why the surrogate/authoritative split matters
 
 E2's objective linearises risk and contracts, so it orders plans imperfectly. We measured how
-imperfectly: the rank correlation between surrogate cost and authoritative P50 is **−0.05 to 0.00 in
-steel and 0.20 to 0.73 in petrochemicals**, and the surrogate's cheapest plan is the authoritative
-cheapest in **0 of 8** (firm × scenario) bundles.
+imperfectly, per bundle, over the base plans E2 enumerated:
+
+<!-- GEN:surrogate -->
+| Firm | Scenario | Plans | ρ(surrogate cost, P50) | ρ(risk proxy, TCaR) | Surrogate's cheapest = authoritative cheapest |
+|---|---|---|---|---|---|
+| LOTTE Chemical | B20 | 8 | +0.91 | +0.91 | **no** |
+| LOTTE Chemical | NZ15 | 6 | +0.72 | +0.78 | **no** |
+| Mitsui Chemicals | B20 | 9 | +0.94 | +0.94 | **no** |
+| Mitsui Chemicals | NZ15 | 8 | +0.20 | +0.71 | **no** |
+| Nippon Steel | B20 | 5 | +0.21 | +0.29 | **no** |
+| Nippon Steel | NZ15 | 5 | -0.56 | +0.55 | **no** |
+| POSCO | B20 | 4 | +0.11 | +0.11 | **no** |
+| POSCO | NZ15 | 3 | +0.00 | +0.00 | **no** |
+
+The surrogate's cheapest plan is the authoritative cheapest in **0 of 8** (firm × scenario) bundles. Rank correlation runs from -0.56 to +0.94 on cost — it is not a sector split, and the worst cell is a steel one.
+<!-- /GEN:surrogate -->
 
 The consequence is a design rule, not a caveat: E2 is allowed to stop at a 2% relative MIP gap and a
 60-second time limit, because proving optimality of the *surrogate* to the last basis point buys
@@ -713,8 +726,8 @@ columns from the ones the model reads, and the difference is not a subset relati
 `scripts/build_data_package.py`, against the headers of the files actually written. **This guide is
 the definition of record**; the dictionary is a projection of it. A shipped column with no
 definition here fails the build rather than shipping undocumented — which is how the previous
-dictionary came to describe 85 columns of two files the package does not contain while leaving 73 of
-the 89 columns it does contain undescribed.
+dictionary came to describe 85 columns across nine files — 24 of them belonging to the two files the
+package does not contain — while leaving 73 of the 134 columns it does contain undescribed.
 
 **The two aggregates carry no `source_id`.** Grouping destroys it, so the claim in §3.9 that every
 data row carries a foreign key into the register holds for the seven input files that ship
@@ -780,7 +793,7 @@ grade: either an axis we **re-solved** and can therefore quote a number for, or 
 
 | ID | Assumption | Why it is assumed | Impact | How it is checked |
 |---|---|---|---|---|
-| **A-02** | Facility emissions = firm-reported total, distributed by capacity × route emission factor (steel); bottom-up (petchem) | Per-facility measured emissions are not publicly issued in Korea | **Largest single parameter — rank 1 in sensitivity screening, evidence tier T5.** Moves abatement cost by up to 86% | Back-test; for Japan, replaced by T1 site disclosure (EEGS) — see §5.1 |
+| **A-02** | Facility emissions = firm-reported total, distributed by capacity × route emission factor (steel); bottom-up (petchem) | Per-facility measured emissions are not publicly issued in Korea | **Largest single parameter — rank 1 in sensitivity screening, evidence tier T5.** Moves abatement cost by up to 86% | Back-test; for Japan, replaced by T1 site disclosure (EEGS) — see §6.5 |
 | **A-17** | Factors with too few observations use prior volatility (h₂ 0.25, capex 0.06, identity correlation) | D4 has 1–19 observations per series | **Large — sets the level of metric ③.** Mean-reversion instead of GBM cuts TCaR by 41–48% | `docs/process_alternative.md`; D4 is too short to discriminate statistically, and we say so rather than reporting a test we have no power for |
 | **A-24** | Price shocks normalised so **E[shock] = 1** | D2b does not state whether its central path is a mean or a median | **Large — petrochemical metric ② moves +71–73% under the median convention.** Log-normal skew drags the median down: at σ=0.25 over 25 years the 2050 median is 0.47× the central path | `docs/process_alternative.md` §3 |
 | **A-07** | Auction share follows the confirmed K-ETS Phase 4 allocation plan (15% non-power, 2026–2030), then an assumed ramp to 100% by 2050 | Post-2030 allocation is not decided | **Large, measured.** `carbon_fast` (full auctioning by 2040) is the largest mover on ③ of any axis we have re-solved; on ② it is third, behind both hydrogen-price bundles. The looser direction, `carbon_slow`, has **not** been re-planned and its 0.0% is not a finding — §4.3 | `test_auction_share_follows_confirmed_allocation_plan`; §4.3 |
@@ -844,7 +857,10 @@ One-at-a-time parameter screening, top 5 by worst-metric move: `fac.ef_inc` (T5,
 Three identifiers are not discussed above because they change reported precision or a second-order
 term rather than a conclusion: **A-12** (closure adds back the model's own energy saving, so closure
 is not rewarded twice), **A-22** (CAPEX shock amplitude scaled per technology by D3
-`capex_uncertainty`, worth about 1% of variance), **A-23** (metric ⑤ re-optimisation subsample raised
+`capex_uncertainty`, worth about 1% of variance in the headline cell — and 6.9% averaged over every
+cell, rising to the *entire* variance in the two petrochemical B20 plans that adopt no hydrogen, so
+"second-order" is a statement about the headline and not about the file, `out/e5/variance_decomp.csv`),
+**A-23** (metric ⑤ re-optimisation subsample raised
 300 → 1,500, which fixed a 15% coefficient of variation on ⑤ and nothing else). **A-02, A-03, A-13,
 A-17, A-24** are treated in §4.1; **A-01, A-04, A-06, A-08–A-11, A-14–A-16, A-18–A-21** in §4.2;
 dataset-level consequences of **A-01, A-03, A-20** also appear in §3.
@@ -941,6 +957,12 @@ Five-seed repetition of E3–E5 gives the sampling error:
 Seed stability is precision, not accuracy. Every seed uses the same prior volatility (A-17); if that
 prior is wrong, all seeds are consistently wrong.
 
+The sweep is also **older than the current run**: in `docs/seed_stability.csv` the pinned-seed row
+for Nippon Steel carries ② 165.4 and ③ 34,488 against the 155.6 and 32,961 above, because its
+cost-minimising plan changed after the sweep was taken. The other three firms match to the digit. So
+the CVs are a measurement of the sampling channel, taken on a plan menu that has since moved once —
+read them as the order of magnitude of seed noise, not as an error bar on the table above.
+
 ### 6.2 What is robust and what is not
 
 **Ranking is robust.** It survives discount rates of 3.5/5/6.5%, GBM vs. mean reversion, both shock
@@ -965,10 +987,9 @@ Under the alternative convention where carbon price is itself stochastic, 25 of 
 non-dominated and the technology axis returns in 7 of 8 bundles. The frontier's thinness is a
 property of the risk convention, not of the candidate generator.
 
-Separately, of 51 enumerated plans only **43** are distinct under authoritative evaluation. In each
-bundle exactly one pair differs only in whether a CCfD is signed, and under `support=none` the CCfD
-strike is undefined — so the two plans are numerically identical downstream while the surrogate
-charges a premium and prices them apart.
+<!-- GEN:plan_distinct -->
+Separately, of 48 enumerated plans only **40** are distinct under authoritative evaluation. Every one of the 8 bundles collapses exactly one pair, which differs only in whether a CCfD is signed — under `support=none` the CCfD strike is undefined, so the two plans are numerically identical downstream while the surrogate charges a premium and prices them apart.
+<!-- /GEN:plan_distinct -->
 
 ### 6.4 Where the gap cannot be computed, and why
 
@@ -1086,7 +1107,9 @@ summary, package manifest. Facility-level detail is refused by default. See
 8. **Metric ⑥ is not comparable across countries as it stands.** The `ebitda` column mixes billion
    KRW with 億円 and no exchange rate is applied, and for the two Japanese firms it holds operating
    profit rather than EBITDA (§3.7). The cross-country ⑥ comparison is therefore off by roughly 8%
-   from the currency alone, in a known direction, before the profit-definition difference is
+   from the currency alone and in a known direction — at the project's own 9.2 KRW/JPY the Japanese
+   denominators are ~8% too large, so ⑥ reads too *low* for those two firms
+   (`docs/data_gap_registry.md` F1) — before the profit-definition difference is
    counted. Found 2026-08-11 while checking this document against the data; not yet fixed, because
    the fix is a re-run rather than an edit.
 

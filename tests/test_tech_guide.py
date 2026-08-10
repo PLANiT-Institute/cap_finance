@@ -114,3 +114,32 @@ def test_section9_hand_written_counts_still_hold():
     # 회사당 강제된 공시 확약이 하나뿐이라는 O3의 주장
     assert len({c for c, _ in distinct}) == 2, "§9 O3은 좌표를 가진 회사가 둘이라고 적었다"
     assert "**2 become a forced decision**" in text, "§9 O3의 강제 확약 수가 사라졌다"
+
+
+def test_seed_sweep_staleness_is_described_as_it_is():
+    """§6.1이 시드 표를 '한 번 낡았다'고 밝힌다 — 그 판정 자체가 낡을 수 있다.
+
+    `docs/seed_stability.csv`의 정본 시드 행은 NSC에서만 `out/`과 어긋난다(그 회사의
+    최소비용 계획이 스윕 이후 바뀌었다). 스윕을 다시 뜨면 어긋남이 사라지고 §6.1의
+    단락은 거짓이 되며, 반대로 다른 회사까지 어긋나면 그 단락은 실제보다 약하게 적은
+    것이 된다. 어느 쪽이든 산문을 고쳐야 하므로 여기서 잡는다.
+    """
+    import csv
+
+    m = ROOT / "out" / "e5" / "metrics_company.csv"
+    sweep = ROOT / "docs" / "seed_stability.csv"
+    if not (m.exists() and sweep.exists()):
+        pytest.skip("no pipeline run in out/ or no seed sweep")
+    from cap import config as C  # noqa: E402  (src/ is on the path via conftest)
+    pinned = str(C.load().seed)
+    cur = {r["company_id"]: r for r in csv.DictReader(m.open())
+           if r["scenario"] == "NZ15" and r["support"] == "none"}
+    drift = set()
+    for r in csv.DictReader(sweep.open()):
+        if r["seed"] != pinned or r["company_id"] not in cur:
+            continue
+        if round(float(r["tcar_bnkrw"]), 3) != round(float(cur[r["company_id"]]["tcar_bnkrw"]), 3):
+            drift.add(r["company_id"])
+    assert drift == {"NSC"}, (
+        f"§6.1은 시드 스윕이 NSC에서만 현재 실행과 어긋난다고 적었는데 지금 어긋나는 것은 {drift or '없다'}"
+        " — 문단을 고치거나 지워라")

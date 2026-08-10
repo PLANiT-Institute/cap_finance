@@ -2924,3 +2924,86 @@ h2 사전 변동성 0.25는 `src/cap/calibration.py:47 FALLBACK_VOL`(하드코�
   전부 있으므로 데이터는 이미 준비돼 있다.
 - **미해결 코드 수정 5건**(창 밖): D6 통화 환산(F1), 광양 2고로 능력(F3), 미등록 `facility_id`
   조용한 탈락(F4), `FACTOR_SERIES`의 부재 계열 정리(F5), **`get_affordability` 통화 경고(F8 신규)**.
+
+## F9 (05:33) — 숫자 추적성: 손으로 쓴 순위상관이 한 자릿수 틀렸고 계획 수는 어느 파일에도 없는 수였다
+
+**한 일.** 지도대로 가이드의 **생성 블록 밖** 수치를 전수로 `out/`·`config.yaml`·`docs/*.csv`·
+`data/prepared/`에 대조했다. 확인한 수는 약 60개(§1 P1–P4, §2 대리 통계, §3 산문, §4.1–§4.4
+A-xx 영향 문장, §5 설정, §6.1–§6.5, §7, §8, §9). **대부분은 맞았다** — 틀린 여섯 개와
+근거가 약한 두 개를 아래에 적는다. 손으로 쓴 범위가 두 번 다 틀렸으므로, 그 두 자리는
+산문을 고치는 대신 **생성 블록으로 바꿨다**.
+
+### 가이드에서 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | §2, `METHODOLOGY.md:234` | 대리비용·정본 P50 순위상관 "**−0.05 to 0.00** in steel" | **−0.56**이다(NSC NZ15 ρ=−0.564, POSCO 0.000). 자릿수가 하나 빠진 채 두 문서에 실려 있었고, **더 나쁜 사실을 실제보다 좋게** 적고 있었다. 게다가 그 범위는 NZ15 한 시나리오의 것인데 그 사실을 적지 않았다 — B20까지 넣으면 −0.56~+0.94다 | `out/e4/summary.csv` × `out/e2/plan_index.csv`; `tests/test_paper_numbers.py::surrogate_rho_*` |
+| 2 | §6.3 | "of **51** enumerated plans only **43** are distinct" | **48 중 40**이다. 51도 43도 어느 산출물에도 없는 수다. 차이 8 = 묶음당 정확히 한 쌍이라는 뒤 문장은 그대로 성립한다(8묶음 각각 1쌍) | `out/e2/plan_index.csv` 48행; `out/e4/summary.csv`의 `central_cost` 묶음별 유일값 합 40 |
+| 3 | §3.10 | "85 columns of **two files** … 73 of the **89** columns" | 옛 사전 85행은 **아홉 파일**에 걸쳐 있었고 그중 싣지 않는 두 파일 몫이 **24열**이다. 실린 열은 89가 아니라 **134**다 | `git show 4b44202~1:data/package/data_dictionary.csv` 대 현재 패키지 헤더 |
+| 4 | §1 P2 | "an **even** hedge covers 0% of the variance" | 오역이다. 근거 문서의 "**고른** 헤지"는 *uniform*이 아니라 *chosen* — 위험회피 기준이 고른 수단(고정가 EPC)이 석화 꼬리분산의 0%를 덮는다는 뜻이다. "even hedge"는 존재하지 않는 균등 배분 헤지를 가리키고 있었다 | `docs/robustness_structural.md` §3-1 |
+| 5 | §4.1 A-02 | "see **§5.1**" | §5에는 하위 절이 없다. 문서의 유일한 끊긴 상호참조였고(전수 확인), EEGS 내용은 §6.5에 있다 | 가이드 제목 전수 대조 |
+| 6 | §8 주장 8 | "off by roughly 8% … **in a known direction**" | 방향을 안다고 적고 방향을 적지 않았다. 9.2원/엔에서 일본 2사 **분모가 약 8% 과대** → ⑥이 그만큼 **낮게** 읽힌다. 출처 위치(F1)도 없었다 | `docs/data_gap_registry.md` F1 |
+
+### 근거가 약해 같은 문장에서 밝힌 것 두 개
+
+| # | 어디 | 무엇 | 근거 |
+|---|---|---|---|
+| 7 | §4.4 A-22 | "worth about 1% of variance"는 **헤드라인 칸(NZ15·none)의 평균 1.1%**일 뿐이다. 전 칸 평균은 6.9%이고, **수소를 하나도 채택하지 않는 석화 B20 계획 2개에서는 분산의 전부(100%)**다. "2차항"은 파일이 아니라 헤드라인에 대한 진술이라는 것을 적었다 | `out/e5/variance_decomp.csv` (capex 몫: 전체 평균 0.069, NZ15·none 평균 0.011, 최대 1.000) |
+| 8 | §6.1 | 시드 표가 **현재 실행보다 낡았다**. `docs/seed_stability.csv`의 정본 시드(20260806) 행이 NSC에서만 out/과 어긋난다(② 165.4·③ 34,488 대 155.6·32,961) — 스윕 이후 NSC의 최소비용 계획이 바뀌었다. 나머지 3사는 자릿수까지 일치. CV를 "위 표의 오차막대"가 아니라 "시드 잡음의 자릿수"로 읽으라고 적었다 | `docs/seed_stability.csv` 대 `out/e5/metrics_company.csv` |
+
+### 맞았던 것 (대조해 확인, 변경 없음)
+
+`4 of 32`·`25`·`7 of 8`(`out/m8/tech_epsilon.csv`) · `0 of 8`·2% gap·60초(`config.yaml:38,42`) ·
+gap 2/4사와 NSC 1,255/4,651(`out/e5/gap.csv`) · `disclosed_skipped.csv` 4행에 NSC 없음 ·
+TCaR 41–48%·석화 ② 71–73%·2050 중앙값 0.47배(`docs/process_alternative.md`) ·
+CV 0.3–0.8/1.1–1.8/3–9%(`docs/seed_stability.csv`에서 재계산) · A-01 민감도 8위·×913.3·16/23행 ·
+BF 17기와 200/150/250/300천원(`D1a`) · A-11 ≈39천원 교차·floor 0에서 3사 역전(`out/m5/penalty_axis.csv`) ·
+A-05 30–42%(`out/sensitivity/screening.csv`) · s2 63/69 · naphtha 0/69 · D4 1–19관측 ·
+re_price 175,000/198,000 · 110.2 · 3,500 · 10,240 · D7 ¥630.2bn+¥140bn·2.5 Mt/yr · D5 7행 15% ·
+D6 회사별 연도창 · A-13 ×4.2.
+
+### 생성기로 만든 것
+
+- `scripts/build_tech_guide.py::gen_surrogate` (`GEN:surrogate`, §2) — firm×scenario 8묶음의
+  ρ(대리비용, P50)·ρ(위험대리, TCaR)·대리 최저=정본 최저 여부를 표로 낸다. **손으로 쓴 업종별
+  범위가 오류 1을 만들었으므로 범위를 손으로 쓰지 않는다.**
+- `::gen_plan_distinct` (`GEN:plan_distinct`, §6.3) — 열거 계획 수·정본 기준 유일 계획 수·
+  한 쌍씩 붕괴하는 묶음 수. 오류 2의 자리.
+- 둘 다 `_e4_base_plans()`/`_rho()` 공유. scipy 없이 순위→피어슨(`test_paper_numbers.py`와 동일 규약).
+- `tests/test_tech_guide.py::test_seed_sweep_staleness_is_described_as_it_is` — §6.1의 새 단락은
+  "NSC에서만 어긋난다"는 판정이고 그 판정 자체가 낡을 수 있다. 스윕을 다시 뜨거나 다른 회사가
+  어긋나면 실패한다. (pytest 61 → 62)
+
+### 검증
+
+```
+.venv/bin/python scripts/build_data_package.py   # 15개 파일, 사전 134행 (불변)
+.venv/bin/python scripts/build_tech_guide.py     # 19 blocks (surrogate·plan_distinct 신설), 92,502 chars
+.venv/bin/python scripts/build_guide_page.py     # 37 sections, 373 table rows (364 → 373)
+.venv/bin/python scripts/build_site.py
+.venv/bin/python scripts/gate.py                 # gate: OK (pytest 62 passed, audit ok 68/PARTIAL 4 불변)
+```
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | 유지 | gate audit `ok 68, PARTIAL 4` 불변. 이 사이클은 수치를 만들지 않고 이미 있던 수치를 출처와 대조했다 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | 유지 | `out/scenarios/summary.csv` 12묶음(3묶음 미재계획 — F2) |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선** | 대리 순위상관이 실제로 얼마나 나쁜지가 8묶음 표로 보인다. Arc가 "왜 E4를 따로 도느냐"고 물으면 표 하나가 답이다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | 유지 | `scripts/gate.py` 8항목. MCP 표면 변화 없음 |
+| ⑤ 산출물 — 다른 형식이 있는가 | 유지 | md + HTML(`/guide` 37절 373행) + 데이터 패키지 |
+
+### 인계
+
+- **F10(그림)**: §9.1 표 + 이번 §2 표가 같은 그림의 두 축이다. `frontier_points.csv`에
+  `p50`·`tcar`·`is_disclosed`·`on_frontier`가 있고, 대리 순위는 `e4/summary.csv`×`e2/plan_index.csv`로
+  같은 평면에 얹을 수 있다 — "대리가 고른 점"을 프론티어 그림 위에 표시하면 오류 1이 그림이 된다.
+- **F11(한계 절)**: §8 주장 3·4는 이미 정량. 정량이 없는 것은 주장 1(시설 단위 = 순서 정보)·
+  주장 6(재계획 채널)이고, 후자는 §4.3 표가 이미 반쯤 답한다.
+- **F12(적대적 검토 2)**: 오류 1이 §9 O5의 무게를 키운다 — 대리가 정본 순위를 이만큼 못 지키면
+  "후보 생성기가 프론티어를 결정한다"는 반론이 더 세진다. §9에 그 줄이 없다.
+- **§6.1 시드 스윕 재실행**(신규 백로그): E3–E5 × 5시드. 지금 CV는 NSC 옛 계획 위의 값이다.
+  30분 창에 들어갈지 미확인이므로 시작하지 않았다(중단 파이프라인 금지 규칙).
+- **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).
