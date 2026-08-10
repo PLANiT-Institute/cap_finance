@@ -181,3 +181,26 @@ def test_figure_is_built_and_referenced():
     assert fig.exists(), "§2 그림 파일이 없다 — scripts/build_tech_guide.py 를 돌려라"
     assert "figures/frontier_gap.svg" in GUIDE.read_text(encoding="utf-8")
     assert fig.read_text(encoding="utf-8").startswith("<svg")
+
+
+def test_no_facility_carries_a_measured_emission():
+    """§8 주장 1은 "실측 시설 배출은 하나도 없다"고 단정한다 — 손으로 쓴 단정이다.
+
+    F11 이전의 문장은 "일본은 이제 실측이다"였고 이것이 틀렸다. 사업소 실측(EEGS)은
+    NSC의 배분 분포로만 들어가고 MCI 2기는 두 사업소 모두 실측 행이 있는데도
+    상향식 추정이다. 실측 시설 배출이 D1b에 들어오면 이 테스트가 실패해야 하고,
+    그때 §8 주장 1은 다시 써야 한다.
+    """
+    import csv
+
+    prep = ROOT / "data" / "prepared"
+    d1b = list(csv.DictReader((prep / "D1b_facility_panel.csv").open()))
+    assert {r["source_id"] for r in d1b} <= {"PREP_ALLOC", "PREP_BOTTOMUP"}, (
+        "D1b에 배분·상향식이 아닌 출처가 생겼다 — 실측이면 §8 주장 1을 다시 써라")
+    keys = {r["site_key"] for r in csv.DictReader(
+        (ROOT / "data" / "raw" / "jp_site_emissions.csv").open())}
+    bottomup = {r["facility_id"] for r in d1b if r["source_id"] == "PREP_BOTTOMUP"}
+    unused = {f for f in bottomup if f.split("_")[1] in keys}
+    assert unused == {"MCI_ICH_CR", "MCI_OSK_CR"}, (
+        f"사업소 실측이 있는데 상향식으로 남은 시설이 {sorted(unused)}로 바뀌었다 "
+        "— §8 주장 1의 마지막 문장을 고쳐라")

@@ -965,8 +965,127 @@ def gen_gap_figure():
             f"`support` axis duplicates each one (§3.6, O7).")
 
 
+def gen_limits():
+    """Sizes for the §8 claims that were stated without one.
+
+    A limitation with no magnitude is a disclaimer, not a limitation: a reader
+    cannot tell whether it moves the answer. Every row here is recomputed from
+    the artefacts, so a claim that stops being true stops being printed.
+    """
+    rows = []
+
+    d1a = pd.read_csv(prepared() / "D1a_facility_static.csv")
+    d1b = pd.read_csv(prepared() / "D1b_facility_panel.csv")
+    site = ROOT / "data" / "raw" / "jp_site_emissions.csv"
+    if site.exists():
+        keys = set(pd.read_csv(site).site_key)
+        d1a = d1a.assign(k=d1a.facility_id.str.split("_").str[1])
+        at_site = d1a[d1a.k.isin(keys)]
+        alloc = set(d1b[d1b.source_id == "PREP_ALLOC"].facility_id)
+        used = at_site[at_site.facility_id.isin(alloc)]
+        by = ", ".join(f"{c} {n}" for c, n in at_site.company_id.value_counts().items())
+        rows.append([
+            "1 — facility absolutes",
+            f"**0 of {len(d1a)}** facilities carry a measured facility-level emission. "
+            f"{len(at_site)} sit at a site with a measured *site* total ({by}), and the "
+            f"site data reaches D1b for **{len(used)}** of them, as an inter-site "
+            f"distribution only — every level is the company Scope 1 total rescaled",
+            "`data/raw/jp_site_emissions.csv` × `D1a` × `D1b.source_id`"])
+
+    pet = d1b[d1b.facility_id.str.startswith(("MCI_", "LOTTE_"))]
+    if len(pet):
+        ef = (pet.emissions_s1 / pet.production).round(6).unique()
+        varies = int((pet.groupby("facility_id").production.nunique() > 1).sum())
+        fp = pd.read_csv(ROOT / "data" / "raw" / "facility_panel.csv")
+        cov = []
+        for co, tot in (("MCI_", "MITSUI_TOTAL"), ("LOTTE_", "LOTTE_TOTAL")):
+            t = fp[(fp.facility_id == tot) & fp.emissions_s1.notna()]
+            s = pet[pet.facility_id.str.startswith(co)]
+            if len(t) and len(s):
+                y = s.year.max()
+                cov.append(f"{co.rstrip('_')} {100 * s[s.year == y].emissions_s1.sum() / float(t.sort_values('year').emissions_s1.iloc[-1]):.0f}%")
+        rows.append([
+            "2 — petrochemical intensity",
+            f"every petrochemical facility-year carries the same implied intensity "
+            f"(**{'/'.join(f'{e:g}' for e in ef)} tCO₂/t**, the injected NCC route factor), "
+            f"production is flat across {_span(pet, 'year')} for "
+            f"**{len(pet.facility_id.unique()) - varies} of "
+            f"{len(pet.facility_id.unique())}** units, and the modelled units cover "
+            f"{', '.join(cov)} of the company Scope 1 total",
+            "`D1b_facility_panel.csv` × `data/raw/facility_panel.csv`"])
+
+    pp = ROOT / "docs" / "price_process_test.csv"
+    if pp.exists():
+        t = pd.read_csv(pp)
+        rows.append([
+            "3 — TCaR levels",
+            f"the unit-root test rejects in **0 of {len(t)}** series ({t.n_obs.min()}–"
+            f"{t.n_obs.max()} observations), and its power against a mean-reverting "
+            f"alternative with a 10-year half-life is "
+            f"**{100 * t.power_vs_ou_hl10y.min():.1f}–{100 * t.power_vs_ou_hl10y.max():.1f}%** "
+            f"at a nominal 5% size — the test cannot tell the two processes apart, so "
+            f"\"untestable\" is measured, not rhetorical",
+            "`docs/price_process_test.csv`"])
+
+    gp = ROOT / "out" / "e5" / "gap.csv"
+    if gp.exists():
+        g = pd.read_csv(gp)
+        piv = g.pivot_table(index=["company_id", "scenario"], columns="support",
+                            values=["gap_cost_bnkrw", "gap_risk_bnkrw", "p50", "tcar"])
+        diff = max(float(abs(piv[c]["current"] - piv[c]["none"]).max())
+                   for c in ["gap_cost_bnkrw", "gap_risk_bnkrw", "p50", "tcar"])
+        rows.append([
+            "5 — the `support` axis",
+            f"`gap.csv` holds {len(g)} rows for "
+            f"**{g.groupby(['company_id', 'scenario']).ngroups} distinct gaps**, and the "
+            f"largest disagreement between `support=current` and `support=none` on any "
+            f"reported quantity is **{diff:g}**",
+            "`out/e5/gap.csv`"])
+
+    bm = ROOT / "out" / "m5" / "bundle_matrix.csv"
+    if bm.exists():
+        sys.path.insert(0, str(ROOT / "scripts"))
+        from run_scenarios import REPLAN_REQUIRED
+        b = pd.read_csv(bm)
+        stale = sorted(set(b[~b.replanned].bundle) & REPLAN_REQUIRED)
+        rows.append([
+            "6 — the plan-selection channel",
+            f"**{int(b.replanned.sum())} of {len(b)}** bundles were re-planned; "
+            f"**{len(stale)}** of the rest need re-planning to be read at all "
+            f"({', '.join('`' + s + '`' for s in stale)}), so their Δ② / Δ③ are "
+            f"unmeasured rather than flat (§4.3)",
+            "`out/m5/bundle_matrix.csv` × `scripts/run_scenarios.py::REPLAN_REQUIRED`"])
+
+    fpp = ROOT / "out" / "e5" / "frontier_points.csv"
+    if fpp.exists() and gp.exists():
+        f = pd.read_csv(fpp).query("support == 'none'")
+        g1 = pd.read_csv(gp).query("support == 'none'")
+        cc = cr = 0
+        over = []
+        for r in g1.itertuples():
+            d = f[(f.company_id == r.company_id) & (f.scenario == r.scenario)]
+            fr, p = d[d.on_frontier], d[d.is_disclosed].iloc[0]
+            if p.tcar > fr.tcar.max():
+                cc += 1
+                over.append(p.tcar / fr.tcar.max())
+            cr += int(p.p50 > fr.p50.max())
+        rows.append([
+            "9 — the gaps are lower bounds",
+            f"**{cc} of {len(g1)}** cost legs and **{cr} of {len(g1)}** risk legs are "
+            f"clamped to a frontier endpoint, the disclosed plan sitting "
+            f"{_x(min(over))}–{_x(max(over))} above the tail risk of the riskiest plan on "
+            f"its own frontier. At the top of that range the frontier is not a "
+            f"neighbourhood of the disclosed plan at all",
+            "`out/e5/frontier_points.csv` × `out/e5/gap.csv`"])
+
+    return _md(rows, ["Claim", "The size of it", "Recomputed from"]) + (
+        "\n\nClaims 4, 7 and 8 carry their size in the sentence itself (71–73%, 2 of 4 "
+        "firms, ~8%). The table is the ones that did not.")
+
+
 BLOCKS = {
     "stamp": gen_stamp,
+    "limits": gen_limits,
     "gap_figure": gen_gap_figure,
     "axis_impact": gen_axis_impact,
     "surrogate": gen_surrogate,

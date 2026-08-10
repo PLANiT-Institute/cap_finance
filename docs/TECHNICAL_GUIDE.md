@@ -1100,10 +1100,15 @@ summary, package manifest. Facility-level detail is refused by default. See
 
 ## 8. What we do not claim
 
-1. Facility-level absolute values should be treated as **ordering information only** until per-site
-   measured emissions are obtained. For Japan they now are; for Korea they are not.
+1. Facility-level absolute values should be treated as **ordering information only**. No facility in
+   the register carries a measured facility-level emission — not even the Japanese ones. Measured
+   *site* totals exist for both Japanese firms, and they enter the data for Nippon Steel's units
+   only, and only as the distribution across sites: the level is always the company's Scope 1 total
+   rescaled (§3.2). Mitsui's two units are bottom-up estimates although measured site rows for both
+   of their sites are sitting in the raw data unused.
 2. Petrochemical emission intensity is confirmed at the level of one primary source and is otherwise
-   **unverified** — neither firm discloses production volume.
+   **unverified** — neither firm discloses production volume, so both the numerator and the
+   denominator are constructed, and neither moves across the panel's years.
 3. **TCaR levels depend on an untestable choice.** D4 is too short to discriminate GBM from mean
    reversion. Rankings are robust to the choice; levels are not.
 4. Metric ② for petrochemicals depends on the shock-normalisation convention to the tune of 71–73%.
@@ -1121,6 +1126,29 @@ summary, package manifest. Facility-level detail is refused by default. See
    (`docs/data_gap_registry.md` F1) — before the profit-definition difference is
    counted. Found 2026-08-11 while checking this document against the data; not yet fixed, because
    the fix is a re-run rather than an edit.
+9. **The reported frontier gaps are lower bounds, not estimates.** Every disclosed plan in the
+   current run sits above the entire tail-risk span of its own frontier, so each cost leg is
+   measured against the frontier's riskiest endpoint rather than a point in its interior (§2 figure,
+   §9.1). The endpoint reaches the same saving with less risk than an interpolated point would, so
+   the error has a known direction: the true distance is at least what we report. The opposite case
+   — a disclosed plan *below* the frontier's span, where interpolation would fabricate a gap —
+   returns NaN by construction and does not arise in the current run. The holes in §6.4 are a
+   different thing: no disclosed coordinate exists to measure from.
+
+Each of the claims above that was stated without a magnitude has one here.
+
+<!-- GEN:limits -->
+| Claim | The size of it | Recomputed from |
+|---|---|---|
+| 1 — facility absolutes | **0 of 23** facilities carry a measured facility-level emission. 12 sit at a site with a measured *site* total (NSC 10, MCI 2), and the site data reaches D1b for **10** of them, as an inter-site distribution only — every level is the company Scope 1 total rescaled | `data/raw/jp_site_emissions.csv` × `D1a` × `D1b.source_id` |
+| 2 — petrochemical intensity | every petrochemical facility-year carries the same implied intensity (**0.95 tCO₂/t**, the injected NCC route factor), production is flat across 2022–2024 for **4 of 4** units, and the modelled units cover MCI 25%, LOTTE 55% of the company Scope 1 total | `D1b_facility_panel.csv` × `data/raw/facility_panel.csv` |
+| 3 — TCaR levels | the unit-root test rejects in **0 of 8** series (7–19 observations), and its power against a mean-reverting alternative with a 10-year half-life is **4.9–5.4%** at a nominal 5% size — the test cannot tell the two processes apart, so "untestable" is measured, not rhetorical | `docs/price_process_test.csv` |
+| 5 — the `support` axis | `gap.csv` holds 8 rows for **4 distinct gaps**, and the largest disagreement between `support=current` and `support=none` on any reported quantity is **0** | `out/e5/gap.csv` |
+| 6 — the plan-selection channel | **4 of 11** bundles were re-planned; **3** of the rest need re-planning to be read at all (`carbon_slow`, `ppa_costly`, `retire_free`), so their Δ② / Δ③ are unmeasured rather than flat (§4.3) | `out/m5/bundle_matrix.csv` × `scripts/run_scenarios.py::REPLAN_REQUIRED` |
+| 9 — the gaps are lower bounds | **4 of 4** cost legs and **3 of 4** risk legs are clamped to a frontier endpoint, the disclosed plan sitting 1.01×–477× above the tail risk of the riskiest plan on its own frontier. At the top of that range the frontier is not a neighbourhood of the disclosed plan at all | `out/e5/frontier_points.csv` × `out/e5/gap.csv` |
+
+Claims 4, 7 and 8 carry their size in the sentence itself (71–73%, 2 of 4 firms, ~8%). The table is the ones that did not.
+<!-- /GEN:limits -->
 
 ---
 
