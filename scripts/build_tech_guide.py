@@ -754,11 +754,60 @@ def gen_plan_distinct():
     distinct = int(grp.central_cost.apply(lambda x: x.round(6).nunique()).sum())
     collapsed = sum(len(g) - g.central_cost.round(6).nunique() == 1 for _, g in grp)
     how_many = ("Every one of the" if collapsed == grp.ngroups else f"{collapsed} of the")
-    return (f"Separately, of {len(d)} enumerated plans only **{distinct}** are distinct under "
-            f"authoritative evaluation. {how_many} {grp.ngroups} bundles collapses "
-            f"exactly one pair, which differs only in whether a CCfD is signed — under "
-            f"`support=none` the CCfD strike is undefined, so the two plans are numerically "
-            f"identical downstream while the surrogate charges a premium and prices them apart.")
+    out = (f"Separately, of {len(d)} enumerated plans only **{distinct}** are distinct under "
+           f"authoritative evaluation. {how_many} {grp.ngroups} bundles collapses "
+           f"exactly one pair, which differs only in whether a CCfD is signed — under "
+           f"`support=none` the CCfD strike is undefined, so the two plans are numerically "
+           f"identical downstream while the surrogate charges a premium and prices them apart.")
+    # F13: E4 keeps E2's contracts, E5 does not — it dedupes to technology schedules
+    # and rebuilds the contract dimension. That second collapse is the larger one and
+    # was in neither this guide nor METHODOLOGY.
+    fp = ROOT / "out" / "e5" / "frontier_points.csv"
+    if fp.exists():
+        f = pd.read_csv(fp)
+        f = f[(f.support == "none") & ~f.is_disclosed]
+        sched = f.base_plan_id.nunique()
+        per = sorted(f.groupby("base_plan_id").size().unique())
+        grid = per[0] if len(per) == 1 else None
+        out += (f"\n\nThe collapse E5 applies is larger still, and in the other direction. The "
+                f"frontier is not built on E2's plans: E5 reduces them to their **{sched}** distinct "
+                f"technology schedules — dropping the contract choice E2 made for each — and "
+                f"regenerates the contract dimension itself"
+                + (f", {grid} variants per schedule" if grid else "")
+                + f" (`src/cap/e5_metrics.py:184-201`). So the {len(d)} enumerated plans carry "
+                f"{sched} distinct investment programmes between them, and every \"candidate plan\" "
+                f"count in §9.1 counts E5's regenerated set, not E2's output (§10).")
+    return out
+
+
+def _ccfd_note(f, pi):
+    """Why no frontier point carries a CCfD — construction, not outcome (F13).
+
+    Both the guide and METHODOLOGY §9-6 item 10 read "no frontier point in the
+    current run signs a CCfD" as an observation about this run. It cannot be
+    anything else: E5 rebuilds every non-disclosed candidate with ccfd=0, and D5
+    has no ccfd row, so the instrument is inert in the authoritative revaluation
+    for two independent reasons. E2 nevertheless signs it, because its surrogate
+    credits CCfD against a proxy carbon-volatility term E4/E5 do not have.
+    """
+    d5 = ROOT / "data" / "prepared" / "D5_policy_support.csv"
+    strikes = int((pd.read_csv(d5).instrument == "ccfd").sum()) if d5.exists() else 0
+    signed, total = int(pi.ccfd.sum()), len(pi)
+    if int(f.ccfd.max()) or strikes:
+        return ("\n\nCCfD is signed on some revalued point or a strike now exists in D5 — this "
+                "passage was written for a run where neither was true and must be rewritten.")
+    return (
+        f"\n\nThe third contract instrument is absent from all of this by construction. **No "
+        f"frontier point signs a CCfD, and none can.** E5 does not revalue the contracts E2 chose: "
+        f"it dedupes E2's plans "
+        f"down to technology schedules and rebuilds each one across a fixed contract grid with "
+        f"`ccfd=0` on every point (`src/cap/e5_metrics.py:200`), and D5 carries **{strikes}** CCfD "
+        f"strike rows, so a signed CCfD would price identically anyway "
+        f"(`src/cap/plancost.py:258`). E2 signs a CCfD in **{signed} of {total}** enumerated plans "
+        f"— it is credited there against a proxy carbon-volatility term the authoritative "
+        f"revaluation does not carry (`src/cap/e2_milp.py:263`) — and not one of those signatures "
+        f"reaches a reported number. P2 (§1) is therefore untested for CCfD in this run, and the "
+        f"frontier's financing axis is PPA share and fixed-price EPC only.")
 
 
 def gen_frontier_shape():
@@ -780,44 +829,57 @@ def gen_frontier_shape():
     g = g[g.support == "none"] if "support" in g.columns else g
     pi = pd.read_csv(ROOT / "out" / "e2" / "plan_index.csv")
     rows, one_sched, last_ranked, bottom_half = [], 0, 0, 0
+    multi_avail, multi_collapsed = 0, 0
     for (co, sc), d in f.groupby(["company_id", "scenario"]):
         hit = g[(g.company_id == co) & (g.scenario == sc)]
         fr = d[d.on_frontier & ~d.is_disclosed]
         sched = fr.base_plan_id.nunique()
         one_sched += int(sched == 1)
+        # F13: a bundle whose candidate set holds ONE schedule cannot show a second
+        # one on its frontier — the collapse is arithmetic there, and only the
+        # bundles that had a choice test the claim.
+        avail = d[~d.is_disclosed].base_plan_id.nunique()
+        multi_avail += int(avail > 1)
+        multi_collapsed += int(avail > 1 and sched == 1)
         # where the frontier's schedule sits in the surrogate's own cost ordering
         p = pi[(pi.company_id == co) & (pi.scenario == sc)]
         rank = p.npv_cost_bnkrw.rank()[p.plan_id.isin(set(fr.base_plan_id))]
         last_ranked += int(rank.max() == len(p))
         bottom_half += int(rank.min() > len(p) / 2)
-        rows.append([COMPANY_NAME.get(co, co), sc, len(d), int(d.on_frontier.sum()), sched,
+        rows.append([COMPANY_NAME.get(co, co), sc, len(d), avail, int(d.on_frontier.sum()), sched,
                      f"{hit.iloc[0].gap_cost_bnkrw:,.0f} / {hit.iloc[0].gap_risk_bnkrw:,.0f}"
                      if len(hit) else "**no coordinate**"])
     rows.sort(key=lambda r: (r[0], r[1]))
-    head = _md(rows, ["Firm", "Scenario", "Candidate plans", "On frontier",
+    head = _md(rows, ["Firm", "Scenario", "Candidate plans", "Schedules available", "On frontier",
                       "Distinct schedules on frontier", "Gap cost / risk (bn KRW)"])
-    lo, hi = min(r[3] for r in rows), max(r[3] for r in rows)
-    thin = [r for r in rows if r[5] != "**no coordinate**"]
-    worst = min(thin, key=lambda r: r[3]) if thin else None
+    lo, hi = min(r[4] for r in rows), max(r[4] for r in rows)
+    thin = [r for r in rows if r[6] != "**no coordinate**"]
+    worst = min(thin, key=lambda r: r[4]) if thin else None
     note = (f"\n\nThe efficient frontier is **{lo} to {hi} plans** per firm × scenario, out of "
             f"{min(r[2] for r in rows)}–{max(r[2] for r in rows)} candidates. A frontier gap is a "
             f"distance to that set, so it is a distance to a handful of points, not to a curve.")
     if worst:
         note += (f" The thinnest case that carries a gap is {worst[0]} under {worst[1]}: "
-                 f"**{worst[3]} non-dominated plans**, and the reported "
-                 f"{worst[5]} bn KRW is the distance to them.")
+                 f"**{worst[4]} non-dominated plans**, and the reported "
+                 f"{worst[6]} bn KRW is the distance to them.")
     note += (
         f"\n\nThe column to read first is *Distinct schedules on frontier*. In **{one_sched} of "
         f"{len(rows)}** bundles every non-dominated point is a contract variant of a **single** "
         f"technology schedule — same facilities, same technologies, same years, same total CAPEX — "
-        f"differing only in PPA share and the fixed-price EPC flag (no frontier point in the "
-        f"current run signs a CCfD). The frontier therefore slopes along the *financing* axis and "
+        f"differing only in PPA share and the fixed-price EPC flag. Read that against the column "
+        f"before it: in **{len(rows) - multi_avail} of {len(rows)}** bundles the candidate set "
+        f"holds only one schedule to begin with, so there the collapse is arithmetic and not a "
+        f"finding. The claim rests on the other {multi_avail} bundles, where the optimiser did "
+        f"offer a choice of two or three schedules — and there the frontier still keeps one, in "
+        f"**{multi_collapsed} of {multi_avail}**. The "
+        f"frontier therefore slopes along the *financing* axis and "
         f"is a single point on the *technology* axis, so a frontier gap answers \"could this firm "
         f"have contracted its programme better\" and not \"could it have chosen a better "
         f"programme\". And that schedule is not one the surrogate liked: it is the surrogate's "
         f"most expensive plan in **{last_ranked} of {len(rows)}** bundles and in its bottom half in "
         f"**{bottom_half} of {len(rows)}**, which is the same failure §2 measures, seen from the "
         f"frontier's side (O11).")
+    note += _ccfd_note(f, pi)
     vd = ROOT / "out" / "e5" / "variance_decomp.csv"
     if vd.exists():
         v = pd.read_csv(vd)

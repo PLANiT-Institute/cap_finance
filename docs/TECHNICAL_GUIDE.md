@@ -10,7 +10,10 @@ in this markdown file — invisible when the markdown is rendered, so the web ve
 (`web/guide.html`, built by `scripts/build_guide_page.py`) labels each one instead. Where the
 evidence is weak, this document says so in the same sentence as the number. A reader with limited
 time should read §3 for what the data is, §4.1 for the assumptions that decide the answer, and
-**§9 for the objections we think are strongest against our own results**.
+**§9 for the objections we think are strongest against our own results**. §10 is a glossary; the
+terms that carry the most weight — *technology schedule*, *contract variant*, *candidate plan*,
+*TCaR*, *frontier gap* — are narrower here than they sound, and §9's corrections came from reading
+them loosely.
 
 **Companion documents.** [`METHODOLOGY.md`](../METHODOLOGY.md) states the model in equations and
 holds the assumption ledger (`A-01` … `A-24`). [`REDESIGN_SPEC.md`](../REDESIGN_SPEC.md) is the
@@ -47,8 +50,8 @@ The model is built so that each of these can be shown false. Current status is s
 
 | ID | Claim | Status |
 |---|---|---|
-| **P1** | A plan that is cheap in expectation is expensive in the tail — the frontier slopes, it does not collapse to a point. | Holds, but **weakly, and on a different axis than the claim implies**: only 4 of 32 forced technology schedules survive as non-dominated under the headline risk convention (§6.3), and in the reported run every non-dominated point in all 8 firm × scenario bundles is a contract variant of one technology schedule (§9.1, O11). The frontier slopes because contracts trade cost against risk, not because technologies do. |
-| **P2** | Contract instruments (renewable PPA, fixed-price EPC, CCfD) raise expected cost and lower tail risk. | Not rejected for steel. **In petrochemicals the hedge a risk-averse criterion actually picks — fixed-price EPC — covers 0% of that firm's tail variance**, because the tail is essentially all hydrogen and the instrument set has no hydrogen hedge (`docs/robustness_structural.md` §3-1). That is a gap in the instrument set, not a counterexample. |
+| **P1** | A plan that is cheap in expectation is expensive in the tail — the frontier slopes, it does not collapse to a point. | Holds, but **weakly, and on a different axis than the claim implies**: only 4 of 32 forced technology schedules survive as non-dominated under the headline risk convention (§6.3), and in the reported run every non-dominated point in all 8 firm × scenario bundles is a contract variant of one technology schedule (§9.1, O11) — half of those bundles were offered only one schedule to begin with, so the collapse is a finding in the other half. The frontier slopes because contracts trade cost against risk, not because technologies do. |
+| **P2** | Contract instruments (renewable PPA, fixed-price EPC, CCfD) raise expected cost and lower tail risk. | Tested for two of the three instruments only. **CCfD is never evaluated**: E5 rebuilds every candidate with `ccfd=0` and D5 holds no CCfD strike, so the instrument is inert in the authoritative revaluation twice over even though E2 signs one in most of its enumerated plans (counts in §9.1). For PPA and EPC the claim is not rejected in steel; **in petrochemicals the hedge a risk-averse criterion actually picks — fixed-price EPC — covers 0% of that firm's tail variance**, because the tail is essentially all hydrogen and the instrument set has no hydrogen hedge (`docs/robustness_structural.md` §3-1). That is a gap in the instrument set, not a counterexample. |
 | **P3** | Underspending is itself an energy-price risk position, i.e. the disclosed plan has `gap_risk > 0`. | Holds where a disclosed coordinate can be computed. It cannot be computed for 2 of 4 firms — see §6.4, and note the reason is a model boundary, not corporate disclosure failure. |
 | **P4** | The ranking by abatement cost and the ranking by financing burden do not coincide. | Holds. This is why metric ⑥ exists. |
 
@@ -108,7 +111,9 @@ from the outputs rather than asserted here.
 | ⑤ Flexibility value | Lower bound on the value of re-optimising per path |
 | ⑥ Financing burden | Peak CAPEX ÷ 3-year mean EBITDA; total CAPEX ÷ EBITDA; post-hoc net-debt multiple |
 
-**Efficient frontier** = the Pareto non-dominated set in the (P50, TCaR) plane.
+**Efficient frontier** = the Pareto non-dominated set in the (P50, TCaR) plane, computed inside one
+firm × scenario × support bundle over the candidate set E5 constructs — E2's technology schedules
+crossed with a fixed contract grid, not E2's plans as E2 emitted them (§6.3, §10).
 **Frontier gap** = horizontal and vertical distance from the disclosed plan's coordinate to that
 frontier. `gap_cost` is how much more the firm could have spent at the same risk; `gap_risk` is how
 much tail risk it could have removed at the same cost.
@@ -1001,6 +1006,8 @@ property of the risk convention, not of the candidate generator.
 
 <!-- GEN:plan_distinct -->
 Separately, of 48 enumerated plans only **40** are distinct under authoritative evaluation. Every one of the 8 bundles collapses exactly one pair, which differs only in whether a CCfD is signed — under `support=none` the CCfD strike is undefined, so the two plans are numerically identical downstream while the surrogate charges a premium and prices them apart.
+
+The collapse E5 applies is larger still, and in the other direction. The frontier is not built on E2's plans: E5 reduces them to their **13** distinct technology schedules — dropping the contract choice E2 made for each — and regenerates the contract dimension itself, 10 variants per schedule (`src/cap/e5_metrics.py:184-201`). So the 48 enumerated plans carry 13 distinct investment programmes between them, and every "candidate plan" count in §9.1 counts E5's regenerated set, not E2's output (§10).
 <!-- /GEN:plan_distinct -->
 
 ### 6.4 Where the gap cannot be computed, and why
@@ -1173,27 +1180,29 @@ should ask, asked in their sharpest form, with our answer next to each. Where th
 | **O8** | *"Three of your eleven sensitivity axes were never re-run properly."* | Stated in §4.3 with the three named, and their 0.0% deltas marked as unmeasured rather than flat. Re-planning them costs about ten minutes of solver time each and has not been spent. The count is eleven and not twelve: `out/scenarios/summary.csv` holds twelve bundles because one of them is `base`, the reference the other eleven are differenced against |
 | **O9** | *"The emissions pathway you ship covers one support scenario."* | `result_emissions_pathway.csv` is computed under the first support scenario only (`src/cap/e5_metrics.py:290`) and carries **no `support` column at all**, so a question about the emissions path under `support=current` has no answer in the package and nothing in the file says a support scenario was chosen. Given O7 the two would be identical today — but that is an accident of D5's contents, not a property of the code |
 | **O10** | *"Your public package cannot be traced back to sources."* | Two of its files cannot: the firm-level aggregates destroy `source_id` (§3.10). The other twelve keep it |
-| **O11** | *"Your frontier is one investment programme in different contract wrappers, and the optimiser that produced it ranked that programme last."* | **Correct on both counts, and this is the sharpest objection in the document.** In 8 of 8 firm × scenario bundles every non-dominated point shares a single `base_plan_id` — identical facilities, technologies, adoption years and total CAPEX — and the points differ only in PPA share and the fixed-price EPC flag; no frontier point in the current run signs a CCfD. So the frontier slopes on the financing axis and is a *point* on the technology axis, and a frontier gap measures contracting, not programme choice. Worse, that schedule is E2's most expensive plan in 5 of 8 bundles and in its bottom half in 7 of 8 (§9.1) — the surrogate that enumerates candidates does not agree with the authoritative revaluation about what is good (§2), so the frontier is the non-dominated set of a menu built by a ranking we have measured to be wrong |
+| **O11** | *"Your frontier is one investment programme in different contract wrappers, and the optimiser that produced it ranked that programme last."* | **Correct on both counts, and this is the sharpest objection in the document.** In 8 of 8 firm × scenario bundles every non-dominated point shares a single `base_plan_id` — identical facilities, technologies, adoption years and total CAPEX — and the points differ only in PPA share and the fixed-price EPC flag. Two qualifications, both of which make the objection sharper rather than softer. Half the bundles had only one schedule in their candidate set, so the claim is carried by the four that had two or three (§9.1). And no frontier point signs a CCfD **because none can**: E5 discards the contract choice E2 made and rebuilds every candidate with `ccfd=0`, while D5 holds no CCfD strike to price one with — so the third instrument in P2 is absent from every reported number, not rejected by them. So the frontier slopes on the financing axis and is a *point* on the technology axis, and a frontier gap measures contracting, not programme choice. Worse, that schedule is E2's most expensive plan in 5 of 8 bundles and in its bottom half in 7 of 8 (§9.1) — the surrogate that enumerates candidates does not agree with the authoritative revaluation about what is good (§2), so the frontier is the non-dominated set of a menu built by a ranking we have measured to be wrong |
 | **O12** | *"Two of your four gap cases sit hundreds of times outside their own frontier's range — is that a comparison at all?"* | For Mitsui under B20 the disclosed coordinate sits at **477×** the tail risk of the riskiest plan on its frontier (§2 figure), and calling the resulting number a distance *to the frontier* overstates what it is: at that separation the frontier is not a neighbourhood of the disclosed plan, and the leg is better read as "the disclosed commitment is not on the same risk scale as any modelled programme". The other three are 1.01×, 1.42× and 2.08× out, where the comparison is defensible. §8 claim 9 gives the direction; this is the case where direction is not enough |
 | **O13** | *"Measured emissions exist for the plants you estimated bottom-up, and you left them in the raw folder."* | True for Mitsui's two units. `data/raw/jp_site_emissions.csv` carries FY2023 totals for both of their sites — Ichihara 1,107,038 tCO₂, Osaka 1,454,608 — and D1b's bottom-up NCC estimates for those sites (547 kt and 450 kt including Scope 2, 2023) are 49% and 31% of them, so the site rows are a *bound* the estimates satisfy and nobody checked. They are not a substitute: the site rows are energy-CO₂ Scope 1+2 for a whole multi-plant site, and the modelled unit is one cracker, so using them as levels would attribute non-NCC emissions to the cracker. Using them as an upper-bound test costs nothing and is not done (`prepare_raw.py`'s petrochemical branch never reads the site table) |
 
 ### 9.1 What the frontier gap is a distance to
 
 <!-- GEN:frontier_shape -->
-| Firm | Scenario | Candidate plans | On frontier | Distinct schedules on frontier | Gap cost / risk (bn KRW) |
-|---|---|---|---|---|---|
-| LOTTE Chemical | B20 | 10 | 2 | 1 | **no coordinate** |
-| LOTTE Chemical | NZ15 | 10 | 6 | 1 | **no coordinate** |
-| Mitsui Chemicals | B20 | 11 | 2 | 1 | 836 / 1,326 |
-| Mitsui Chemicals | NZ15 | 21 | 8 | 1 | 713 / 969 |
-| Nippon Steel | B20 | 31 | 6 | 1 | 5,529 / 7,441 |
-| Nippon Steel | NZ15 | 21 | 5 | 1 | 1,255 / 4,651 |
-| POSCO | B20 | 10 | 4 | 1 | **no coordinate** |
-| POSCO | NZ15 | 20 | 5 | 1 | **no coordinate** |
+| Firm | Scenario | Candidate plans | Schedules available | On frontier | Distinct schedules on frontier | Gap cost / risk (bn KRW) |
+|---|---|---|---|---|---|---|
+| LOTTE Chemical | B20 | 10 | 1 | 2 | 1 | **no coordinate** |
+| LOTTE Chemical | NZ15 | 10 | 1 | 6 | 1 | **no coordinate** |
+| Mitsui Chemicals | B20 | 11 | 1 | 2 | 1 | 836 / 1,326 |
+| Mitsui Chemicals | NZ15 | 21 | 2 | 8 | 1 | 713 / 969 |
+| Nippon Steel | B20 | 31 | 3 | 6 | 1 | 5,529 / 7,441 |
+| Nippon Steel | NZ15 | 21 | 2 | 5 | 1 | 1,255 / 4,651 |
+| POSCO | B20 | 10 | 1 | 4 | 1 | **no coordinate** |
+| POSCO | NZ15 | 20 | 2 | 5 | 1 | **no coordinate** |
 
 The efficient frontier is **2 to 8 plans** per firm × scenario, out of 10–31 candidates. A frontier gap is a distance to that set, so it is a distance to a handful of points, not to a curve. The thinnest case that carries a gap is Mitsui Chemicals under B20: **2 non-dominated plans**, and the reported 836 / 1,326 bn KRW is the distance to them.
 
-The column to read first is *Distinct schedules on frontier*. In **8 of 8** bundles every non-dominated point is a contract variant of a **single** technology schedule — same facilities, same technologies, same years, same total CAPEX — differing only in PPA share and the fixed-price EPC flag (no frontier point in the current run signs a CCfD). The frontier therefore slopes along the *financing* axis and is a single point on the *technology* axis, so a frontier gap answers "could this firm have contracted its programme better" and not "could it have chosen a better programme". And that schedule is not one the surrogate liked: it is the surrogate's most expensive plan in **5 of 8** bundles and in its bottom half in **7 of 8**, which is the same failure §2 measures, seen from the frontier's side (O11).
+The column to read first is *Distinct schedules on frontier*. In **8 of 8** bundles every non-dominated point is a contract variant of a **single** technology schedule — same facilities, same technologies, same years, same total CAPEX — differing only in PPA share and the fixed-price EPC flag. Read that against the column before it: in **4 of 8** bundles the candidate set holds only one schedule to begin with, so there the collapse is arithmetic and not a finding. The claim rests on the other 4 bundles, where the optimiser did offer a choice of two or three schedules — and there the frontier still keeps one, in **4 of 4**. The frontier therefore slopes along the *financing* axis and is a single point on the *technology* axis, so a frontier gap answers "could this firm have contracted its programme better" and not "could it have chosen a better programme". And that schedule is not one the surrogate liked: it is the surrogate's most expensive plan in **5 of 8** bundles and in its bottom half in **7 of 8**, which is the same failure §2 measures, seen from the frontier's side (O11).
+
+The third contract instrument is absent from all of this by construction. **No frontier point signs a CCfD, and none can.** E5 does not revalue the contracts E2 chose: it dedupes E2's plans down to technology schedules and rebuilds each one across a fixed contract grid with `ccfd=0` on every point (`src/cap/e5_metrics.py:200`), and D5 carries **0** CCfD strike rows, so a signed CCfD would price identically anyway (`src/cap/plancost.py:258`). E2 signs a CCfD in **26 of 48** enumerated plans — it is credited there against a proxy carbon-volatility term the authoritative revaluation does not carry (`src/cap/e2_milp.py:263`) — and not one of those signatures reaches a reported number. P2 (§1) is therefore untested for CCfD in this run, and the frontier's financing axis is PPA share and fixed-price EPC only.
 
 And the axis that gap is measured on is the one with no market evidence: hydrogen carries 64%–77% of cost variance across the four firms, while its volatility is the prior of 0.25, not an estimate (§3.5). Tail-risk *levels*, and therefore `gap_risk` levels, inherit that.
 <!-- /GEN:frontier_shape -->
@@ -1206,6 +1215,101 @@ riskiest *endpoint* (the figure in §2 shows where the legs land, with the count
 is direction, not size: a clamped leg is a lower bound, so the reported gaps understate. And the
 numbers are reported to the nearest billion KRW in §6.4 while resting on a set that small; the
 digits are exact arithmetic on the outputs, not a precision claim about the world.
+
+---
+
+## 10. Glossary
+
+Terms this document uses in a narrower sense than ordinary English, each with the code that defines
+it. Where a term has been used loosely elsewhere in the literature — or elsewhere in this repository
+— the entry says so, because two of the corrections in §9 were caused by exactly that looseness.
+
+**Bundle.** One firm × one scenario. Eight of them (`out/e5/frontier_points.csv`). A **cell** adds
+the support axis, so a cell is firm × scenario × support. The word "bundle" is also used in §4.3 for
+an *assumption* bundle — a named perturbation of the configuration in `out/scenarios/summary.csv`.
+The two are unrelated and the counts differ; §4.3 and §9.1 are the respective homes.
+
+**Technology schedule** (`base_plan_id`). The investment programme itself: the set of
+(facility, technology, adoption year) triples. Two plans with the same schedule build the same
+things in the same years for the same total CAPEX (`src/cap/e5_metrics.py:186-189`).
+
+**Contract variant.** The same technology schedule wrapped in a different financing decision — PPA
+share and the fixed-price EPC flag. E5 enumerates these on a fixed grid rather than taking them from
+E2 (`CONTRACT_GRID`, `src/cap/e5_metrics.py:165`), and sets `ccfd=0` on all of them.
+
+**Candidate plan.** Ambiguous across this document, deliberately flagged rather than silently
+reconciled: in §2's surrogate table it means *a plan E2 emitted* (`out/e2/plan_index.csv`); in §9.1
+it means *a point E5 revalued*, which is a schedule × contract-grid product plus the disclosed plan.
+The second set is larger and its contract dimension is synthetic.
+
+**Surrogate.** E2's objective — a linearised stand-in for cost and risk used only to *enumerate*
+candidates. It is not reported anywhere as a result. Its disagreement with the authoritative
+revaluation is measured in §2 and is large.
+
+**Authoritative revaluation.** E4/E5: every candidate re-priced along every simulated price path
+with contracts applied non-linearly. Every number in §6 comes from here.
+
+**Incremental.** Every cost in this document is a difference against the no-transition baseline
+(incumbent technology forever, paying the scenario carbon price on full emissions), taken per
+simulation so the reported distribution is the distribution of the increment
+(`src/cap/e5_metrics.py:210-217`).
+
+**Resource-cost basis.** Metric ② additionally subtracts the plan's carbon-expenditure NPV, so
+avoided carbon does not read as a benefit of the plan (A-19). The carbon path is deterministic, so
+this subtraction shifts P50 and P90 by the same constant and **TCaR is identical with or without
+it** — a fact worth knowing before comparing our ③ against a study that nets carbon differently.
+
+**P50 / P90.** Median and 90th percentile *across simulated price paths* within one plan, not across
+plans or firms. The path count is in §5.
+
+**TCaR** (Transition Cost at Risk), metric ③. P90 − P50 of the incremental cost distribution: the
+cost above the median that the firm carries in the upper tail of price outcomes. It is a spread, not
+a level, and it is not a value-at-risk in the regulatory sense — there is no confidence statement
+about a loss, only a percentile of a simulated cost distribution.
+
+**Efficient frontier.** The lower-left envelope of the candidate set in the (P50, TCaR) plane within
+one cell: sort by TCaR, keep points whose P50 strictly improves (`src/cap/e5_metrics.py:51-58`).
+Ties collapse to one representative point.
+
+**Frontier gap** (`gap_cost`, `gap_risk`). Two axis-aligned distances from the disclosed
+coordinate to that envelope — not a nearest-point distance. `gap_cost` is the cost saving available
+at the disclosed plan's risk level, `gap_risk` the risk reduction available at its cost level. Where
+the disclosed point lies beyond the frontier's span the leg is **clamped to the endpoint**, which
+makes it a lower bound; where it lies below the span the gap is NaN rather than extrapolated
+(`src/cap/e5_metrics.py:61-81`). In the current run almost every leg is clamped (§2 figure).
+
+**Disclosed coordinate.** The (P50, TCaR) point of the firm's own announced commitments, built by
+forcing those commitments into the plan and revaluing it identically to every candidate. It exists
+only where a commitment survives to a forced decision — for two of four firms it does not, and the
+reason is a model boundary (§6.4), not the firm's disclosure.
+
+**Enforceable commitment / `resolution`.** A D7 row is enforceable when it names a facility, a
+technology and a year precisely enough to become a constraint in E2. `resolution` is our grade of
+that precision, not a judgement of the firm's ambition (§3.8).
+
+**Support scenario** (`current`, `none`). The policy-support axis: which subsidy, auction-share and
+CCfD-strike rows from D5 apply. Today the two settings return identical results because D5 holds
+nothing that separates them (§3.6, O7).
+
+**Evidence tier** (T1–T5). Grading of where a number came from, not of how uncertain it is: T1
+regulatory or audited filings, T2 company primary disclosure, T3 peer-reviewed or public-institution,
+T4 trade or secondary citation, **T5 our own model estimate**. T5 values are required to carry a
+low/high range; a T5 number without one is treated as a defect (§4.5).
+
+**λ tangency.** The plan that minimises P50 + λ·TCaR for an exogenous risk aversion λ. We report
+the tangent plan per λ rather than choosing a λ (`src/cap/e5_metrics.py:257-268`).
+
+**Policy wedge.** The same plans — schedule and contracts fixed — revalued under each scenario's
+prices and baseline. It measures exposure to policy *stringency*, which is a discrete choice, as
+distinct from the stochastic price risk in ③.
+
+**Flexibility value** (metric ⑤). A lower bound on the value of re-optimising as prices unfold,
+computed by letting the firm switch between already-enumerated plans per path rather than
+re-solving. A better decision rule would raise it; it cannot lower it.
+
+**Units.** Money is bn KRW (십억원) unless the column name says otherwise; abatement cost is
+thousand KRW per tCO₂ on discounted abatement; emissions are tCO₂. Japanese firms' financial inputs
+enter in 億円 and are **not** converted, which is a known defect confined to metric ⑥ (§3.7, §8).
 
 ---
 

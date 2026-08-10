@@ -242,3 +242,31 @@ def test_base_is_not_counted_as_an_assumption_bundle():
         f"가정 묶음 {len(bundles)}개 · 칸 {cells}개로 바뀌었다 — §4.3·O8의 손으로 쓴 수를 고쳐라")
     text = GUIDE.read_text(encoding="utf-8")
     assert "twelve sensitivity axes" not in text and "twelve firm × scenario" not in text
+
+
+def test_ccfd_cannot_reach_the_frontier():
+    """§1 P2·§9.1·O11은 "CCfD는 기각된 것이 아니라 시험된 적이 없다"고 단정한다 (F13).
+
+    F13 이전에는 세 문서 모두 "현행 실행의 경계 점 중 CCfD를 서명한 것은 없다"고 적어
+    관측처럼 읽혔다. 실제로는 두 겹의 구성이다 — E5의 계약 격자가 모든 비공시 후보에
+    ccfd=0을 강제하고(e5_metrics.py:200), D5에 ccfd 행이 없어 행사가가 정의되지 않는다
+    (plancost.py:258). 둘 중 하나라도 바뀌면 P2·O11·§9.1 생성문을 다시 써야 한다.
+    """
+    import csv
+    import re
+
+    src = (ROOT / "src" / "cap" / "e5_metrics.py").read_text(encoding="utf-8")
+    assert re.search(r"replace\(prof0,\s*ppa=ppa_v,\s*epc=epc_v,\s*ccfd=0\)", src), (
+        "E5의 계약 격자가 더 이상 ccfd=0을 강제하지 않는다 — P2·O11·§9.1을 다시 써라")
+    grid = re.search(r"CONTRACT_GRID = \[\(ppa, epc\) for ppa in \(([^)]*)\) "
+                     r"for epc in \(([^)]*)\)\]", src)
+    assert grid and len(grid.group(1).split(",")) * len(grid.group(2).split(",")) == 10, (
+        "계약 격자의 크기가 바뀌었다 — §10 용어집과 §6.3 생성문의 격자 서술을 고쳐라")
+
+    d5 = list(csv.DictReader((ROOT / "data" / "prepared" / "D5_policy_support.csv").open()))
+    assert not [r for r in d5 if r["instrument"] == "ccfd"], (
+        "D5에 CCfD 행사가 행이 생겼다 — CCfD가 비활성이라는 §9.1 문장이 거짓이 된다")
+
+    plans = list(csv.DictReader((ROOT / "out" / "e2" / "plan_index.csv").open()))
+    assert any(r["ccfd"] == "1" for r in plans), (
+        "E2가 더 이상 CCfD를 서명하지 않는다 — '대리만 서명한다'는 대비가 사라졌다")

@@ -3222,3 +3222,71 @@ O11–O13으로 추가했다. 대조 과정에서 **세는 수가 틀린 곳 셋
 - **§6.1 시드 스윕 재실행**(백로그 유지): E3–E5 × 5시드.
 - **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
   미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).
+
+## F13 (07:49) — 용어집을 쓰다가 "경계에 CCfD가 없다"가 관측이 아니라 구성이라는 것이 드러났다
+
+**한 일.** 지도의 F13대로 외부 독자용 용어집을 §10으로 붙였다. 용어 하나하나에 "그래서 그 수는
+무엇 위에서 세는가"를 붙이는 작업이었고, 그 과정에서 **세 문서가 공유하던 사실 오류 둘**과
+**어느 문서에도 없던 축약 하나**가 나왔다.
+
+### 가이드에서 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | §1 P2 · §9 O11 · §9.1 `GEN:frontier_shape` · METHODOLOGY §9-6 항목 10 | "현행 실행의 경계 점 중 CCfD를 서명한 것은 없다" — **관측처럼** | **구성이다. 서명할 수 없다.** E5는 비공시 후보를 전부 `ccfd=0`으로 다시 만들고(`e5_metrics.py:200`), D5에는 `ccfd` 행이 **0개**라 서명해도 값이 같다(`plancost.py:258`). 두 겹으로 비활성이다. 그런데 **E2는 48개 중 26개 계획에서 CCfD를 서명한다** — 대리 목적함수가 프록시 탄소변동성에 대해 공제를 주기 때문(`e2_milp.py:263`). 즉 **P2의 세 수단 중 CCfD는 기각된 것이 아니라 시험된 적이 없다** | `out/e5/frontier_points.csv`(`ccfd` 전 행 0) × `out/e2/plan_index.csv`(`ccfd` 합 26/48) × `data/prepared/D5_policy_support.csv`(7행, `ccfd` 0행) |
+| 2 | §1 P1 · O11 · §9.1 | "8묶음 **전부**에서 비지배 점이 한 기술계획의 계약 변형" | 맞지만 **넷은 산술이다.** 여덟 중 넷(LOTTE 양쪽·MCI B20·POSCO B20)은 후보 집합에 기술 일정이 **애초에 하나뿐**이라 두 번째가 나올 수 없다. 진단이 서는 곳은 일정이 둘·셋 있었던 **나머지 넷**이고, 거기서 4/4가 하나로 무너진다. 표에 `Schedules available` 열을 새로 생성한다 | `out/e5/frontier_points.csv` (비공시 `base_plan_id` nunique = 1,1,1,2,3,2,1,2) |
+| 3 | §6.3 `GEN:plan_distinct` | "48개 중 40개가 정본 평가에서 구별된다"까지만 | **E5의 축약은 더 크고 방향이 다르다.** E5는 E2 계획을 (시설·기술·연도) 일정으로 중복 제거해 **13개 기술 일정**으로 줄인 뒤 고정 계약 격자(PPA 5수준 × EPC 2 = 10점)를 다시 씌운다(`e5_metrics.py:184-201`). **E2가 고른 계약은 보고되는 어떤 수에도 도달하지 않는다.** 어느 문서에도 없던 사실이다 | `out/e5/frontier_points.csv` × `out/e2/plan_index.csv` |
+| 4 | §2 "Efficient frontier" 정의 | "the Pareto non-dominated set in the (P50, TCaR) plane" | 어느 집합 위인지가 빠져 있었다. **한 칸(기업×시나리오×support) 안에서, E5가 재구성한 후보 집합 위**다 — E2가 낸 계획 위가 아니다 | `e5_metrics.py:51-58`, 오류 3과 같은 근거 |
+| 5 | §2 vs §9.1 "candidate plans" | 같은 말로 **다른 집합**을 세고 있었다 | §2 대리 표의 `Plans`는 **E2 산출**(8·6·9·8·5·5·4·3), §9.1의 `Candidate plans`는 **E5 재구성**(10–31)이다. 화해시키지 않고 용어집에서 둘 다 이름 붙였다 — 뒤의 집합은 계약 차원이 합성이다 | 같은 두 파일 |
+
+### 새로 붙인 것
+
+- **§10 용어집** (손으로 쓴 산문, 20항목): bundle/cell, technology schedule(`base_plan_id`),
+  contract variant, candidate plan(모호성 명시), surrogate, authoritative revaluation, incremental,
+  resource-cost basis, P50/P90, TCaR, efficient frontier, frontier gap, disclosed coordinate,
+  enforceable commitment/`resolution`, support scenario, evidence tier, λ tangency, policy wedge,
+  flexibility value, units. 항목마다 정의하는 코드 위치를 붙였고 **수치는 넣지 않았다** —
+  F12의 "twelve" 복사 사고가 손으로 옮긴 수에서 났기 때문이다.
+- 용어집에서 확인한 비자명한 사실 하나: **TCaR은 탄소지출 차감 여부와 무관하게 같다.**
+  `dcarb`가 계획별 상수라 P50·P90을 같은 크기로 옮긴다(`e5_metrics.py:213-217`). ③을 탄소 처리가
+  다른 연구와 비교할 때 필요한 문장인데 어디에도 없었다.
+- **METHODOLOGY.md도 고쳤다** (정본 우선): §9-6 항목 9에 E5의 일정 축약·계약 격자·`ccfd=0` 강제를
+  적고, 항목 10의 "CCfD 서명 없음" 괄호를 지웠으며 "여덟 묶음 전부" 옆에 넷은 산술이라는 단서를 붙였다.
+
+### 검증
+
+```
+.venv/bin/python scripts/build_tech_guide.py     # 21 blocks, 111,189 chars (101,987 → )
+.venv/bin/python scripts/build_guide_page.py     # 38 sections (37 → 38), 383 table rows, figure 1
+.venv/bin/python scripts/build_site.py
+.venv/bin/python scripts/gate.py                 # gate: OK (pytest 68 passed, audit ok 68/PARTIAL 4 불변)
+```
+
+테스트 1개 추가(67 → 68). `test_ccfd_cannot_reach_the_frontier`는 E5 격자가 `ccfd=0`을 그만
+강제하거나, 격자 크기가 바뀌거나, D5에 `ccfd` 행이 생기거나, E2가 CCfD를 그만 서명하면 실패한다
+— 넷 중 무엇이든 §1 P2·O11·§9.1·§10을 다시 써야 하는 사건이다.
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | 유지(+발견) | gate audit `ok 68, PARTIAL 4` 불변. 새 발견은 데이터가 아니라 **수단**의 미사용이다 — D5에 CCfD 행사가가 없어 계약 수단 하나가 통째로 비활성 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | 유지 | 11 가정 묶음 + base, 묶음당 16칸 (3묶음 미재계획 — F2) |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선** | Arc가 "PPA·EPC·CCfD 다 봤나"고 물으면 이제 "둘만 봤다"가 문서에 있다. 용어집은 미팅 중 되묻기를 줄인다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | 유지 | `scripts/gate.py` 8항목. MCP 표면 변화 없음 |
+| ⑤ 산출물 — 다른 형식이 있는가 | 유지 | md / HTML(38절 383행) / SVG / 데이터 패키지 |
+
+### 인계
+
+- **CCfD를 시험 가능하게 만드는 일**(신규 백로그, 코드+데이터): 둘 다 필요하다 — D5에 CCfD 행사가
+  행(한·일 각각 근거 있는 값), 그리고 E5 계약 격자에 `ccfd` 축 추가(격자가 10점 → 20점, E5 재실행
+  필요). 지금 P2는 세 수단 중 둘만 시험한다.
+- **③ 번호 오기**(코드 주석, 미수정): `e5_metrics.py` 모듈 독스트링과 `plancost.py:216`이 분산분해를
+  ③이라 부르는데 정본(METHODOLOGY §7 표)에서 ③은 TCaR이다. 고쳤다가 **되돌렸다** — 주석 한 줄만
+  바꿔도 gate의 `out/ vs data/raw`가 STALE로 뒤집혀 다음 창이 out/를 의심하게 된다. 파이프라인을
+  다시 도는 사이클에 같이 넣어라.
+- **F14(README 연결)**: 용어집이 생겼으므로 README에서 가이드로 가는 링크는 §10을 함께 가리키는 것이 낫다.
+- **§6.1 시드 스윕 재실행**(백로그 유지): E3–E5 × 5시드.
+- **MCI 사업소 상한 검증**(백로그 유지, O13): `prepare_raw.py` 석화 분기에 경고 한 줄.
+- **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).
