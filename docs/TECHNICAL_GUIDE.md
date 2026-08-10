@@ -301,6 +301,7 @@ does.
 |---|---|
 | `scenario` | `NZ15` (1.5 °C-consistent) or `B20` (below 2 °C) |
 | `region` | `Korea` or `Japan` — Korean budgets are direct-emission based and on calendar years, Japanese include purchased power and are on fiscal years |
+| `year` | Anchor year. Both files are on 5-year anchors that E1 interpolates annually, with `re_price` the exception noted above — so a row is a knot on a path, not an observation of that year |
 | `sector` (D2a) | `steel` / `petchem` |
 | `carbon_budget` (D2a) | Sector emissions allowance for that year |
 | `gcam_version` (D2a) | Provenance tag of the pathway — see the caveat below |
@@ -451,6 +452,14 @@ thinnest dataset in the project and it directly sets the level of metric ③. No
 free text carrying the definitional caveat for the series (basis, coverage, whether a value is
 estimated), so it is worth reading in the table below rather than skipping as a label.
 
+| Field | Definition | Unit |
+|---|---|---|
+| `date` **[req]** | Observation date, `YYYY-MM-DD`. Spacing is irregular — annual for most series, and the interval is never checked | date |
+| `series_id` **[req]** | Series key. A series is only opened if some factor names it in `FACTOR_SERIES` (`src/cap/calibration.py:24-26`); 11 of the 18 series present are named by no factor | — |
+| `value` **[req]** | The quoted level. Volatility is estimated from log differences of consecutive values, so only the shape matters, not the level — except for the electrolyzer series, whose last value anchors the hydrogen price path | see `unit` |
+| `unit` **[req]** | Free text carrying the series' basis and caveats, not a parseable unit code. **No stage converts on it**, so two series in different units may not be mixed inside one factor | — |
+| `source_id` **[req]** | Foreign key into `source_register` | — |
+
 The three factors are electricity, hydrogen and capex, and the mapping from factor to series is a
 constant in `calibration.py`, not a property of the file: **a series no factor names is never
 opened, however long it is.** The "Read as" column below is that mapping.
@@ -528,10 +537,28 @@ GX-ETS price collar rows that no stage reads.
 
 ### 3.7 D6 — company financials
 
-One row per company-year: revenue, EBITDA, total CAPEX, total and net debt, interest expense, cash,
-plus `source_id`. Feeds metric ⑥ only. Coverage is 2020–2025 for POSCO and Nippon Steel, 2021–2025
-for LOTTE, 2020–2024 for Mitsui. The column list is not a description of a filled table — most of
-these columns are sparse, and the sparsity is not evenly spread across the four firms:
+One row per company-year. Feeds metric ⑥ only.
+
+| Field | Definition | Unit |
+|---|---|---|
+| `company_id`, `year` | Composite key | — |
+| `revenue` **[req]** | Revenue as reported by the entity named in `source_id` | **bn KRW or 億円 — see the currency caution** |
+| `ebitda` **[req]** | Earnings before interest, tax, depreciation and amortisation **as the filer labels it**; for the two Japanese firms the value is reported operating profit, which is not the same quantity | same as `revenue` |
+| `capex_total` **[req]** | Reported capital expenditure, all purposes — **not** the model's transition CAPEX, which carries the same name in the result files | same as `revenue` |
+| `total_debt` **[req]** | Gross interest-bearing debt | same as `revenue` |
+| `net_debt` **[req]** | Debt net of cash | same as `revenue` |
+| `interest_expense` **[req]** | Interest cost for the year | same as `revenue` |
+| `cash` **[req]** | Cash and equivalents | same as `revenue` |
+| `source_id` **[req]** | Foreign key into `source_register`. It also fixes the **legal entity**: the POSCO rows are the steel operating company, not the holding company | — |
+
+**Currency caution.** No exchange rate is applied anywhere in the pipeline. The Korean rows are
+billion KRW and the Japanese rows are 億円, so any cross-country reading of ⑥ carries that error —
+see §8 claim 8. Ratios within one firm are unaffected, because numerator and denominator share the
+row's currency.
+
+Coverage is 2020–2025 for POSCO and Nippon Steel, 2021–2025 for LOTTE, 2020–2024 for Mitsui. The
+column list is not a description of a filled table — most of these columns are sparse, and the
+sparsity is not evenly spread across the four firms:
 
 <!-- GEN:d6_coverage -->
 | Column | Non-null | Firms | Read by |
@@ -648,9 +675,92 @@ URL/DOI, publication and retrieval dates, reporting period, licence, and whether
 redistributable. Citations in prose use `source_id`; URLs are never written inline.
 
 `data/raw/` is not committed (licence-restricted sources). The redistributable subset plus derived
-results ships in `data/package/` with a `manifest.json` carrying SHA256 per file, a merged data
-dictionary, and the configuration the results were produced under. Facility-level results are
-confidential by design and are excluded from the package.
+results ships in `data/package/` with a `manifest.json` carrying SHA256 per file and the
+configuration the results were produced under. Facility-level results are confidential by design and
+are excluded from the package. What that exclusion does to the files themselves is §3.10.
+
+### 3.10 What the public package actually ships
+
+The package is **not** the input set described above. Two of the nine input files are replaced by
+firm-level aggregates before anything leaves the repository (design spec §8-2), and four result
+files and the source register are added. So a reader who downloads `data/package/` holds different
+columns from the ones the model reads, and the difference is not a subset relation.
+
+<!-- GEN:package -->
+| Package file | Kind | Rows | Columns | Defined in |
+|---|---|---|---|---|
+| `D1a_company_capacity.csv` | aggregate of D1a | 6 | 5 | §3.10 |
+| `D1b_company_panel.csv` | aggregate of D1b | 12 | 8 | §3.10 |
+| `D2a_scenario_budget.csv` | input, as loaded | 48 | 7 | §3.3 |
+| `D2b_scenario_prices.csv` | input, as loaded | 224 | 7 | §3.3 |
+| `D3_tech_options.csv` | input, as loaded | 13 | 15 | §3.4 |
+| `D4_price_history.csv` | input, as loaded | 99 | 5 | §3.5 |
+| `D5_policy_support.csv` | input, as loaded | 7 | 9 | §3.6 |
+| `D6_company_financials.csv` | input, as loaded | 22 | 10 | §3.7 |
+| `D7_disclosed_plan.csv` | input, as loaded | 12 | 9 | §3.8 |
+| `result_affordability.csv` | results | 16 | 16 | §3.10 |
+| `result_emissions_pathway.csv` | results | 520 | 6 | §3.10 |
+| `result_gap.csv` | results | 8 | 8 | §3.10 |
+| `result_metrics_company.csv` | results | 16 | 13 | §3.10 |
+| `source_register.csv` | register | 82 | 16 | §3.10 |
+
+14 data files, 134 columns, every one of them defined in §3 — the build refuses to write the dictionary otherwise. **2 of the 9 input files ship under a different name and a different grain** (`D1a_facility_static`, `D1b_facility_panel` → the two aggregates above), so the package is not the input set with rows removed. `data_dictionary.csv` ships alongside these and holds one row per column above, 134 in total.
+<!-- /GEN:package -->
+
+`data/package/data_dictionary.csv` is generated from the field tables in this section by
+`scripts/build_data_package.py`, against the headers of the files actually written. **This guide is
+the definition of record**; the dictionary is a projection of it. A shipped column with no
+definition here fails the build rather than shipping undocumented — which is how the previous
+dictionary came to describe 85 columns of two files the package does not contain while leaving 73 of
+the 89 columns it does contain undescribed.
+
+**The two aggregates carry no `source_id`.** Grouping destroys it, so the claim in §3.9 that every
+data row carries a foreign key into the register holds for the seven input files that ship
+unchanged and not for `D1a_company_capacity` / `D1b_company_panel`. Their provenance is traceable
+only through the repository, not through the package.
+
+| File | Field | Definition | Unit |
+|---|---|---|---|
+| `D1a_company_capacity` | `company_id`, `sector`, `unit_type` | Grouping key. The facility identity, site, name, vintage and reinvestment anchors of §3.1 are dropped here, not aggregated | — |
+| `D1a_company_capacity` | `units` | Count of facilities in the group that survived the register filter (§3.1) | count |
+| `D1a_company_capacity` | `capacity_t_yr` | Sum of `D1a.capacity` over the group. Comparable within a `unit_type` only — the basis differs across unit types, and 16 of the 23 underlying rows are inner-volume estimates (**A-01**) | t/yr on the group's basis |
+| `D1b_company_panel` | `company_id`, `year` | Grouping key | — |
+| `D1b_company_panel` | `production_t` | Sum of `D1b.production` over the firm's facilities — **mixes hot metal, crude steel and ethylene tonnes**, so it is a scale indicator and not a physical total | t/yr |
+| `D1b_company_panel` | `emissions_s1_tco2`, `emissions_s2_tco2` | Sums of the corresponding §3.2 columns. Scope 2 is carried here although no stage reads it | tCO₂/yr |
+| `D1b_company_panel` | `energy_elec_mwh` | Sum of `D1b.energy_elec` | MWh/yr |
+| `D1b_company_panel` | `energy_coal_gj`, `energy_gas_gj` | Sums of `D1b.energy_coal` / `energy_gas`, in gigajoules (§3.2) | GJ/yr |
+| `result_metrics_company` | `company_id`, `scenario`, `support` | Key. One row per firm × scenario × support axis, for the **cost-minimising** plan of that cell — not for the disclosed plan | — |
+| `result_metrics_company` | `capex_total_bnkrw`, `capex_peak_bnkrw`, `capex_peak_year` | Metric ① — transition CAPEX of that plan, undiscounted sum and largest single year. Unrelated to `D6.capex_total` despite the name | bn KRW / bn KRW / year |
+| `result_metrics_company` | `p50_bnkrw` | Metric ② — median incremental NPV against the incumbent plan, **excluding** carbon expenditure (A-19) | bn KRW |
+| `result_metrics_company` | `cost_per_tco2_thkrw` | Metric ② per tonne — `p50` ÷ discounted abated tCO₂ | thousand KRW/tCO₂ |
+| `result_metrics_company` | `tcar_bnkrw` | Metric ③ — P90 − P50 of the same distribution | bn KRW |
+| `result_metrics_company` | `flex_value_bnkrw` | Metric ⑤ — mean value of re-optimising per path, a lower bound | bn KRW |
+| `result_metrics_company` | `p50_incl_carbon_bnkrw`, `carbon_delta_bnkrw` | The same P50 with carbon expenditure included, and the difference. The pair is what makes A-19 auditable rather than assumed | bn KRW |
+| `result_metrics_company` | `policy_exposure_bnkrw` | Metric ④ — P50 under the first configured scenario minus P50 under the second, within a support level | bn KRW |
+| `result_affordability` | `company_id`, `scenario`, `support` | Key, same cell definition as above | — |
+| `result_affordability` | `capex_total_bnkrw`, `capex_peak_bnkrw`, `capex_peak_year` | Carried over from ① | bn KRW / bn KRW / year |
+| `result_affordability` | `ebitda_ref_bnkrw` | Reference earnings — mean of the **last three reported** years of `D6.ebitda`, which is not a fixed window and differs by firm | bn KRW or 億円 (§3.7) |
+| `result_affordability` | `ebitda_years` | The years that mean was taken over, semicolon-separated. It exists so the window is visible rather than assumed | — |
+| `result_affordability` | `revenue_latest_bnkrw`, `net_debt_bnkrw` | Latest non-null `D6.revenue` / `D6.net_debt`. `net_debt` is blank for POSCO and LOTTE by entity boundary (§3.7) | bn KRW or 億円 |
+| `result_affordability` | `capex_peak_to_ebitda`, `capex_total_to_ebitda` | Metric ⑥ — blank where reference EBITDA is ≤ 0, because a ratio on a loss is not a smaller burden | ratio |
+| `result_affordability` | `capex_total_to_revenue_pct` | Total CAPEX as a share of latest revenue. Computed even on negative EBITDA, which is why LOTTE has this and no other ⑥ figure | percent |
+| `result_affordability` | `netdebt_to_ebitda_now`, `netdebt_to_ebitda_post` | Leverage before, and with the whole transition CAPEX debt-financed — a **ceiling**, not a funding forecast | ratio |
+| `result_affordability` | `funding_verdict` | Banded reading of `capex_peak_to_ebitda` (Korean text). A label over the ratio, carrying no extra information | — |
+| `result_gap` | `company_id`, `scenario`, `support`, `plan_id` | Key plus the **disclosed** plan's id — this file is about the disclosed coordinate, and a firm with no representable commitment has no row (§6.4) | — |
+| `result_gap` | `p50`, `tcar` | The disclosed plan's own coordinate in the (P50, TCaR) plane | bn KRW |
+| `result_gap` | `gap_cost_bnkrw`, `gap_risk_bnkrw` | Horizontal and vertical distance from that coordinate to the efficient frontier (§2) | bn KRW |
+| `result_emissions_pathway` | `company_id`, `scenario`, `plan`, `year` | Key. `plan` ∈ `baseline`, `cost_min`, `disclosed`; there is **no support column** — pathways are computed for the first configured support level only (`support_scenarios[0]`, `src/cap/e5_metrics.py:290`) and are not re-run for the others | — |
+| `result_emissions_pathway` | `emissions_tco2` | Firm emissions in that year under that plan | tCO₂/yr |
+| `result_emissions_pathway` | `budget_tco2` | The D2a-derived allowance for the same firm-year, repeated on every plan row so the comparison needs no join | tCO₂/yr |
+| `source_register` | `source_id` | Primary key, referenced by every `source_id` above | — |
+| `source_register` | `publisher`, `title`, `source_type`, `url_or_doi` | Bibliographic identity of the source | — |
+| `source_register` | `publication_date`, `retrieved_at` | When the source was published and when we took it. `publication_date` is empty where the publisher states none | date |
+| `source_register` | `reporting_start`, `reporting_end` | The period the figures describe — distinct from publication date, and the field that makes a vintage claim checkable | date |
+| `source_register` | `location` | Where inside the source the figure sits (page, table, sheet) | — |
+| `source_register` | `licence`, `redistributable` | Licence as stated, and whether we may republish the extracted values. `conditional` means cited but not redistributed in full | — |
+| `source_register` | `file_name`, `sha256` | The retained copy and its hash, where the licence permits retention | — |
+| `source_register` | `extraction_method` | How the number was taken out — web fetch, PDF text, manual transcription. It is the field that says how much to trust a single digit | — |
+| `source_register` | `quality_note` | Free text (Korean) on caveats, disputed values and what was verified | — |
 
 ---
 

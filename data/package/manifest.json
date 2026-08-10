@@ -88,33 +88,33 @@
     },
     {
       "name": "data_dictionary.csv",
-      "rows": 85,
-      "sha256": "45f2b53a8881780fba9a9925bdf9aaee469ebd01aec91062ca39b7317f3163aa"
+      "rows": 134,
+      "sha256": "befc0eb1a444d6a4db065ca027f80f011a77822fdbf14d38dc8a33b88ae596f7"
     },
     {
       "name": "result_affordability.csv",
       "rows": 16,
-      "sha256": "dc824d88a8851332db6334b6df24535ca13f7dec930e7e14fcdd3ea26854adb6"
+      "sha256": "5184954099becf55725c88d04ca5c1c61b88b234b3cd0e94e94789f4875d08dc"
     },
     {
       "name": "result_emissions_pathway.csv",
       "rows": 520,
-      "sha256": "a2392044bfd609ee5d1d8b05a9aae446ada54cfa3b9adde868a96ba7e0d7d5be"
+      "sha256": "4dbcde08fbd3e991185b726f3561104fca4167a3cd6d957a640f0d919c739ec3"
     },
     {
       "name": "result_gap.csv",
       "rows": 8,
-      "sha256": "64fe5074e724a6385590063d227b09fea5b9a36e11247f010d2a041819115d23"
+      "sha256": "381574e35eacc7a80aef071b0ac1860d9ee64eb0383e752e79c6f9b1db807109"
     },
     {
       "name": "result_metrics_company.csv",
       "rows": 16,
-      "sha256": "919fa429710d70d71383d088a2db68ac56f6d11274eb1f80b961dd178691ee16"
+      "sha256": "59da56ea06ed0719623c51360de46074905535e53e27bae19989c740e57679bf"
     },
     {
       "name": "source_register.csv",
-      "rows": 81,
-      "sha256": "dcfa396332407ac93534e3d4efbb7d992ebe5e37b8ab8b6254d92c9a740a9c52"
+      "rows": 82,
+      "sha256": "4d32056453a3bd12d378957aa3f745c31bf8c9c65697d149694cc6748d48374d"
     }
   ]
 }

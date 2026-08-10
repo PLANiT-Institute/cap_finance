@@ -444,6 +444,40 @@ def gen_d6_coverage():
     return _md(rows, ["Column", "Non-null", "Firms", "Read by"]) + note
 
 
+def gen_package():
+    """What the public package contains, against what the model reads.
+
+    The two are not the same set and the difference is not a subset relation:
+    two input files are replaced by firm-level aggregates and five files are added.
+    Reading the file listing off `manifest.json` and the column counts off the
+    generated dictionary means this table cannot claim a file the build did not write.
+    """
+    pkg = ROOT / "data" / "package"
+    man, dic = pkg / "manifest.json", pkg / "data_dictionary.csv"
+    if not (man.exists() and dic.exists()):
+        return "_Package not built — run `scripts/build_data_package.py`._"
+    files = {f["name"]: f for f in json.loads(man.read_text(encoding="utf-8"))["files"]}
+    d = pd.read_csv(dic)
+    KIND = {"D1a_company_capacity": "aggregate of D1a", "D1b_company_panel": "aggregate of D1b"}
+    rows = []
+    for stem, g in d.groupby("file", sort=False):
+        name = f"{stem}.csv"
+        kind = KIND.get(stem, "results" if stem.startswith("result_")
+                        else "register" if stem == "source_register" else "input, as loaded")
+        secs = sorted(set(g.defined_in.str.split("§").str[-1]))
+        rows.append([f"`{name}`", kind, f"{files[name]['rows']:,}", str(len(g)),
+                     "§" + ", §".join(secs)])
+    shipped = sorted(files)
+    inputs = [s for s in SCHEMAS if not any(f.startswith(s) for f in shipped)]
+    note = (f"\n\n{len(rows)} data files, {len(d)} columns, every one of them defined in §3 — the "
+            f"build refuses to write the dictionary otherwise. **{len(inputs)} of the "
+            f"{len(SCHEMAS)} input files ship under a different name and a different grain** "
+            f"(`{'`, `'.join(inputs)}` → the two aggregates above), so the package is not the "
+            f"input set with rows removed. `data_dictionary.csv` ships alongside these and holds "
+            f"one row per column above, {len(d)} in total.")
+    return _md(rows, ["Package file", "Kind", "Rows", "Columns", "Defined in"]) + note
+
+
 def gen_d7_enforcement():
     """Row-by-row verdict on the disclosed plan, obtained by *calling* the engine's
     `_disclosed_fixed` rather than restating its precondition chain in prose. A
@@ -669,6 +703,7 @@ BLOCKS = {
     "price_series": gen_price_series,
     "d6_coverage": gen_d6_coverage,
     "d7_enforcement": gen_d7_enforcement,
+    "package": gen_package,
     "tier_distribution": gen_tier_distribution,
     "config": gen_config,
     "headline": gen_headline,

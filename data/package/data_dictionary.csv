@@ -1,86 +1,135 @@
-file,column
-D1a_facility_static,facility_id
-D1a_facility_static,company_id
-D1a_facility_static,sector
-D1a_facility_static,site
-D1a_facility_static,unit_type
-D1a_facility_static,unit_name
-D1a_facility_static,capacity
-D1a_facility_static,capacity_unit
-D1a_facility_static,commissioning_year
-D1a_facility_static,last_reline_year
-D1a_facility_static,reinvest_cycle_yr
-D1a_facility_static,next_reinvest_year
-D1a_facility_static,status
-D1a_facility_static,source_id
-D1b_facility_panel,facility_id
-D1b_facility_panel,year
-D1b_facility_panel,production
-D1b_facility_panel,emissions_s1
-D1b_facility_panel,emissions_s2
-D1b_facility_panel,energy_coal
-D1b_facility_panel,energy_gas
-D1b_facility_panel,energy_elec
-D1b_facility_panel,energy_naphtha
-D1b_facility_panel,source_id
-D2a_scenario_budget,scenario
-D2a_scenario_budget,region
-D2a_scenario_budget,sector
-D2a_scenario_budget,year
-D2a_scenario_budget,carbon_budget
-D2a_scenario_budget,gcam_version
-D2a_scenario_budget,source_id
-D2b_scenario_prices,scenario
-D2b_scenario_prices,region
-D2b_scenario_prices,variable
-D2b_scenario_prices,year
-D2b_scenario_prices,value
-D2b_scenario_prices,unit
-D2b_scenario_prices,source_id
-D3_tech_options,tech_id
-D3_tech_options,sector
-D3_tech_options,applies_to_unit
-D3_tech_options,capex_unit
-D3_tech_options,opex_fixed
-D3_tech_options,opex_var
-D3_tech_options,elec_intensity
-D3_tech_options,h2_intensity
-D3_tech_options,emission_factor
-D3_tech_options,avail_year
-D3_tech_options,build_years
-D3_tech_options,lifetime
-D3_tech_options,capex_uncertainty
-D3_tech_options,source_id
-D4_price_history,date
-D4_price_history,series_id
-D4_price_history,value
-D4_price_history,unit
-D4_price_history,source_id
-D5_policy_support,support_scenario
-D5_policy_support,instrument
-D5_policy_support,tech_id
-D5_policy_support,param_type
-D5_policy_support,value
-D5_policy_support,unit
-D5_policy_support,valid_from
-D5_policy_support,valid_to
-D5_policy_support,source_id
-D6_company_financials,company_id
-D6_company_financials,year
-D6_company_financials,revenue
-D6_company_financials,ebitda
-D6_company_financials,capex_total
-D6_company_financials,total_debt
-D6_company_financials,net_debt
-D6_company_financials,interest_expense
-D6_company_financials,cash
-D6_company_financials,source_id
-D7_disclosed_plan,company_id
-D7_disclosed_plan,item_type
-D7_disclosed_plan,facility_id
-D7_disclosed_plan,tech_id
-D7_disclosed_plan,year_stated
-D7_disclosed_plan,coverage_pct
-D7_disclosed_plan,resolution
-D7_disclosed_plan,source_id
-D7_disclosed_plan,quote
+file,column,schema_required,unit,definition,defined_in
+D1a_company_capacity,company_id,,,"Grouping key. The facility identity, site, name, vintage and reinvestment anchors of §3.1 are dropped here, not aggregated",TECHNICAL_GUIDE.md §3.10
+D1a_company_capacity,sector,,,"Grouping key. The facility identity, site, name, vintage and reinvestment anchors of §3.1 are dropped here, not aggregated",TECHNICAL_GUIDE.md §3.10
+D1a_company_capacity,unit_type,,,"Grouping key. The facility identity, site, name, vintage and reinvestment anchors of §3.1 are dropped here, not aggregated",TECHNICAL_GUIDE.md §3.10
+D1a_company_capacity,units,,,Count of facilities in the group that survived the register filter (§3.1),TECHNICAL_GUIDE.md §3.10
+D1a_company_capacity,capacity_t_yr,,,"Sum of D1a.capacity over the group. Comparable within a unit_type only — the basis differs across unit types, and 16 of the 23 underlying rows are inner-volume estimates (A-01)",TECHNICAL_GUIDE.md §3.10
+D1b_company_panel,company_id,,,Grouping key,TECHNICAL_GUIDE.md §3.10
+D1b_company_panel,year,,,Grouping key,TECHNICAL_GUIDE.md §3.10
+D1b_company_panel,production_t,,,"Sum of D1b.production over the firm's facilities — mixes hot metal, crude steel and ethylene tonnes, so it is a scale indicator and not a physical total",TECHNICAL_GUIDE.md §3.10
+D1b_company_panel,emissions_s1_tco2,,,Sums of the corresponding §3.2 columns. Scope 2 is carried here although no stage reads it,TECHNICAL_GUIDE.md §3.10
+D1b_company_panel,emissions_s2_tco2,,,Sums of the corresponding §3.2 columns. Scope 2 is carried here although no stage reads it,TECHNICAL_GUIDE.md §3.10
+D1b_company_panel,energy_elec_mwh,,,Sum of D1b.energy_elec,TECHNICAL_GUIDE.md §3.10
+D1b_company_panel,energy_coal_gj,,,"Sums of D1b.energy_coal / energy_gas, in gigajoules (§3.2)",TECHNICAL_GUIDE.md §3.10
+D1b_company_panel,energy_gas_gj,,,"Sums of D1b.energy_coal / energy_gas, in gigajoules (§3.2)",TECHNICAL_GUIDE.md §3.10
+D2a_scenario_budget,scenario,yes,,NZ15 (1.5 °C-consistent) or B20 (below 2 °C),TECHNICAL_GUIDE.md §3.3
+D2a_scenario_budget,region,yes,,"Korea or Japan — Korean budgets are direct-emission based and on calendar years, Japanese include purchased power and are on fiscal years",TECHNICAL_GUIDE.md §3.3
+D2a_scenario_budget,sector,yes,,steel / petchem,TECHNICAL_GUIDE.md §3.3
+D2a_scenario_budget,year,yes,,"Anchor year. Both files are on 5-year anchors that E1 interpolates annually, with re_price the exception noted above — so a row is a knot on a path, not an observation of that year",TECHNICAL_GUIDE.md §3.3
+D2a_scenario_budget,carbon_budget,yes,,Sector emissions allowance for that year,TECHNICAL_GUIDE.md §3.3
+D2a_scenario_budget,gcam_version,yes,,Provenance tag of the pathway — see the caveat below,TECHNICAL_GUIDE.md §3.3
+D2a_scenario_budget,source_id,yes,,"One or more keys into source_register, optionally followed by a free-text derivation note in parentheses. A cell is not a bare key: KR_PPA_2026/REI_JP_PPA_2025 names two, and the qualifier is where the transformation is recorded. Resolution splits on ; | + / and drops the parenthetical (scripts/audit_data.py:source_parts)",TECHNICAL_GUIDE.md §3.3
+D2b_scenario_prices,scenario,yes,,NZ15 (1.5 °C-consistent) or B20 (below 2 °C),TECHNICAL_GUIDE.md §3.3
+D2b_scenario_prices,region,yes,,"Korea or Japan — Korean budgets are direct-emission based and on calendar years, Japanese include purchased power and are on fiscal years",TECHNICAL_GUIDE.md §3.3
+D2b_scenario_prices,variable,yes,,"elec_price, re_price, h2_price, coal_price, gas_price, co2_price",TECHNICAL_GUIDE.md §3.3
+D2b_scenario_prices,year,yes,,"Anchor year. Both files are on 5-year anchors that E1 interpolates annually, with re_price the exception noted above — so a row is a knot on a path, not an observation of that year",TECHNICAL_GUIDE.md §3.3
+D2b_scenario_prices,value,yes,,"The price and its unit (KRW/MWh, KRW/kg, KRW/t, KRW/tCO₂)",TECHNICAL_GUIDE.md §3.3
+D2b_scenario_prices,unit,yes,,"The price and its unit (KRW/MWh, KRW/kg, KRW/t, KRW/tCO₂)",TECHNICAL_GUIDE.md §3.3
+D2b_scenario_prices,source_id,yes,,"One or more keys into source_register, optionally followed by a free-text derivation note in parentheses. A cell is not a bare key: KR_PPA_2026/REI_JP_PPA_2025 names two, and the qualifier is where the transformation is recorded. Resolution splits on ; | + / and drops the parenthetical (scripts/audit_data.py:source_parts)",TECHNICAL_GUIDE.md §3.3
+D3_tech_options,tech_id,yes,,"e.g. steel_h2dri, petchem_ecracker",TECHNICAL_GUIDE.md §3.4
+D3_tech_options,sector,yes,,steel (7 rows) or petchem (6) — the measure is only offered to firms in that sector,TECHNICAL_GUIDE.md §3.4
+D3_tech_options,applies_to_unit,yes,,"Which single unit_type it can be applied to, matched as an exact string against D1a.unit_type (src/cap/e2_milp.py:148); NONE marks a greenfield measure applicable to no existing unit (steel_eaf)",TECHNICAL_GUIDE.md §3.4
+D3_tech_options,capex_unit,yes,,Unit capital cost,TECHNICAL_GUIDE.md §3.4
+D3_tech_options,opex_fixed,yes,,"Fixed / variable operating cost — fixed is charged on capacity, variable on production",TECHNICAL_GUIDE.md §3.4
+D3_tech_options,opex_var,yes,,"Fixed / variable operating cost — fixed is charged on capacity, variable on production",TECHNICAL_GUIDE.md §3.4
+D3_tech_options,elec_intensity,yes,,"Electricity requirement, priced at re_price",TECHNICAL_GUIDE.md §3.4
+D3_tech_options,h2_intensity,yes,,Hydrogen requirement,TECHNICAL_GUIDE.md §3.4
+D3_tech_options,emission_factor,yes,,"Post-conversion intensity, not a reduction rate",TECHNICAL_GUIDE.md §3.4
+D3_tech_options,avail_year,yes,,Earliest adoption year,TECHNICAL_GUIDE.md §3.4
+D3_tech_options,build_years,yes,,Construction duration — CAPEX is spread evenly across it (A-18),TECHNICAL_GUIDE.md §3.4
+D3_tech_options,lifetime,yes,,Economic life,TECHNICAL_GUIDE.md §3.4
+D3_tech_options,capex_uncertainty,yes,,"Relative CAPEX dispersion, used as a relative multiplier only (A-22)",TECHNICAL_GUIDE.md §3.4
+D3_tech_options,source_id,yes,,Foreign key into source_register,TECHNICAL_GUIDE.md §3.4
+D3_tech_options,retrofit,,,1 = keeps the incumbent process running and adds the measure's intensities on top; 0 = swaps the process energy out. 9 of 13 rows are retrofits,TECHNICAL_GUIDE.md §3.4
+D4_price_history,date,yes,,"Observation date, YYYY-MM-DD. Spacing is irregular — annual for most series, and the interval is never checked",TECHNICAL_GUIDE.md §3.5
+D4_price_history,series_id,yes,,Series key. A series is only opened if some factor names it in FACTOR_SERIES (src/cap/calibration.py:24-26); 11 of the 18 series present are named by no factor,TECHNICAL_GUIDE.md §3.5
+D4_price_history,value,yes,,"The quoted level. Volatility is estimated from log differences of consecutive values, so only the shape matters, not the level — except for the electrolyzer series, whose last value anchors the hydrogen price path",TECHNICAL_GUIDE.md §3.5
+D4_price_history,unit,yes,,"Free text carrying the series' basis and caveats, not a parseable unit code. No stage converts on it, so two series in different units may not be mixed inside one factor",TECHNICAL_GUIDE.md §3.5
+D4_price_history,source_id,yes,,Foreign key into source_register,TECHNICAL_GUIDE.md §3.5
+D5_policy_support,support_scenario,yes,,"Which support world the row belongs to. Every row in the file is current — none is the absence of rows, not a value: support_params returns an empty object without reading the file",TECHNICAL_GUIDE.md §3.6
+D5_policy_support,instrument,yes,,Instrument key — values in §3.0. subsidy_capex and ccfd are the two the code reads and neither occurs,TECHNICAL_GUIDE.md §3.6
+D5_policy_support,tech_id,yes,,Which technology the instrument attaches to; all for economy-wide instruments,TECHNICAL_GUIDE.md §3.6
+D5_policy_support,param_type,yes,,The parameter and its value; param_type is a Korean label and is not parsed,TECHNICAL_GUIDE.md §3.6
+D5_policy_support,value,yes,,The parameter and its value; param_type is a Korean label and is not parsed,TECHNICAL_GUIDE.md §3.6
+D5_policy_support,unit,yes,,The parameter and its value; param_type is a Korean label and is not parsed,TECHNICAL_GUIDE.md §3.6
+D5_policy_support,valid_from,yes,,Applicability window; a blank end extends to the horizon,TECHNICAL_GUIDE.md §3.6
+D5_policy_support,valid_to,yes,,Applicability window; a blank end extends to the horizon,TECHNICAL_GUIDE.md §3.6
+D5_policy_support,source_id,yes,,Foreign key into source_register,TECHNICAL_GUIDE.md §3.6
+D6_company_financials,company_id,yes,,Composite key,TECHNICAL_GUIDE.md §3.7
+D6_company_financials,year,yes,,Composite key,TECHNICAL_GUIDE.md §3.7
+D6_company_financials,revenue,yes,,Revenue as reported by the entity named in source_id,TECHNICAL_GUIDE.md §3.7
+D6_company_financials,ebitda,yes,,"Earnings before interest, tax, depreciation and amortisation as the filer labels it; for the two Japanese firms the value is reported operating profit, which is not the same quantity",TECHNICAL_GUIDE.md §3.7
+D6_company_financials,capex_total,yes,,"Reported capital expenditure, all purposes — not the model's transition CAPEX, which carries the same name in the result files",TECHNICAL_GUIDE.md §3.7
+D6_company_financials,total_debt,yes,,Gross interest-bearing debt,TECHNICAL_GUIDE.md §3.7
+D6_company_financials,net_debt,yes,,Debt net of cash,TECHNICAL_GUIDE.md §3.7
+D6_company_financials,interest_expense,yes,,Interest cost for the year,TECHNICAL_GUIDE.md §3.7
+D6_company_financials,cash,yes,,Cash and equivalents,TECHNICAL_GUIDE.md §3.7
+D6_company_financials,source_id,yes,,"Foreign key into source_register. It also fixes the legal entity: the POSCO rows are the steel operating company, not the holding company",TECHNICAL_GUIDE.md §3.7
+D7_disclosed_plan,company_id,yes,,Who committed,TECHNICAL_GUIDE.md §3.8
+D7_disclosed_plan,item_type,yes,,"target (3 rows), tech_commit (7), timing (2)",TECHNICAL_GUIDE.md §3.8
+D7_disclosed_plan,facility_id,yes,,"What was committed, where, when. facility_id and tech_id are blank where the disclosure names neither",TECHNICAL_GUIDE.md §3.8
+D7_disclosed_plan,tech_id,yes,,"What was committed, where, when. facility_id and tech_id are blank where the disclosure names neither",TECHNICAL_GUIDE.md §3.8
+D7_disclosed_plan,year_stated,yes,,"What was committed, where, when. facility_id and tech_id are blank where the disclosure names neither",TECHNICAL_GUIDE.md §3.8
+D7_disclosed_plan,coverage_pct,yes,,"Share of the unit covered. Blank in all 12 rows — no firm quantifies it, so no partial commitment can be forced. It is also the field a ppa row would carry, which is why the PPA share below is always 0",TECHNICAL_GUIDE.md §3.8
+D7_disclosed_plan,resolution,yes,,"How enforceable the statement is, as judged when the row was written. Two values occur, high (7) and mid (5). Read by no stage, and it decides nothing — the enforcement test below never consults it, so a high row and a mid row fail or survive on identical grounds",TECHNICAL_GUIDE.md §3.8
+D7_disclosed_plan,source_id,yes,,Foreign key into source_register,TECHNICAL_GUIDE.md §3.8
+D7_disclosed_plan,quote,yes,,"The disclosure text the row was derived from, verbatim",TECHNICAL_GUIDE.md §3.8
+result_affordability,company_id,,,"Key, same cell definition as above",TECHNICAL_GUIDE.md §3.10
+result_affordability,scenario,,,"Key, same cell definition as above",TECHNICAL_GUIDE.md §3.10
+result_affordability,support,,,"Key, same cell definition as above",TECHNICAL_GUIDE.md §3.10
+result_affordability,capex_total_bnkrw,,,Carried over from ①,TECHNICAL_GUIDE.md §3.10
+result_affordability,capex_peak_bnkrw,,,Carried over from ①,TECHNICAL_GUIDE.md §3.10
+result_affordability,capex_peak_year,,,Carried over from ①,TECHNICAL_GUIDE.md §3.10
+result_affordability,ebitda_ref_bnkrw,,,"Reference earnings — mean of the last three reported years of D6.ebitda, which is not a fixed window and differs by firm",TECHNICAL_GUIDE.md §3.10
+result_affordability,ebitda_years,,,"The years that mean was taken over, semicolon-separated. It exists so the window is visible rather than assumed",TECHNICAL_GUIDE.md §3.10
+result_affordability,revenue_latest_bnkrw,,,Latest non-null D6.revenue / D6.net_debt. net_debt is blank for POSCO and LOTTE by entity boundary (§3.7),TECHNICAL_GUIDE.md §3.10
+result_affordability,net_debt_bnkrw,,,Latest non-null D6.revenue / D6.net_debt. net_debt is blank for POSCO and LOTTE by entity boundary (§3.7),TECHNICAL_GUIDE.md §3.10
+result_affordability,capex_peak_to_ebitda,,,"Metric ⑥ — blank where reference EBITDA is ≤ 0, because a ratio on a loss is not a smaller burden",TECHNICAL_GUIDE.md §3.10
+result_affordability,capex_total_to_ebitda,,,"Metric ⑥ — blank where reference EBITDA is ≤ 0, because a ratio on a loss is not a smaller burden",TECHNICAL_GUIDE.md §3.10
+result_affordability,capex_total_to_revenue_pct,,,"Total CAPEX as a share of latest revenue. Computed even on negative EBITDA, which is why LOTTE has this and no other ⑥ figure",TECHNICAL_GUIDE.md §3.10
+result_affordability,netdebt_to_ebitda_now,,,"Leverage before, and with the whole transition CAPEX debt-financed — a ceiling, not a funding forecast",TECHNICAL_GUIDE.md §3.10
+result_affordability,netdebt_to_ebitda_post,,,"Leverage before, and with the whole transition CAPEX debt-financed — a ceiling, not a funding forecast",TECHNICAL_GUIDE.md §3.10
+result_affordability,funding_verdict,,,"Banded reading of capex_peak_to_ebitda (Korean text). A label over the ratio, carrying no extra information",TECHNICAL_GUIDE.md §3.10
+result_emissions_pathway,company_id,,,"Key. plan ∈ baseline, cost_min, disclosed; there is no support column — pathways are computed for the first configured support level only (support_scenarios[0], src/cap/e5_metrics.py:290) and are not re-run for the others",TECHNICAL_GUIDE.md §3.10
+result_emissions_pathway,scenario,,,"Key. plan ∈ baseline, cost_min, disclosed; there is no support column — pathways are computed for the first configured support level only (support_scenarios[0], src/cap/e5_metrics.py:290) and are not re-run for the others",TECHNICAL_GUIDE.md §3.10
+result_emissions_pathway,plan,,,"Key. plan ∈ baseline, cost_min, disclosed; there is no support column — pathways are computed for the first configured support level only (support_scenarios[0], src/cap/e5_metrics.py:290) and are not re-run for the others",TECHNICAL_GUIDE.md §3.10
+result_emissions_pathway,year,,,"Key. plan ∈ baseline, cost_min, disclosed; there is no support column — pathways are computed for the first configured support level only (support_scenarios[0], src/cap/e5_metrics.py:290) and are not re-run for the others",TECHNICAL_GUIDE.md §3.10
+result_emissions_pathway,emissions_tco2,,,Firm emissions in that year under that plan,TECHNICAL_GUIDE.md §3.10
+result_emissions_pathway,budget_tco2,,,"The D2a-derived allowance for the same firm-year, repeated on every plan row so the comparison needs no join",TECHNICAL_GUIDE.md §3.10
+result_gap,company_id,,,"Key plus the disclosed plan's id — this file is about the disclosed coordinate, and a firm with no representable commitment has no row (§6.4)",TECHNICAL_GUIDE.md §3.10
+result_gap,scenario,,,"Key plus the disclosed plan's id — this file is about the disclosed coordinate, and a firm with no representable commitment has no row (§6.4)",TECHNICAL_GUIDE.md §3.10
+result_gap,support,,,"Key plus the disclosed plan's id — this file is about the disclosed coordinate, and a firm with no representable commitment has no row (§6.4)",TECHNICAL_GUIDE.md §3.10
+result_gap,plan_id,,,"Key plus the disclosed plan's id — this file is about the disclosed coordinate, and a firm with no representable commitment has no row (§6.4)",TECHNICAL_GUIDE.md §3.10
+result_gap,p50,,,"The disclosed plan's own coordinate in the (P50, TCaR) plane",TECHNICAL_GUIDE.md §3.10
+result_gap,tcar,,,"The disclosed plan's own coordinate in the (P50, TCaR) plane",TECHNICAL_GUIDE.md §3.10
+result_gap,gap_cost_bnkrw,,,Horizontal and vertical distance from that coordinate to the efficient frontier (§2),TECHNICAL_GUIDE.md §3.10
+result_gap,gap_risk_bnkrw,,,Horizontal and vertical distance from that coordinate to the efficient frontier (§2),TECHNICAL_GUIDE.md §3.10
+result_metrics_company,company_id,,,"Key. One row per firm × scenario × support axis, for the cost-minimising plan of that cell — not for the disclosed plan",TECHNICAL_GUIDE.md §3.10
+result_metrics_company,scenario,,,"Key. One row per firm × scenario × support axis, for the cost-minimising plan of that cell — not for the disclosed plan",TECHNICAL_GUIDE.md §3.10
+result_metrics_company,support,,,"Key. One row per firm × scenario × support axis, for the cost-minimising plan of that cell — not for the disclosed plan",TECHNICAL_GUIDE.md §3.10
+result_metrics_company,capex_total_bnkrw,,,"Metric ① — transition CAPEX of that plan, undiscounted sum and largest single year. Unrelated to D6.capex_total despite the name",TECHNICAL_GUIDE.md §3.10
+result_metrics_company,capex_peak_bnkrw,,,"Metric ① — transition CAPEX of that plan, undiscounted sum and largest single year. Unrelated to D6.capex_total despite the name",TECHNICAL_GUIDE.md §3.10
+result_metrics_company,capex_peak_year,,,"Metric ① — transition CAPEX of that plan, undiscounted sum and largest single year. Unrelated to D6.capex_total despite the name",TECHNICAL_GUIDE.md §3.10
+result_metrics_company,p50_bnkrw,,,"Metric ② — median incremental NPV against the incumbent plan, excluding carbon expenditure (A-19)",TECHNICAL_GUIDE.md §3.10
+result_metrics_company,cost_per_tco2_thkrw,,,Metric ② per tonne — p50 ÷ discounted abated tCO₂,TECHNICAL_GUIDE.md §3.10
+result_metrics_company,tcar_bnkrw,,,Metric ③ — P90 − P50 of the same distribution,TECHNICAL_GUIDE.md §3.10
+result_metrics_company,flex_value_bnkrw,,,"Metric ⑤ — mean value of re-optimising per path, a lower bound",TECHNICAL_GUIDE.md §3.10
+result_metrics_company,p50_incl_carbon_bnkrw,,,"The same P50 with carbon expenditure included, and the difference. The pair is what makes A-19 auditable rather than assumed",TECHNICAL_GUIDE.md §3.10
+result_metrics_company,carbon_delta_bnkrw,,,"The same P50 with carbon expenditure included, and the difference. The pair is what makes A-19 auditable rather than assumed",TECHNICAL_GUIDE.md §3.10
+result_metrics_company,policy_exposure_bnkrw,,,"Metric ④ — P50 under the first configured scenario minus P50 under the second, within a support level",TECHNICAL_GUIDE.md §3.10
+source_register,source_id,,,"Primary key, referenced by every source_id above",TECHNICAL_GUIDE.md §3.10
+source_register,publisher,,,Bibliographic identity of the source,TECHNICAL_GUIDE.md §3.10
+source_register,title,,,Bibliographic identity of the source,TECHNICAL_GUIDE.md §3.10
+source_register,source_type,,,Bibliographic identity of the source,TECHNICAL_GUIDE.md §3.10
+source_register,url_or_doi,,,Bibliographic identity of the source,TECHNICAL_GUIDE.md §3.10
+source_register,publication_date,,,When the source was published and when we took it. publication_date is empty where the publisher states none,TECHNICAL_GUIDE.md §3.10
+source_register,retrieved_at,,,When the source was published and when we took it. publication_date is empty where the publisher states none,TECHNICAL_GUIDE.md §3.10
+source_register,reporting_start,,,"The period the figures describe — distinct from publication date, and the field that makes a vintage claim checkable",TECHNICAL_GUIDE.md §3.10
+source_register,reporting_end,,,"The period the figures describe — distinct from publication date, and the field that makes a vintage claim checkable",TECHNICAL_GUIDE.md §3.10
+source_register,location,,,"Where inside the source the figure sits (page, table, sheet)",TECHNICAL_GUIDE.md §3.10
+source_register,licence,,,"Licence as stated, and whether we may republish the extracted values. conditional means cited but not redistributed in full",TECHNICAL_GUIDE.md §3.10
+source_register,redistributable,,,"Licence as stated, and whether we may republish the extracted values. conditional means cited but not redistributed in full",TECHNICAL_GUIDE.md §3.10
+source_register,file_name,,,"The retained copy and its hash, where the licence permits retention",TECHNICAL_GUIDE.md §3.10
+source_register,sha256,,,"The retained copy and its hash, where the licence permits retention",TECHNICAL_GUIDE.md §3.10
+source_register,extraction_method,,,"How the number was taken out — web fetch, PDF text, manual transcription. It is the field that says how much to trust a single digit",TECHNICAL_GUIDE.md §3.10
+source_register,quality_note,,,"Free text (Korean) on caveats, disputed values and what was verified",TECHNICAL_GUIDE.md §3.10

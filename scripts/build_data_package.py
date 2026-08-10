@@ -7,6 +7,10 @@ D1a·D1b는 기업 단위로 집계해서 싣고, 나머지 D2–D7은 그대로
 `manifest.json`은 파일별 SHA256과 행 수, 그리고 이 패키지를 만든 실행의 config 요약을
 담는다. 해시가 다르면 다른 데이터로 만든 결과다.
 
+`data_dictionary.csv`는 **손으로 쓰지 않는다.** `docs/TECHNICAL_GUIDE.md` §3의 필드 표를
+파싱해 실제로 쓴 파일의 헤더에 맞춰 낸다. 정의가 없는 열이 하나라도 실리면 빌드가 죽는다 —
+사전이 정의 없는 열을 조용히 싣던 것이 F7에서 고친 결함이다(가이드 §3.10).
+
     .venv/bin/python scripts/build_data_package.py
 산출: data/package/
 """
@@ -16,6 +20,7 @@ from __future__ import annotations
 import hashlib
 import json
 import pathlib
+import re
 import sys
 
 import pandas as pd
@@ -33,8 +38,93 @@ AGGREGATE = {
 }
 
 
+GUIDE = ROOT / "docs" / "TECHNICAL_GUIDE.md"
+
+
 def sha256(p: pathlib.Path) -> str:
     return hashlib.sha256(p.read_bytes()).hexdigest()
+
+
+def _plain(cell: str) -> str:
+    """Table cell -> plain text: drop emphasis, backticks and the em-dash placeholder."""
+    t = re.sub(r"\*\*?([^*]+)\*\*?", r"\1", cell).replace("`", "").strip()
+    return "" if t in {"—", "-", ""} else re.sub(r"\s+", " ", t)
+
+
+def _cells(row: str) -> list[str]:
+    """Split a markdown table row on unescaped pipes."""
+    return [c.replace(r"\|", "|") for c in re.split(r"(?<!\\)\|", row.strip())[1:-1]]
+
+
+def guide_fields() -> dict[tuple[str, str], dict]:
+    """Parse the field tables of guide §3 — the definition of record.
+
+    Two header shapes are understood. `| Field | Definition | ... |` under a
+    `### 3.x <ID> — ...` heading defines columns of the dataset(s) named in that
+    heading; `| File | Field | Definition | Unit |` (§3.10) names the file per row,
+    which is how the package-only files are defined. A field cell may name several
+    columns (``a`, `b``) and may narrow them to one dataset with a `(D2a)` suffix.
+    """
+    out: dict[tuple[str, str], dict] = {}
+    section, ids, cols = "", [], None
+    for line in GUIDE.read_text(encoding="utf-8").splitlines():
+        if line.startswith("### "):
+            section = line[4:].split()[0]
+            ids = re.findall(r"\bD\d[ab]?\b", line)
+            cols = None
+            continue
+        if not line.startswith("|"):
+            cols = None
+            continue
+        head = [_plain(c) for c in _cells(line)]
+        if head[:1] in (["Field"], ["File"]):
+            cols = head
+            continue
+        if not cols or set(head) <= {"", "---"} or line.startswith("|---"):
+            continue
+        by_file = cols[0] == "File"
+        file_key = _plain(_cells(line)[0]) if by_file else None
+        raw = _cells(line)[1 if by_file else 0]
+        narrow = re.search(r"\((D\d[ab]?)\)", raw)
+        names = re.findall(r"`([^`]+)`", raw)
+        rest = _cells(line)[2 if by_file else 1:]
+        defn = _plain(rest[0]) if rest else ""
+        unit = _plain(rest[1]) if len(rest) > 1 and cols[2 if by_file else 1] == "Unit" else ""
+        for n in names:
+            keys = [(file_key, n)] if by_file else [
+                (i, n) for i in ([narrow.group(1)] if narrow else ids)]
+            for k in keys:
+                out.setdefault(k, dict(definition=defn, unit=unit, section=section))
+    return out
+
+
+def dictionary(files: list[pathlib.Path]) -> pd.DataFrame:
+    """One row per column of every shipped file, defined from the guide.
+
+    A shipped column the guide does not define is a hard failure: the dictionary
+    would otherwise ship a column name with no meaning attached, which is exactly
+    what it did before.
+    """
+    fields = guide_fields()
+    rows, missing = [], []
+    for f in files:
+        stem = f.stem
+        dataset = stem.split("_")[0]
+        header = pd.read_csv(f, nrows=0, encoding="utf-8-sig").columns.tolist()
+        schema = next((v for k, v in SCHEMAS.items() if k.startswith(dataset + "_")), [])
+        for c in header:
+            d = fields.get((stem, c)) or fields.get((dataset, c))
+            if d is None:
+                missing.append(f"{stem}.{c}")
+                continue
+            rows.append(dict(file=stem, column=c,
+                             schema_required="yes" if c in schema and stem in SCHEMAS else "",
+                             unit=d["unit"], definition=d["definition"],
+                             defined_in=f"TECHNICAL_GUIDE.md §{d['section']}"))
+    if missing:
+        raise SystemExit("[package] 가이드 §3에 정의가 없는 열 — 사전을 낼 수 없다:\n  "
+                         + "\n  ".join(missing))
+    return pd.DataFrame(rows)
 
 
 def main() -> int:
@@ -85,12 +175,9 @@ def main() -> int:
         if src.exists():
             (PKG / f"result_{pathlib.Path(rel).name}").write_bytes(src.read_bytes())
 
-    # 데이터 사전
-    dic = []
-    for name, cols in SCHEMAS.items():
-        for c in cols:
-            dic.append(dict(file=name, column=c))
-    pd.DataFrame(dic).to_csv(PKG / "data_dictionary.csv", index=False)
+    # 데이터 사전 — 가이드 §3에서 파생, 실제로 쓴 파일의 헤더 기준
+    dic = dictionary(sorted(PKG.glob("*.csv")))
+    dic.to_csv(PKG / "data_dictionary.csv", index=False)
 
     for f in sorted(PKG.glob("*.csv")):
         n = sum(1 for _ in f.open(encoding="utf-8-sig")) - 1
