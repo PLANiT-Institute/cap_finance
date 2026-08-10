@@ -3080,3 +3080,64 @@ gap 두 다리 = `out/e5/gap.csv` · 클램프 판정 = 같은 두 파일에서 
 - **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
   미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability`
   통화 경고(F8).
+
+## F11 (06:33) — 한계에 크기를 붙였더니 주장 1이 사실과 달랐다: 실측 시설 배출은 23기 중 0기다
+
+**한 일.** 지도의 F11대로 §8 "What we do not claim"에 정량 근거를 붙였다. 다섯 개 주장에는
+크기가 아예 없었고, 하나는 크기를 붙이려고 데이터를 보다가 **틀렸다는 것이 드러났다**.
+크기는 `scripts/build_tech_guide.py::gen_limits`(`GEN:limits`)가 산출물에서 다시 계산한다.
+
+### 가이드에서 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | §8 주장 1 | 시설 절대값은 "per-site **measured emissions**를 얻을 때까지" 순서 정보다. "**For Japan they now are**; for Korea they are not" | **실측 시설 배출은 23기 중 0기다.** 사업소(site) 실측은 12기의 사업소에 있고(NSC 10·MCI 2), D1b에 들어가는 것은 **NSC 10기뿐**이며 그것도 사업소 간 **분포**로만 쓰인다 — 수준은 언제나 회사 Scope 1 총량의 재척도다(`prepare_raw.py:122-125`). 게다가 **MCI 2기는 두 사업소(ICH·OSK) 모두 실측 행이 원자료에 있는데도 상향식 추정**이다. 나라별 구분("일본은 되고 한국은 안 된다")이 아니라 업종·경로별 구분이었다 | `data/raw/jp_site_emissions.csv` × `D1a_facility_static.csv` × `D1b_facility_panel.csv:source_id` |
+| 2 | §8 주장 9 | 없음 | **gap은 하한이다**를 §8에 넣었다. F10이 그림으로 밝힌 사실이 §9.1·O4에만 있었다 — 방향이 알려진 오차이므로 "못 하는 말" 목록에 속한다. 반대 분기(공시 좌표가 경계 구간 **아래**)가 NaN이고 현행 실행에서는 발생하지 않는다는 것, 그리고 §6.4의 빈칸은 그 분기가 아니라 **공시 좌표 부재**라는 것을 같은 자리에서 구분했다 | `src/cap/e5_metrics.py:61-81`; `out/e5/gap.csv` 8행 전부 값 있음 |
+| 3 | §8 주장 2 | "one primary source … otherwise unverified" | 크기를 붙였다: 석화 4기 전부 **분자·분모가 모두 구성값**이고(내재 원단위 0.95 tCO₂/t = 주입한 NCC 루트 계수), 생산량이 2022–2024 내내 **4기 모두 불변**이며, 모형이 덮는 몫은 회사 Scope 1의 **MCI 25% · LOTTE 55%**다 | `D1b_facility_panel.csv` × `data/raw/facility_panel.csv` |
+
+### 새로 붙인 크기 (GEN:limits, 전부 생성값)
+
+| 주장 | 크기 | 출처 |
+|---|---|---|
+| 3 TCaR 수준 | 단위근 검정이 **8개 계열 0개**에서 기각(관측 7–19개), 반감기 10년 평균회귀 대안에 대한 **검정력 4.9–5.4%**(명목 크기 5%) — "untestable"이 수사가 아니라 측정값이다 | `docs/price_process_test.csv` |
+| 5 `support` 축 | `gap.csv` 8행 = **4개 유일 gap**, `current`와 `none`의 최대 불일치 **0** | `out/e5/gap.csv` |
+| 6 계획선택 채널 | **11묶음 중 4묶음** 재계획, 나머지 중 **3개**는 재계획 없이는 읽을 수 없다(`carbon_slow`·`ppa_costly`·`retire_free`) | `out/m5/bundle_matrix.csv` × `run_scenarios.py::REPLAN_REQUIRED` |
+| 9 gap = 하한 | 비용 다리 **4/4**·위험 다리 **3/4** 클램프, 공시 좌표가 자기 경계 최대 꼬리위험의 **1.01×–477×** 위 | `out/e5/frontier_points.csv` × `out/e5/gap.csv` |
+
+주장 4·7·8은 문장 자체에 크기가 있어 표에서 뺐고, 그 사실을 표 밑에 적었다.
+
+### 검증
+
+```
+.venv/bin/python scripts/build_tech_guide.py     # 21 blocks (limits 신설), 97,697 chars
+.venv/bin/python scripts/build_guide_page.py     # 37 sections, 380 table rows (373 → 380), figure 1
+.venv/bin/python scripts/build_site.py
+.venv/bin/python scripts/gate.py                 # gate: OK (pytest 65 passed, audit ok 68/PARTIAL 4 불변)
+```
+
+`tests/test_tech_guide.py::test_no_facility_carries_a_measured_emission` 추가(64 → 65) —
+D1b에 배분·상향식이 아닌 출처가 생기거나, 사업소 실측이 있는데 상향식으로 남은 시설 집합이
+`{MCI_ICH_CR, MCI_OSK_CR}`에서 바뀌면 실패한다. 주장 1은 손으로 쓴 단정이므로 그때 다시 써야 한다.
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | **문제 발견(수정 아님)** | gate audit `ok 68, PARTIAL 4` 불변이지만, **MCI 두 사업소의 실측 배출이 원자료에 있는데 쓰이지 않는다**. audit은 열 채움률을 보므로 이 낭비를 잡지 못한다 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | 유지 | `out/scenarios/summary.csv` 12묶음(3묶음 미재계획 — F2) |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선** | Arc가 "그래서 얼마나 틀릴 수 있느냐"고 물으면 §8 표 한 장이 답이다. 검정력 4.9–5.4%는 "TCaR 수준을 못 믿는다"는 말의 가장 강한 형태다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | 유지 | `scripts/gate.py` 8항목. MCP 표면 변화 없음 |
+| ⑤ 산출물 — 다른 형식이 있는가 | 유지 | md / HTML(37절 380행) / SVG / 데이터 패키지 |
+
+### 인계
+
+- **F12(적대적 검토 2)**: 새 반론 후보 — *"실측이 있는데 왜 안 쓰나"*(MCI ICH·OSK). 답은
+  "석화 회사 총량에 비NCC 설비가 섞여 있어 사업소 배출로도 NCC 몫을 분리할 수 없다"이고,
+  이것을 §3.2나 O 목록에 적은 문서가 없다. 크기는 커버리지 25%다.
+- **MCI 사업소 실측 미사용**(신규 백로그, 코드): `prepare_raw.py`의 석화 분기는 `SITE_EM`을
+  아예 보지 않는다. 사업소 배출을 상한으로 쓰는 것만으로도 상향식 추정의 검증이 된다
+  (ICH·OSK 사업소 총량 대 모형 NCC 배출). 30분 창에 코드+재실행이 안 들어가 시작하지 않았다.
+- **F13(용어집)**: TCaR·frontier gap·surrogate·evidence tier. §8 표가 새 용어를 늘리지는 않았다.
+- **§6.1 시드 스윕 재실행**(백로그 유지): E3–E5 × 5시드. 지금 CV는 NSC 옛 계획 위의 값이다.
+- **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).
