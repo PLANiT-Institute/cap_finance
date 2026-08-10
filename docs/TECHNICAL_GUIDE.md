@@ -145,7 +145,7 @@ behaviour are called out where they appear.
 | `D7.item_type` | 3 | `tech_commit` (7), `target` (3), `timing` (2) |
 | `D7.resolution` | 2 | `high` (7), `mid` (5) |
 
-These are the values that **occur**, not the values the schema permits — `load_input` checks that a column exists and is numeric where required, never what it contains. Three of these fields are documentation to every *modelling* stage — no stage branches on `D1a.status`, `D1a.capacity_unit` or `D7.resolution`. `status` carries one exception that sits upstream of this table: `prepare_raw.py` drops a row whose status contains `폐쇄예정` before writing the prepared file, which is why no such value appears above (§3.1). Nor is any `D5` row read — see §3.6. The rest decide behaviour.
+These are the values that **occur**, not the values the schema permits — `load_input` checks that a column exists and is numeric where required, never what it contains. Three of these fields are documentation to every *modelling* stage — no stage branches on `D1a.status`, `D1a.capacity_unit` or `D7.resolution`. `status` carries one exception that sits upstream of this table: `prepare_raw.py` drops a row whose status contains `폐쇄예정` before writing the prepared file, which is why no such value appears above (§3.1). `D5.instrument` is the near-miss: only the one `auction_share` row is read, and by `plancost.auction_share` rather than by the support axis — the other six rows are read by nothing (§3.6). The rest decide behaviour.
 <!-- /GEN:vocab -->
 
 ### 3.1 D1a — facility register (static)
@@ -449,34 +449,48 @@ thinnest dataset in the project and it directly sets the level of metric ③. No
 free text carrying the definitional caveat for the series (basis, coverage, whether a value is
 estimated), so it is worth reading in the table below rather than skipping as a label.
 
-<!-- GEN:price_series -->
-| Series | Obs | From | To | Volatility | Unit |
-|---|---|---|---|---|---|
-| `smp_monthly` | 19 | 2025-01 | 2026-07 | estimated | 원/kWh (육지 월별) |
-| `usdkrw` | 11 | 2015-01 | 2025-01 | estimated | 원/USD (연평균) |
-| `smp_krw_mwh` | 11 | 2015-01 | 2025-01 | estimated | 원/kWh (육지, 연평균) |
-| `indus_tariff` | 10 | 2015-01 | 2024-01 | estimated | 원/kWh (산업용 전체 평균판매단가, 연평균) |
-| `kau_krw` | 9 | 2015-01 | 2023-01 | estimated | 원/tCO2 (연평균) |
-| `ethylene_naphtha_spread` | 7 | 2019-12 | 2025-12 | estimated | USD/t (CFR NEA - C+F Japan; 19-21 추정) |
-| `jepx_spot` | 7 | 2019-03 | 2025-03 | estimated | JPY/kWh (FY 시스템프라이스) |
-| `steel_margin_krw_t` | 7 | 2019-12 | 2025-12 | estimated | 원/t (포스코 별도 영업이익/조강톤, 추정 혼재) |
-| `cpi` | 4 | 2020-01 | 2024-01 | **prior** | 지수(2020=100, 연평균) |
-| `constr_cost_idx` | 3 | 2020-01 | 2025-01 | **prior** | 지수(2020=100, 11월값) |
-| `lng_import` | 2 | 2022-01 | 2023-01 | **prior** | USD/t (국가평균 도입단가, 연평균) |
-| `electrolyzer_capex` | 2 | 2022-01 | 2023-01 | **prior** | KRW/kW |
-| `coal_import` | 2 | 2022-01 | 2023-01 | **prior** | USD/t (유연탄 전체 — 원료탄 아님) |
-| `h2_contract_krw_kg` | 1 | 2024-12 | 2024-12 | **prior** | KRW/kg (한국 청정수소 현 공급비 ~1만원) |
-| `h2_target_krw_kg` | 1 | 2030-12 | 2030-12 | **prior** | KRW/kg (수소 로드맵 목표) |
-| `re_ppa_jp_krw_mwh` | 1 | 2024-12 | 2024-12 | **prior** | KRW/MWh (일본 물리 PPA HV 총비용 21.5JPY×9.2) |
-| `re_ppa_krw_mwh` | 1 | 2026-01 | 2026-01 | **prior** | KRW/MWh (한국 태양광 PPA 170원대 중반) |
-| `re_ppa_wind_krw_mwh` | 1 | 2026-01 | 2026-01 | **prior** | KRW/MWh (한국 육상풍력 PPA 180원 중반) |
+The three factors are electricity, hydrogen and capex, and the mapping from factor to series is a
+constant in `calibration.py`, not a property of the file: **a series no factor names is never
+opened, however long it is.** The "Read as" column below is that mapping.
 
-**18 series, 99 observations total. 10 of 18 series have fewer than 6 observations** and therefore contribute a prior rather than an estimate. This is the binding constraint on metric ③.
+<!-- GEN:price_series -->
+| Series | Obs | From | To | Read as | Unit |
+|---|---|---|---|---|---|
+| `smp_monthly` | 19 | 2025-01 | 2026-07 | `elec` | 원/kWh (육지 월별) |
+| `usdkrw` | 11 | 2015-01 | 2025-01 | — | 원/USD (연평균) |
+| `smp_krw_mwh` | 11 | 2015-01 | 2025-01 | — | 원/kWh (육지, 연평균) |
+| `indus_tariff` | 10 | 2015-01 | 2024-01 | `elec` | 원/kWh (산업용 전체 평균판매단가, 연평균) |
+| `kau_krw` | 9 | 2015-01 | 2023-01 | — | 원/tCO2 (연평균) |
+| `ethylene_naphtha_spread` | 7 | 2019-12 | 2025-12 | — | USD/t (CFR NEA - C+F Japan; 19-21 추정) |
+| `jepx_spot` | 7 | 2019-03 | 2025-03 | `elec` | JPY/kWh (FY 시스템프라이스) |
+| `steel_margin_krw_t` | 7 | 2019-12 | 2025-12 | — | 원/t (포스코 별도 영업이익/조강톤, 추정 혼재) |
+| `cpi` | 4 | 2020-01 | 2024-01 | — | 지수(2020=100, 연평균) |
+| `constr_cost_idx` | 3 | 2020-01 | 2025-01 | `capex` | 지수(2020=100, 11월값) |
+| `lng_import` | 2 | 2022-01 | 2023-01 | — | USD/t (국가평균 도입단가, 연평균) |
+| `electrolyzer_capex` | 2 | 2022-01 | 2023-01 | `ez` | KRW/kW |
+| `coal_import` | 2 | 2022-01 | 2023-01 | — | USD/t (유연탄 전체 — 원료탄 아님) |
+| `h2_contract_krw_kg` | 1 | 2024-12 | 2024-12 | `h2` | KRW/kg (한국 청정수소 현 공급비 ~1만원) |
+| `h2_target_krw_kg` | 1 | 2030-12 | 2030-12 | — | KRW/kg (수소 로드맵 목표) |
+| `re_ppa_jp_krw_mwh` | 1 | 2024-12 | 2024-12 | — | KRW/MWh (일본 물리 PPA HV 총비용 21.5JPY×9.2) |
+| `re_ppa_krw_mwh` | 1 | 2026-01 | 2026-01 | — | KRW/MWh (한국 태양광 PPA 170원대 중반) |
+| `re_ppa_wind_krw_mwh` | 1 | 2026-01 | 2026-01 | — | KRW/MWh (한국 육상풍력 PPA 180원 중반) |
+
+**18 series, 99 observations. 12 of them are read by nothing** — they are level references and provenance for the price paths in D2b, not inputs to the volatility calibration. Of the 7 series the calibration names, 3 clear the 6-observation floor (`smp_monthly`, `indus_tariff`, `jepx_spot`), and `equip_import_idx` is named but absent from D4. So 2 of the 3 factors take a prior instead of an estimate: `h2` (0.25), `capex` (0.06). The factor correlation matrix is the identity for the same reason — with two factors producing no return series there is nothing to correlate, so identity is the absence of an estimate, not a finding of independence. The electrolyzer capex path is anchored on the last of 2 observations (2,916,000 KRW/kW @2023) with its decline rate and volatility taken from priors (5%/yr, 0.10); note the two observations *rise* 32% while the imposed path falls.
 <!-- /GEN:price_series -->
 
-Any factor with fewer than 6 observations falls back to a prior volatility, and the run **warns
-every time** (**A-17**). Currently hydrogen uses a prior of 0.25 and construction cost 0.06, with an
-identity correlation matrix.
+The 6-observation floor (5 log returns) is applied **per series, not per factor**: a factor
+estimates from whichever of its series clears the floor, and falls back to a prior only when none
+of them does. Electricity clears it three times over and its estimate is the mean of the three
+series' annualised volatilities; hydrogen and capex clear it zero times and take priors of 0.25 and
+0.06. The run **warns on every fallback** (**A-17**), which is the only reason a prior cannot be
+mistaken for an estimate downstream.
+
+Two consequences are worth stating plainly, because metric ③ is where they land. First, **two of
+the three risk factors carry no market evidence at all** — their level of volatility is a
+judgement, and the ±30% parameter sweep in `docs/uncertainty_propagation.md` is the honest way to
+read them. Second, the electrolyzer capex path — which sets the hydrogen price through the
+structural relation in §2, and so is not a small input — is anchored on a **two-point** series
+whose own direction contradicts the prior decline imposed on top of it.
 
 ### 3.6 D5 — policy support
 
@@ -494,22 +508,50 @@ rows.
 
 **The `support` axis is currently empty of information, and the manuscript says so.** The only
 instruments `plancost.support_params` reads are `subsidy_capex` and `ccfd`, and D5 contains no rows
-of either type — the seven rows present are K-ETS auction shares and a Japanese price collar, and
-no stage reads them; the auction ramp the model actually applies is the one in `config.yaml` (§5).
-So `current` returns the same object as `none`. The
-results table has a column where there is no signal. A test asserts this correspondence, so the day
-a subsidy row arrives the test fails and the prose must be corrected with it.
+of either type — the seven rows present are K-ETS auction shares and a Japanese price collar. So
+`current` returns the same object as `none`, and the results table has a column where there is no
+signal. A test asserts this correspondence, so the day a subsidy row arrives the test fails and the
+prose must be corrected with it.
+
+**One D5 row does reach the model, and not through that axis.** `plancost.auction_share` reads the
+single `auction_share` row — K-ETS Phase 4 non-power free allocation, 15% auctioned, 2026–2030 —
+and overwrites the estimated ramp in `config.yaml` for exactly those years, which raises the
+auctioned share in 2026–2029 from the interpolated 0.11–0.14 to a flat 0.15. Confirmed allocation
+beats an estimate wherever confirmed allocation exists, so this happens on every path, under both
+support scenarios, in E2 and E5 alike. It is worth being precise about the difference: the axis
+carries no signal, but the file is not inert. The other six rows are: two power-sector auction
+shares, deliberately not applied — `auction_share_power` is a separate key precisely so the 50%
+power figure cannot leak into steel and petrochemicals, and a test asserts it does not — and four
+GX-ETS price collar rows that no stage reads.
 
 ### 3.7 D6 — company financials
 
 One row per company-year: revenue, EBITDA, total CAPEX, total and net debt, interest expense, cash,
 plus `source_id`. Feeds metric ⑥ only. Coverage is 2020–2025 for POSCO and Nippon Steel, 2021–2025
-for LOTTE, 2020–2024 for Mitsui.
+for LOTTE, 2020–2024 for Mitsui. The column list is not a description of a filled table — most of
+these columns are sparse, and the sparsity is not evenly spread across the four firms:
+
+<!-- GEN:d6_coverage -->
+| Column | Non-null | Firms | Read by |
+|---|---|---|---|
+| `revenue` | 21 / 22 | all four | ⑥ `capex_total_to_revenue_pct` (latest year) |
+| `ebitda` | 22 / 22 | all four | ⑥ reference earnings (mean of last 3 reported) |
+| `capex_total` | 11 / 22 | MCI, NSC | — |
+| `total_debt` | 9 / 22 | MCI, NSC | — |
+| `net_debt` | 9 / 22 | MCI, NSC | ⑥ `netdebt_to_ebitda_now/post` (latest year) |
+| `interest_expense` | 2 / 22 | MCI | — |
+| `cash` | 10 / 22 | MCI, NSC | — |
+
+22 company-years. **4 of the 7 financial columns are read by no stage** (`capex_total`, `total_debt`, `interest_expense`, `cash`) — they were collected, they pass the schema check, and metric ⑥ never opens them. Of the three that are read, `net_debt` exists only for the two Japanese firms, so the net-debt multiple — the leverage half of ⑥ — is blank for POSCO and LOTTE by entity boundary, not by oversight. Reference earnings are the last three *reported* years, which differ by firm: LOTTE Chemical 2023–2024–2025; Mitsui Chemicals 2022–2023–2024; Nippon Steel 2023–2024–2025; POSCO 2023–2024–2025.
+<!-- /GEN:d6_coverage -->
 
 Reference earnings for ⑥ is the **3-year mean EBITDA** (**A-20**) — petrochemicals are at a cyclical
-trough and a single-year denominator flips the conclusion. Firms with non-positive reference earnings
-get **no ratio and a stated verdict** rather than a misleading number. The post-hoc net-debt
-multiple is an **upper bound under full debt financing**, not a forecast of financing mix.
+trough and a single-year denominator flips the conclusion. It is the last three years *reported*,
+not a fixed window, so the three firms whose 2025 is filed are compared on 2023–2025 while Mitsui
+is compared on 2022–2024. Firms with non-positive reference earnings get **no ratio and a stated
+verdict** rather than a misleading number — which is LOTTE, whose EBITDA is negative in four of its
+five years. The post-hoc net-debt multiple is an **upper bound under full debt financing**, not a
+forecast of financing mix, and it exists for two of the four firms.
 
 Three definitional caveats sit inside this table, and all three are live:
 
@@ -525,6 +567,10 @@ Three definitional caveats sit inside this table, and all three are live:
   billion KRW, so Japanese denominators in ⑥ are overstated by about 8% and the ratios understated
   by the same. It is a small error and a real one; it is registered in
   [`docs/data_gap_registry.md`](data_gap_registry.md) rather than silently carried.
+- **The empty leverage cells are a boundary decision, not a hole.** POSCO's rows are the steel
+  operating company; the balance sheet that is readily available is the holding company's. Pairing
+  group debt with operating-company EBITDA produces a ratio that means nothing, so the field stays
+  empty and the leverage half of ⑥ is reported for the Japanese firms only.
 
 ### 3.8 D7 — disclosed plan
 
@@ -535,21 +581,63 @@ The firm's own published commitments, decomposed so they can be forced into the 
 | `company_id` | Who committed |
 | `item_type` | `target` (3 rows), `tech_commit` (7), `timing` (2) |
 | `facility_id`, `tech_id`, `year_stated` | What was committed, where, when. `facility_id` and `tech_id` are blank where the disclosure names neither |
-| `coverage_pct` | Share of the unit covered. **Blank in all 12 rows** — no firm quantifies it, so no partial commitment can be forced |
-| `resolution` | How enforceable the statement is, as judged when the row was written. Two values occur, `high` (7) and `mid` (5). **Read by no stage** — it is an interpretive grade for the skip report, not a filter |
+| `coverage_pct` | Share of the unit covered. **Blank in all 12 rows** — no firm quantifies it, so no partial commitment can be forced. It is also the field a `ppa` row would carry, which is why the PPA share below is always 0 |
+| `resolution` | How enforceable the statement is, as judged when the row was written. Two values occur, `high` (7) and `mid` (5). **Read by no stage, and it decides nothing** — the enforcement test below never consults it, so a `high` row and a `mid` row fail or survive on identical grounds |
 | `quote` | The disclosure text the row was derived from, verbatim |
 | `source_id` | Foreign key into `source_register` |
 
-What actually becomes a fixed decision is narrower than the table suggests: a row is enforced only
-if `item_type == tech_commit`, its `facility_id` is one of that firm's units, `year_stated` is
-present, its `tech_id` exists in D3, and that technology applies to that unit's type. Start year is
-back-computed as `year_stated − build_years` and clamped into the feasible range, so a commitment
-that predates the technology's availability is enforced at the earliest feasible year rather than
-disappearing. `target` and `timing` rows are context, not constraints.
+What actually becomes a fixed decision is narrower than the table suggests. `_disclosed_fixed`
+applies five tests in this order, and **the order is what decides whether a rejection leaves a
+trace**:
+
+1. `item_type == tech_commit` — `target` and `timing` rows are context, not constraints.
+2. `facility_id` is a unit of that firm in D1a, and `year_stated` is present. **Failing here is
+   silent**: no warning, no row in the skip file. A blank `facility_id` and a `facility_id` D1a has
+   never heard of are rejected identically and invisibly.
+3. `tech_id` exists in D3 — recorded, with a reason.
+4. The technology's `applies_to_unit` equals that unit's `unit_type`, exact string match (§3.4) —
+   recorded, with a reason.
+5. The technology is available before the horizon ends. **Silent again**, and unlike test 2 this one
+   can flip between scenarios, since availability years are scenario-dependent.
+
+Start year is then back-computed as `year_stated − build_years` and clamped into the feasible
+range, so a commitment that predates the technology's availability is enforced at the earliest
+feasible year rather than disappearing. Row by row, on the current data:
+
+<!-- GEN:d7_enforcement -->
+| Company | Type | Facility | Tech | Year | Res. | What the engine does |
+|---|---|---|---|---|---|---|
+| POSCO | `tech_commit` | `POSCO_GWY_EAF1` | `steel_eaf` | 2026 | `high` | dropped, **reason recorded** |
+| POSCO | `tech_commit` | — | `steel_h2dri` | 2030 | `mid` | dropped **silently** — no `facility_id` in the disclosure |
+| POSCO | `target` | — | `steel_h2dri` | 2050 | `mid` | context only (`target`) |
+| Nippon Steel | `tech_commit` | `NSC_YAW_EAF1` | `steel_eaf` | 2029 | `high` | dropped **silently** — `facility_id` not in D1a |
+| Nippon Steel | `tech_commit` | `NSC_HIR_EAF2` | `steel_eaf` | 2029 | `high` | dropped **silently** — `facility_id` not in D1a |
+| Nippon Steel | `tech_commit` | `NSC_KIM_BF2` | `steel_h2dri` | 2026 | `high` | **forced**, adopt 2030 (operational 2034), clamped +8y by availability |
+| Nippon Steel | `target` | — | — | 2030 | `mid` | context only (`target`) |
+| LOTTE Chemical | `target` | — | — | 2030 | `mid` | context only (`target`) |
+| LOTTE Chemical | `tech_commit` | `LOTTE_DAE_NCC` | `petchem_ccus` | 2023 | `mid` | dropped, **reason recorded** |
+| Mitsui Chemicals | `tech_commit` | `MCI_OSK_CR` | `petchem_h2fuel` | 2030 | `high` | **forced**, adopt 2028 (operational 2030) |
+| Mitsui Chemicals | `timing` | `MCI_ICH_CR` | — | 2027 | `high` | context only (`timing`) |
+| Mitsui Chemicals | `timing` | `MCI_OSK_CR` | — | 2030 | `high` | context only (`timing`) |
+
+Of the 12 rows, **2 become a forced decision**, 2 are dropped with a reason written to `out/e2/disclosed_skipped.csv`, and **3 are dropped without a trace** — the skip file has no line for them, so a reader counting that file undercounts what the disclosed coordinate is missing. `resolution` appears in none of it: the two `high` rows that are dropped silently are dropped for the same reason a `mid` row would be. Verdicts are identical across both scenarios. The same call also fixes the three contract levers: because D7 contains no `ppa`, `epc` or `ccfd` rows, every disclosed coordinate is solved with `ppa = 0, epc = 0, ccfd = 0` while the optimum may buy all three. Part of every frontier gap is therefore a hedging difference no firm ever disclosed either way (§6.4).
+<!-- /GEN:d7_enforcement -->
 
 **If no commitment is enforceable, we do not produce a disclosed coordinate** (**A-16**). An empty
 set of fixed decisions would just be a second unconstrained optimisation, and the resulting "gap"
-would be fabricated. Skips and their reasons are written to `out/e2/disclosed_skipped.csv`.
+would be fabricated. Skips and their reasons are written to `out/e2/disclosed_skipped.csv` — which
+is the right file to read for *why* a coordinate is missing, and the wrong one to count for *how
+much* is missing, because tests 2 and 5 above never write to it.
+
+Two things follow that an external reader should have in hand before reading any gap number. **The
+disclosed coordinate is the disclosure as our model can express it, not the disclosure.** Nippon
+Steel's Kimitsu commitment is stated for 2026 and enforced at an adoption year of 2030 —
+operational 2034 — because H2-DRI is not available earlier under the scenario availability year E1
+derives from D3 (constraint C4 in [`METHODOLOGY.md`](../METHODOLOGY.md)); the clamp is logged, and
+it is an eight-year shift on the one steel commitment that survives. And the same call that forces commitments also **forces the contract levers off**: with
+no `ppa`, `epc` or `ccfd` rows anywhere in D7, every disclosed solve runs with all three at zero
+while the optimum is free to buy them, so part of every gap is a hedging difference rather than a
+technology difference.
 
 ### 3.9 Provenance and licensing
 

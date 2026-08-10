@@ -150,7 +150,9 @@ def gen_vocab():
             "no stage branches on `D1a.status`, `D1a.capacity_unit` or `D7.resolution`. `status` "
             "carries one exception that sits upstream of this table: `prepare_raw.py` drops a row "
             "whose status contains `폐쇄예정` before writing the prepared file, which is why no "
-            "such value appears above (§3.1). Nor is any `D5` row read — see §3.6. The rest "
+            "such value appears above (§3.1). `D5.instrument` is the near-miss: only the one "
+            "`auction_share` row is read, and by `plancost.auction_share` rather than by the "
+            "support axis — the other six rows are read by nothing (§3.6). The rest "
             "decide behaviour.")
     return _md(rows, ["Field", "Distinct", "Values (count)"]) + note
 
@@ -352,23 +354,171 @@ def gen_d3b_bands():
 
 
 def gen_price_series():
+    """D4 series against the factors that actually read them.
+
+    The obs count alone said "estimated" for any series with 6+ observations,
+    which reads as though eleven series were estimating something. Only the
+    series named in `calibration.FACTOR_SERIES` are ever opened, so the factor
+    map is imported rather than restated — if a factor's series list changes,
+    this table changes with it.
+    """
     d = prepared() / "D4_price_history.csv"
     if not d.exists():
         return "_D4 not available._"
+    from cap.calibration import FACTOR_SERIES, FALLBACK_VOL
+    reads = {s: f for f, ss in FACTOR_SERIES.items() for s in ss}
+    reads["electrolyzer_capex"] = "ez"          # read directly by `calibrate`, not via a factor
     df = pd.read_csv(d, dtype=str)
     df["date"] = pd.to_datetime(df.date, format="mixed")
+    df["value"] = pd.to_numeric(df.value, errors="coerce")
     g = (df.groupby("series_id")
            .agg(n=("value", "size"), first=("date", "min"), last=("date", "max"),
                 unit=("unit", "first")))
     g = g.sort_values("n", ascending=False)
     rows = [[f"`{i}`", r.n, f"{r.first:%Y-%m}", f"{r.last:%Y-%m}",
-             ("**prior**" if r.n < 6 else "estimated"), str(r.unit)[:44]]
+             (f"`{reads[i]}`" if i in reads else "—"), str(r.unit)[:44]]
             for i, r in g.iterrows()]
-    thin = int((g.n < 6).sum())
-    note = (f"\n\n**{len(g)} series, {int(g.n.sum())} observations total. "
-            f"{thin} of {len(g)} series have fewer than 6 observations** and therefore contribute a "
-            "prior rather than an estimate. This is the binding constraint on metric ③.")
-    return _md(rows, ["Series", "Obs", "From", "To", "Volatility", "Unit"]) + note
+    used = [s for s in reads if s in g.index and g.loc[s, "n"] >= 6]
+    unread = len(g) - len([s for s in reads if s in g.index])
+    missing = [s for s in reads if s not in g.index]
+    prior = [f"`{f}` ({FALLBACK_VOL[f]})" for f, ss in FACTOR_SERIES.items()
+             if not any(s in g.index and g.loc[s, "n"] >= 6 for s in ss)]
+    ez = df[df.series_id == "electrolyzer_capex"].sort_values("date")
+    note = (f"\n\n**{len(g)} series, {int(g.n.sum())} observations. "
+            f"{unread} of them are read by nothing** — they are level references and "
+            "provenance for the price paths in D2b, not inputs to the volatility "
+            f"calibration. Of the {len(reads)} series the calibration names, "
+            f"{len(used)} clear the 6-observation floor ({', '.join('`' + s + '`' for s in used)})"
+            + (f", and {', '.join('`' + s + '`' for s in missing)} "
+               f"{'is' if len(missing) == 1 else 'are'} named but absent from D4" if missing else "")
+            + f". So {len(prior)} of the {len(FACTOR_SERIES)} factors take a prior instead of an "
+              f"estimate: {', '.join(prior)}. The factor correlation matrix is the identity for the "
+              "same reason — with two factors producing no return series there is nothing to "
+              "correlate, so identity is the absence of an estimate, not a finding of independence.")
+    if len(ez) >= 2:
+        a, b = ez.iloc[0], ez.iloc[-1]
+        note += (f" The electrolyzer capex path is anchored on the last of {len(ez)} observations "
+                 f"({b.value:,.0f} KRW/kW @{b.date:%Y}) with its decline rate and volatility taken "
+                 f"from priors (5%/yr, 0.10); note the two observations *rise* "
+                 f"{100 * (b.value / a.value - 1):.0f}% while the imposed path falls.")
+    return _md(rows, ["Series", "Obs", "From", "To", "Read as", "Unit"]) + note
+
+
+def gen_d6_coverage():
+    """Which D6 columns are actually populated, and which are read.
+
+    The prose listed seven financial columns as though the table were a filled
+    rectangle. Only `ebitda` is complete, and the two firms with no leverage rows
+    are exactly the two whose leverage ratios come out blank downstream.
+    """
+    d = prepared() / "D6_company_financials.csv"
+    if not d.exists():
+        return "_D6 not available._"
+    df = pd.read_csv(d)
+    # consumers verified against src/cap/e5_metrics.py:104-112 — everything else in
+    # the table is collected context that no stage opens
+    READ = {"revenue": "⑥ `capex_total_to_revenue_pct` (latest year)",
+            "ebitda": "⑥ reference earnings (mean of last 3 reported)",
+            "net_debt": "⑥ `netdebt_to_ebitda_now/post` (latest year)"}
+    cols = [c for c in df.columns if c not in ("company_id", "year", "source_id")]
+    rows = []
+    for c in cols:
+        firms = sorted(df.company_id[df[c].notna()].unique())
+        rows.append([f"`{c}`", f"{int(df[c].notna().sum())} / {len(df)}",
+                     ", ".join(firms) if len(firms) < df.company_id.nunique() else "all four",
+                     READ.get(c, "—")])
+    af = ROOT / "out" / "e5" / "affordability.csv"
+    span = ""
+    if af.exists():
+        a = pd.read_csv(af).drop_duplicates("company_id")
+        span = (" Reference earnings are the last three *reported* years, which differ by firm: "
+                + "; ".join(f"{COMPANY_NAME.get(r.company_id, r.company_id)} "
+                            f"{str(r.ebitda_years).replace(';', '–')}"
+                            for r in a.itertuples()) + ".")
+    unread = [c for c in cols if c not in READ]
+    note = (f"\n\n{len(df)} company-years. **{len(unread)} of the {len(cols)} financial columns are "
+            f"read by no stage** (`{'`, `'.join(unread)}`) — they were collected, they pass the "
+            "schema check, and metric ⑥ never opens them. Of the three that are read, `net_debt` "
+            "exists only for the two Japanese firms, so the net-debt multiple — the leverage half "
+            "of ⑥ — is blank for POSCO and LOTTE by entity boundary, not by oversight." + span)
+    return _md(rows, ["Column", "Non-null", "Firms", "Read by"]) + note
+
+
+def gen_d7_enforcement():
+    """Row-by-row verdict on the disclosed plan, obtained by *calling* the engine's
+    `_disclosed_fixed` rather than restating its precondition chain in prose. A
+    re-implementation here would drift from `e2_milp.py` the moment either moved,
+    and the interesting cases are precisely the ones that leave no trace.
+    """
+    import numpy as np
+    from cap import config as C
+    from cap.schemas import load_input
+    from cap.e2_milp import COMPANY_REGION, _disclosed_fixed, _prep_company
+    cfg = C.load()
+    ddir = C.data_dir(cfg)
+    av_path = ROOT / "out" / "e1" / "tech_availability.csv"
+    if not (ddir / "D7_disclosed_plan.csv").exists() or not av_path.exists():
+        return "_D7 or E1 availability not available._"
+    d7 = load_input(ddir, "D7_disclosed_plan")
+    fac, d3, _ = _prep_company(cfg, ddir)
+    avail = pd.read_csv(av_path)
+    years = np.arange(cfg.years.start, cfg.years.end + 1)
+
+    verdicts, levers = {}, {}
+    for company in sorted(fac.company_id.unique()):
+        cf = fac[fac.company_id == company]
+        for scen in cfg.scenarios:
+            av = (avail[(avail.scenario == scen) & (avail.region == COMPANY_REGION[company])]
+                  .set_index("tech_id").avail_year_scenario)
+            f = _disclosed_fixed(d7, cf, d3[d3.sector == cf.sector.iloc[0]], years, av)
+            forced = {(fid, tk): ta for (fid, tk, ta) in f["x"]}
+            levers[company] = (f["ppa"], f["epc"], f["ccfd"])
+            for r in d7[d7.company_id == company].itertuples():
+                if r.item_type != "tech_commit":
+                    v = f"context only (`{r.item_type}`)"
+                elif (r.facility_id, r.tech_id) in forced:
+                    ta = forced[(r.facility_id, r.tech_id)]
+                    build = int(d3.set_index("tech_id").build_years.get(r.tech_id, 0))
+                    clamp = ta - (int(r.year_stated) - build)
+                    v = (f"**forced**, adopt {ta} (operational {ta + build})"
+                         + (f", clamped +{clamp}y by availability" if clamp else ""))
+                elif any(str(x).startswith(f"{r.facility_id}/{r.tech_id}:") for x in f["dropped"]):
+                    v = "dropped, **reason recorded**"
+                elif pd.isna(r.facility_id):
+                    v = "dropped **silently** — no `facility_id` in the disclosure"
+                elif r.facility_id not in cf.index:
+                    v = "dropped **silently** — `facility_id` not in D1a"
+                else:
+                    v = "dropped **silently**"
+                verdicts.setdefault((company, r.Index), set()).add(v)
+    rows = []
+    for r in d7.itertuples():
+        vs = verdicts.get((r.company_id, r.Index), {"—"})
+        rows.append([COMPANY_NAME.get(r.company_id, r.company_id),
+                     f"`{r.item_type}`",
+                     f"`{r.facility_id}`" if pd.notna(r.facility_id) else "—",
+                     f"`{r.tech_id}`" if pd.notna(r.tech_id) else "—",
+                     "" if pd.isna(r.year_stated) else int(r.year_stated),
+                     f"`{r.resolution}`",
+                     " / ".join(sorted(vs))])
+    n_forced = sum("forced" in v for vs in verdicts.values() for v in vs)
+    n_silent = sum("silently" in v for vs in verdicts.values() for v in vs)
+    n_rec = sum("recorded" in v for vs in verdicts.values() for v in vs)
+    note = (f"\n\nOf the {len(d7)} rows, **{n_forced} become a forced decision**, "
+            f"{n_rec} are dropped with a reason written to `out/e2/disclosed_skipped.csv`, and "
+            f"**{n_silent} are dropped without a trace** — the skip file has no line for them, so a "
+            "reader counting that file undercounts what the disclosed coordinate is missing. "
+            "`resolution` appears in none of it: the two `high` rows that are dropped silently are "
+            "dropped for the same reason a `mid` row would be. Verdicts are identical across "
+            "both scenarios."
+            if len({v for vs in verdicts.values() for v in vs}) else "")
+    if levers and all(l == (0.0, 0, 0) for l in levers.values()):
+        note += (" The same call also fixes the three contract levers: because D7 contains no "
+                 "`ppa`, `epc` or `ccfd` rows, every disclosed coordinate is solved with "
+                 "`ppa = 0, epc = 0, ccfd = 0` while the optimum may buy all three. Part of every "
+                 "frontier gap is therefore a hedging difference no firm ever disclosed either "
+                 "way (§6.4).")
+    return _md(rows, ["Company", "Type", "Facility", "Tech", "Year", "Res.", "What the engine does"]) + note
 
 
 def gen_tier_distribution():
@@ -517,6 +667,8 @@ BLOCKS = {
     "d3_reach": gen_d3_reach,
     "d3b_bands": gen_d3b_bands,
     "price_series": gen_price_series,
+    "d6_coverage": gen_d6_coverage,
+    "d7_enforcement": gen_d7_enforcement,
     "tier_distribution": gen_tier_distribution,
     "config": gen_config,
     "headline": gen_headline,
