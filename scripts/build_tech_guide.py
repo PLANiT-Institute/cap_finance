@@ -49,6 +49,20 @@ DATASETS = {
 COMPANY_NAME = {"POSCO": "POSCO", "NSC": "Nippon Steel",
                 "LOTTE": "LOTTE Chemical", "MCI": "Mitsui Chemicals"}
 
+# Categorical fields whose documented value set went stale in F1: the guide named
+# `CR` as a unit_type and `operating/idle/closed` as statuses, neither of which
+# occurs in the data. Enumerating them by hand is what produced that, so they are
+# generated from the prepared files instead.
+VOCAB = [
+    ("D1a_facility_static", "sector"), ("D1a_facility_static", "unit_type"),
+    ("D1a_facility_static", "capacity_unit"), ("D1a_facility_static", "status"),
+    ("D2a_scenario_budget", "scenario"), ("D2a_scenario_budget", "region"),
+    ("D2b_scenario_prices", "variable"), ("D2b_scenario_prices", "unit"),
+    ("D3_tech_options", "applies_to_unit"), ("D3_tech_options", "retrofit"),
+    ("D5_policy_support", "support_scenario"), ("D5_policy_support", "instrument"),
+    ("D7_disclosed_plan", "item_type"), ("D7_disclosed_plan", "resolution"),
+]
+
 
 def prepared() -> Path:
     from cap import config as C
@@ -111,6 +125,24 @@ def gen_dataset_inventory():
             f"{sum(len(v) for v in SCHEMAS.values())} schema-required columns in total. "
             "Extra columns are permitted and preserved; required ones are not optional.")
     return _md(rows, ["ID", "Dataset", "Grain", "Rows", "Years", "Domains"]) + note
+
+
+def gen_vocab():
+    d = prepared()
+    rows = []
+    for stem, col in VOCAB:
+        p = d / f"{stem}.csv"
+        if not p.exists():
+            continue
+        s = pd.read_csv(p, dtype=str)[col].dropna()
+        vals = ", ".join(f"`{v}` ({n})" for v, n in s.value_counts().items())
+        rows.append([f"`{stem.split('_')[0]}.{col}`", s.nunique(), vals])
+    note = ("\n\nThese are the values that **occur**, not the values the schema permits — "
+            "`load_input` checks that a column exists and is numeric where required, never what "
+            "it contains. Three of these fields are documentation rather than input and no stage "
+            "branches on them: `D1a.status`, `D1a.capacity_unit` and `D7.resolution`. Nor is any "
+            "`D5` row read — see §3.6. The rest decide behaviour.")
+    return _md(rows, ["Field", "Distinct", "Values (count)"]) + note
 
 
 def gen_price_series():
@@ -219,6 +251,7 @@ def gen_headline():
 BLOCKS = {
     "stamp": gen_stamp,
     "dataset_inventory": gen_dataset_inventory,
+    "vocab": gen_vocab,
     "price_series": gen_price_series,
     "tier_distribution": gen_tier_distribution,
     "config": gen_config,

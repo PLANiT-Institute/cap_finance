@@ -2330,3 +2330,70 @@ D17 절의 셋(§8 결론 / 마감 절차 / G1 한국)과 겹치는 부분은 �
 (one-time, 09:00 발화 완료, `enabled: false`) 하나뿐이다. 30분 사이클 태스크
 `cap-autopilot-d-cycle`은 09:25에 이미 수동 삭제됐고 재확인했다 — 반복 발화는 없다.
 남은 one-time 항목도 이 절과 함께 삭제한다.
+
+## F1 (01:33) — 가이드 §3 필드 정의 검증 1회차: 존재하지 않는 값을 문서화하던 열이 넷이었다
+
+**한 일.** `docs/TECHNICAL_GUIDE.md` §3의 D1a–D7 필드표를 `src/cap/schemas.py`의 `SCHEMAS`,
+`data/prepared/*.csv` 실데이터, 그리고 그 열을 실제로 읽는 코드와 한 줄씩 대조했다. 산문만
+고치는 것으로는 같은 오류가 재발하므로, 열거형 값은 손으로 쓰지 않고 생성기로 옮겼다
+(`scripts/build_tech_guide.py`의 새 `GEN:vocab` 블록, §3.0).
+
+### 가이드에서 고친 사실 오류 (하나씩)
+
+| # | 어디 | 가이드가 적었던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | §3.1 `unit_type` | `BF`, `NCC`, **`CR`**, `EAF` | `BF` 17 · `NCC` 4 · `FINEX` 1 · `EAF` 1. **`CR`은 한 행도 없다** | `data/prepared/D1a_facility_static.csv` |
+| 2 | §3.1 `status` | `operating` / `idle` / `closed` 열거형 | 공시 원문 그대로의 한국어 자유서술 6종(`가동` 18 등). **어떤 코드도 이 열을 읽지 않는다** — 폐쇄 예정이라 적힌 2행도 제외되지 않는다 | 같은 파일 + `grep status src/cap/` |
+| 3 | §3.1 `capacity` | 단위 `t/yr` | 단위가 행마다 다르고 `capacity_unit` 열에 담긴다 — `t용선`(18) · `t에틸렌`(4) · `t조강`(1). **행 간 비교 불가**이고 환산하는 코드가 없다 | `D1a.capacity_unit` |
+| 4 | §3.1 누락 | `unit_name`·`capacity_unit`(둘 다 스키마 필수), `margin_kthou_t`(추가 열) 자체가 표에 없었다 | `margin_kthou_t`는 E2의 폐쇄 결정을 켜고 끄는 열이다 — 한 행이라도 비면 그 회사 전체의 폐쇄가 꺼진다 | `schemas.py:15-19`, `e2_milp.py:161` |
+| 5 | §3.4 `max_applicability_pct` | "부분 감축은 `max_applicability_pct`가 설비 커버리지를 제한한다" | **그런 열은 저장소 어디에도 없다.** 채택은 (설비×기술×연도) 이진변수이고 설비당 최대 1건. 부분성은 `emission_factor`(감축률이 아니라 사후 원단위)와 `retrofit`(가산이냐 대체냐)로 표현된다 | `grep max_applicability` = 가이드 1건뿐, `e2_milp.py:86,168` |
+| 6 | §3.4 `capex_uncertainty` | 단위 "fraction" | **퍼센트**(30–60). `plancost.py:22`가 명시 | `D3_tech_options.csv` |
+| 7 | §3.3 D2 출처 | "NGFS Phase 5 / GCAM 파생 공개 추정치, 전부 `EST` 라벨" | **GCAM 산출이 아니다.** `gcam_version` 열이 `EST_v0 (비GCAM 잠정)`이라 적고 있고, GCAM-KAIST 수령 전 잠정 구성물이다. 라벨도 전부가 아니라 **행별 혼재** — 앵커 행은 실출처(`IEA_GECM_DOC_2025` 등)를 유지하고 보간 행만 `EST_D2A_V0/EST_D2B_V0` | `data/manifests/estimation_notes_D2_v0.md`, `D2a/D2b.source_id` |
+| 8 | §3.3 앵커 | "D2a·D2b 둘 다 5년 앵커" | `re_price`만 예외 — 26년 연간이며 **2050년까지 상수**(한국 175,000 KRW/MWh). PPA 채널에는 경로가 없다 | `D2b_scenario_prices.csv` |
+| 9 | §3.6 `instrument` | 열거형에 `subsidy_capex`·`ccfd` 포함, `auction_share_power` 누락 | 실제 4종: `auction_share_power` 2 · `price_cap` 2 · `price_floor` 2 · `auction_share` 1. **D5 전 7행을 읽는 스테이지가 없다** — 모형이 쓰는 유상할당 램프는 `config.yaml` 쪽이다 | `D5_policy_support.csv`, `plancost.support_params` |
+| 10 | §3.8 `resolution` | `high` / `medium` / `low`, 강제성 판정 기준 | 실제 값은 `high` 7 · `mid` 5, **`medium`도 `low`도 없다**. 그리고 이 열을 읽는 코드가 없다 — 고정 결정 여부는 `item_type`·`facility_id`·`year_stated`·D3 적용가능성이 정한다 | `D7_disclosed_plan.csv`, `e2_milp._disclosed_fixed` |
+| 11 | §3.8 `coverage_pct` | "설비 커버리지 비율" | **12행 전부 공란.** 부분 이행을 강제할 방법이 현재 없다는 뜻이므로 그렇게 적었다 | 같은 파일 |
+| 12 | §3.7 D6 | "Annual **consolidated** figures: revenue, **EBITDA**, …" | 네 회사 중 어느 것에 대해서도 완전히 참이 아니다 — POSCO는 별도, `ebitda` 열은 NSC 営業利益·MCI コア営業利益(감가상각 미가산) | 아래 별항 |
+
+### 별항 — 수치 결함 1건 발견: D6 통화 단위가 섞여 있고 환산이 없다
+
+가장 큰 소득은 산문 오류가 아니라 이것이다. `D6_company_financials.csv`는 한국 2사를 **십억원**,
+일본 2사를 **億円**으로 담는다(NSC 2024 revenue 86,955 = 억엔). `PREP_LOG`는 "E1에서 환산"이라
+적었으나 **그 환산은 구현된 적이 없고**, `e5_metrics._affordability`가 열을 그대로
+`ebitda_ref_bnkrw`로 읽는다. 9.2원/엔에서 1억엔 = 0.92십억원이므로 **일본 2사 분모가 약 8%
+과대, 지표 ⑥ 비율은 그만큼 과소**다. ①–⑤는 D6를 읽지 않으므로 영향 없다.
+
+**이번 창에서 고치지 않았다.** 이 창은 가이드 창이고, 고칠 자리는 `prepare_raw.py`의 D6 블록이며
+고치면 ⑥ 재실행이 따라온다 — D17이 실증한 대로 사이클 안에 못 끝낼 실행은 시작하지 않는다.
+대신 세 곳에 적었다: 가이드 §3.7, `docs/data_gap_registry.md`(F1 항목), `METHODOLOGY.md` §⑥.
+
+### 검증
+
+```
+.venv/bin/python scripts/build_tech_guide.py   # 7 blocks (vocab 신설)
+.venv/bin/python scripts/gate.py               # gate: OK
+```
+
+창 시작 시 게이트는 **FAILED (tests)** 였다 — `test_tech_guide`가 stamp 블록의 커밋 해시
+`f60cdd3`(직전 창)이 낡았다고 잡은 것으로, 생성기를 돌리는 것이 곧 수정이었다. 감지 장치가
+의도대로 작동한 사례이므로 별도 조치는 없다.
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | 유지, 단 **미사용 열이 문서화됐다** | gate audit `ok 68, PARTIAL 4, 설계상 정상 16`. §3.0이 이제 어느 열이 입력이고 어느 열이 기록인지 명시 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | 유지 | `out/scenarios/summary.csv` 12 묶음 |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선** | Arc의 "데이터셋 정의를 자세히"에 대해 §3이 이제 스키마 필수/추가, 실제 값 집합, 읽히지 않는 열까지 답한다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | 유지 | `gate.py` 8항목 통과 |
+| ⑤ 산출물 — 다른 형식이 있는가 | **미충족** | md뿐. HTML은 F6 |
+
+### 인계
+
+- **F2(§4 가정 절 검증)**: A-xx 영어 서술 대 METHODOLOGY 정본 대조. F1에서 A-13(BF 200천원/t,
+  unit_type별 단일값)·A-04(margin 섹터별 단일값)의 근거 구조를 확인했으므로 그 두 개는 "영향
+  등급"보다 **값의 해상도**를 함께 적을 것.
+- **F7(데이터 사전 통합)**에 F1의 [req]/[extra] 구분과 §3.0을 정본으로 넘긴다.
+  `data/package/data_dictionary.csv`가 이 구분을 갖고 있는지 미확인.
+- **D6 통화 환산**은 가이드 창 밖의 코드 수정이다. 창 마감(F16) 이후, 또는 `cap all`을 끝까지
+  돌릴 수 있는 창에서 `prepare_raw.py` D6 블록 + ⑥ 재실행으로 처리.

@@ -14,7 +14,7 @@ design narrative. [`docs/data_gap_registry.md`](data_gap_registry.md) records wh
 collect and where we were blocked. `paper/working_paper.md` is the manuscript.
 
 <!-- GEN:stamp -->
-> **Repository state.** Commit `f60cdd3` (2026-08-10). Results in this document come from the pipeline run finished `2026-08-10T10:00:24`. Regenerate the generated blocks with `python3 scripts/build_tech_guide.py`.
+> **Repository state.** Commit `c53d500` (2026-08-11). Results in this document come from the pipeline run finished `2026-08-10T10:00:24`. Regenerate the generated blocks with `python3 scripts/build_tech_guide.py`.
 <!-- /GEN:stamp -->
 
 ---
@@ -120,6 +120,34 @@ numeric column stops the run rather than propagating.
 9 files across 7 dataset families, 85 schema-required columns in total. Extra columns are permitted and preserved; required ones are not optional.
 <!-- /GEN:dataset_inventory -->
 
+The field tables below mark each column **[req]** if `SCHEMAS` in `src/cap/schemas.py` requires
+it and **[extra]** if it is an additional column the loader preserves and some stage reads. An
+extra column can disappear without the schema check noticing, so the ones that carry model
+behaviour are called out where they appear.
+
+### 3.0 Controlled vocabularies
+
+<!-- GEN:vocab -->
+| Field | Distinct | Values (count) |
+|---|---|---|
+| `D1a.sector` | 2 | `steel` (19), `petchem` (4) |
+| `D1a.unit_type` | 4 | `BF` (17), `NCC` (4), `FINEX` (1), `EAF` (1) |
+| `D1a.capacity_unit` | 4 | `t용선/yr (내용적 추정)` (16), `t에틸렌/yr` (4), `t용선/yr` (2), `t조강/yr` (1) |
+| `D1a.status` | 6 | `가동` (18), `휴지예정(전기로 전환)` (1), `가동(여천NCC 통합법인 이관 예정)` (1), `가동중단 계획(롯데대산석화 재편)` (1), `가동(2027.7 지바 집약 거점)` (1), `가동(2030년도 서일본 집약 거점)` (1) |
+| `D2a.scenario` | 2 | `NZ15` (24), `B20` (24) |
+| `D2a.region` | 2 | `Korea` (24), `Japan` (24) |
+| `D2b.variable` | 6 | `re_price` (104), `elec_price` (24), `h2_price` (24), `co2_price` (24), `coal_price` (24), `gas_price` (24) |
+| `D2b.unit` | 4 | `KRW/MWh` (128), `KRW/t` (48), `KRW/kg` (24), `KRW/tCO2` (24) |
+| `D3.applies_to_unit` | 4 | `NCC` (6), `BF` (5), `NONE` (1), `FINEX` (1) |
+| `D3.retrofit` | 2 | `1` (9), `0` (4) |
+| `D5.support_scenario` | 1 | `current` (7) |
+| `D5.instrument` | 4 | `auction_share_power` (2), `price_cap` (2), `price_floor` (2), `auction_share` (1) |
+| `D7.item_type` | 3 | `tech_commit` (7), `target` (3), `timing` (2) |
+| `D7.resolution` | 2 | `high` (7), `mid` (5) |
+
+These are the values that **occur**, not the values the schema permits — `load_input` checks that a column exists and is numeric where required, never what it contains. Three of these fields are documentation rather than input and no stage branches on them: `D1a.status`, `D1a.capacity_unit` and `D7.resolution`. Nor is any `D5` row read — see §3.6. The rest decide behaviour.
+<!-- /GEN:vocab -->
+
 ### 3.1 D1a — facility register (static)
 
 One row per production unit. This is the model's spine: every technology decision is attached to a
@@ -127,19 +155,27 @@ row here.
 
 | Field | Definition | Unit | Notes |
 |---|---|---|---|
-| `facility_id` | Stable key, `COMPANY_SITE_UNIT` (e.g. `NSC_OIT_BF1`) | — | Never reused |
-| `company_id` | `POSCO`, `NSC`, `LOTTE`, `MCI` | — | |
-| `sector` | `steel` or `petchem` | — | Determines which technology set applies |
-| `site` | Works / plant name | — | Site is the grain at which Japanese emissions are disclosed |
-| `unit_type` | `BF`, `NCC`, `CR`, `EAF` … | — | Governs technology applicability (A-10) |
-| `capacity` | Nameplate annual capacity | t/yr | Published capacity where available; otherwise inner volume × 913 t/m³·yr (**A-01**) |
-| `commissioning_year` | First operation | year | |
-| `last_reline_year` | Most recent campaign renewal | year | Blast furnaces only |
-| `reinvest_cycle_yr` | Campaign length | yr | Sets the reinvestment window |
-| `next_reinvest_year` | Next campaign anchor | year | Early conversion before this anchor writes off residual book value (**A-13**) |
-| `incumbent_capex_unit` | Replacement cost of the incumbent asset | thousand KRW/t | Used only for the stranding write-off |
-| `status` | `operating`, `idle`, `closed` | — | |
-| `source_id` | Foreign key into `source_register` | — | Mandatory |
+| `facility_id` **[req]** | Stable key, `COMPANY_SITE_UNIT` (e.g. `NSC_OIT_BF1`) | — | Never reused |
+| `company_id` **[req]** | `POSCO`, `NSC`, `LOTTE`, `MCI` | — | |
+| `sector` **[req]** | `steel` or `petchem` | — | Determines which technology set applies |
+| `site` **[req]** | Works / plant name | — | Site is the grain at which Japanese emissions are disclosed |
+| `unit_type` **[req]** | Process type — values in §3.0 | — | Matched against `D3.applies_to_unit`, so it governs technology applicability (A-10) |
+| `unit_name` **[req]** | Unit label as published, free text | — | Read by no stage; it is what makes a row checkable against its source |
+| `capacity` **[req]** | Nameplate annual capacity | **see `capacity_unit`** | Published capacity where available; otherwise inner volume × 913 t/m³·yr (**A-01**) |
+| `capacity_unit` **[req]** | The basis `capacity` is stated on | — | **Three bases occur in this one column** — hot metal, crude steel, ethylene (§3.0). See the caution below |
+| `commissioning_year` **[req]** | First operation | year | |
+| `last_reline_year` **[req]** | Most recent campaign renewal | year | Blast furnaces only |
+| `reinvest_cycle_yr` **[req]** | Campaign length | yr | Sets the reinvestment window |
+| `next_reinvest_year` **[req]** | Next campaign anchor | year | Early conversion before this anchor writes off residual book value (**A-13**) |
+| `status` **[req]** | Operating state, free Korean text as published (§3.0) | — | Not parsed and not branched on: **no row is excluded on `status`**, including the two units whose text says closure or transfer is planned |
+| `source_id` **[req]** | Foreign key into `source_register` | — | Mandatory |
+| `incumbent_capex_unit` **[extra]** | Replacement cost of the incumbent asset | thousand KRW/t | Used only for the stranding write-off. One value per `unit_type`, not per asset: BF 200, EAF 250, FINEX 300, NCC 150. The BF figure is the one A-13 fails external validation on, at 4.2× |
+| `margin_kthou_t` **[extra]** | Operating margin per tonne of output | thousand KRW/t | Closure forfeits it (**A-04**). Also one value per sector, not per asset: steel 70, petchem 290. E2 enables the retirement decision **only if every facility of that firm has a positive value** — one blank switches closure off for the whole firm rather than making closure free. All 23 rows are currently populated, so retirement is live for all four firms |
+
+**Unit caution.** `capacity` is not commensurate across rows: a blast furnace is stated in tonnes of
+hot metal, an NCC in tonnes of ethylene, and one unit in tonnes of crude steel. Nothing in the model
+converts between them — `D3` costs and intensities are applied per tonne of whatever basis the row
+carries, so a technology's `capex_unit` is only comparable within a `unit_type`.
 
 **Grain caution.** Emissions are disclosed by *site* in Japan and only by *legal entity* in Korea,
 while decisions are made per *unit*. That mismatch is where the model's largest assumption lives —
@@ -150,67 +186,103 @@ see A-02 in §4.
 One row per facility-year. Production and energy define the incumbent baseline that every plan is
 measured against.
 
+All nine columns are schema-required.
+
 | Field | Definition | Unit |
 |---|---|---|
 | `facility_id`, `year` | Composite key | — |
-| `production` | Physical output | t/yr |
+| `production` | Physical output — on the same basis as `D1a.capacity_unit` for that facility | t/yr |
 | `emissions_s1` | Scope 1 | tCO₂/yr |
 | `emissions_s2` | Scope 2 (purchased electricity) | tCO₂/yr |
 | `energy_coal` | Coal / coke input | t/yr |
 | `energy_gas` | Gas input | t/yr |
 | `energy_elec` | Electricity input | MWh/yr |
 | `energy_naphtha` | Naphtha feedstock | t/yr |
+| `source_id` | Foreign key into `source_register` | — |
 
 Derived quantities: incumbent output `Q_f` is the 3-year mean of `production`; incumbent emission
-intensity `e_f = emissions_s1 / Q_f`; energy intensities likewise.
+intensity `e_f = emissions_s1 / Q_f`; energy intensities likewise. The panel holds exactly
+2022–2024, so "3-year mean" is the whole panel, not a trailing window — a fourth year would change
+the baseline of every result.
 
-**Known hole:** `energy_naphtha` is empty for all 69 rows. Petrochemical feedstock exposure is
-therefore understated. Because margin is taken on an operating-profit basis there is no
-double-count, but the naphtha price channel is absent.
+**Known hole:** `energy_naphtha` is empty for all 69 rows — the column is blank, not zero.
+Petrochemical feedstock exposure is therefore understated. Because margin is taken on an
+operating-profit basis there is no double-count, but the naphtha price channel is absent.
 
-**Emission boundary:** Scope 1 only (**A-21**). Reported Scope 2 is preserved in the data and not
-charged, because budgets are anchored to the firm's own base and the choice is level-neutral.
+**Emission boundary:** Scope 1 only (**A-21**). `emissions_s2` is non-zero in 63 of 69 rows and is
+preserved but never charged, because budgets are anchored to the firm's own base and the choice is
+level-neutral.
 
 ### 3.3 D2a / D2b — scenarios
 
-`D2a` carries sector carbon budgets, `D2b` carries price paths, both on 5-year anchors that E1
-interpolates annually.
+`D2a` carries sector carbon budgets, `D2b` carries price paths. Both are stated on 5-year anchors
+(2025, 2030 … 2050) that E1 interpolates annually — **with one exception**: `re_price` is already
+annual, and flat. It is a single procurement price held constant to 2050 (Korea 175,000 KRW/MWh),
+so the renewable-PPA channel has a level but no path, while every other price does.
 
 | Field | Definition |
 |---|---|
 | `scenario` | `NZ15` (1.5 °C-consistent) or `B20` (below 2 °C) |
-| `region` | `Korea` or `Japan` — Korean budgets are direct-emission based, Japanese include purchased power |
-| `sector` | `steel` / `petchem` |
-| `carbon_budget` | Sector emissions allowance for that year |
+| `region` | `Korea` or `Japan` — Korean budgets are direct-emission based and on calendar years, Japanese include purchased power and are on fiscal years |
+| `sector` (D2a) | `steel` / `petchem` |
+| `carbon_budget` (D2a) | Sector emissions allowance for that year |
+| `gcam_version` (D2a) | Provenance tag of the pathway — see the caveat below |
 | `variable` (D2b) | `elec_price`, `re_price`, `h2_price`, `coal_price`, `gas_price`, `co2_price` |
+| `value`, `unit` (D2b) | The price and its unit (`KRW/MWh`, `KRW/kg`, `KRW/t`, `KRW/tCO₂`) |
+| `source_id` | Foreign key into `source_register`, per row |
 
 Only the **ratio** to the base year is used (**A-06**), so the Korea/Japan boundary difference
 survives only in path shape, not level. Electricity is deliberately split in two: incumbent
 consumption is priced at grid tariff, transition technologies at a renewable PPA price (`re_price`).
 
-**Provenance caveat.** These are NGFS Phase 5 / GCAM-derived public estimates, labelled `EST`
-throughout. They are not a bespoke run, and `D2b` central paths do not state whether they are means
-or medians — which is the whole reason A-24 exists (§4).
+**Provenance caveat — these are not GCAM output.** They are provisional in-house pathways built to
+exercise the structure until the GCAM-KAIST solved output arrives; the `gcam_version` column says so
+in the data (`EST_v0 (비GCAM 잠정)`). The construction is documented anchor by anchor in
+[`data/manifests/estimation_notes_D2_v0.md`](../data/manifests/estimation_notes_D2_v0.md): budgets
+are piecewise-linear between government targets, carbon prices interpolate central-bank and IEA
+anchors, electricity comes from an LCOE study rather than a wholesale market. Provenance is
+**mixed at row level**, not uniform — rows carrying an anchor keep the real `source_id`
+(`IEA_GECM_DOC_2025`, `MOTIE_H2_PLAN_2021`, `KETS_P4_CONFIRM_2025` …) and only the interpolated
+rows are labelled `EST_D2A_V0` / `EST_D2B_V0`, which are the rows to be replaced wholesale on
+receipt.
+
+Three consequences a reader should carry:
+
+- **`coal_price` is thermal coal**, not the coking coal a blast furnace consumes. A coking-coal
+  scenario path has not been obtained (§6.5).
+- **Korean `h2_price` for 2025 is blank** — no verified current price was found — so the hydrogen
+  path starts from the 2030 target anchor.
+- The central paths do not state whether they are means or medians, which is the whole reason A-24
+  exists (§4). Series definitions are also mixed across scenarios: Korean NZ15 carbon price is a
+  central-bank shadow price, Japanese NZ15 is IEA NZE, B20 is IEA STEPS.
 
 ### 3.4 D3 — technology options
 
-One row per abatement measure available to a sector. Partial-abatement measures are included, with
-`max_applicability_pct` bounding how much of a unit they can cover.
+One row per abatement measure available to a sector, 13 rows in total.
+
+**Adoption is all-or-nothing per facility.** There is no coverage fraction: E2's decision variable
+is binary over (facility, technology, adoption year), and at most one technology or one closure may
+be taken per facility over the whole horizon. Partial abatement is therefore expressed in two other
+places — in `emission_factor`, which is the post-measure intensity rather than a reduction rate, and
+in `retrofit`, which decides whether the measure's energy intensities are **added to** the
+incumbent process or **replace** it.
 
 | Field | Definition | Unit |
 |---|---|---|
-| `tech_id` | e.g. `steel_h2dri`, `petchem_ecracker` | — |
-| `applies_to_unit` | Which `unit_type` values it can be applied to | — |
-| `capex_unit` | Unit capital cost | thousand KRW / t capacity |
-| `opex_fixed` / `opex_var` | Fixed / variable operating cost | thousand KRW per t capacity·yr / per t |
-| `elec_intensity` | Electricity requirement | MWh/t |
-| `h2_intensity` | Hydrogen requirement | kg/t |
-| `emission_factor` | Post-conversion intensity | tCO₂/t |
-| `avail_year` | Earliest adoption year | year |
-| `build_years` | Construction duration — CAPEX is spread evenly across it (**A-18**) | yr |
-| `lifetime` | Economic life | yr |
-| `capex_uncertainty` | Relative CAPEX dispersion, used as a **relative** multiplier only (**A-22**) | fraction |
-| `retrofit` | Whether the measure is a retrofit or a replacement | 0/1 |
+| `tech_id` **[req]** | e.g. `steel_h2dri`, `petchem_ecracker` | — |
+| `sector` **[req]** | `steel` (7 rows) or `petchem` (6) — the measure is only offered to firms in that sector | — |
+| `applies_to_unit` **[req]** | Which single `unit_type` it can be applied to; `NONE` marks a greenfield measure applicable to no existing unit (`steel_eaf`) | — |
+| `capex_unit` **[req]** | Unit capital cost | thousand KRW / t capacity |
+| `opex_fixed` / `opex_var` **[req]** | Fixed / variable operating cost — fixed is charged on `capacity`, variable on `production` | thousand KRW per t capacity·yr / per t |
+| `elec_intensity` **[req]** | Electricity requirement, priced at `re_price` | MWh/t |
+| `h2_intensity` **[req]** | Hydrogen requirement | kg/t |
+| `emission_factor` **[req]** | Post-conversion intensity, **not** a reduction rate | tCO₂/t |
+| `avail_year` **[req]** | Earliest adoption year | year |
+| `build_years` **[req]** | Construction duration — CAPEX is spread evenly across it (**A-18**) | yr |
+| `lifetime` **[req]** | Economic life | yr |
+| `capex_uncertainty` **[req]** | Relative CAPEX dispersion, used as a **relative** multiplier only (**A-22**) | **percent, 30–60 across our set** — not a fraction |
+| `source_id` **[req]** | Foreign key into `source_register` | — |
+| `retrofit` **[extra]** | 1 = keeps the incumbent process running and adds the measure's intensities on top; 0 = swaps the process energy out. 9 of 13 rows are retrofits | 0/1 |
 
 `D3b_tech_bands.csv` carries `[value_low, value_high]` evidence bands per (tech, field) from the
 literature. The bands are **asymmetric**, and at least one D3 point value sits outside its own band —
@@ -222,8 +294,11 @@ snapped to the band.
 
 ### 3.5 D4 — price history
 
-Used for one purpose: estimating annualised volatility per stochastic factor. This is the thinnest
-dataset in the project and it directly sets the level of metric ③.
+Five columns, all required: `date`, `series_id`, `value`, `unit`, `source_id` — one observation per
+row. Used for one purpose: estimating annualised volatility per stochastic factor. This is the
+thinnest dataset in the project and it directly sets the level of metric ③. Note that `unit` is
+free text carrying the definitional caveat for the series (basis, coverage, whether a value is
+estimated), so it is worth reading in the table below rather than skipping as a label.
 
 <!-- GEN:price_series -->
 | Series | Obs | From | To | Volatility | Unit |
@@ -256,30 +331,51 @@ identity correlation matrix.
 
 ### 3.6 D5 — policy support
 
-Instruments that change the economics: auction share, price collar, capital subsidy, CCfD.
+Instruments that change the economics: auction share, price collar, capital subsidy, CCfD. Seven
+rows.
 
 | Field | Definition |
 |---|---|
-| `support_scenario` | `none` (gross) or `current` |
-| `instrument` | `auction_share`, `price_cap`, `price_floor`, `subsidy_capex`, `ccfd` |
-| `param_type`, `value`, `unit` | The parameter and its value |
-| `valid_from`, `valid_to` | Applicability window |
+| `support_scenario` | Which support world the row belongs to. **Every row in the file is `current`** — `none` is the absence of rows, not a value: `support_params` returns an empty object without reading the file |
+| `instrument` | Instrument key — values in §3.0. `subsidy_capex` and `ccfd` are the two the code reads and neither occurs |
+| `tech_id` | Which technology the instrument attaches to; `all` for economy-wide instruments |
+| `param_type`, `value`, `unit` | The parameter and its value; `param_type` is a Korean label and is not parsed |
+| `valid_from`, `valid_to` | Applicability window; a blank end extends to the horizon |
+| `source_id` | Foreign key into `source_register` |
 
 **The `support` axis is currently empty of information, and the manuscript says so.** The only
 instruments `plancost.support_params` reads are `subsidy_capex` and `ccfd`, and D5 contains no rows
-of either type — so `current` returns the same object as `none`. The results table has a column
-where there is no signal. A test asserts this correspondence, so the day a subsidy row arrives the
-test fails and the prose must be corrected with it.
+of either type — the seven rows present are K-ETS auction shares and a Japanese price collar, and
+no stage reads them; the auction ramp the model actually applies is the one in `config.yaml` (§5).
+So `current` returns the same object as `none`. The
+results table has a column where there is no signal. A test asserts this correspondence, so the day
+a subsidy row arrives the test fails and the prose must be corrected with it.
 
 ### 3.7 D6 — company financials
 
-Annual consolidated figures: revenue, EBITDA, total CAPEX, total and net debt, interest expense,
-cash. Feeds metric ⑥ only.
+One row per company-year: revenue, EBITDA, total CAPEX, total and net debt, interest expense, cash,
+plus `source_id`. Feeds metric ⑥ only. Coverage is 2020–2025 for POSCO and Nippon Steel, 2021–2025
+for LOTTE, 2020–2024 for Mitsui.
 
 Reference earnings for ⑥ is the **3-year mean EBITDA** (**A-20**) — petrochemicals are at a cyclical
 trough and a single-year denominator flips the conclusion. Firms with non-positive reference earnings
 get **no ratio and a stated verdict** rather than a misleading number. The post-hoc net-debt
 multiple is an **upper bound under full debt financing**, not a forecast of financing mix.
+
+Three definitional caveats sit inside this table, and all three are live:
+
+- **The column called `ebitda` is not EBITDA for every firm.** For Nippon Steel it is 営業利益
+  (operating profit) and for Mitsui コア営業利益 (core operating profit) — depreciation is not added
+  back. Metric ⑥ therefore understates Japanese capacity to fund relative to Korean.
+- **Reporting boundaries differ.** POSCO is 별도 (parent-only), LOTTE consolidated, and the two
+  Japanese firms consolidated on an April–March fiscal year. Nippon Steel's FY2025 additionally
+  consolidates U.S. Steel, which breaks the series rather than continuing it.
+- **The currency unit is mixed and nothing converts it.** Korean rows are in billion KRW and
+  Japanese rows in 億円 as published, and no stage applies an exchange rate — `e5_metrics` reads the
+  column straight into `ebitda_ref_bnkrw`. At the project's own rate (9.2 KRW/JPY) 1 億円 is 0.92
+  billion KRW, so Japanese denominators in ⑥ are overstated by about 8% and the ratios understated
+  by the same. It is a small error and a real one; it is registered in
+  [`docs/data_gap_registry.md`](data_gap_registry.md) rather than silently carried.
 
 ### 3.8 D7 — disclosed plan
 
@@ -287,11 +383,20 @@ The firm's own published commitments, decomposed so they can be forced into the 
 
 | Field | Definition |
 |---|---|
-| `item_type` | `target`, `tech_commit`, `timing` |
-| `facility_id`, `tech_id`, `year_stated` | What was committed, where, when |
-| `coverage_pct` | Share of the unit covered |
-| `resolution` | `high` / `medium` / `low` — how enforceable the statement is |
-| `quote` | The disclosure text the row was derived from |
+| `company_id` | Who committed |
+| `item_type` | `target` (3 rows), `tech_commit` (7), `timing` (2) |
+| `facility_id`, `tech_id`, `year_stated` | What was committed, where, when. `facility_id` and `tech_id` are blank where the disclosure names neither |
+| `coverage_pct` | Share of the unit covered. **Blank in all 12 rows** — no firm quantifies it, so no partial commitment can be forced |
+| `resolution` | How enforceable the statement is, as judged when the row was written. Two values occur, `high` (7) and `mid` (5). **Read by no stage** — it is an interpretive grade for the skip report, not a filter |
+| `quote` | The disclosure text the row was derived from, verbatim |
+| `source_id` | Foreign key into `source_register` |
+
+What actually becomes a fixed decision is narrower than the table suggests: a row is enforced only
+if `item_type == tech_commit`, its `facility_id` is one of that firm's units, `year_stated` is
+present, its `tech_id` exists in D3, and that technology applies to that unit's type. Start year is
+back-computed as `year_stated − build_years` and clamped into the feasible range, so a commitment
+that predates the technology's availability is enforced at the earliest feasible year rather than
+disappearing. `target` and `timing` rows are context, not constraints.
 
 **If no commitment is enforceable, we do not produce a disclosed coordinate** (**A-16**). An empty
 set of fixed decisions would just be a second unconstrained optimisation, and the resulting "gap"
@@ -562,6 +667,12 @@ summary, package manifest. Facility-level detail is refused by default. See
    `--replan`, which has been run for some bundles and not others.
 7. Where a disclosed coordinate is absent, that is a **measurement-impossible verdict**, not a
    missing value, and not evidence about the firm.
+8. **Metric ⑥ is not comparable across countries as it stands.** The `ebitda` column mixes billion
+   KRW with 億円 and no exchange rate is applied, and for the two Japanese firms it holds operating
+   profit rather than EBITDA (§3.7). The cross-country ⑥ comparison is therefore off by roughly 8%
+   from the currency alone, in a known direction, before the profit-definition difference is
+   counted. Found 2026-08-11 while checking this document against the data; not yet fixed, because
+   the fix is a re-run rather than an edit.
 
 ---
 
