@@ -2847,3 +2847,80 @@ innerWidth`(1280) — 가로 스크롤 없음. 표는 `.tblwrap`이 자체 스�
   누락은 자동으로 잡히지만, §3.10이 길어져 웹 판 §3이 무거워졌다. F15 교정 때 §3.10을 접을지 판단.
 - **미해결 코드 수정 4건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
   미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES`의 부재 계열 정리(F5).
+
+## F8 (05:03) — 적대적 검토 1: gap이 무엇까지의 거리인지 문서가 말한 적 없었다
+
+**한 일.** 지도대로 Arc·심사자 입장에서 가이드를 통독하고 **답이 없는 질문 10개**를 §9
+"The objections we expect"로 세운 뒤 그 자리에서 답을 채웠다. 이전 사이클들이 인계로 넘긴
+질문 8개는 이미 §3–§6 상세절이 선제적으로 말하고 있었으므로, 그것들은 §9에서 **"어디가
+먼저 말하는가"로 축약**하고, 목록을 만드는 과정에서 **처음 드러난 세 개**에 자리를 줬다.
+
+시작 시 gate가 `FAILED (tests)`였다 — `test_generated_blocks_are_current`가 STALE. 원인은
+F7 커밋이 `data/package/*`를 건드려 `GEN:stamp`의 상태 sha가 움직인 것. 규칙대로 지도보다
+먼저 완결했다(생성기 재실행).
+
+### 가이드에서 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | §6.2 | "Ranking is robust … zero rank reversals" | **표본 크기를 밝히지 않은 강건성 주장이었다.** 그 순위는 **네 기업**의 순위다. 네 항목은 원래 뒤집기 어렵다 — 12개 섭동에서 역전이 0인 것은 파이프라인이 요동치지 않는다는 증거이지 다섯 번째 기업에서도 성립한다는 증거가 아니다. 같은 자리에서 밝히도록 고쳤다 | `out/e5/metrics_company.csv` 4사 |
+| 2 | §9 O3 (신설) | 없음 | **공시 좌표 둘 다 확약 한 줄로 만들어진다.** D7 12행 중 강제되는 것은 2행이고 회사당 하나씩이다(NSC 기미쓰 H2 주입, MCI 오사카 H2 연료전환). 즉 CAP이 계산한 **모든** 공시 좌표는 단일 확약 좌표이고, gap은 "기업의 전환계획과 프론티어의 거리"가 아니라 "그 결정 하나와 프론티어의 거리"다. §3.8이 두 사실을 따로 적고 있었으나 합친 문장이 없었다 | `GEN:d7_enforcement`; `out/e5/gap.csv` 8행 = MCI·NSC |
+| 3 | §9.1 (신설) | 없음 | **프론티어가 몇 점인지 문서 어디에도 없었다.** §6.3의 "32개 중 4개"는 기술 스윕에 대한 진술이지 gap이 재는 집합이 아니다. 실제 비지배 집합은 firm×scenario당 **2~8점**(후보 10~31개 중). gap을 가진 것 중 가장 얇은 **MCI B20은 2점**이고, 보고된 836/1,326 bn KRW는 그 두 점까지의 거리다 | 새 `GEN:frontier_shape` ← `out/e5/frontier_points.csv` |
+| 4 | 같은 블록 | 없음 | gap이 재는 축의 근거를 같은 자리에 붙였다 — **h2가 비용 분산의 64~77%를 지는데 h2 변동성은 추정이 아니라 사전값 0.25**다. ③ 수준을 못 믿는다는 §8 주장 3이 `gap_risk` 수준에도 그대로 적용된다는 뜻이고, 그 연결이 없었다 | `out/e5/variance_decomp.csv`; `calibration.py:FALLBACK_VOL` |
+| 5 | §9 O6 (신설) | 없음 | 가이드 §6 표는 통화 혼재 때문에 ⑥을 **일부러** 싣지 않는다. 그런데 `out/e5/affordability.csv`와 MCP `get_affordability`는 무보정으로 싣는다. **경고가 문서에만 있고 파일에는 없다** | `affordability.csv` 헤더에 통화 주석 열 없음 |
+| 6 | §9 O9 (신설) | 없음 | `result_emissions_pathway.csv`는 첫 지원 시나리오만 계산할 뿐 아니라 **`support` 열 자체가 없다** — 파일 안 어디에도 지원 시나리오가 선택되었다는 표시가 없다. F7 인계는 "1개만 계산"까지만 알고 있었다 | `e5_metrics.py:290`; 그 파일의 6개 열 |
+| 7 | 머리말 | 읽는 순서 안내 없음 | 시간이 없는 독자에게 §3(데이터)·§4.1(결론을 정하는 가정)·**§9(우리가 생각하는 가장 센 반론)** 세 곳을 지목한다 | — |
+
+O1·O2·O5·O7·O8·O10은 새 사실이 아니라 **이미 상세절이 말하던 것을 반론의 형태로 재배치**한
+것이다(각각 4사 표본 / 2사만 좌표 / 위험인자 사전값 / support 축 무신호 / 미재계획 3축 /
+패키지 집계본 `source_id` 소실). 이 창의 이전 인계 5줄이 여기로 들어왔다.
+
+### 생성기로 만든 것
+
+- `scripts/build_tech_guide.py::gen_frontier_shape` — `frontier_points.csv`를 `support == none`으로
+  접고(§3.6대로 축이 전 행을 복제한다) firm×scenario별 후보 수·비지배 수를 세어 `gap.csv`와
+  붙인다. 좌표가 없는 조합은 `**no coordinate**`로 남아 4사 8조합이 한 표에 다 보인다.
+- `tests/test_tech_guide.py::test_section9_hand_written_counts_still_hold` — §9 산문에 박힌
+  두 수(강제 확약 2행, gap 8행 = 4개 gap의 복제)를 `out/`에서 다시 세어 대조한다. 생성 블록
+  **밖** 산문이라 생성기가 갱신하지 않으므로 파이프라인이 바뀌면 조용히 거짓이 될 수 있었다.
+  (pytest 60 → 61)
+
+### 검증
+
+```
+.venv/bin/python scripts/build_tech_guide.py    # 17 blocks (frontier_shape 신설), 90,528 chars
+.venv/bin/python scripts/build_guide_page.py    # 37 sections, 364 table rows (35/344 → 37/364)
+.venv/bin/python scripts/build_site.py
+.venv/bin/python scripts/gate.py                # gate: OK (pytest 61 passed, audit ok 68/PARTIAL 4 불변)
+```
+
+수치 출처: 비지배 계획 수·후보 수는 `out/e5/frontier_points.csv`의 `on_frontier` 집계 ·
+gap 값은 `out/e5/gap.csv` · h2 분산 지분은 `out/e5/variance_decomp.csv`를 회사별 평균 ·
+h2 사전 변동성 0.25는 `src/cap/calibration.py:47 FALLBACK_VOL`(하드코딩 대신 import) ·
+강제 확약 2행은 `GEN:d7_enforcement`가 엔진을 호출해 얻은 판정 · 지원 축 복제는
+`gap.csv` 8행 대 서로 다른 (회사, 시나리오) 4쌍.
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | 유지 | gate audit `ok 68, PARTIAL 4` 불변. 이 사이클은 수치를 만들지 않고 이미 있던 산출물을 처음으로 세었다 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | 유지 | `out/scenarios/summary.csv` 12묶음 192행(3묶음 미재계획 — F2) |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선** | Arc의 가장 센 질문 열 개에 대한 답이 한 절에 모였다. 특히 "gap이 무엇까지의 거리냐"는 질문에 이제 수로 답한다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | 유지 | `scripts/gate.py` 8항목. 다만 O6이 MCP 쪽 결함을 하나 지목한다 — `get_affordability`가 통화 경고 없이 ⑥을 내준다 |
+| ⑤ 산출물 — 다른 형식이 있는가 | 유지 | md + HTML(`/guide` 37절) + 데이터 패키지. 새 형식은 없다 |
+
+### 인계
+
+- **F9(숫자 추적성)**: 이번에 §9 산문이 새 수치를 몇 개 들여왔고 전부 파일 경로를 달았다.
+  F9는 **생성 블록 밖 문장의 숫자를 전수**로 세는 작업이고, `test_section9_...`가 그 작업의
+  축소판이다 — 같은 방식(산출물에서 다시 세기)을 §1·§2·§6·§8 산문에 확대하면 된다.
+  P1의 "4 of 32", P2의 "petchem 0% variance", §2의 "−0.05~0.00 / 0.20~0.73", "0 of 8"이 후보다.
+- **F12(적대적 검토 2)**: §9는 열 줄로 닫았다. 재점검할 것 — ① O6의 MCP 결함은 문서가 아니라
+  코드에서 고쳐야 한다(응답에 통화 경고 필드), ② O3을 읽은 Arc가 "그러면 gap을 왜 싣느냐"고
+  물으면 §9에 답이 없다, ③ 2점 프론티어에 대한 거리를 bn KRW 단위로 §6.4가 여전히 그대로 적는다.
+- **F10(그림)**: §9.1 표가 그림의 후보다 — (P50, TCaR) 평면에 후보·비지배·공시 좌표를 얹으면
+  O3·O4가 한 화면이 된다. `frontier_points.csv`에 `p50`·`tcar`·`is_disclosed`·`on_frontier`가
+  전부 있으므로 데이터는 이미 준비돼 있다.
+- **미해결 코드 수정 5건**(창 밖): D6 통화 환산(F1), 광양 2고로 능력(F3), 미등록 `facility_id`
+  조용한 탈락(F4), `FACTOR_SERIES`의 부재 계열 정리(F5), **`get_affordability` 통화 경고(F8 신규)**.
