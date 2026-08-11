@@ -778,3 +778,47 @@ def test_reline_cheap_is_not_sold_as_a_completed_check():
     assert "| **no — lower bound** |" in guide, (
         "§4.3 표가 reline_cheap을 다시 'not needed'로 찍는다")
     assert "pull adoption years forward" in guide
+
+
+def test_crossmodel_band_reads_the_committed_eff_copy():
+    """교차대조의 유일한 수준(level) 검사가 저장소 밖 파일에 걸려 있었다 (F22).
+
+    EFF는 두 벌로 존재하고 `outputs/candidate_scenario_metrics.csv`가 두 트리에서
+    다르다. F20까지 `cross_model_check.py`는 저장소 밖 사본을 읽었고, 그 사본에서는
+    NSC가 EFF 실행가능 대역 **안**, 커밋된 사본에서는 **밖**이다 — 즉 이 저장소만으로
+    재현하면 판정이 뒤집힌다. 이 테스트는 (a) 읽는 사본이 커밋된 쪽인지, (b) 가이드
+    §7의 대역 표가 그 사본에서 다시 계산한 값과 맞는지, (c) 대역이 EFF 자신의 선택값을
+    하단으로 삼는다는(=한쪽으로만 실패하는) 서술이 남아 있는지를 본다.
+    """
+    pd = pytest.importorskip("pandas")
+    if not (ROOT / "out" / "e5" / "metrics_company.csv").exists():
+        pytest.skip("out/ 없음")
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from cross_model_check import CAND, PAIR, cost_band, eff_file
+
+    src = eff_file(CAND)
+    assert src is not None, f"EFF 후보 지표가 두 트리 어디에도 없다: {CAND}"
+    assert ROOT in src.parents, (
+        f"교차대조가 저장소 밖 사본을 읽는다 ({src}) — 이 저장소만으로 재현되지 않고, "
+        "NSC의 대역 안/밖 판정이 어느 트리를 읽느냐로 뒤집힌다")
+
+    band = cost_band(src)
+    m = pd.read_csv(ROOT / "out" / "e5" / "metrics_company.csv").query(
+        "scenario=='NZ15' and support=='none'").set_index("company_id")
+    guide = " ".join(GUIDE.read_text(encoding="utf-8").split())
+
+    for fin, eff in PAIR.items():
+        if fin not in m.index or eff not in band.index:
+            continue
+        ours = float(m.loc[fin, "cost_per_tco2_thkrw"])
+        lo, hi = float(band.loc[eff, "min"]), float(band.loc[eff, "max"])
+        assert f"{lo:,.1f}" in guide and f"{hi:,.1f}" in guide, (
+            f"§7의 대역 표에 {fin}의 [{lo:,.1f}, {hi:,.1f}]가 없다 — 생성기를 다시 돌려라")
+        assert ours >= lo, (
+            f"{fin}: 우리 {ours:,.0f}이 EFF 채택값 {lo:,.1f} 아래다 — 대역 하단이 EFF "
+            "자신의 선택값이라는 §7의 서술이 더 이상 참이 아니다")
+
+    assert "the band's lower edge is EFF's own answer" in guide, (
+        "§7이 대역 검사를 대칭적인 검사처럼 되돌려 팔고 있다 — 이 검사는 위쪽으로만 실패한다")
+    assert "not tree-invariant" in guide, (
+        "§7이 두 EFF 트리가 이 판정을 갈라놓는다는 사실을 더 이상 적지 않는다")

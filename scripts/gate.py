@@ -117,6 +117,28 @@ def check_freshness():
                    else f"STALE: {src[1].relative_to(ROOT)} changed after {rel} — rerun `python -m cap all`")
 
 
+def check_sidecars():
+    """base보다 오래된 곁가지 산출물 — 아무도 보지 않아 낡은 채 인용된다.
+
+    freshness는 `out/e5`만 본다. F20에서 실증됐다: `out/process`·`out/scenarios`·`out/m8`이
+    base보다 하루 넘게 낡은 채 가이드 §6.2에 인용되고 있었고, 게이트는 그동안 그린이었다.
+    WARN인 이유는 이것이 코드 결함이 아니라 재실행 대기 상태이기 때문이다 — 파이프라인
+    창을 잡을 때까지 무엇이 낡았는지 이름으로 보이는 것이 목적이다.
+    """
+    base = _newest("out/e5/*.csv")
+    if base is None:
+        return False, "out/e5 missing"
+    stale = []
+    for name in ("process", "scenarios", "m8", "m5"):
+        got = _newest(f"out/{name}/**/*.csv")
+        if got is None:
+            stale.append(f"{name}(없음)")
+        elif got[0] < base[0]:
+            stale.append(f"{name}({(base[0] - got[0]) / 3600:.0f}h)")
+    return not stale, ("all sidecar outputs at or newer than out/e5" if not stale
+                       else f"STALE behind out/e5: {', '.join(stale)}")
+
+
 def check_provenance():
     """out/이 **정본 설정**의 전체 실행인가.
 
@@ -159,6 +181,7 @@ CHECKS = [
     ("mcp", "MCP tools/list", check_mcp),
     ("cli", "python -m cap", check_cli),
     ("freshness", "out/ vs data/raw", check_freshness),
+    ("sidecars", "곁가지 out/ vs out/e5", check_sidecars),
     ("provenance", "out/ 실행 설정 = config.yaml", check_provenance),
     ("git", "committed and pushed", check_git),
 ]

@@ -1220,6 +1220,20 @@ any one cause, which would take re-running one model under the other's definitio
 time. So the claim this layer supports is that the two models point the same direction — not that
 their levels agree.
 
+One comparison in that document does live in level space, and this guide has not carried it until
+now: our abatement cost per tonne against the range spanned by the plans the other model calls
+feasible. It is a real check and a weak one, and both halves belong in the same sentence as the
+numbers.
+
+<!-- GEN:crossmodel_band -->
+| Firm | Ours ② (thousand KRW/tCO₂) | EFF feasible min | EFF feasible max | Band width | Ours ÷ EFF's pick | Position in band | Verdict |
+|---|---|---|---|---|---|---|---|
+| **POSCO** | 115 | 26.6 | 155.9 | 5.9× | 4.3× | 68% | **inside** — inside on the uncommitted copy |
+| **NSC** | 156 | 42.3 | 152.3 | 3.6× | 3.7× | 103% | **above** — inside on the uncommitted copy, **verdict flips** |
+
+EFF's selection rule is minimum gross cost, so **the band's lower edge is EFF's own answer** and ours cannot fall below it by construction — this check can only fail from above, and a band 5.9× wide is a loose bound to be inside. What it supports is narrow: our plans cost more per tonne than the cheapest plan EFF calls feasible, and for POSCO still less than the most expensive one. It is also **not tree-invariant**: EFF exists as a copy committed here and a separate repository, the two differ in `outputs/candidate_scenario_metrics.csv`, and the verdict above is computed from the committed copy so that it is reproducible from this repository alone. Until F20 this comparison was read from the uncommitted copy, where the second firm reads inside. The band is the weakest link in this layer, not the strongest.
+<!-- /GEN:crossmodel_band -->
+
 That list gained a sixth cause when this section was checked, and it is the one that bites hardest on
 the risk metric: **the two models do not simulate the same stochastic world.** We run GBM; the other
 model runs Ornstein–Uhlenbeck on all three factors — electricity at a **2.0-year half-life**, hydrogen

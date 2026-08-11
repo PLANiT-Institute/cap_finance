@@ -736,8 +736,8 @@ def _mtime(p):
 
 
 def _eff_file(rel: str):
-    """EFF exists twice — a separate repository and the copy vendored here."""
-    for base in (Path.home() / "Documents" / "cap-efficient", ROOT / "cap-efficient"):
+    """EFF exists twice — the copy committed here (canonical) and a separate repository."""
+    for base in (ROOT / "cap-efficient", Path.home() / "Documents" / "cap-efficient"):
         p = base / rel
         if p.exists():
             return p
@@ -1430,8 +1430,71 @@ def gen_limits():
         "firms, ~8%). The table is the ones that did not.")
 
 
+def gen_crossmodel_band():
+    """The one level-space check the cross-model layer actually supports — and its limits.
+
+    F22: §7 said the layer supports "same direction, not that their levels agree" and
+    stopped there. `docs/cross_model_check.md` §3 has carried a level-space result since
+    C16 — FIN's per-tonne cost against the range EFF's feasible candidates span — and the
+    guide never carried it. It is a weak test and worth stating as one: the band's lower
+    edge *is* EFF's own pick (its selection rule is min gross cost), so the check can only
+    fail from above. And it is tree-dependent: F20 read the range from an EFF copy that is
+    not committed here, and on the committed copy NSC falls outside.
+    """
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from cross_model_check import (CAND, PAIR, cost_band,  # noqa: E402
+                                   eff_divergence, eff_file)
+    m = pd.read_csv(ROOT / "out" / "e5" / "metrics_company.csv").query(
+        "scenario=='NZ15' and support=='none'").set_index("company_id")
+    src = eff_file(CAND)
+    if src is None:
+        return "_EFF candidate metrics not found — cannot rebuild the cross-model band._"
+    band = cost_band(src)
+    div = eff_divergence(CAND)
+    alt = cost_band(div[1]) if div is not None else None
+
+    rows, verdicts = [], []
+    for fin, eff in PAIR.items():
+        if fin not in m.index or eff not in band.index:
+            continue
+        ours = float(m.loc[fin, "cost_per_tco2_thkrw"])
+        lo, hi = float(band.loc[eff, "min"]), float(band.loc[eff, "max"])
+        pos = 100 * (ours - lo) / (hi - lo)
+        inside = lo <= ours <= hi
+        cell = "**inside**" if inside else "**above**"
+        if alt is not None and eff in alt.index:
+            a_lo, a_hi = float(alt.loc[eff, "min"]), float(alt.loc[eff, "max"])
+            other = a_lo <= ours <= a_hi
+            cell += f" — {'inside' if other else 'above'} on the uncommitted copy"
+            if other != inside:
+                cell = cell.replace("uncommitted copy", "uncommitted copy, **verdict flips**")
+        rows.append([f"**{fin}**", f"{ours:,.0f}", f"{lo:,.1f}", f"{hi:,.1f}",
+                     f"{hi / lo:.1f}×", f"{ours / lo:.1f}×", f"{pos:.0f}%", cell])
+        verdicts.append((fin, inside))
+    if not rows:
+        return "_No company pairs available for the cross-model band._"
+    tbl = _md(rows, ["Firm", "Ours ② (thousand KRW/tCO₂)", "EFF feasible min", "EFF feasible max",
+                     "Band width", "Ours ÷ EFF's pick", "Position in band", "Verdict"])
+    ins = [f for f, i in verdicts if i]
+    return tbl + (
+        f"\n\nEFF's selection rule is minimum gross cost, so **the band's lower edge is EFF's "
+        f"own answer** and ours cannot fall below it by construction — this check can only fail "
+        f"from above, and a band {rows[0][4]} wide is a loose bound to be inside. What it "
+        f"supports is narrow: our plans cost more per tonne than the cheapest plan EFF calls "
+        f"feasible, and for {', '.join(ins) if ins else 'no firm'} still less than the most "
+        f"expensive one. "
+        + (f"It is also **not tree-invariant**: EFF exists as a copy committed here and a "
+           f"separate repository, the two differ in `{CAND}`, and the verdict above is computed "
+           f"from the committed copy so that it is reproducible from this repository alone. "
+           f"Until F20 this comparison was read from the uncommitted copy, where the second "
+           f"firm reads inside. The band is the weakest link in this layer, not the strongest."
+           if div is not None else
+           "Both EFF trees agree on the candidate file, so the verdict is tree-invariant."))
+
+
 BLOCKS = {
     "stamp": gen_stamp,
+    "crossmodel_band": gen_crossmodel_band,
     "limits": gen_limits,
     "gap_figure": gen_gap_figure,
     "axis_impact": gen_axis_impact,

@@ -28,6 +28,7 @@ from cap.schemas import load_input  # noqa: E402
 EFF = pathlib.Path.home() / "Documents" / "cap-efficient"
 DOCS = ROOT / "docs"
 PAIR = {"POSCO": "POSCO_KR", "NSC": "NIPPON_STEEL_JP"}   # 양쪽에 모두 있는 기업
+CAND = "outputs/candidate_scenario_metrics.csv"          # EFF 후보 지표 (트리 둘 다에 존재)
 
 
 def pct(a, b):
@@ -35,11 +36,40 @@ def pct(a, b):
 
 
 def eff_file(rel: str):
-    """EFF는 별도 저장소(`~/Documents/cap-efficient`)와 이 저장소의 사본 둘 다로 존재한다."""
-    for base in (EFF, ROOT / "cap-efficient"):
+    """EFF는 별도 저장소(`~/Documents/cap-efficient`)와 이 저장소의 사본 둘 다로 존재한다.
+
+    **커밋된 사본이 정본이다.** F22까지는 순서가 반대여서 이 문서의 감축단가 표가
+    저장소 밖 파일에서 나오고 있었고, 두 사본은 실제로 어긋나 있었다 — 같은 필터에서
+    NSC 실행가능 후보 상한이 152.3(사내) 대 184.6(사외)이라 FIN의 156이 한쪽에서는
+    대역 안, 다른 쪽에서는 대역 밖이 된다. 재현 가능성이 판정을 바꾸는 자리다.
+    """
+    for base in (ROOT / "cap-efficient", EFF):
         p = base / rel
         if p.exists():
             return p
+    return None
+
+
+def feasible(e):
+    """FIN의 선택 규칙과 같게 — 전 제약 실행가능한 후보만."""
+    return e[(e.carbon_budget_feasible) & (e.scenario_feasible)
+             & (e.physical_constraints_feasible) & (e.resource_constraints_feasible)]
+
+
+def cost_band(path):
+    """한 EFF 트리의 실행가능 후보 감축단가 대역 (company_id × min/max)."""
+    x = pd.read_csv(path)
+    x = x[x.scenario_id == "ACCELERATED_15C"]
+    y = feasible(x)
+    return (y if not y.empty else x).groupby(
+        "company_id").gross_cost_p50_kkrw_per_tco2.agg(["min", "max"])
+
+
+def eff_divergence(rel: str):
+    """같은 EFF 파일이 두 트리에서 다르면 (정본경로, 사외경로)를, 같거나 없으면 None."""
+    a, b = ROOT / "cap-efficient" / rel, EFF / rel
+    if a.exists() and b.exists() and a.read_bytes() != b.read_bytes():
+        return a, b
     return None
 
 
@@ -93,16 +123,15 @@ def main() -> int:
         s1_mt=("emissions_s1", lambda s: s.sum() / 1e6),
         s2_mt=("emissions_s2", lambda s: s.sum() / 1e6))
 
-    ep_path = EFF / "outputs" / "candidate_scenario_metrics.csv"
-    if not ep_path.exists():
-        raise SystemExit(f"EFF 산출물 없음: {ep_path}")
+    ep_path = eff_file(CAND)
+    if ep_path is None:
+        raise SystemExit(f"EFF 산출물 없음: {CAND}")
     e = pd.read_csv(ep_path)
     e = e[e.scenario_id == "ACCELERATED_15C"]
     # FIN의 '비용최소 계획'은 예산 실행가능 집합 안에서 고른 것이다. EFF에서도 같은 조건을
     # 걸지 않으면 실행 불가능한 이상치 후보를 집어 대조가 무의미해진다(첫 실행에서 실증:
     # 필터 없이 최소값을 잡자 POSCO 감축단가가 −5.7로 나왔다).
-    feas = e[(e.carbon_budget_feasible) & (e.scenario_feasible)
-             & (e.physical_constraints_feasible) & (e.resource_constraints_feasible)]
+    feas = feasible(e)
     if feas.empty:
         feas = e
         FEAS_NOTE = "**주의**: EFF 후보 중 전 제약 실행가능한 것이 없어 전체에서 골랐다."
@@ -180,6 +209,36 @@ def main() -> int:
               "즉 두 모형은 서로 다른 '최적'을 고르지만, FIN이 고른 계획의 단가는 EFF가 "
               "실행가능하다고 본 계획들이 만드는 범위 안에 든다. 수준이 어긋나는 것이 아니라 "
               "**선택 규칙이 다른 것**이다 — FIN은 예산 제약 하 비용최소, EFF는 강건성 선별.", ""]
+    L += ["", "**단, 이 대역은 넓고 한쪽으로만 열려 있다.** " + " · ".join(
+        f"{r.company} {r.eff_hi / r.eff_lo:.1f}배 폭, FIN이 EFF 채택안의 "
+        f"{r.fin_lcoa / r.eff_lcoa:.1f}배, 대역 안 위치 "
+        f"{100 * (r.fin_lcoa - r.eff_lo) / (r.eff_hi - r.eff_lo):.0f}%"
+        for r in df.itertuples()) + ". 대역의 **하단은 EFF 자신이 고른 값**이므로("
+        "선택 규칙이 gross 최소) FIN은 정의상 하단 아래로 내려갈 수 없다 — 이 검사는 "
+        "위쪽으로만 실패할 수 있다. 즉 '수준이 일치한다'가 아니라 "
+        "'**EFF가 실행가능하다고 본 것 중 비싼 쪽에 FIN이 있다**'가 이 표가 말하는 전부다.", ""]
+
+    div = eff_divergence(CAND)
+    if div is not None:
+        alt = cost_band(div[1])
+        flips = []
+        for r in df.itertuples():
+            eid = PAIR[r.company]
+            if eid not in alt.index:
+                continue
+            was = alt.loc[eid, "min"] <= r.fin_lcoa <= alt.loc[eid, "max"]
+            now = r.eff_lo <= r.fin_lcoa <= r.eff_hi
+            flips.append(f"{r.company} {alt.loc[eid, 'min']:,.1f} ~ {alt.loc[eid, 'max']:,.1f} "
+                         f"({'안' if was else '**밖**'})")
+            if was != now:
+                flips[-1] += " ← **판정이 뒤집힌다**"
+        L += ["", "**이 표가 어느 트리에서 나왔는가.** EFF는 두 벌로 존재한다 — 이 저장소에 "
+              f"커밋된 `{CAND}`와 저장소 밖 `~/Documents/cap-efficient/{CAND}`. **위 표는 "
+              "커밋된 사본에서 나온다**: 저장소 밖 파일에서 나온 수치는 이 저장소만으로 "
+              "재현되지 않는다. 두 사본은 실제로 어긋나 있고, 같은 필터를 저장소 밖 사본에 "
+              "걸면 대역이 " + " · ".join(flips) + "가 된다. F20까지 이 스크립트는 저장소 밖 "
+              "사본을 읽고 있었다.", ""]
+
     L += ["", "**구조 요인 — 이 차이가 가장 크고 가장 설명이 필요하다.**", "",
           "1. **분모가 다르다.** FIN은 할인된 감축량(tCO₂)으로 나누고 EFF는 공통 회피배출 "
           "(`common_avoided_emissions`)로 나눈다. EFF 분모가 Scope 1+2 기반이라 더 크고, "
