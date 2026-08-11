@@ -950,10 +950,19 @@ def gen_axis_impact():
             f"{partial[0]}` is what would measure it.")
     r = ROOT / "out" / "sensitivity" / "ranking.csv"
     if r.exists():
-        s = pd.read_csv(r).head(5)
+        rk = pd.read_csv(r)
+        s = rk.head(5)
         note += ("\n\nOne-at-a-time parameter screening, top 5 by worst-metric move: "
                  + ", ".join(f"`{t.base_param}` ({t.tier}, {t.score:.0f}%)"
-                             for t in s.itertuples()) + ".")
+                             for t in s.itertuples()) + ". "
+                 f"`{rk.iloc[0].base_param}` is {rk.iloc[0].score / rk.iloc[1].score:.1f}× "
+                 f"the next parameter, which is the quantity A-02 in §4.1 quotes. "
+                 f"The screen perturbs every parameter by a symmetric ±30% — the convention "
+                 f"§4.5 shows to be wrong in its *center* wherever literature bands exist — "
+                 f"**with the E2 plan menu held fixed** (`scripts/sensitivity_screening.py`), so like "
+                 f"`reline_cheap` above it re-prices plans rather than re-choosing them — the "
+                 f"same ceiling, and it too understates. These ranks are read from "
+                 f"`out/sensitivity/ranking.csv` at build time.")
     return head + note
 
 

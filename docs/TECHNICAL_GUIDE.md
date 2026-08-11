@@ -21,7 +21,7 @@ design narrative. [`docs/data_gap_registry.md`](data_gap_registry.md) records wh
 collect and where we were blocked. `paper/working_paper.md` is the manuscript.
 
 <!-- GEN:stamp -->
-> **Repository state.** Code, inputs, config and results (`src`, `data`, `config.yaml`, `out`) hash to `1131b4a83a82`. Results in this document come from the pipeline run finished `2026-08-10T10:00:24`. Rebuild the generated blocks with `python3 scripts/build_tech_guide.py`; `--check` fails if this document no longer matches that state. The stamp is a content digest, not a commit SHA, because a SHA is not knowable inside the commit that writes it.
+> **Repository state.** Code, inputs, config and results (`src`, `data`, `config.yaml`, `out`) hash to `6c888ea3c1ea`. Results in this document come from the pipeline run finished `2026-08-10T10:00:24`. Rebuild the generated blocks with `python3 scripts/build_tech_guide.py`; `--check` fails if this document no longer matches that state. The stamp is a content digest, not a commit SHA, because a SHA is not knowable inside the commit that writes it.
 <!-- /GEN:stamp -->
 
 ---
@@ -192,7 +192,7 @@ row here.
 | `site` **[req]** | Works / plant name | — | Site is the grain at which Japanese emissions are disclosed |
 | `unit_type` **[req]** | Process type — values in §3.0 | — | Matched against `D3.applies_to_unit`, so it governs technology applicability (A-10) |
 | `unit_name` **[req]** | Unit label as published, free text | — | Read by no stage; it is what makes a row checkable against its source |
-| `capacity` **[req]** | Nameplate annual capacity | **see `capacity_unit`** | Published capacity where available; otherwise inner volume × 913 t/m³·yr (**A-01**) |
+| `capacity` **[req]** | Nameplate annual capacity | **see `capacity_unit`** | Published capacity where available; otherwise inner volume × 913.3 t/m³·yr (**A-01**) |
 | `capacity_unit` **[req]** | The basis `capacity` is stated on | — | **Three bases occur in this one column** — hot metal, crude steel, ethylene (§3.0). See the caution below |
 | `commissioning_year` **[req]** | First operation | year | |
 | `last_reline_year` **[req]** | Most recent campaign renewal | year | Blast furnaces only |
@@ -249,7 +249,8 @@ the schema check in `load_input` validates what survived, not what was collected
 One row per facility-year. Production and energy define the incumbent baseline that every plan is
 measured against.
 
-All nine columns are schema-required.
+All ten columns are schema-required. The table has nine rows because the composite key
+`facility_id` + `year` is shown on one line.
 
 | Field | Definition | Unit | Read by |
 |---|---|---|---|
@@ -816,7 +817,7 @@ grade: either an axis we **re-solved** and can therefore quote a number for, or 
 
 | ID | Assumption | Why it is assumed | Impact | How it is checked |
 |---|---|---|---|---|
-| **A-02** | Facility emissions = firm-reported total, distributed by capacity × route emission factor (steel); bottom-up (petchem) | Per-facility measured emissions are not publicly issued in Korea | **Largest single parameter — rank 1 in sensitivity screening, evidence tier T5.** Moves abatement cost by up to 86% | Back-test; for Japan, replaced by T1 site disclosure (EEGS) — see §6.5 |
+| **A-02** | Facility emissions = firm-reported total, distributed by capacity × route emission factor (steel); bottom-up (petchem) | Per-facility measured emissions are not publicly issued in Korea | **Largest single parameter — rank 1 in sensitivity screening, evidence tier T5.** Moves abatement cost by up to 154%, and by 3.4× the next parameter (§4.3) | Back-test; for Japan, replaced by T1 site disclosure (EEGS) — see §6.5 |
 | **A-17** | Factors with too few observations use prior volatility (h₂ 0.25, capex 0.06, identity correlation) | D4 has 1–19 observations per series | **Large — sets the level of metric ③.** Mean-reversion instead of GBM cuts TCaR by 41–48% | `docs/process_alternative.md`; D4 is too short to discriminate statistically, and we say so rather than reporting a test we have no power for |
 | **A-24** | Price shocks normalised so **E[shock] = 1** | D2b does not state whether its central path is a mean or a median | **Large — petrochemical metric ② moves +71–73% under the median convention.** Log-normal skew drags the median down: at σ=0.25 over 25 years the 2050 median is 0.47× the central path | `docs/process_alternative.md` §3 |
 | **A-07** | Auction share follows the confirmed K-ETS Phase 4 allocation plan (15% non-power, 2026–2030), then an assumed ramp to 100% by 2050 | Post-2030 allocation is not decided | **Large, measured.** `carbon_fast` (full auctioning by 2040) is the largest mover on ③ of any axis we have re-solved; on ② it is third, behind both hydrogen-price bundles. The looser direction, `carbon_slow`, has **not** been re-planned and its 0.0% is not a finding — §4.3 | `test_auction_share_follows_confirmed_allocation_plan`; §4.3 |
@@ -840,7 +841,7 @@ grade: either an axis we **re-solved** and can therefore quote a number for, or 
 | **A-14** | E2 is an ordering surrogate at a 2% relative gap | Cheap because E4 is authoritative — **but see §2: had we trusted the surrogate we would have been wrong in 8 of 8 bundles** |
 | **A-15** | Hedges enter the surrogate as a plan-independent linear deduction at the median | Avoids bilinearity. Conservative; E4 applies contracts non-linearly. The `ppa_costly` bundle that would bound it has also not been re-planned (§4.3) |
 | **A-18** | CAPEX spread evenly across `build_years` | Charging it at adoption overstated peak funding need by up to `build_years`× |
-| **A-01** | Capacity = published, else inner volume × 913 t/m³·yr | Sensitivity rank 8. A 12% discrepancy against the independent implementation is open (workstream G3) |
+| **A-01** | Capacity = published, else inner volume × 913.3 t/m³·yr | Sensitivity rank 10. A 12% discrepancy against the independent implementation is open (workstream G3) |
 | **A-21** | Emission boundary = Scope 1 | Level-neutral given A-06; Scope 2 preserved but not charged |
 
 ### 4.3 What we actually re-solved
@@ -877,7 +878,7 @@ Largest mover on ③ is `carbon_fast` (61.5%); on ② it is `h2_cheap` (27.0%) �
 
 **`reline_cheap` is measured, but what is measured is a lower bound.** The replacement cost enters E2 through the stranding term, so its main effect is to **pull adoption years forward**; with the plan menu shared, all that is left is the smaller write-off at an adoption year the assumption should have moved. `run_scenarios.py --replan reline_cheap` is what would measure it.
 
-One-at-a-time parameter screening, top 5 by worst-metric move: `fac.ef_inc` (T5, 86%), `tech.emission_factor` (T3, 86%), `cfg.discount` (T5, 42%), `vol.h2` (T5, 42%), `tech.h2_intensity` (T3, 31%).
+One-at-a-time parameter screening, top 5 by worst-metric move: `fac.ef_inc` (T5, 154%), `vol.h2` (T5, 45%), `tech.emission_factor` (T3, 44%), `cfg.discount` (T5, 36%), `vol.elec` (T3, 33%). `fac.ef_inc` is 3.4× the next parameter, which is the quantity A-02 in §4.1 quotes. The screen perturbs every parameter by a symmetric ±30% — the convention §4.5 shows to be wrong in its *center* wherever literature bands exist — **with the E2 plan menu held fixed** (`scripts/sensitivity_screening.py`), so like `reline_cheap` above it re-prices plans rather than re-choosing them — the same ceiling, and it too understates. These ranks are read from `out/sensitivity/ranking.csv` at build time.
 <!-- /GEN:axis_impact -->
 
 ### 4.4 The rest of the ledger

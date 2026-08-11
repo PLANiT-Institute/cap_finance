@@ -5,11 +5,13 @@ run) and re-evaluates E4/E5 economics under each perturbation. This measures
 "given the menu of plans, which parameter moves the answer" — the plan-selection
 channel is covered separately by the full re-runs in I1/I2.
 
-Perturbations are ±30% by default, or the [low, high] range recorded in the
-parameter inventory where one exists.
+Perturbations are ±30% for every parameter. Reading the [low, high] range out of the
+parameter inventory instead was the intent and is not implemented — F25 found this
+docstring claiming it. The symmetric ±30% is the convention §4.5 of the guide shows to
+be wrong in its *center* wherever literature bands exist, so this screen inherits that.
 
     .venv/bin/python scripts/sensitivity_screening.py [--sims 4000]
-Writes out/sensitivity/screening.csv + prints the top-10 ranking with tiers.
+Writes out/sensitivity/{screening,ranking}.csv + prints the top-10 ranking with tiers.
 """
 
 from __future__ import annotations
@@ -197,9 +199,12 @@ def main():
                              d_front=v["front"] - b["front"]))
 
     df = pd.DataFrame(rows)
-    outdir = ROOT / "outputs"
-    outdir.mkdir(exist_ok=True)
-    df.to_csv(outdir / "sensitivity_screening.csv", index=False)
+    # 소비자(가이드 §4·evidence 페이지·MCP `get_sensitivity`·uncertainty_propagation)는
+    # 전부 out/sensitivity/{screening,ranking}.csv를 읽는다. F25까지 이 스크립트는
+    # 존재하지도 않는 `outputs/`에 다른 이름으로 썼고, 그래서 소비자가 읽던 파일은
+    # 2026-08-09 판에 얼어붙은 채 G1 배분 수정(08-10) 이전 값을 인용하고 있었다.
+    outdir = C.out_dir(cfg, "sensitivity")
+    df.to_csv(outdir / "screening.csv", index=False)
 
     # rank by max |ΔLCOA| and |ΔTCaR| across companies, averaged over the ± pair
     df["base_param"] = df.param.str.replace(r"×(low|high)$", "", regex=True)
@@ -207,7 +212,7 @@ def main():
             .apply(lambda g: g.abs().max()).reset_index()
             .assign(score=lambda x: x[["d_lcoa_pct", "d_tcar_pct"]].max(axis=1))
             .sort_values("score", ascending=False))
-    rank.to_csv(outdir / "sensitivity_ranking.csv", index=False)
+    rank.to_csv(outdir / "ranking.csv", index=False)
     print("\n=== 상위 12 (±30% 최대 영향, 4사 중 최대치 %)")
     print(rank.head(12).round(1).to_string(index=False))
     low = rank.head(10)[rank.head(10).tier.str.contains("T4|T5")]

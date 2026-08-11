@@ -979,3 +979,79 @@ def test_epsilon_sweep_counts_are_read_off_m8_everywhere_they_appear():
             f"§1 P1이 비지배 계획이 한 묶음에 몰린 사실을 {nb}묶음 기준으로 적지 않는다")
         assert f"in the other {nb - len(hb)} none survives" in guide, (
             f"§1 P1의 '나머지 묶음' 수가 m8({nb - len(hb)})과 다르다")
+
+
+def test_sensitivity_ledger_numbers_track_the_screening_output():
+    """§4의 A-01·A-02가 3일 낡은 민감도 파일에서 손으로 옮긴 수를 들고 있었다 (F25).
+
+    `scripts/sensitivity_screening.py`는 자기 독스트링과 달리 `outputs/`(존재하지 않는
+    디렉터리)에 다른 이름으로 썼고, 소비자 다섯(가이드 §4.3 생성기 · evidence 페이지 ·
+    `data_section_table` · MCP `get_sensitivity` · `uncertainty_propagation`)은 전부
+    `out/sensitivity/`를 읽었다. 그래서 그 파일들은 G1 배분 수정(08-10) 이전 판에
+    얼어붙어 있었고, A-02의 "86%"와 A-01의 "rank 8"은 수정 전 데이터의 값이었다.
+    실제 값은 154%와 rank 10이다. 경로를 고쳤으므로 다시 얼어붙지는 않지만, 손으로 적힌
+    두 수는 여전히 표 셀 안이라 생성할 수 없다 — 이 테스트가 대신 붙잡는다.
+
+    METHODOLOGY도 같은 두 수를 들고 있으므로 (정본) 같이 본다. 한쪽만 고치면 실패한다.
+    """
+    pd = pytest.importorskip("pandas")
+    p = ROOT / "out" / "sensitivity" / "ranking.csv"
+    if not p.exists():
+        pytest.skip("out/sensitivity 없음 — scripts/sensitivity_screening.py를 돌려라")
+    rk = pd.read_csv(p).reset_index(drop=True)
+    top, second = rk.iloc[0], rk.iloc[1]
+    cap_rank = int(rk.index[rk.base_param == "fac.capacity"][0]) + 1
+    guide = " ".join(GUIDE.read_text(encoding="utf-8").split())
+    meth = " ".join((ROOT / "METHODOLOGY.md").read_text(encoding="utf-8").split())
+
+    assert top.base_param == "fac.ef_inc", (
+        f"민감도 1위가 `{top.base_param}`로 바뀌었다 — A-02가 여전히 최대 파라미터라는 "
+        "§4.1의 주장을 다시 쓰라")
+    assert f"up to {top.score:.0f}%" in guide, (
+        f"§4.1 A-02의 이동폭이 ranking.csv({top.score:.0f}%)와 다르다")
+    assert f"{top.score:.0f}% 움직이는" in meth, (
+        f"METHODOLOGY §0의 이동폭이 ranking.csv({top.score:.0f}%)와 다르다")
+    ratio = f"{top.score / second.score:.1f}"
+    assert f"{ratio}× the next parameter" in guide and f"{ratio}배다" in meth, (
+        f"1위/2위 배수가 ranking.csv({ratio}배)와 다르다 — 가이드와 METHODOLOGY 양쪽")
+    assert f"Sensitivity rank {cap_rank}." in guide, (
+        f"§4.2 A-01의 민감도 순위가 ranking.csv({cap_rank}위)와 다르다")
+    assert f"민감도 {cap_rank}위" in meth, (
+        f"METHODOLOGY A-01의 민감도 순위가 ranking.csv({cap_rank}위)와 다르다")
+
+
+def test_screening_writes_where_every_consumer_reads():
+    """생산자와 소비자가 다른 경로를 쓰면 낡음은 조용하다 (F25).
+
+    산출 경로를 손으로 바꿔 다시 어긋나게 만들면 이 테스트가 실패한다.
+    """
+    src = (ROOT / "scripts" / "sensitivity_screening.py").read_text(encoding="utf-8")
+    assert 'C.out_dir(cfg, "sensitivity")' in src, (
+        "민감도 스크립트가 out/sensitivity 밖으로 쓴다 — 소비자 다섯이 읽는 곳이다")
+    assert 'ROOT / "outputs"' not in src, "존재하지 않는 `outputs/`로 되돌아갔다"
+    for name in ("screening.csv", "ranking.csv"):
+        assert f'"{name}"' in src, f"{name}을 쓰지 않는다"
+
+
+def test_gate_sidecar_check_enumerates_out_rather_than_a_hand_written_list():
+    """곁가지 목록을 손으로 적으면 목록에 없는 산출물이 낡은 채 인용된다 (F25).
+
+    F22가 네 곳을 이름으로 박았고, 그 목록에 없던 `out/sensitivity`가 base보다 24시간
+    낡은 채 §4와 MCP에 인용됐다 — 게이트는 그동안 그린이었다. 이제 base(e1–e5)가 아닌
+    `out/` 디렉터리를 전부 센다.
+    """
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import gate
+
+    base = gate._newest("out/e5/*.csv")
+    if base is None:
+        pytest.skip("out/e5 없음")
+    names = [p.name for p in (ROOT / "out").iterdir()
+             if p.is_dir() and p.name not in {"e1", "e2", "e3", "e4", "e5"}]
+    assert "sensitivity" in names, "out/sensitivity가 없다"
+    expected = {n for n in names
+                if (gate._newest(f"out/{n}/**/*.csv") or (0, None))[0] < base[0]}
+    ok, msg = gate.check_sidecars()
+    for n in expected:
+        assert n in msg, f"게이트가 낡은 곁가지 `{n}`를 이름으로 부르지 않는다"
+    assert ok == (not expected)

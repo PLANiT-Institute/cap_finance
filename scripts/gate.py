@@ -124,12 +124,19 @@ def check_sidecars():
     base보다 하루 넘게 낡은 채 가이드 §6.2에 인용되고 있었고, 게이트는 그동안 그린이었다.
     WARN인 이유는 이것이 코드 결함이 아니라 재실행 대기 상태이기 때문이다 — 파이프라인
     창을 잡을 때까지 무엇이 낡았는지 이름으로 보이는 것이 목적이다.
+
+    **목록을 손으로 적지 않는다.** F22가 네 곳을 이름으로 박아두었고, F25에서 그 목록에
+    없던 `out/sensitivity`가 base보다 24시간 낡은 채 가이드 §4의 A-01·A-02와 MCP
+    `get_sensitivity`에 인용되고 있는 것이 발견됐다 — 게이트는 그 24시간 동안 그린이었다.
+    이제 `out/` 아래 base(e1–e5)가 아닌 디렉터리를 전부 센다. 새 곁가지가 생겨도 숨을
+    자리가 없다.
     """
     base = _newest("out/e5/*.csv")
     if base is None:
         return False, "out/e5 missing"
     stale = []
-    for name in ("process", "scenarios", "m8", "m5"):
+    for name in sorted(p.name for p in (ROOT / "out").iterdir()
+                       if p.is_dir() and p.name not in {"e1", "e2", "e3", "e4", "e5"}):
         got = _newest(f"out/{name}/**/*.csv")
         if got is None:
             stale.append(f"{name}(없음)")

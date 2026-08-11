@@ -181,7 +181,9 @@ def main():
         ("route.BF.emission_factor", 2.15, "tCO2/t", 1.9, 2.4, "D1b 시설 배출 배분"),
         ("route.BF.coal_intensity", 13.5, "GJ/t", 12.0, 15.0, "기존 조업 비용"),
         ("route.NCC.emission_factor", 0.95, "tCO2/t", 0.8, 1.2, "석화 상향식 추정"),
-        ("capacity.t_per_m3_yr", 913.0, "t/m³/yr", 800.0, 1000.0, "고로 능력 추정"),
+        # prepare_raw.py:44의 T_PER_M3와 같은 식으로 쓴다 — 광양1고로 6,000m³=5.48Mt.
+        # F25까지 여기에 913.0이 손으로 적혀 있어, 대장이 모형이 쓰지 않는 값을 등재했다.
+        ("capacity.t_per_m3_yr", round(5_480_000 / 6_000, 1), "t/m³/yr", 800.0, 1000.0, "고로 능력 추정"),
     ]:
         rows.append(dict(param_id=f"FIN.prep.{name}", model="FIN", group="prep_injection",
                          entity="prepare_raw.py", field=name, value=val, unit=unit,
