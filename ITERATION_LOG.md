@@ -4204,3 +4204,100 @@ files"는 과거형 서술**(고쳐진 옛 사전)이므로 결함이 아니다.
 - **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
   미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5),
   `get_affordability` 통화 경고(F8).
+
+## F25 (05:30) — §3과 §4가 같은 것을 다르게 세는 자리를 훑다가, 3일 낡은 산출물을 찾았다
+
+**한 일.** F24 인계의 규칙을 따랐다 — *§3(데이터 정의)과 §4(가정 대장)가 같은 객체를
+세는 자리를 짝지어 훑어라.* 짝을 하나씩 대조하는 중에 A-01의 곱수가 §3.1에서 913.3,
+§3.1 필드표와 §4.2에서 913으로 갈리는 것이 나왔고, 그 대조를 코드까지 밀자
+**코드는 5,480,000/6,000 = 913.3**인데 파라미터 대장이 913.0을 손으로 들고 있었다.
+같은 방식으로 A-01의 "민감도 8위"를 `out/sensitivity/ranking.csv`와 맞춰보다가
+**이번 사이클의 실제 결함**이 나왔다.
+
+`scripts/sensitivity_screening.py`는 **자기 독스트링과 다른 곳에 쓴다.** 산출을
+`outputs/sensitivity_{screening,ranking}.csv`로 쓰는데 그 디렉터리는 저장소에 없다.
+소비자는 다섯이고 전부 `out/sensitivity/{ranking,screening}.csv`를 읽는다 —
+`build_tech_guide.py:951`(가이드 §4.3), `build_evidence_page.py`, `data_section_table.py`,
+`mcp_server.py`(도구 `get_sensitivity` + 데이터 패키지 매니페스트), `uncertainty_propagation.py`.
+그래서 소비자가 읽던 두 파일은 **2026-08-09 10:27 판에 얼어붙어** 있었다. 그 사이
+`3825a87 fix: allocation fallback zeroed POSCO's emissions`와 G1 사업소 배분이 들어가
+`data/prepared/`가 08-10 05:19에 재생성됐다. **가이드 §4가 인용하던 민감도는 그 수정
+이전 데이터의 것이다.**
+
+재실행은 **4.2초**다. 낡음의 원인은 비용이 아니라 경로였다.
+
+### 가이드에서 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | §4.1 A-02 | "Moves abatement cost by up to **86%**" | **154%**다. 그리고 옛 값에서는 2위 `tech.emission_factor`(85.8)와 사실상 동률이라 "최대 파라미터"라는 주장이 근소했으나, 현재는 2위(`vol.h2` 45.1)의 **3.4배**다 — A-02의 주장은 약해진 게 아니라 훨씬 세졌고, 그것을 3일간 모르고 있었다 | `out/sensitivity/ranking.csv` (재실행 후) |
+| 2 | §4.2 A-01 | "Sensitivity rank **8**" | **10위**다. `fac.capacity`는 14.0으로 내려가고 `vol.elec`·`tech.elec_intensity`·`price.re`가 위로 올라왔다 | 같은 파일 |
+| 3 | §4.3 생성 블록 | top 5 = ef_inc 86 · emission_factor 86 · discount 42 · vol.h2 42 · h2_intensity 31 | **ef_inc 154 · vol.h2 45 · emission_factor 44 · discount 36 · vol.elec 33.** 생성 블록이었으나 **읽는 파일이 낡아** 자동 갱신이 무의미했다 — 생성이 신선을 보장하지 않는다는 반례다 | 같은 파일 |
+| 4 | §4.3 (신규) | — | 스크린의 천장을 같은 자리에 붙였다: **E2 계획 메뉴를 고정한 채 재가격**하므로 위의 `reline_cheap`과 같은 종류의 과소평가이고, 섭동은 **대칭 ±30%** — §4.5가 문헌 밴드가 있는 세 칸에서 *중심*이 틀렸다고 보인 바로 그 규약이다 | `scripts/sensitivity_screening.py` |
+| 5 | §3.1 필드표 · §4.2 A-01 | 곱수 "913 t/m³·yr" (§3.1 산문은 913.3) | **913.3**이다(코드 `T_PER_M3 = 5,480,000/6,000`). 한 문서가 같은 상수를 두 값으로 적고 있었다 | `scripts/prepare_raw.py:44` |
+| 6 | §3.2 | "**All nine** columns are schema-required" | **10열**이다. 표가 9행인 것은 복합키 `facility_id`+`year`를 한 줄에 적었기 때문 — 그 사실을 문장에 넣었다 | `src/cap/schemas.py` `SCHEMAS['D1b_facility_panel']` |
+
+**코드·문서 결함 3건**(가이드 밖):
+- `check_sidecars`가 네 디렉터리를 손으로 적고 있었다. `out/sensitivity`는 목록에 없었고
+  **목록에 있던 어느 것보다 낡았다**(24시간). 이제 `out/` 아래 base(e1–e5)가 아닌
+  디렉터리를 전부 센다 — 새 곁가지가 생겨도 숨을 자리가 없다. WARN이 4개에서 9개로
+  늘었다(`g2`·`m3`·`m4`·`seeds`·`uncertainty`가 처음 이름으로 불린다).
+- `build_parameter_inventory.py:184`가 913.0을 손으로 적어 **대장이 모형이 쓰지 않는
+  값을 등재**하고 있었다. 이제 코드와 같은 식으로 쓴다.
+- `sensitivity_screening.py` 독스트링이 "인벤토리 밴드를 쓴다"고 주장했으나 구현은
+  일률 ±30%다. 독스트링을 사실로 고쳤다.
+
+### 검증
+
+```
+.venv/bin/python scripts/sensitivity_screening.py   # 4.2s, out/sensitivity/ 재생성
+.venv/bin/python scripts/build_parameter_inventory.py
+.venv/bin/python scripts/build_tech_guide.py        # 29 blocks, 138,309 chars (137,681 -> )
+.venv/bin/python scripts/build_guide_page.py        # 38 sections, 400 table rows (불변)
+.venv/bin/python scripts/build_evidence_page.py && .venv/bin/python scripts/build_site.py
+.venv/bin/python scripts/gate.py                    # gate: OK (pytest 92 passed, sidecars WARN 9건)
+```
+
+수치 출처: 154·45·44·36·33·14.0·3.4배·순위 10 = `out/sensitivity/ranking.csv`(재실행분) ·
+913.3 = `scripts/prepare_raw.py:44` · 10열 = `src/cap/schemas.py` ·
+낡음 판정 = `out/sensitivity` 파일 시각 08-09 10:27 대 `data/prepared` 08-10 05:19,
+`out/e5` 08-10 10:00.
+
+테스트 3개 추가(89 → 92).
+`test_sensitivity_ledger_numbers_track_the_screening_output`은 A-02의 이동폭·1위 배수와
+A-01의 순위를 `ranking.csv`에서 다시 계산해 **가이드와 METHODOLOGY 양쪽**에 대조한다 —
+한쪽만 고치면 실패하고, 1위 파라미터가 바뀌면 §4.1을 다시 쓰라고 실패한다.
+`test_screening_writes_where_every_consumer_reads`는 생산자 경로가 다시 어긋나면 실패한다.
+`test_gate_sidecar_check_enumerates_out_rather_than_a_hand_written_list`는 게이트가
+낡은 곁가지를 하나라도 이름에서 빠뜨리면 실패한다.
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | 유지 | gate audit `ok 68, UNUSED 1, PARTIAL 3` 불변 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | 유지 | 11 묶음 + base 불변. 다만 OAT 스크린(25 파라미터)이 3일 만에 현행 데이터로 돌아왔다 |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선** | Arc가 "가장 약한 가정이 얼마나 아픈가"를 물으면 답이 "86%, 2위와 동률"에서 "**154%, 2위의 3.4배**"로 바뀐다. A-02가 압도적 단일 약점이라는 §1의 서사가 처음으로 수치로 뒷받침된다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | **개선** | MCP `get_sensitivity`와 데이터 패키지 매니페스트가 3일 낡은 순위를 서빙하고 있었다 — 이제 현행. 게이트 9항목·MCP 11도구 불변이나 `sidecars`가 손목록에서 열거로 바뀌었다 |
+| ⑤ 산출물 — 다른 형식이 있는가 | 유지 | md / HTML(38절 400행 + evidence 페이지) / SVG / 데이터 패키지 |
+
+### 인계
+
+- **F24의 규칙(§3↔§4 짝 대조)은 절반만 소진됐다.** A-01·A-13·A-03·A-11·A-09·A-20의
+  §3 대응 지점을 봤고 실효 결함은 위 5·6번이다. **다음 규칙 후보**: 이번 결함 1–3은
+  전부 *생성 블록이 낡은 파일을 읽어* 생긴 것이다 — **생성기가 읽는 입력 파일의 시각을
+  전수로 훑어라.** 생성은 신선을 보장하지 않는다. `build_tech_guide.py`가 읽는 경로
+  목록을 뽑아 각각이 `out/e5`보다 새것인지 보면, 지금 §6.2·§6.3(process·m8)과
+  §6.1(seeds)이 같은 상태일 가능성이 높다.
+- **곁가지 산출물 재실행**(F20 이래 6사이클 연속 미실시, 최우선 유지): 게이트가 이제
+  9개를 이름으로 부른다 — `process`(13h) · `m8`(3h) · `g2`(3h) · `m3`(3h) · `uncertainty`(3h) ·
+  `m4`(2h) · `scenarios`(1h) · `m5`(1h) · `seeds`(18h). **이번 사이클이 그 중 하나를
+  4.2초에 끝냈다** — 낡음의 원인이 전부 파이프라인 비용은 아니라는 증거다. 나머지도
+  실행 비용을 먼저 재라. 30분 창에서 못 하는 것은 `process`·`scenarios`·`m8`뿐일 수 있다.
+- **EFF 두 사본 불일치**(F22) · **EFF·FIN 확률과정 정량 분해**(F20) · **EFF 철강 CAPEX 2건
+  출처 부재**(F19) · **`_alt` 행의 용도 미실현**(F19) · **감사기의 이름 매칭 한계**(F18) ·
+  **§7이 드러낸 실질 공백 2건** · **CCfD 시험 가능화**(F13) · **§6.1 시드 스윕 재실행** ·
+  **MCI 사업소 상한 검증**(O13) · **③ 번호 오기**(F13).
+- **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5),
+  `get_affordability` 통화 경고(F8).
