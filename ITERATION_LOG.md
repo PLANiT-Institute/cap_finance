@@ -3712,3 +3712,89 @@ CV·미측정 채널 = `docs/seed_stability.md`.
   **③ 번호 오기**(백로그, F13).
 - **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
   미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).
+
+## F19 (02:49) — A-10이 CCUS를 리트로핏이라 팔고 있었고, EFF 정합의 근거 두 칸이 출처 없는 가정이었다
+
+**한 일.** F18 인계의 첫 후보(§3.4 ↔ `tech_cost_reconciliation`)를 열었다. 인용을 붙이러
+열었더니 붙일 곳이 어긋나 있었다 — **F16·F17·F18·F19 네 번 연속**. 이번엔 어긋난 것이
+가이드만이 아니었다: 정본인 `METHODOLOGY.md`의 A-10 줄이 틀렸고, 대조 상대인 EFF의 값 두 개가
+출처 없는 가정이었으며, 그 사실을 모르고 쓴 "정합" 판정이 두 칸 있었다.
+
+### 가이드에서 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | §4.2 A-10 (+ `METHODOLOGY.md` A-10) | "Blast-furnace conversion is hydrogen-DRI only; **CCUS and efficiency are retrofits**" — 포집이 고로에 붙는 수단으로 읽힌다 | **CCUS는 수단 집합에 없다.** `prepare_raw.py:303`이 raw 17행에서 `steel_ccus`·`petchem_ccus`를 떨어뜨린다(사용자 결정 2026-08-06). 어떤 설비도 어떤 가격에도 채택할 수 없다. 그리고 **같은 두 문서의 §6.4가 "LOTTE의 공시 수단이 CCUS인데 우리가 D3에서 제외했다"고 적고 있었다** — 문서가 자기를 부정하고 있었다. A-10이 왜 네 기업 중 둘의 공시 좌표를 없애는지도 이제 한 자리에서 읽힌다(POSCO=BF→EAF 불허, LOTTE=CCUS 제외) | `scripts/prepare_raw.py:303` · `data/prepared/D3_tech_options.csv` · 빌드 로그 `[e2] warning: disclosed tech 'petchem_ccus' not in D3 — commitment dropped` |
+| 2 | §3.4 | "One row per abatement measure available to a sector, **13 rows in total**" — 13이 수집량인 것처럼 읽힌다 | **raw는 17행이고 4행이 솔버에 닿지 않는다.** CCUS 2행(제외 결정) + `_alt` 2행(대안 출처 CAPEX 700·1,126 대 채택값 240·863, 민감도 전용). 수가 데이터이므로 `GEN:d3_excluded` 블록으로 옮겼다 — 손으로 적은 13이 지금까지 4행의 부재를 가리고 있었다 | `data/raw/tech_options.csv` (17행) · `data/prepared/D3_tech_options.csv` (13행) · `scripts/prepare_raw.py:301,303` |
+| 3 | §3.4 밴드 주석 | `steel_eaf` 240이 밴드(370–835) 아래인 이유를 "기존 부지 재활용 대 그린필드"로 적고 그 근거를 `data/manifests/estimation_notes_D2_v0.md`에 인용 | **그 파일은 그린필드를 말하지 않는다.** 그린필드 귀속은 `data/raw/tech_bands.csv`의 `derivation` 열에 있다("그린필드 EAF 기준"). 인용을 옮겼다 | `data/raw/tech_bands.csv` · `data/manifests/estimation_notes_D2_v0.md:40` |
+| 4 | §3.4 밴드 주석 | 240을 "문헌에 조용히 맞추지 않았다"는 증거로만 씀 — 그 값이 얼마나 낮은지는 없었다 | **우리가 이미 들고 있는 EAF 실적 6건 중 최저이고, 유일한 `partial_scope_comparator`다.** 나머지 5건은 1,314–2,899 천원/t(정부지원·물류·후속설비 포함 gross). **240은 방어 가능한 하한이지 EAF 중심값이 아니다** — 그렇게 적었다. 우리 결론에는 영향이 없다(`steel_eaf`는 아무 설비도 채택 못 하는 행), 영향은 그 전환을 허용하는 EFF 쪽에 있다 | `cap-efficient/data/technology_cost_evidence.csv` |
+| 5 | §7 | 교차대조 절이 `tech_cost_reconciliation.md` 미인용 (F17·F18 인계의 미인용 부속 문서 3개 중 하나) | 인용 부착 + 아래 정정의 결과를 적었다: **수소환원 CAPEX ±4% 일치는 문헌 도출값 1개(우리, DIW DP2082)와 표준화 가정 1개(저쪽)의 일치이고, 독립 추출 2개의 일치가 아니다.** 보이는 것보다 약한 교차검증이며, 두 저장소 중 이 사실을 적는 곳은 지금 여기뿐이다 | `docs/tech_cost_reconciliation.md` · `cap-efficient/data/technologies.csv` |
+
+### 부속 문서에서 고친 것 (가이드 결함의 뿌리)
+
+`docs/tech_cost_reconciliation.md` (양 저장소 동일 사본):
+
+- **§2 스크랩 EAF 판정 철회.** "정본 = EFF. EFF는 실제 프로젝트 6건의 총사업비/용량 환산"은
+  사실이 아니다 — `cap-efficient/data/technologies.csv`의 `SCRAP_EAF` 행은
+  `data_status=model_estimate`, 근거는 "용해설비·전력계통·부대설비 포함 표준화 비용 가정"이다.
+  6건을 실제로 환산하면 **240 · 1,314 · 1,515 · 2,266 · 2,576 · 2,899**(중앙값 ≈1,890 ·
+  평균 ≈1,802)이고 **560은 그 어떤 함수도 아니다.** 따라서 "FIN의 240은 하한 편의"라는 판정의
+  근거도 사라졌다. 남는 사실만 남겼다.
+- **§1 수소환원 판정 약화.** "EFF=프로젝트 기반"도 같은 착각이었다(`H2_DRI_EAF`도 `model_estimate`).
+- **§5 추적 항목 3번 신설**: EFF 철강 CAPEX 2건의 출처 부재. 재도출·`source_note` 기재까지 이 표는
+  두 값을 정합의 근거로 쓰지 않는다.
+
+### 검증
+
+```
+.venv/bin/python scripts/build_tech_guide.py    # 22 blocks (21 -> ), 125,519 chars (122,320 -> )
+.venv/bin/python scripts/build_guide_page.py    # 38 sections, 383 table rows (불변)
+.venv/bin/python scripts/build_site.py
+.venv/bin/python scripts/gate.py                # gate: OK (pytest 79 passed)
+.venv/bin/python scripts/build_tech_guide.py --check   # 커밋 직후 current
+```
+
+수치 출처: 탈락 4행·행 수 = `data/raw/tech_options.csv` ↔ `data/prepared/D3_tech_options.csv` ·
+CCUS 제외 지점 = `scripts/prepare_raw.py:303` · 그린필드 귀속 = `data/raw/tech_bands.csv` derivation ·
+EAF 실적 6건 = `cap-efficient/data/technology_cost_evidence.csv` · EFF 값의 등급 =
+`cap-efficient/data/technologies.csv` (`data_status`) · `_alt` CAPEX = `data/raw/tech_options.csv`.
+
+테스트 2개 추가(77 → 79). `test_ccus_is_described_as_excluded_wherever_a10_is_stated`는 CCUS가
+D3에 들어오거나 두 문서 중 하나라도 CCUS를 리트로핏 수단으로 되돌려 적으면 실패하고, 제외 지점을
+파일:행으로 적지 않으면 실패한다. `test_section_3_4_excluded_rows_are_counted_not_typed`는 행 수와
+탈락 이름을 raw ↔ prepared에서 다시 세고, EFF 6건의 최저값·범위·`partial_scope` 플래그가 바뀌거나
+EFF 두 값에 출처가 붙으면 실패한다(=정정 문장을 갱신하라는 신호).
+
+**생성 블록은 하나 늘었다** (21 → 22, `d3_excluded` 신설). 손으로 쓴 산문 변경은 §4.2 A-10 한 줄과
+§7 한 문단이고, 나머지 수치는 전부 생성기가 썼다.
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | **정확해짐** | gate audit `ok 68, UNUSED 1, PARTIAL 3` 불변. 그와 별개로 **raw 17행 중 4행이 모형에 닿지 않는다는 사실이 처음으로 문서에 적혔다** — 감사는 prepared만 보므로 이것을 잡지 못한다 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | 유지 | 11 가정 묶음 + base, 묶음당 16칸 (3묶음 미재계획 — F2) |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선** | Arc가 반드시 묻는 "CCS는 넣었나"에 답이 생겼고(안 넣었다, 왜, 어디서), 교차검증의 강도를 과장하지 않는다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | 유지 | 게이트 8항목 그린, MCP 11도구 불변 |
+| ⑤ 산출물 — 다른 형식이 있는가 | 유지 | md / HTML(38절 383행) / SVG / 데이터 패키지 |
+
+### 인계
+
+- **미인용 부속 문서 2개**(F18 목록에서 `tech_cost_reconciliation` 해소): `literature_map` ·
+  `price_process_test`. 다음 후보는 **§6.2의 GBM/OU 대조 ↔ `price_process_test`**. 인용 부착 =
+  사실 대조가 **네 번 연속** 확인됐다 — 이 규칙성 자체가 남은 2개를 여는 이유다.
+- **EFF 철강 CAPEX 2건 출처 부재**(신규, 미해결): `SCRAP_EAF` 560 · `H2_DRI_EAF` 900이
+  `model_estimate`이고 외부 앵커가 없다. EFF에는 `technology_cost_evidence.csv`에 실적 6건이
+  이미 있으므로 **비교가능 범위(`full_project` + `partial_scope`)만 골라 재도출하는 것이 데이터 0의
+  작업이다.** 이것을 하면 H4 교차대조의 "정합" 판정 두 칸이 처음으로 근거를 갖는다.
+- **`_alt` 행의 용도 미실현**(신규 관측): `steel_eaf_alt`·`steel_h2dri_alt`는 "민감도 전용"으로
+  보존되는데 **어떤 민감도 축도 이 행을 쓰지 않는다**(11 묶음에 `tech_capex_alt`류가 없다).
+  `tech.capex` 증거 승수 구간 [1.00, 3.48](F17)과 같은 문제를 다른 데이터로 재는 행이 이미
+  저장소에 있다는 뜻이다.
+- **`D6.capex_total` 소비**(F18): `_affordability`에 한 줄. E5 재실행이 필요하니 파이프라인
+  재실행 사이클에 묶어라.
+- **감사기의 이름 매칭 한계**(F18, 미해결) · **§7이 드러낸 실질 공백 2건**(문헌 LCOA 미추출 ·
+  교차대조 요인별 정량 분해 미실시) · **CCfD 시험 가능화**(F13) · **§6.1 시드 스윕 재실행** ·
+  **MCI 사업소 상한 검증**(O13) · **③ 번호 오기**(F13).
+- **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).
