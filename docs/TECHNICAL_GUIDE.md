@@ -21,7 +21,7 @@ design narrative. [`docs/data_gap_registry.md`](data_gap_registry.md) records wh
 collect and where we were blocked. `paper/working_paper.md` is the manuscript.
 
 <!-- GEN:stamp -->
-> **Repository state.** Code, inputs, config and results (`src`, `data`, `config.yaml`, `out`) hash to `6c888ea3c1ea`. Results in this document come from the pipeline run finished `2026-08-10T10:00:24`. Rebuild the generated blocks with `python3 scripts/build_tech_guide.py`; `--check` fails if this document no longer matches that state. The stamp is a content digest, not a commit SHA, because a SHA is not knowable inside the commit that writes it.
+> **Repository state.** Code, inputs, config, results and the derived records this document cites (`src`, `data`, `config.yaml`, `out`, `docs/*.csv` — 920 files, results read from disk because `out/` is not tracked) hash to `33d92a014e0b`. Results in this document come from the pipeline run finished `2026-08-10T10:00:24`. Rebuild the generated blocks with `python3 scripts/build_tech_guide.py`; `--check` fails if this document no longer matches that state. The stamp is a content digest, not a commit SHA, because a SHA is not knowable inside the commit that writes it.
 <!-- /GEN:stamp -->
 
 ---

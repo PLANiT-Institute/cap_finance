@@ -11,6 +11,7 @@ Run: .venv/bin/pytest tests/test_tech_guide.py -q
 """
 
 import datetime as _dt
+import os
 import pathlib
 import subprocess
 import sys
@@ -49,6 +50,37 @@ def test_stamp_is_a_content_digest_not_a_commit_sha():
     resolved = subprocess.run(["git", "rev-parse", "--verify", "--quiet", f"{m.group(1)}^{{commit}}"],
                               cwd=ROOT, capture_output=True, text=True)
     assert resolved.returncode != 0, "스탬프가 커밋으로 해석된다 — SHA 스탬프로 되돌아갔다"
+
+
+def test_stamp_covers_the_results_it_claims_to_cover():
+    """스탬프가 `out`을 이름으로 대면서 `out`을 세지 않으면 그것은 거짓 그린이다.
+
+    F28까지 `state_digest`는 `git ls-files`만 읽었고 `.gitignore`가 `out/**`를 지운다.
+    847개 결과 파일 중 2개(우연히 추적되던 `out/sensitivity/*.csv`)만 세고 있었으므로,
+    파이프라인을 다시 돌려 가이드의 모든 수치가 움직여도 스탬프는 그대로였다.
+    """
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import build_tech_guide as btg
+
+    counted = set(btg._state_files())
+    results = {str(p.relative_to(ROOT)) for p in (ROOT / "out").rglob("*")
+               if p.is_file() and not any(s.startswith(".") for s in p.parts)}
+    missed = results - counted
+    assert not missed, f"결과 {len(missed)}개가 상태 스탬프 밖에 있다, 예: {sorted(missed)[:3]}"
+
+    # 실제로 내용에 반응하는가 — 목록에 있으나 읽지 않는 구현이면 여기서 잡힌다
+    victim = ROOT / "out" / "e5" / "gap.csv"
+    before, keep, st = btg.state_digest(), victim.read_bytes(), victim.stat()
+    try:
+        victim.write_bytes(keep + "\n# 스탬프 반응 확인\n".encode())
+        assert btg.state_digest() != before, "결과 파일 내용이 바뀌었는데 스탬프가 그대로다"
+    finally:
+        victim.write_bytes(keep)
+        # mtime까지 되돌린다 — 안 되돌리면 이 파일이 out/e5의 최신이 되고
+        # 게이트의 곁가지 검사가 아홉 디렉터리를 전부 STALE로 부른다(검사가 base를
+        # `_newest("out/e5/*.csv")`로 잡는다). 테스트가 게이트를 붉히면 안 된다.
+        os.utime(victim, (st.st_atime, st.st_mtime))
+    assert btg.state_digest() == before, "복원 뒤에도 스탬프가 다르다 — 다이제스트가 결정적이지 않다"
 
 
 def test_guide_makes_no_claim_it_cannot_source():
@@ -1070,6 +1102,34 @@ def test_gate_sidecar_check_enumerates_out_rather_than_a_hand_written_list():
     loc = list(ROOT.glob("out/scenarios/*/e1_local/*.csv"))
     if loc:
         assert "e1_local" not in msg, "게이트가 out/e1의 사본을 낡음으로 보고한다"
+
+
+def test_freshness_measures_out_by_its_oldest_file_not_its_newest():
+    """F27은 곁가지 검사만 고쳤고, 같은 맹점이 `check_freshness`에 F28까지 남아 있었다.
+
+    e5의 아홉 파일 중 하나만 다시 써도 out/ 전체가 입력보다 새것으로 보였다.
+    부분 재실행은 실제로 일어난다(F27이 `out/scenarios`에서 실측했다). 여기서는
+    파일 하나를 입력보다 낡게 되돌려 게이트가 그것을 보는지 확인한다.
+    """
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import gate
+
+    src = gate._newest("data/raw/*.csv", "src/cap/*.py", "config.yaml")
+    e5 = sorted(ROOT.glob("out/e5/*.csv"))
+    if src is None or len(e5) < 2:
+        pytest.skip("out/e5 또는 입력 없음")
+    assert gate.check_freshness()[0], "전제가 깨졌다 — out/이 이미 입력보다 낡다"
+
+    victim = e5[-1]  # 가장 새 파일 하나로 판정하면 이 파일이 낡아도 그린이다
+    st = victim.stat()
+    try:
+        os.utime(victim, (st.st_atime, src[0] - 3600))
+        ok, msg = gate.check_freshness()
+        assert not ok, "e5 파일 하나가 입력보다 낡은데 freshness가 그린이다"
+        assert victim.name in msg, f"게이트가 뒤처진 파일 `{victim.name}`을 이름으로 부르지 않는다"
+    finally:
+        os.utime(victim, (st.st_atime, st.st_mtime))
+    assert gate.check_freshness()[0], "복원 실패 — mtime을 되돌리지 못했다"
 
 
 def test_axis_impact_deltas_state_the_cells_they_are_maximised_over():

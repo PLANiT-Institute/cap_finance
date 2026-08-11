@@ -4535,3 +4535,92 @@ are_maximised_over`는 16칸 최대 두 값을 `summary.csv`에서 다시 계산
 - **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
   미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5),
   `get_affordability` 통화 경고(F8).
+
+## F28 (08:34) — 상태 스탬프가 결과 847개 중 2개만 세고 있었다: `git ls-files`는 `.gitignore`를 통과하지 못한다
+
+**한 일.** F27 인계의 규칙("판정 코드가 낙관적 집계 — `max`/`newest`/`any` — 를 쓰는 자리를
+전수로 훑어라")을 실행했다. `scripts/` 전체에서 신선도·정합 판정 자리를 훑었고, 두 곳이
+걸렸다. 하나는 낙관적 *집계*가 아니라 낙관적 *범위*였고, 그것이 더 컸다.
+
+**결함 1 — 가이드의 상태 스탬프가 결과를 세지 않는다.** `build_tech_guide.state_digest()`는
+`git ls-files src data config.yaml out`으로 파일 목록을 만들었다. `.gitignore:31`이
+`out/**`를 지운다. 그래서 스탬프가 실제로 센 결과 파일은 **847개 중 2개**였다 —
+우연히 추적되던 `out/sensitivity/{ranking,screening}.csv` 둘. 스탬프의 문장은
+"Code, inputs, config **and results** (`src`, `data`, `config.yaml`, `out`) hash to …"
+였다. **`python -m cap all`을 다시 돌려 가이드가 인용하는 모든 수치가 움직여도 이 스탬프는
+그대로였고, `--check`도 스탬프 테스트도 그린이었다.** 가이드가 외부 독자에게 처음 보이는
+문장이 "이 문서는 이 상태에 대응한다"이고, 그 문장이 검사하지 않는 것을 검사한다고
+적고 있었다.
+
+이제 결과는 디스크에서 열거한다(`out/**`, 숨김 경로 제외). 비용을 먼저 쟀다 —
+**847파일 · 397MB · 0.55초**. 일곱 사이클을 미룬 근거가 재본 적 없는 추정이었다는
+F27의 교훈을 그대로 적용했다. 덧붙여 가이드가 인용하는 파생 기록 `docs/*.csv` 넷
+(`seed_stability`·`parameter_inventory`·`price_process_test`·`validation_backtest`)도
+같은 이유로 스탬프 밖이었다 — 범위에 넣었다. 센 파일은 68개에서 **920개**가 됐다.
+
+**결함 2 — `gate.check_freshness`가 `out/`을 가장 새 파일로 쟀다.** F27이 곁가지 검사에서
+같은 것을 고쳤고, 이 검사는 그대로 남아 있었다. `out/e5`의 아홉 파일 중 하나만 다시 써도
+out/ 전체가 입력보다 새것으로 보인다. 지금 e5는 아홉 파일이 같은 초에 쓰였으므로 거짓
+그린은 아직 없었으나, 부분 재실행은 실측된 사건이다(F27이 `out/scenarios`에서 봤다).
+검사의 방향은 비대칭이어야 한다 — **어느 입력이라도 새로우면 낡은 것이고, 모든 산출이
+새로워야 새것이다.** `_oldest`로 바꾸고 뒤처진 파일을 이름으로 부른다.
+
+**규칙을 다 훑고 남은 것(거짓 양성)**: `calibration.FACTOR_SERIES`의 `any`(생성기 §3.5)는
+`calibrate()`의 `if not avail`과 같은 뜻이라 맞다. `gen_frontier_shape`의
+`rank.max() == len(p)`는 묶음마다 프런티어 일정이 하나뿐이라(8/8) 현재 `min`과 같은 값을
+낸다 — 일정이 둘 이상 오면 갈리므로 인계에 남긴다. `check_sidecars`의
+`base = _newest("out/e5")`는 낙관이 아니라 보수 방향이라 그대로 둔다.
+
+### 가이드에서 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | 머리말 상태 스탬프 | "Code, inputs, config and results (`src`, `data`, `config.yaml`, `out`) hash to `6c888ea3c1ea`" — **결과가 해시에 들어 있다는 주장** | `out/`은 gitignore 대상이고 목록은 `git ls-files`로 만들어졌다. 847개 중 2개만 셌다. 이제 920파일을 세고 `33d92a014e0b`이며, 무엇을 어떻게 세는지(디스크에서 읽는 이유)를 문장이 밝힌다 | `.gitignore:31` · `git ls-files out` (2줄) · `out/**` 실측 847 |
+
+### 검증
+
+```
+.venv/bin/python scripts/build_tech_guide.py   # 31 blocks, 140,835 chars
+.venv/bin/python scripts/build_tech_guide.py --check   # generated blocks current (다이제스트가 자기 자신을 낡게 하지 않는다)
+.venv/bin/python scripts/gate.py               # gate: OK
+```
+
+수치 출처: 847 = `find out -type f | wc -l` · 2 = `git ls-files out` · 397MB = `du -sh out` ·
+0.55초 = sha256 전수 해시 실측 · 920 = `_state_files()` · §9.1 재계산(8/8 · 4 · 5 · 7)은
+`out/e5/frontier_points.csv` × `out/e2/plan_index.csv`에서 독립으로 다시 세어 가이드와 일치.
+
+테스트 2개 추가(97 → 99).
+- `test_stamp_covers_the_results_it_claims_to_cover` — `out/` 아래 결과가 스탬프 목록에
+  전부 들어 있는지 보고, 결과 파일 하나의 **내용**을 바꿔 다이제스트가 움직이는지 확인한
+  뒤 내용과 **mtime까지** 되돌린다(안 되돌리면 그 파일이 e5의 최신이 되어 게이트의 곁가지
+  검사가 아홉 디렉터리를 전부 STALE로 부른다 — 테스트가 게이트를 붉히면 안 된다).
+- `test_freshness_measures_out_by_its_oldest_file_not_its_newest` — e5 파일 하나를 입력보다
+  낡게 되돌려 게이트가 붉어지고 그 파일을 이름으로 부르는지 확인한다.
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | 유지 | gate audit `ok 68, UNUSED 1, PARTIAL 3` 불변 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | 유지 | `out/scenarios/summary.csv` 12묶음 192행, 곁가지 검사 PASS |
+| ③ 인사이트 — 팔 수 있는 그림인가 | 유지 | §9.1의 8/8 · 4 · 5 · 7을 독립 재계산으로 확인 — Arc가 "프런티어가 무엇의 프런티어인가"를 물으면 답이 데이터에서 다시 세어진다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | **개선** | 상태 스탬프가 처음으로 결과를 실제로 센다. freshness 판정이 파일 단위가 됐다. 게이트 9항목·MCP 11도구 불변 |
+| ⑤ 산출물 — 다른 형식이 있는가 | 유지 | md / HTML / SVG / 데이터 패키지 |
+
+### 인계
+
+- **규칙(낙관적 집계·범위 훑기)은 절반 소진.** `scripts/`의 신선도·정합 판정은 다 봤다.
+  **남은 절반은 `src/cap/`이다** — 모형 안에서 "하나라도 있으면 있다"로 판정하는 자리
+  (`avail`·`applies_to`·`any`), 특히 조용한 탈락과 붙어 있는 것들.
+- **`gen_frontier_shape`의 `rank.max()`**: "그 일정은 대리모형의 가장 비싼 계획"이라는
+  문장을 묶음당 프런티어 일정이 둘 이상일 때도 참으로 만들려면 `min`이어야 한다.
+  지금은 8/8이 단일 일정이라 갈리지 않는다 — 갈리는 날 조용히 틀린다.
+- **동시 실행**(F27 최우선 인계, 미해결): 같은 저장소에 스케줄 태스크가 둘. 이번 사이클은
+  `pgrep -f run_scenarios`로 시작 시 확인했고 비어 있었다.
+- **`reline_cheap` 재계획**(~20분) · **추첨 대상을 밴드 보유로도 열기**(F27) ·
+  **EFF 두 사본 불일치**(F22) · **EFF·FIN 확률과정 정량 분해**(F20) · **EFF 철강 CAPEX 2건
+  출처 부재**(F19) · **`_alt` 행의 용도 미실현**(F19) · **감사기의 이름 매칭 한계**(F18) ·
+  **§7이 드러낸 실질 공백 2건** · **CCfD 시험 가능화**(F13) · **MCI 사업소 상한 검증**(O13).
+- **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5),
+  `get_affordability` 통화 경고(F8).

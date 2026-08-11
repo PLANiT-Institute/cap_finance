@@ -98,14 +98,28 @@ def _span(df, col):
 # cycle). A digest of the *content* of these paths is knowable before the commit, so
 # it is stable across the commit that carries it, and it still moves whenever code,
 # inputs, config or results move. Prose-only commits leave it alone.
-STATE_PATHS = ["src", "data", "config.yaml", "out"]
+STATE_PATHS = ["src", "data", "config.yaml", "out", "docs/*.csv"]
+
+# `git ls-files` only sees *tracked* files, and `.gitignore:31` ignores `out/**`. So the
+# digest that advertised itself as covering results was reading 2 of 847 files under
+# `out/` (F28): a full `python -m cap all` could move every number the guide quotes and
+# the stamp would not budge, while `--check` and the stamp test stayed green. Results are
+# enumerated from disk instead — 847 files, 397 MB, 0.6 s to hash, which is not a reason
+# to prefer a stamp that is blind to them.
+DISK_STATE = "out"
+
+
+def _state_files():
+    tracked = subprocess.run(["git", "ls-files", "-z", *STATE_PATHS],
+                             cwd=ROOT, capture_output=True, text=True).stdout.split("\0")
+    on_disk = [str(p.relative_to(ROOT)) for p in (ROOT / DISK_STATE).rglob("*")
+               if p.is_file() and not any(s.startswith(".") for s in p.parts)]
+    return sorted(set(f for f in tracked if f) | set(on_disk))
 
 
 def state_digest() -> str:
-    files = subprocess.run(["git", "ls-files", "-z", *STATE_PATHS],
-                           cwd=ROOT, capture_output=True, text=True).stdout.split("\0")
     h = hashlib.sha256()
-    for name in sorted(f for f in files if f):
+    for name in _state_files():
         p = ROOT / name
         h.update(name.encode())
         # a tracked path deleted in the working tree is a state change, not a crash
@@ -116,8 +130,10 @@ def state_digest() -> str:
 def gen_stamp():
     man = ROOT / "out" / "run_manifest.json"
     run = json.loads(man.read_text())["e5"]["finished"] if man.exists() else "no run recorded"
-    return (f"> **Repository state.** Code, inputs, config and results "
-            f"(`{'`, `'.join(STATE_PATHS)}`) hash to `{state_digest()}`. Results in this document "
+    return (f"> **Repository state.** Code, inputs, config, results and the derived records "
+            f"this document cites (`{'`, `'.join(STATE_PATHS)}` — {len(_state_files()):,} files, "
+            f"results read from disk because `out/` is not tracked) hash to "
+            f"`{state_digest()}`. Results in this document "
             f"come from the pipeline run finished `{run}`. Rebuild the generated blocks with "
             f"`python3 scripts/build_tech_guide.py`; `--check` fails if this document no longer "
             f"matches that state. The stamp is a content digest, not a commit SHA, because a SHA "

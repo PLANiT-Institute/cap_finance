@@ -120,14 +120,20 @@ def check_freshness():
     D10까지 이 검사는 data/raw만 봤다. 그래서 D6~D9이 `src/cap/`을 고치고 `cap all`을
     돌리지 않은 채 지나갔고, out/e2는 나흘 전 것이었으며 페이퍼 §0 대장은 그 낡은
     산출물에 대해 '검증됨'으로 통과했다. 코드도 입력이다 — 여기서 같이 센다.
+
+    **입력은 가장 새 파일로, 산출은 가장 낡은 파일로 잰다.** F27이 곁가지 검사에서
+    같은 것을 고쳤고 이 검사는 F28까지 `_newest("out/e5/*.csv")`로 남아 있었다 —
+    e5의 아홉 파일 중 하나만 다시 써도 out/ 전체가 새것으로 보인다. 검사의 방향은
+    비대칭이어야 한다: 어느 입력이라도 새로우면 낡은 것이고, 모든 산출이 새로워야
+    새것이다.
     """
     src = _newest("data/raw/*.csv", "src/cap/*.py", "config.yaml")
-    out = _newest("out/e5/*.csv")
+    out = _oldest("out/e5/*.csv")
     if src is None or out is None:
         return False, "data/raw or out/e5 missing — pipeline has never run here"
     fresh = out[0] >= src[0]
     rel = out[1].relative_to(ROOT)
-    return fresh, (f"out/ newer than data/raw + src/cap ({rel})" if fresh
+    return fresh, (f"out/ newer than data/raw + src/cap (oldest {rel})" if fresh
                    else f"STALE: {src[1].relative_to(ROOT)} changed after {rel} — rerun `python -m cap all`")
 
 
