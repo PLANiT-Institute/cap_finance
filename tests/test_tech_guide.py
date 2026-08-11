@@ -384,3 +384,42 @@ def test_hydrogen_share_in_the_ledger_is_reproducible():
         row = text[text.index(anchor):][:900]          # A-05 행 하나만 본다
         assert lo in row and hi in row, (
             f"{path.name}의 A-05 수소 분산 몫이 실제 {lo}–{hi}와 다르다")
+
+
+def test_section_7_backtest_matches_the_backtest_record():
+    """§7이 하지 않은 검증을 했다고 적고 있었다 (F16).
+
+    두 가지였다. (1) "reproduction error on actual emissions **and energy cost**" —
+    `docs/validation_backtest.md` §3이 에너지 원단위도 비용도 재현하지 못했다고 명시한다.
+    (2) 후향 검증의 판정 자체가 없었다 — NSC가 ±10% 기준을 초과하고 석화 2사는 생산량
+    미공시로 대조가 성립하지 않는데, §7은 "오차를 보고한다"까지만 적었다.
+    이 테스트는 §7이 실제 판정과 어긋나면 실패한다.
+    """
+    import csv
+
+    bt = ROOT / "docs" / "validation_backtest.csv"
+    if not bt.exists():
+        pytest.skip("후향 검증 미실행 — scripts/validate_backtest.py")
+    err = {}
+    for r in csv.DictReader(bt.open(encoding="utf-8")):
+        if r["err_pct"]:
+            err.setdefault(r["company_id"], []).append(float(r["err_pct"]))
+    assert set(err) == {"POSCO", "NSC"}, f"대조 가능한 기업이 {sorted(err)}로 바뀌었다"
+
+    text = " ".join(GUIDE.read_text(encoding="utf-8").split())
+    for firm, sign in (("POSCO", "+"), ("NSC", "+")):
+        v = err[firm]
+        mean, worst = sum(v) / len(v), max(abs(x) for x in v)
+        assert f"mean {sign}{mean:.1f}%" in text, (
+            f"§7의 {firm} 평균 오차가 실제 {mean:+.1f}%와 다르다")
+        assert f"{worst:.1f}%" in text, f"§7의 {firm} 최대 오차가 실제 {worst:.1f}%와 다르다"
+
+    assert "and energy cost reported" not in text, (
+        "§7이 다시 에너지 비용을 후향 검증했다고 주장한다 — validation_backtest.md §3은 "
+        "비용 재현이 없다고 적는다")
+    assert "has not been compared against published hydrogen-DRI LCOA" in text, (
+        "§7이 문헌 LCOA 대조의 공백을 더 이상 밝히지 않는다 — validation_external.md §5는 "
+        "그 대조를 '아직 하지 않음'으로 기록한다")
+    for rec in ("docs/validation_external.md", "docs/validation_backtest.md",
+                "docs/cross_model_check.md", "tests/test_consistency.py"):
+        assert rec in text, f"§7이 {rec}를 가리키지 않는다 — 검증 층의 기록을 찾을 수 없다"

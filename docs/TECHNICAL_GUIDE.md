@@ -1055,26 +1055,70 @@ Full record with attempted access paths: [`docs/data_gap_registry.md`](data_gap_
 
 ## 7. Verification
 
-Three layers, all runnable.
+Four layers, all runnable, and each one leaves a written record. The records are where the numbers
+below come from; this section is a summary of them, not a substitute.
 
-**Internal consistency.** Accounting identities (total = sum of components), mass and energy balance
-(output × intensity = energy consumed), emission consistency (EF × output = emissions), unit
-round-trips. Plus an allocation identity — facility emissions must sum to the firm's disclosed total
-in every year — which was added after a fallback branch silently zeroed one firm's emissions and
-nothing caught it until the last stage.
+**Internal consistency** — `tests/test_consistency.py`. Accounting identities (total = sum of
+components), mass and energy balance (output × intensity = energy consumed), emission consistency
+(EF × output = emissions), unit round-trips. Plus an allocation identity — facility emissions must
+sum to the firm's disclosed total in every year — which was added after a fallback branch silently
+zeroed one firm's emissions and nothing caught it until the last stage.
 
-**External comparison.** Model CAPEX against disclosed actual project costs (Gwangyang EAF, Nippon
-Steel Yawata, JFE Kurashiki); metric ② against published LCOA/MAC ranges (Vogl, Agora, IEA ISTR,
-Material Economics, MPP). This is the layer that found A-13's 4.2× over-estimate.
+**External comparison** — `scripts/validate_external.py` →
+[`docs/validation_external.md`](validation_external.md). Model CAPEX against disclosed actual project
+costs: seven projects, and the binding one is not an EAF at all but Kobe Steel's 2016 No. 3
+blast-furnace reline at 47 thousand KRW/t of capacity against our injected 200. That is A-13's 4.2×.
+Model CAPEX against literature ranges: `steel_h2dri` and `steel_hyrex` at 863 sit inside DIW's
+858–1,089, while `steel_eaf` at 240 sits **below** the literature band 368–677, at 0.65× its lower
+bound. And the one petrochemical technology assumption anyone outside has confirmed — our 49%
+abatement for NCC fuel switching against Mitsui's disclosed ~44% at Osaka.
 
-**Back-test.** 2020–2024 actual production and energy prices fed in, and the reproduction error on
-actual emissions and energy cost reported.
+That layer's own record names a hole in it, so this guide should too. **Metric ② has not been
+compared against published hydrogen-DRI LCOA.** What §3 of that document does is bound the order of
+magnitude: our 115–279 thousand KRW/tCO₂ (US$85–207) against NGFS 1.5 °C shadow carbon prices of
+US$150 in 2030 and US$1,700 in 2050, and against a retrofit-only MAC from the steel-efficiency
+literature. The Vogl / Agora / IEA ISTR / Material Economics / MPP LCOA figures are recorded as not
+yet extracted (`docs/validation_external.md` §5, `docs/data_gap_registry.md`). Vogl 2018 does enter
+the model, but as a CAPEX and technology-parameter anchor, not as a US$/tCO₂ comparator.
 
-**Independent reimplementation.** A second model (`cap-efficient/`, stdlib only) computes overlapping
-quantities from the same data through different code. Differences are decomposed by structural cause
-— boundary definition, margin treatment, carbon treatment, facility resolution. The two trees are
+**Back-test** — `scripts/validate_backtest.py` →
+[`docs/validation_backtest.md`](validation_backtest.md), table in `docs/validation_backtest.csv`.
+2020–2024 disclosed production against route-standard emission intensity, on a ±10% criterion. Two
+of the four firms can be tested at all, and one of those two fails:
+
+- **POSCO passes** — mean +1.0%, maximum absolute error 2.7%.
+- **NSC fails** — mean +15.7%, maximum 17.5%. The obvious explanation, missing electric arc furnaces
+  in the register, was tested and rejected: adding every operating EAF closes 1.3 of the 15.7
+  percentage points, and adding the FY2029 units NSC has already disclosed still leaves +10.2%. The
+  cause is the injected `BF = 2.15 tCO₂/t` route standard itself.
+- **LOTTE and MCI cannot be back-tested.** Neither discloses production, so no intensity exists to
+  compare against.
+
+Two things the back-test does **not** cover, because the data to do it does not exist: energy
+intensity (no firm discloses site-level energy consumption, so the route-standard electricity, coal
+and gas intensities of A-03 have passed no back-test of any kind) and cost (there is no actual
+energy-spend or CAPEX time series, so the model's cost structure has never been back-tested at all —
+external comparison is what stands in for it).
+
+Why NSC failing does not move the headline, and where it would: steel facility emissions are
+rescaled to the firm's disclosed total, so the route standard acts as an allocation weight rather
+than a level. NSC's register is ten blast furnaces and nothing else, uniform weights make the
+standard's level cancel, and the `ef_inc` the model actually uses is 1.846 against a disclosed 1.856.
+The 15.7% is therefore a measure of facility-mix resolution, not of the answer. Where a bad route
+standard *would* set the level is the two petrochemical firms, which are bottom-up and never
+rescaled — and those are exactly the two that cannot be tested.
+
+**Independent reimplementation** — `scripts/cross_model_check.py` →
+[`docs/cross_model_check.md`](cross_model_check.md). A second model (`cap-efficient/`, stdlib only)
+computes overlapping quantities from the same data through different code. The two trees are
 forbidden from importing each other, enforced by `tests/test_independence.py`; without that, the
-cross-check would be circular.
+cross-check would be circular. Differences are decomposed by structural cause — emission boundary
+(Scope 1 here, Scope 1+2 there), technology set (we forbid full BF→EAF conversion, it does not),
+carbon treatment (resource cost against gross cost), facility resolution, scenario definition. The
+decomposition is **qualitative**: no share of the abatement-cost difference has been attributed to
+any one cause, which would take re-running one model under the other's definitions one factor at a
+time. So the claim this layer supports is that the two models point the same direction — not that
+their levels agree.
 
 ### One command
 

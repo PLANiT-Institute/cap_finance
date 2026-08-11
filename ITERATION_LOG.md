@@ -3440,3 +3440,96 @@ README가 가이드 링크를 잃거나 `config.yaml`의 `n_sims`와 어긋나�
 - **③ 번호 오기**(백로그 유지, F13): 파이프라인 재실행 사이클에 같이 넣어라.
 - **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
   미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).
+
+## F16 (01:10) — §7이 하지 않은 검증 둘을 했다고 적고 있었고, 실제로 한 검증의 낙제 판정은 빠져 있었다
+
+**한 일.** F15 인계의 첫 후보(“§7이 검증 세 겹을 서술만 하고 그것을 담은 파일을 가리키지 않는다”)를
+집었다. 파일을 붙이려고 네 기록 문서를 열어 대조하니 **문제는 인용 부재가 아니었다** — §7의 서술
+자체가 기록과 어긋났다. 안 한 검증 둘을 했다고 적고 있었고, 한 검증에서는 두 기업 중 하나가
+기준을 초과하는데 그 판정이 통째로 없었다.
+
+*(지도상 F16은 창 마감이나, 태스크 정의가 마감을 09:00 별도 태스크로 분리하고 이 창의 목적을
+“가이드 개선·검증”으로 못박고 있어 실작업 사이클로 돌렸다. 스케줄은 건드리지 않았다.)*
+
+### 가이드에서 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | §7 back-test | “2020–2024 실적 생산량과 **에너지 가격**을 넣고 실제 배출과 **에너지 비용**의 재현 오차를 보고한다” | **비용은 재현한 적이 없다.** `docs/validation_backtest.md` §3이 세 줄로 명시한다 — 에너지 원단위 재현 불가(사업장별 에너지 소비 미공시), 석화 전면 미검증, **“비용 재현 없음: 실제 에너지 지출·CAPEX 실적 시계열이 없어 모형 비용 구조 자체는 후향 검증되지 않았다.”** 가이드가 그 문서를 인용하지 않는 동안, 문서가 “안 했다”고 적은 것을 가이드가 “했다”고 팔고 있었다 | `docs/validation_backtest.md` §3 |
+| 2 | §7 external | “지표 ②를 공표된 LCOA/MAC 범위(**Vogl, Agora, IEA ISTR, Material Economics, MPP**)와 대조” | **그 대조는 하지 않았다.** `docs/validation_external.md` **§5 「아직 못 한 대조 (없는 것을 있다고 하지 않는다)」**의 첫 항목이 정확히 그 다섯 출처다: “수소환원 LCOA(US$/tCO₂) 수치를 아직 추출하지 않았다.” `data_gap_registry.md:124,137`도 「미추출」·「미시도」로 이중 기재한다. §3이 실제로 한 것은 NGFS 섀도 탄소가격(2030 US$150 / 2050 US$1,700)과 리트로핏 MAC으로 **자릿수만** 가둔 것이다. Vogl은 모형에 들어오지만 CAPEX·기술 파라미터 앵커이지 US$/tCO₂ 비교자가 아니다 | `docs/validation_external.md:152`, `docs/data_gap_registry.md:124,137` |
+| 3 | §7 back-test | 판정 없음 — “재현 오차를 보고한다”로 끝 | **네 기업 중 둘만 대조 가능하고 그 둘 중 하나가 낙제다.** POSCO 평균 +1.0%·최대 2.7% 통과, **NSC 평균 +15.7%·최대 17.5%로 ±10% 기준 초과**. 게다가 원인 가설 배제까지 되어 있다 — 가동 중 EAF를 전부 넣어도 15.7%p 중 1.3%p만 닫히고 FY2029 신설분까지 넣어도 +10.2%가 남는다. 원인은 설비 목록이 아니라 주입값 `BF = 2.15 tCO₂/t` 자체다. LOTTE·MCI는 생산량 미공시라 대조가 성립조차 않는다 | `docs/validation_backtest.csv`, `docs/validation_backtest.md` §1·§2 |
+| 4 | §7 external | 실적 대조 대상을 “광양 EAF, NSC 야하타, JFE 구라시키”로 셋 열거한 뒤 “이 층이 A-13의 4.2배를 찾았다” | **그 4.2배를 만든 프로젝트가 열거에 없다.** 4.2배는 고베제강 2016년 3고로 개수(47 천원/t능력) ↔ 우리 주입값 200에서 나온다. 열거된 셋은 전부 EAF이고 그중 어느 것도 개수 앵커가 아니다. Arc가 “그 4.2는 어느 프로젝트인가”를 물으면 §7의 답이 틀린다 | `docs/validation_external.md` §1·§1-1 |
+| 5 | §7 머리 | “**Three layers**, all runnable.” 뒤에 굵은 글씨 층이 **넷** | **넷이다.** independent reimplementation이 네 번째 층으로 서 있는데 머리말은 셋을 셌다 | `docs/TECHNICAL_GUIDE.md` §7 자체 |
+
+### 인용 부재로 남아 있던 것 (원래 F16의 목표)
+
+각 층에 생성기와 기록 파일을 붙였다: `tests/test_consistency.py` / `scripts/validate_external.py` →
+[`validation_external.md`] / `scripts/validate_backtest.py` → [`validation_backtest.md`] +
+`validation_backtest.csv` / `scripts/cross_model_check.py` → [`cross_model_check.md`].
+F15가 지목한 미인용 문서 9개 중 셋이 §7에서 해소됐다(`validation_external`·`validation_backtest`·
+`cross_model_check`). 남은 여섯은 `literature_map`·`price_process_test`·`seed_stability`·
+`tech_band_upgrade`·`tech_cost_reconciliation`·`data_audit`이다.
+
+### 덧붙인 정량 사실 (전부 기록 문서에서)
+
+- CAPEX 문헌 대조 판정: `steel_h2dri`·`steel_hyrex` 863은 DIW 858–1,089 **안**, `steel_eaf` 240은
+  368–677의 **하단 아래 ×0.65** — 외부 대조의 두 번째 낙제인데 §7에 없었다.
+- 석화 유일 외부 확인: NCC 연료전환 49% ↔ 미쓰이 오사카 공시 약 44%.
+- 지표 ② 자릿수: 115–279 천원/tCO₂ = US$85–207.
+- **NSC 낙제가 헤드라인을 움직이지 않는 이유**를 같은 자리에 적었다: 철강은 회사 공시 총량에
+  재척도하므로 루트 표준은 수준이 아니라 배분 가중치이고, NSC 목록이 고로 10기 단일 구성이라
+  가중이 균일해 수준이 상쇄된다(모형이 실제로 쓰는 `ef_inc` 1.846 vs 공시 1.856). 그리고 그 값이
+  **수준을 정하는 곳은 재척도하지 않는 석화 2사인데, 그 둘이 정확히 대조 불가능한 둘이다.**
+- 교차대조 분해가 **정성적**이라는 것을 명시했다 — 어느 요인이 감축단가 차이의 몇 %인지는
+  계산되지 않았고(`cross_model_check.md` §4), 따라서 이 층이 지지하는 주장은 “같은 방향”이지
+  “같은 수준”이 아니다.
+
+### 검증
+
+```
+.venv/bin/python scripts/build_tech_guide.py     # 21 blocks, 115,805 chars (112,185 -> )
+.venv/bin/python scripts/build_guide_page.py     # 38 sections, 383 table rows (불변)
+.venv/bin/python scripts/build_site.py
+.venv/bin/python scripts/gate.py                 # gate: OK (pytest 73 passed, audit ok 68/PARTIAL 4 불변)
+```
+
+수치 출처: 후향 오차 = `docs/validation_backtest.csv`(`err_pct`) · EAF 가설 배제 표 =
+`docs/validation_backtest.md` §2 · CAPEX 실적·문헌 대조 = `docs/validation_external.md` §1·§1-1·§2 ·
+LCOA 미대조 = `docs/validation_external.md:152` + `docs/data_gap_registry.md:124,137` ·
+지표 ② 자릿수 = `docs/validation_external.md` §3 · 교차대조 미분해 = `docs/cross_model_check.md` §4.
+
+테스트 1개 추가(72 → 73). `test_section_7_backtest_matches_the_backtest_record`는
+`validation_backtest.csv`에서 기업별 평균·최대 오차를 다시 계산해 §7의 수와 대조하고,
+대조 가능한 기업 집합이 {POSCO, NSC}에서 바뀌면 실패한다. 더해서 “and energy cost reported”가
+되살아나거나 LCOA 공백 문장이 사라지거나 네 기록 파일 중 하나라도 §7에서 빠지면 실패한다.
+
+**생성 블록은 손대지 않았다.** 21개 불변, 바뀐 3,600자는 전부 §7의 손으로 쓴 산문이다.
+
+`data/~$CAP_data_collection_template.xlsx`(엑셀 잠금 파일) 삭제를 이번 커밋에 실었다 — 창 내내
+uncommitted로 남아 게이트 ⑧을 WARN으로 붙들고 있던 것이다.
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | 유지 | gate audit `ok 68, PARTIAL 4` 불변 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | 유지 | 11 가정 묶음 + base, 묶음당 16칸 (3묶음 미재계획 — F2) |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **약해진 쪽으로 정확해짐** | §7이 팔던 검증 두 개가 실은 미시행이었다. Arc가 `validation_backtest.md`를 열면 어차피 보이는 것이고, 심사자가 먼저 찾으면 문서 전체의 신뢰가 걸린다. 대신 NSC 낙제가 헤드라인에 걸리지 않는 이유를 같은 자리에 붙여 방어 가능한 형태로 만들었다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | 유지 | `scripts/gate.py` 8항목. MCP 표면 변화 없음 |
+| ⑤ 산출물 — 다른 형식이 있는가 | 유지 | md / HTML(38절 383행) / SVG / 데이터 패키지 |
+
+### 인계
+
+- **미인용 부속 문서 6개**(F15 목록에서 셋 해소): `literature_map`·`price_process_test`·
+  `seed_stability`·`tech_band_upgrade`·`tech_cost_reconciliation`·`data_audit`. 다만 §7에서 본 것을
+  적어 두면 — **인용을 붙이는 작업이 곧 사실 대조 작업이다.** 붙일 곳을 열면 서술이 어긋나 있다.
+  다음 후보는 §4.5(evidence grading) ↔ `tech_band_upgrade.md`·`data_audit.md`.
+- **§7이 새로 드러낸 실질 공백 2건**(문서가 아니라 작업): (a) 문헌 LCOA 미추출 — Vogl·Agora·
+  IEA ISTR·Material Economics·MPP 한 번의 수집이 `data_gap_registry.md:137`대로 세 공백을 동시에
+  메운다. (b) 교차대조 요인별 정량 분해 미실시.
+- **CCfD를 시험 가능하게 만드는 일**(백로그 유지, F13): D5에 행사가 행 + E5 격자에 `ccfd` 축.
+- **§6.1 시드 스윕 재실행**(백로그 유지): E3–E5 × 5시드.
+- **MCI 사업소 상한 검증**(백로그 유지, O13): `prepare_raw.py` 석화 분기에 경고 한 줄.
+- **③ 번호 오기**(백로그 유지, F13): 파이프라인 재실행 사이클에 같이 넣어라.
+- **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).
