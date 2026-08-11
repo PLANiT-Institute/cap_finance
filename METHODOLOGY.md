@@ -230,7 +230,7 @@ $$\text{P50} = \operatorname{med}_\omega\big[\mathcal C^{tot}(P,\omega)-\mathcal
 | A-07 | 유상할당 = 확정 할당계획(2026–30 발전외 15%) 우선, 이후 추정 램프 | KETS_P4_CONFIRM_2025 | **대** (전량 부과 시 전 설비 폐쇄가 최적해) | `test_auction_share_follows_confirmed_allocation_plan` |
 | A-08 | 결측 가격 앵커는 제거·평탄 외삽하고 경고 | — | 대 (조용한 모형 후퇴 차단) | `test_central_price_paths_are_complete_and_finite` |
 | A-09 | 폐쇄 상한 20% | 시장지위 프록시 | 대 | I2 대안 검증 대상 |
-| A-10 | BF 전환 = 수소환원만, CCUS·효율은 리트로핏, BF→EAF 전면 전환 불허 | 사용자 확정 | 대 | 설계 결정 |
+| A-10 | BF 전환 = 수소환원만, 효율·부분감축은 리트로핏, BF→EAF 전면 전환 불허, **CCUS는 수단 집합에서 제외** (`scripts/prepare_raw.py:303` — raw 17행 중 `steel_ccus`·`petchem_ccus` 2행 탈락) | 사용자 확정 (CCUS 제외는 2026-08-06) | 대 | 설계 결정. F19까지 이 줄은 CCUS를 고로에 붙는 리트로핏 수단으로 적고 있었고 그것은 파이프라인이 하는 일의 반대였다 — §6.4가 같은 문서에서 "LOTTE는 공시 수단이 CCUS인데 우리가 CCUS를 D3에서 제외했다"고 적고 있었다 |
 | A-11 | 예산 위반 페널티 바닥 300천원/tCO₂ | 1차 실행 실증 | 대 | — |
 | A-12 | 폐쇄 시 모형 자신의 에너지 절감을 되돌려 더함 | 이중계상 방지 | 중 | — |
 | A-13 | 좌초비용 = 캠페인 정액상각 잔존 장부가, 앵커 ±1년 유예. 재조달가 BF 200천원/t 주입 | 설계서 §2 | 대(투자 시점) | **H3: 공시 실적(고베 3고로 47천원/t) 대비 ×4.2 과대** — `reline_cheap` 시나리오 |

@@ -554,3 +554,72 @@ def test_section_6_1_seed_sweep_matches_the_stability_record():
         "남은 두 선택지 중 하나로 적는다")
     assert "the stability of plan selection is not measured by this sweep" in text, (
         "§6.1이 이 스윕이 재지 않는 채널을 더 이상 밝히지 않는다")
+
+
+def test_ccus_is_described_as_excluded_wherever_a10_is_stated():
+    """A-10이 파이프라인이 하는 일의 반대를 적고 있었다 (F19).
+
+    `prepare_raw.py:303`은 raw 17행에서 CCUS 2행을 떨어뜨린다 — 어떤 설비도 어떤 가격에도
+    포집을 채택할 수 없다. 그런데 가이드 §4.2와 METHODOLOGY §A-10은 둘 다 "CCUS·효율은
+    리트로핏"이라고 적고 있었고, 같은 두 문서의 §6.4는 "LOTTE의 공시 수단이 CCUS인데
+    우리가 제외했다"고 적고 있었다. 한 문서 안에서 서로를 부정하고 있었던 것이다.
+    이 테스트는 (a) 실제로 제외돼 있는지, (b) 두 문서가 그렇게 적는지 둘 다 본다.
+    """
+    import pandas as pd
+
+    raw = pd.read_csv(ROOT / "data" / "raw" / "tech_options.csv")
+    prep = pd.read_csv(ROOT / "data" / "prepared" / "D3_tech_options.csv")
+    ccus_raw = set(raw[raw.tech_id.str.contains("ccus")].tech_id)
+    assert ccus_raw, "raw에 CCUS 행이 없다 — 이 테스트의 전제가 사라졌으니 문장을 다시 써라"
+    assert not any("ccus" in t for t in prep.tech_id), (
+        "CCUS가 D3에 들어왔다 — A-10과 §3.4를 다시 써라")
+
+    for doc in (GUIDE, ROOT / "METHODOLOGY.md"):
+        text = " ".join(doc.read_text(encoding="utf-8").split())
+        a10 = [ln for ln in doc.read_text(encoding="utf-8").splitlines() if "A-10" in ln and "|" in ln]
+        assert a10, f"{doc.name}에서 A-10 줄을 못 찾았다"
+        assert any("ccus" in ln.lower() for ln in a10), f"{doc.name}의 A-10이 CCUS를 언급하지 않는다"
+        assert "CCUS and efficiency are retrofits" not in text and "CCUS·효율은 리트로핏" not in text, (
+            f"{doc.name}이 다시 CCUS를 리트로핏 수단으로 적는다 — prepare_raw.py:303이 떨어뜨린다")
+        assert "prepare_raw.py:303" in text, (
+            f"{doc.name}이 CCUS 제외 지점을 파일:행으로 적지 않는다")
+
+
+def test_section_3_4_excluded_rows_are_counted_not_typed():
+    """§3.4가 "13 rows in total"만 적어 4행이 왜 사라졌는지 말하지 않았다 (F19).
+
+    양쪽 수가 데이터이므로 생성 블록으로 옮겼다. 이 테스트는 그 블록의 수·이름을
+    raw ↔ prepared에서 다시 세고, `steel_eaf` 240의 위치 주장(6건 중 최저·유일한
+    partial_scope)도 EFF 증거 파일에서 다시 확인한다.
+    """
+    import pandas as pd
+
+    raw = pd.read_csv(ROOT / "data" / "raw" / "tech_options.csv")
+    prep = pd.read_csv(ROOT / "data" / "prepared" / "D3_tech_options.csv")
+    text = " ".join(GUIDE.read_text(encoding="utf-8").split())
+    assert f"sees {len(prep)} of the {len(raw)} rows" in text, (
+        f"§3.4의 행 수가 실제 {len(prep)}/{len(raw)}와 다르다")
+    for tid in set(raw.tech_id) - set(prep.tech_id):
+        assert f"`{tid}`" in text, f"§3.4가 탈락 행 {tid}을 이름으로 적지 않는다"
+
+    ev = ROOT / "cap-efficient" / "data" / "technology_cost_evidence.csv"
+    if not ev.exists():
+        pytest.skip("EFF 증거 파일 부재")
+    e = pd.read_csv(ev)
+    e = e[e.technology_id == "SCRAP_EAF"]
+    v = e.normalized_capex_bn_krw_per_mtpa.astype(float)
+    lo = e.loc[v.idxmin()]
+    assert abs(float(lo.normalized_capex_bn_krw_per_mtpa) - 240) < 0.5, (
+        "6건 중 최저가 더 이상 광양 240이 아니다 — §3.4의 '가장 낮다' 주장을 다시 써라")
+    assert lo.comparability.startswith("partial"), (
+        "광양 행의 comparability가 바뀌었다 — §3.4의 partial-scope 주장을 다시 써라")
+    rest = v.drop(v.idxmin())
+    assert f"{rest.min():,.0f}–{rest.max():,.0f} thousand KRW/t" in text, (
+        f"§3.4의 나머지 5건 범위가 실제 {rest.min():,.0f}–{rest.max():,.0f}와 다르다")
+
+    # 이 표를 정합의 근거로 쓰던 두 칸이 model_estimate 위에 서 있었다
+    tech = pd.read_csv(ROOT / "cap-efficient" / "data" / "technologies.csv")
+    for tid in ("SCRAP_EAF", "H2_DRI_EAF"):
+        row = tech[tech.technology_id == tid].iloc[0]
+        assert row.data_status == "model_estimate", (
+            f"EFF {tid}에 출처가 붙었다 — §7과 tech_cost_reconciliation.md의 F19 정정을 갱신하라")

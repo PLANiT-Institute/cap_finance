@@ -339,6 +339,40 @@ def gen_d3_reach():
     return _md(rows, ["Unit type", "Facilities", "Capacity (Mt/yr)", "Measures", "Which"]) + note
 
 
+def gen_d3_excluded():
+    """Raw D3 rows that never reach the solver.
+
+    F19: the guide said "13 rows in total" and stopped there, so a reader could not
+    tell that CCUS is priced in the raw table and excluded from the run — and §4.2's
+    A-10 said the opposite ("CCUS and efficiency are retrofits"). Both sides of the
+    filter are data, so the count and the names are generated.
+    """
+    raw = pd.read_csv(ROOT / "data" / "raw" / "tech_options.csv")
+    kept = pd.read_csv(prepared() / "D3_tech_options.csv")
+    dropped = raw[~raw.tech_id.isin(kept.tech_id)]
+    ccus = sorted(dropped[dropped.tech_id.str.contains("ccus")].tech_id)
+    alt = dropped[dropped.tech_id.str.endswith("_alt")]
+    pairs = []
+    for r in alt.itertuples():
+        base = r.tech_id[: -len("_alt")]
+        adopted = kept.loc[kept.tech_id == base, "capex_unit"]
+        pairs.append(f"`{r.tech_id}` {r.capex_unit:,.0f} against the adopted "
+                     f"{adopted.iloc[0]:,.0f}" if len(adopted) else f"`{r.tech_id}`")
+    other = sorted(set(dropped.tech_id) - set(ccus) - set(alt.tech_id))
+    return (
+        f"**The model sees {len(kept)} of the {len(raw)} rows in "
+        f"`data/raw/tech_options.csv`.** {len(dropped)} are filtered out in preparation and "
+        f"nothing downstream can adopt them. "
+        f"{len(ccus)} of them are the CCUS measures ({', '.join('`' + c + '`' for c in ccus)}): "
+        "**CCUS is not in the option set at all** — a user scope decision of 2026-08-06, taken "
+        "until storage-capacity and cost data exist, applied at `scripts/prepare_raw.py:303`. "
+        f"The other {len(alt)} are alternative-source CAPEX estimates kept for sensitivity and "
+        f"read by nothing in this run ({'; '.join(pairs)} thousand KRW/t of capacity). "
+        + (f"Also dropped: {', '.join('`' + o + '`' for o in other)}. " if other else "")
+        + "This is the one exclusion in §3 that removes a measure firms actually name in their "
+        "own disclosures — see §6.4 for what it costs the disclosed-plan comparison.")
+
+
 def gen_d3b_bands():
     """Every evidence band, and where the central value sits in it."""
     d = prepared()
@@ -363,11 +397,45 @@ def gen_d3b_bands():
             "CAPEX dispersion enters the model through `capex_uncertainty` (**A-22**) instead. "
             "No central value sits strictly inside its band: two sit on a bound and "
             f"{len(outside)} sits outside ({', '.join(outside)}). That is deliberate and tested — "
-            "`steel_eaf` at 240 is POSCO's Gwangyang project on a reused site, below a "
-            "literature band built from greenfield builds "
-            "(`data/manifests/estimation_notes_D2_v0.md`), and it is the evidence that the "
-            "central values were not quietly snapped to the literature.")
+            "`steel_eaf` at 240 is POSCO's Gwangyang project on a reused site, and the band it "
+            "sits below is stated to be greenfield EAF builds in the `derivation` column of "
+            "`data/raw/tech_bands.csv` — that is where the greenfield attribution lives, not in "
+            "the estimation notes this sentence used to cite. It is the evidence that the "
+            "central values were not quietly snapped to the literature." + _eaf_evidence_note())
     return _md(rows, ["Tech", "Field", "Central", "Band", "Position", "Tier"]) + note
+
+
+def _eaf_evidence_note():
+    """How low 240 is against every primary EAF project figure we hold.
+
+    F19: the band explanation ("reused site, not greenfield") is true and not the whole
+    reading. The independent implementation collected six primary project figures for
+    the same technology, and Gwangyang is the lowest of them by a factor of five.
+    """
+    p = ROOT / "cap-efficient" / "data" / "technology_cost_evidence.csv"
+    if not p.exists():
+        return ""
+    e = pd.read_csv(p)
+    e = e[e.technology_id == "SCRAP_EAF"]
+    if e.empty:
+        return ""
+    v = e.normalized_capex_bn_krw_per_mtpa.astype(float)
+    lo = e.loc[v.idxmin()]
+    rest = v.drop(v.idxmin())
+    partial = sorted(e.loc[e.comparability.str.startswith("partial"), "project_id"])
+    return (
+        f" The independent implementation puts a sharper reading on the same number: of the "
+        f"{len(e)} primary EAF project figures in "
+        f"`cap-efficient/data/technology_cost_evidence.csv`, Gwangyang's "
+        f"{lo.normalized_capex_bn_krw_per_mtpa:,.0f} is the lowest"
+        + (f" and the only one flagged partial-scope ({len(partial)} of {len(e)})" if len(partial) == 1
+           else "")
+        + f", while the other {len(rest)} normalise to {rest.min():,.0f}–{rest.max():,.0f} thousand "
+        "KRW/t because they are gross figures covering government support and downstream measures. "
+        "Read 240 as a defensible floor rather than a central EAF cost. It costs this model nothing "
+        "either way, because `steel_eaf` is the row no facility can adopt (above) — it costs the "
+        "other model, which does allow the conversion, and that is recorded in "
+        "[`docs/tech_cost_reconciliation.md`](tech_cost_reconciliation.md).")
 
 
 def gen_price_series():
@@ -1201,6 +1269,7 @@ BLOCKS = {
     "d1b_intensity": gen_d1b_intensity,
     "d2_provenance": gen_d2_provenance,
     "d3_reach": gen_d3_reach,
+    "d3_excluded": gen_d3_excluded,
     "d3b_bands": gen_d3b_bands,
     "price_series": gen_price_series,
     "d6_coverage": gen_d6_coverage,

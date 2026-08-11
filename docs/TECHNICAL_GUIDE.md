@@ -397,7 +397,11 @@ carbon price is a central-bank shadow price, Japanese NZ15 is IEA NZE, B20 is IE
 
 ### 3.4 D3 — technology options
 
-One row per abatement measure available to a sector, 13 rows in total.
+One row per abatement measure available to a sector.
+
+<!-- GEN:d3_excluded -->
+**The model sees 13 of the 17 rows in `data/raw/tech_options.csv`.** 4 are filtered out in preparation and nothing downstream can adopt them. 2 of them are the CCUS measures (`petchem_ccus`, `steel_ccus`): **CCUS is not in the option set at all** — a user scope decision of 2026-08-06, taken until storage-capacity and cost data exist, applied at `scripts/prepare_raw.py:303`. The other 2 are alternative-source CAPEX estimates kept for sensitivity and read by nothing in this run (`steel_eaf_alt` 700 against the adopted 240; `steel_h2dri_alt` 1,126 against the adopted 863 thousand KRW/t of capacity). This is the one exclusion in §3 that removes a measure firms actually name in their own disclosures — see §6.4 for what it costs the disclosed-plan comparison.
+<!-- /GEN:d3_excluded -->
 
 **Adoption is all-or-nothing per facility.** There is no coverage fraction: E2's decision variable
 is binary over (facility, technology, adoption year), and at most one technology or one closure may
@@ -465,7 +469,7 @@ guide previously described these as bands "per (tech, field)", which overstates 
 | `steel_eaf` | `capex_unit` | 240 | 370 – 835 | **below band** | T3 |
 | `steel_eaf` | `emission_factor` | 0.05 | 0.04 – 0.05 | at upper bound | T3 |
 
-**3 bands over 2 of 13 technologies and 2 of 11 numeric fields** — this is a spot check on two steel CAPEX values, not a band layer over the option set. Every other central value in D3 is a point with a source and no stated range, which is why CAPEX dispersion enters the model through `capex_uncertainty` (**A-22**) instead. No central value sits strictly inside its band: two sit on a bound and 1 sits outside (`steel_eaf.capex_unit`). That is deliberate and tested — `steel_eaf` at 240 is POSCO's Gwangyang project on a reused site, below a literature band built from greenfield builds (`data/manifests/estimation_notes_D2_v0.md`), and it is the evidence that the central values were not quietly snapped to the literature.
+**3 bands over 2 of 13 technologies and 2 of 11 numeric fields** — this is a spot check on two steel CAPEX values, not a band layer over the option set. Every other central value in D3 is a point with a source and no stated range, which is why CAPEX dispersion enters the model through `capex_uncertainty` (**A-22**) instead. No central value sits strictly inside its band: two sit on a bound and 1 sits outside (`steel_eaf.capex_unit`). That is deliberate and tested — `steel_eaf` at 240 is POSCO's Gwangyang project on a reused site, and the band it sits below is stated to be greenfield EAF builds in the `derivation` column of `data/raw/tech_bands.csv` — that is where the greenfield attribution lives, not in the estimation notes this sentence used to cite. It is the evidence that the central values were not quietly snapped to the literature. The independent implementation puts a sharper reading on the same number: of the 6 primary EAF project figures in `cap-efficient/data/technology_cost_evidence.csv`, Gwangyang's 240 is the lowest and the only one flagged partial-scope (1 of 6), while the other 5 normalise to 1,314–2,899 thousand KRW/t because they are gross figures covering government support and downstream measures. Read 240 as a defensible floor rather than a central EAF cost. It costs this model nothing either way, because `steel_eaf` is the row no facility can adopt (above) — it costs the other model, which does allow the conversion, and that is recorded in [`docs/tech_cost_reconciliation.md`](tech_cost_reconciliation.md).
 <!-- /GEN:d3b_bands -->
 
 **Hydrogen is an externally procured commodity**, not an electrolyser built inside the model
@@ -821,7 +825,7 @@ grade: either an axis we **re-solved** and can therefore quote a number for, or 
 | ID | Assumption | Note |
 |---|---|---|
 | **A-06** | Firm budget = own base emissions × sector path ratio | Level from the firm, shape from the scenario. No inter-firm allocation of abatement — who abates when is E2's decision |
-| **A-10** | Blast-furnace conversion is hydrogen-DRI only; CCUS and efficiency are retrofits; wholesale BF→EAF conversion is disallowed | User-confirmed scope decision. **This is why POSCO has no disclosed coordinate** — its Gwangyang EAF cannot be represented (§6.4) |
+| **A-10** | Blast-furnace conversion is hydrogen-DRI only; efficiency and partial-abatement measures are retrofits; wholesale BF→EAF conversion is disallowed; **CCUS is not in the option set at all** — both CCUS rows are dropped in preparation (`scripts/prepare_raw.py:303`), so no firm can be assigned a capture project at any price | User-confirmed scope decision. **This is why two of the four firms have no disclosed coordinate** — POSCO's Gwangyang EAF cannot be represented and LOTTE's disclosed measure is CCUS (§6.4, §3.4). Until F19 this row called CCUS a retrofit measure available to blast furnaces, the opposite of what the pipeline does, while §6.4 of the same document said it was excluded |
 | **A-09** | At most 20% of firm production may be retired early | Demand / market-position proxy. Without it, NZ15 carbon prices dwarf margins and full closure wins — an observation from the first unconstrained run, **not** a re-solved result: the `retire_free` bundle (cap raised to 40%) has never been re-planned, so its 0.0% measures nothing (§4.3) |
 | **A-11** | Budget-violation penalty floored at 300 thousand KRW/tCO₂ | Without a floor the optimiser buys violations instead of transitions. Registered T5 with a `[150, 600]` band whose `source_id` is `MODEL_CHOICE` — i.e. **the band has no external basis**. The floor is far above where it needs to be: early action stops winning only below ≈39 thousand KRW/tCO₂, and at a floor of 0 three of four firms flip while at 50 none do (`out/m5/penalty_axis.csv`) |
 | **A-04** | Margin is operating profit per tonne, lost on closure | One value per sector, not per facility or per product — the closure decision therefore cannot distinguish a marginal cracker from a profitable one |
@@ -1164,6 +1168,20 @@ decomposition is **qualitative**: no share of the abatement-cost difference has 
 any one cause, which would take re-running one model under the other's definitions one factor at a
 time. So the claim this layer supports is that the two models point the same direction — not that
 their levels agree.
+
+Below the plan level, the two trees are reconciled parameter by parameter in
+[`docs/tech_cost_reconciliation.md`](tech_cost_reconciliation.md) — adopted value, difference and
+reason for every technology cost the two share, with the same copy committed on both sides. Two of
+its entries did not survive being checked for this section, and the file now records the correction:
+it described the other model's steel CAPEX values (900 for hydrogen-DRI, 560 for scrap EAF) as
+project-derived, and therefore called 560 the canonical figure over our 240. Both are flagged
+`model_estimate` in `cap-efficient/data/technologies.csv` with "standardised cost assumption" as
+their stated basis, and the six primary EAF projects in that repository's evidence file normalise to
+240–2,899 with a median near 1,890 — so 560 is not a function of them. The consequence for this
+document is narrow and worth stating plainly: **the ±4% agreement on hydrogen-DRI CAPEX is agreement
+between one literature-derived value (ours, DIW DP2082) and one standardised assumption (theirs), not
+between two independent extractions.** It is weaker corroboration than it looks, and this is the only
+place either repository now says so.
 
 ### One command
 
