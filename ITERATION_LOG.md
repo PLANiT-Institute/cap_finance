@@ -3953,3 +3953,89 @@ out/에서 다시 계산해 생성 블록의 수와 맞추고, **팔을 다시 �
   **§6.1 시드 스윕 재실행** · **MCI 사업소 상한 검증**(O13) · **③ 번호 오기**(F13).
 - **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
   미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).
+
+## F22 (04:30) — 교차대조의 유일한 수준 검사가 저장소 밖 파일에서 나오고 있었다
+
+**한 일.** F21 인계는 "부속 문서 인용이 전부 붙었다 — 다음 사이클부터는 이 탐지기가
+없다"였고, 대체 규칙으로 **부속 문서의 판정 날짜 대 가이드 문단의 최종 수정 시각**을
+제안했다. 그것을 스크립트로 돌려 봤다(`git blame` × 부속 문서 최종 커밋). 8건이 걸렸으나
+**대부분 노이즈였다** — 매 사이클 재생성되는 문서를 가리키는 포인터 문장들이 시간차만으로
+걸린다. 규칙 자체는 만들지 않고(허용목록 유지비가 잡는 결함보다 크다) 그 목록을 손으로
+읽었고, 거기서 §7의 실제 결함이 나왔다.
+
+최우선 인계(곁가지 산출물 재실행)는 이번에도 시작하지 않았다 — 30분 창 규칙. 대신 그것을
+**게이트가 말하게** 만들었다.
+
+### 가이드에서 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | §7 | "the claim this layer supports is that the two models point the same direction — **not that their levels agree**" — 교차대조가 수준 공간에서는 아무것도 재지 않은 것처럼 읽힌다 | **수준 공간의 검사가 하나 있고 C16 이래 있었다.** 우리 ②가 EFF의 실행가능 후보 대역 안에 드는가 — POSCO 115 대 [26.6, 155.9] **안**, NSC 156 대 [42.3, 152.3] **밖(위치 103%)**. 가이드는 이 검사를 한 번도 싣지 않았다 | `docs/cross_model_check.md` §3 · `out/e5/metrics_company.csv` · `cap-efficient/outputs/candidate_scenario_metrics.csv` |
+| 2 | 검사 자체 (`cross_model_check.py`) | 대역이 **저장소 밖 파일**에서 나오고 있었다. F20이 `eff_file()` 헬퍼를 넣고도 후보 지표만은 `EFF / "outputs" / ...`로 직접 읽었다 | **두 사본이 어긋나 있고 판정이 뒤집힌다.** 같은 필터에서 NSC 대역이 커밋된 사본 **42.3~152.3**, 저장소 밖 사본 **78.5~184.6** — 우리 156은 앞에서 밖, 뒤에서 안. **F20이 판정을 "(POSCO)"에서 "(POSCO, NSC)"로 올린 근거가 저장소 밖 파일의 변화 하나였다.** 탐색 순서를 뒤집어 커밋된 사본을 정본으로 삼았다 — 재현 가능해지는 대신 NSC가 대역 밖이 된다 | `scripts/cross_model_check.py:37-50,110` · 두 트리 `outputs/candidate_scenario_metrics.csv` (사내 08-10 00:43 / 사외 08-11 22:17) |
+| 3 | §7 (신규) | — (대역 검사가 대칭적 검사로 읽힐 자리) | 약한 근거를 같은 문장에 붙였다: **대역의 하단은 EFF 자신이 고른 값**이다(선택 규칙이 gross 최소). 우리 값은 정의상 그 아래로 내려갈 수 없으므로 **이 검사는 위쪽으로만 실패한다**. 폭도 **POSCO 5.9배 · NSC 3.6배**로 느슨하다. 이 검사가 지지하는 진술은 "수준이 일치한다"가 아니라 "EFF가 실행가능하다고 본 것 중 **비싼 쪽에** 우리가 있다" | `cap-efficient/outputs/candidate_scenario_metrics.csv` (`gross_cost_p50_kkrw_per_tco2`) |
+| 4 | `docs/cross_model_check.md` §3 (양 사본) | "FIN의 값이 EFF의 실행가능 후보 분포 안에 있다 (POSCO, NSC)" 한 줄뿐 | 같은 문서에 대역 폭·한쪽 실패·트리 의존을 적었다. §3의 "어느 트리에서 나왔는가" 절이 두 사본의 대역을 나란히 적고 **판정이 뒤집히는 자리를 표시**한다 | 생성기가 씀 (`eff_divergence` 신설) |
+
+### 게이트에 추가한 것
+
+- **`sidecars` 검사(WARN)**: `out/process`·`out/scenarios`·`out/m8`·`out/m5`가 `out/e5`보다
+  오래되면 이름과 시간차를 찍는다. F20 인계 항목이다 — 그 전까지 이 넷은 아무도 보지 않아
+  하루 넘게 낡은 채 §6.2에 인용됐고 게이트는 그린이었다.
+  현재: `STALE behind out/e5: process(13h), scenarios(1h), m8(3h), m5(1h)`.
+  FAIL이 아닌 이유는 코드 결함이 아니라 **재실행 대기 상태**이기 때문이다.
+
+### 검증
+
+```
+.venv/bin/python scripts/cross_model_check.py     # docs/ + EFF 사본 2개
+.venv/bin/python scripts/build_tech_guide.py      # 25 blocks (24 -> ), 134,143 chars (132,387 -> )
+.venv/bin/python scripts/build_guide_page.py      # 38 sections, 395 table rows (392 -> )
+.venv/bin/python scripts/build_site.py
+.venv/bin/python scripts/gate.py                  # gate: OK (pytest 84 passed, sidecars WARN)
+.venv/bin/python scripts/build_tech_guide.py --check   # 커밋 직후 current
+```
+
+수치 출처: 우리 ② 115·156 = `out/e5/metrics_company.csv` (NZ15·support=none) ·
+EFF 대역 = `cap-efficient/outputs/candidate_scenario_metrics.csv`
+(`scenario_id=ACCELERATED_15C`, 4개 실행가능 플래그 전부 참인 96개 후보의
+`gross_cost_p50_kkrw_per_tco2` min/max) · 저장소 밖 대역 =
+`~/Documents/cap-efficient/outputs/candidate_scenario_metrics.csv` (같은 필터, 99개).
+
+테스트 1개 추가(83 → 84). `test_crossmodel_band_reads_the_committed_eff_copy`는 (a) 읽는
+사본이 저장소 안인지, (b) §7 표의 대역이 그 사본에서 다시 계산한 값과 맞는지, (c) 우리
+값이 EFF 채택값 아래로 내려가지 않는지(=하단이 EFF의 답이라는 서술의 전제), (d) §7이
+"위쪽으로만 실패"와 "트리 의존"을 계속 적는지를 본다. **탐색 순서가 다시 뒤집히면 실패한다.**
+
+**생성 블록은 하나 늘었다** (24 → 25, `crossmodel_band` 신설). 손으로 쓴 산문 변경은 §7
+한 문단(대역 검사 도입문)이고, 대역 수치는 전부 생성기가 썼다.
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | 유지 | gate audit `ok 68, UNUSED 1, PARTIAL 3` 불변 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | 유지 | 11 묶음 + base 불변. 다만 게이트가 이제 이 묶음이 base보다 1시간 낡았다고 말한다 |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선 (약해진 쪽으로)** | Arc가 "다른 모형과 대조했느냐"고 물으면 답이 "방향만"에서 "수준에서도 한 검사가 있다 — 우리 단가는 상대 모형이 실행가능하다고 본 대역 안(POSCO)·위(NSC)이고, 그 대역은 5.9배로 느슨하며 하단이 상대의 답이라 위쪽으로만 실패한다"로 바뀐다. 자랑이 아니라 방어 가능한 진술이다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | **개선** | 교차대조가 이 저장소만으로 재현된다. 게이트 9항목(8 → ), MCP 11도구 불변 |
+| ⑤ 산출물 — 다른 형식이 있는가 | 유지 | md / HTML(38절 395행) / SVG / 데이터 패키지 |
+
+### 인계
+
+- **EFF 트리 문제는 절반만 닫혔다**(F20 인계 갱신): 읽는 쪽은 커밋된 사본으로 고정했으나
+  **두 사본이 여전히 다르다**. 저장소 밖 사본(08-11 22:17)이 더 새롭고, 그쪽이 맞다면
+  커밋된 `cap-efficient/outputs/`를 갱신해야 한다 — 그러면 NSC가 다시 대역 안이 되고
+  §7 표와 테스트가 자동으로 따라간다. **어느 쪽이 정본인지는 EFF를 누가 언제 돌렸는지의
+  문제**이고 이 창에서 결정할 수 없다.
+- **부속 문서 낡음 탐지기는 만들지 않았다**(F21 제안 기각): `git blame` × 부속 문서 최종
+  커밋으로 8건이 걸렸으나 실효 1건, 나머지는 재생성 문서를 가리키는 포인터 문장이었다.
+  허용목록 유지비가 잡는 결함보다 크다. 대신 **이번 결함이 걸린 경로**를 규칙으로 삼아라 —
+  *가이드가 인용하는 문서의 표가 가이드에 없으면 왜 없는지 확인한다.*
+  §7의 대역 표가 정확히 그 경우였다.
+- **곁가지 산출물 재실행**(F20, 최우선 유지): 이제 게이트가 이름으로 말한다.
+  `out/process`(13h)·`out/m8`(3h)·`out/scenarios`(1h)·`out/m5`(1h). `D6.capex_total` 소비(F18) ·
+  `reline_cheap --replan`(F21) · 대역 상단(×1.34) 미측정(F21)을 **한 번의 파이프라인 창에 묶어라**.
+- **EFF·FIN 확률과정 정량 분해**(F20) · **EFF 철강 CAPEX 2건 출처 부재**(F19) ·
+  **`_alt` 행의 용도 미실현**(F19) · **감사기의 이름 매칭 한계**(F18) ·
+  **§7이 드러낸 실질 공백 2건** · **CCfD 시험 가능화**(F13) · **§6.1 시드 스윕 재실행** ·
+  **MCI 사업소 상한 검증**(O13) · **③ 번호 오기**(F13).
+- **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).
