@@ -4301,3 +4301,112 @@ A-01의 순위를 `ranking.csv`에서 다시 계산해 **가이드와 METHODOLOG
 - **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
   미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5),
   `get_affordability` 통화 경고(F8).
+
+## F26 (06:00) — 좁은 정의를 넓은 정의로 광고한 문장, 그리고 그것을 고치는 비용이 절반으로 적혀 있던 이유
+
+**한 일.** F25 인계의 규칙을 따랐다 — *생성기가 읽는 입력 파일의 시각을 전수로 훑어라.*
+`build_tech_guide.py`가 읽는 `out/` 경로 14개를 뽑아 `out/e5`와 대조했다. 넷이 낡았다
+(`m5` 1.1h · `m8` 3.3h · `process` 12.5h · `scenarios` 1.1h). 나머지 열은 현행이었고,
+F25가 고친 `out/sensitivity`는 43.7시간 **앞서** 있었다 — 규칙이 겨눈 것은 맞았다.
+
+낡음을 좇아 `out/m5`의 생산자를 찾다가 이번 사이클의 결함이 나왔다. `out/scenarios`를
+새로 돌리고 `bundle_matrix.csv`를 재생성하는 과정에서, 저장된 값이 **`scenario == NZ15`
+한 칸에서만** 재현된다는 것이 먼저 드러났다(16칸 전체로는 22개 대조 중 15개만 맞았고,
+NZ15로 거르자 22/22 맞았다). 생산자를 열어보니 `SCEN, SUPP = "NZ15", "none"`이 코드에
+박혀 있었다. **좁은 정의는 논문 §6의 규약이므로 틀리지 않았다. 틀린 것은 가이드였다.**
+
+### 가이드에서 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | §4.3 산문 | "Δ② and Δ③ are the largest move across the **sixteen** firm × scenario × support cells (4 × 2 × 2)" | **네 칸**이다 — 헤드라인 칸(`NZ15`·`support=none`)의 기업 4개. 두 정의는 멀다: `penalty_none`이 헤드라인에서 ③ **5.9%**, 16칸 전체에서 **241.8%**다. Arc가 "무엇에 대한 최대인가"를 물으면 답이 40배 달라진다 | `scripts/robustness_section_table.py:41`, `out/scenarios/summary.csv` |
+| 2 | §4.3 산문 | "Two of those five have been re-planned" | 손으로 적힌 수였고, 재계획 하나가 끝나는 순간 거짓이 된다. 이번 사이클이 바로 그렇게 만들었다 — 지금은 5/5다 | `out/m5/bundle_matrix.csv` |
+| 3 | §4.3 대체 문구 | "Run `python -m cap m5`" | **그런 단계가 없다.** CLI는 `e1–e5·render·all`이고 `out/m5`는 `robustness_section_table.py`가 쓴다. 지시대로 하면 아무것도 나오지 않는다 | `src/cap/__main__.py:13` |
+| 4 | §4.3 · `run_scenarios.py` 3곳 · 논문 §6.2 | "Re-planning each costs about ten minutes" / "묶음당 ~10분" | **12~32분**이다(실측 6묶음, 중앙값 20). `retire_free` 32분이 가장 비싸다 — 제약을 푸는 묶음이 탐색 공간을 넓히므로 | `REPLAN_MINUTES`, 실행 로그 |
+| 5 | 논문 §6.2 | "남은 둘(`carbon_slow`·`ppa_costly`)은 미착수다" | **셋**이었다. `retire_free`가 세는 데서 빠져 있었다 | `out/scenarios/summary.csv` |
+
+1·2번은 **손으로 쓴 산문이 수치 주장을 하고 있던** 자리다. 문장을 지우고 범위 진술을
+생성기로 옮겼다. `bundle_matrix.csv`에 16칸 최대 두 열(`d_m2_pct_all`·`d_tcar_pct_all`)을
+새로 낸다 — 헤드라인 열은 논문 §6이 그 정의로 쓰였으므로 그대로 두고, 둘 다 싣는다.
+
+### 미뤄둔 일을 했고, 판정이 다섯 번 뒤집혔다
+
+4번을 실측하려 `--replan`을 한 번 돌린 것이 F20 이래 7사이클 밀린 항목의 시작이 됐다.
+**E2 전용 다섯 축을 전부 재계획했다.**
+
+| 묶음 | 재계획 전 ② / ③ | 재계획 후 ② / ③ |
+|---|---|---|
+| `retire_free` | **0.0% / 0.0%** ("모든 열에서 base와 같다") | **41.2% / 51.9%** — ②에서 **전 축 최대** |
+| `carbon_slow` | **0.0% / 0.0%** | **39.0% / 99.7%** |
+| `ppa_costly` | **0.0% / 0.0%** ("평가 단계에 아예 등장하지 않는다") | 1.4% / 8.1% |
+
+**이 표의 '변화 0'은 한 번도 축의 성질이었던 적이 없었다** — 다섯 번 다 E2 공유라는 실행
+규약의 산물이었다. 논문이 "폐쇄 상한은 평가 단계에 아예 등장하지 않는다"고 적었던 축이
+②의 최대 축이다. 순위는 다섯 축 모두에서 보존됐다(`m5_bundle_rank_reversals` = 0) —
+**결론의 순서는 견디고 조달부담의 크기는 견디지 않는다**가 이제 다섯 축에서 확인됐다.
+
+논문 §6.2의 표 11행·산문 두 문단·제목과 §0 대장 3개 키(`m5_bundles_inert` 2→0,
+`m5_bundles_headline_inert` 3→0, `m5_bundles_replanned` 4→7), §4 요약 한 항목을 다시 썼다.
+
+### 동시 실행 (기록해 둘 것)
+
+07:00경 **다른 세션이 같은 저장소에서 같은 F26을 돌리고 있었다.** `--replan penalty_none`
+·`retire_free`·`carbon_fast`가 내 `ppa_costly`와 겹쳤고, 내 `retire_free`는 실행 중
+종료됐다(exit 144). D17이 실증한 바로 그 위험이므로 **경쟁 쓰기를 더 넣지 않고 그쪽
+체인이 끝나기를 기다렸다.** 결과적으로 두 세션이 다섯 축을 나눠 재계획한 셈이 됐고,
+`REPLAN_MINUTES`는 그쪽이 6묶음을 잰 값(20)이 내 2묶음 값(16)보다 나으므로 그것을 남겼다.
+`out/`은 깨지지 않았다 — `run_scenarios.py`의 부분 갱신 로직과 재계획본 보존 로직이
+버텼다. **다만 이것은 운이 아니라 확인이 필요한 사실이고, 다음 창은 동시 실행 여부를
+먼저 보라.**
+
+### 검증
+
+```
+.venv/bin/python scripts/run_scenarios.py                    # 평가 전용 6묶음 갱신
+.venv/bin/python scripts/run_scenarios.py --replan carbon_slow   # 16분 3초
+.venv/bin/python scripts/run_scenarios.py --replan ppa_costly    # 21분 44초
+.venv/bin/python scripts/robustness_section_table.py         # out/m5 재생성
+.venv/bin/python scripts/build_tech_guide.py                 # 31 blocks, 140,714 chars
+.venv/bin/python scripts/build_guide_page.py && scripts/build_site.py
+.venv/bin/python scripts/gate.py                             # gate: OK (pytest 97 passed)
+```
+
+수치 출처: 241.8·47.8·41.2·51.9·39.0·99.7·1.4·8.1 = `out/m5/bundle_matrix.csv`(재생성분) ·
+네 칸/16칸 = `scripts/robustness_section_table.py:41` × `out/scenarios/summary.csv` ·
+CLI 단계 목록 = `src/cap/__main__.py:13` · 재계획 실측 = 실행 로그 6건.
+
+테스트 2개 추가(92 → 97, 다른 세션분 포함). `test_axis_impact_deltas_state_the_cells_they_
+are_maximised_over`는 16칸 최대 두 값을 `summary.csv`에서 다시 계산해 **대장 열과 가이드
+문장 양쪽**에 대조하고, 생산자의 필터가 바뀌거나 옛 "sixteen" 문장이 되살아나면 실패한다.
+`test_guide_never_names_a_pipeline_stage_that_does_not_exist`는 가이드나 생성기가 CLI에
+없는 `python -m cap <단계>`를 부르면 실패한다.
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | 유지 | gate audit `ok 68, UNUSED 1, PARTIAL 3` 불변 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | **개선** | 11묶음 중 **다섯이 처음으로 계획 선택까지 다시 풀렸다**. "흔들어 봤다"고 표에 실려 있으면서 흔든 적 없던 행이 0개가 됐다 |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선** | Arc가 "그 최대는 무엇에 대한 최대인가"를 물으면 답이 있다. 그리고 답이 두 개다 — 헤드라인 칸과 16칸이 40배 갈린다는 것 자체가 팔 그림이다. 폐쇄 상한이 ②의 최대 축이라는 것은 새 결과다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | 유지 | 게이트 9항목·MCP 11도구 불변. 곁가지 STALE이 9개에서 `scenarios(0h)` 하나로 줄었다(두 세션 합산) |
+| ⑤ 산출물 — 다른 형식이 있는가 | 유지 | md / HTML(38절 400행 + evidence) / SVG / 데이터 패키지 |
+
+### 인계
+
+- **F25의 규칙(생성기 입력 시각 전수 조사)은 소진됐다.** 14경로를 다 봤고 낡은 넷 중 둘
+  (`m5`·`scenarios`)을 이번에 없앴다. 남은 둘은 `m8`(3.3h)·`process`(12.5h)다.
+  **다음 규칙 후보**: 이번 결함 1·2·5는 전부 *같은 사실을 코드와 산문이 따로 들고 있다가
+  갈린* 경우다(필터 상수, 재계획 수, 미착수 묶음 수). **가이드와 논문에서 "몇 개"를 세는
+  문장을 전수로 뽑아, 그 수가 코드나 CSV에서 다시 세어지는지 하나씩 확인하라.** 다시
+  세어지지 않는 수는 전부 2번과 같은 자리다.
+- **동시 실행 확인을 사이클 시작 절차에 넣어라** (`pgrep -f run_scenarios`). 이번엔 버텼다.
+- **`out/m8`·`out/process` 재실행**: 남은 두 곁가지. m8은 `frontier_tech_epsilon.py`,
+  process는 `process_alternative.py`. **비용을 먼저 재라** — F26이 보인 것은 미루는 판단이
+  대개 재본 적 없는 추정 위에 선다는 것이다.
+- **EFF 두 사본 불일치**(F22) · **EFF·FIN 확률과정 정량 분해**(F20) · **EFF 철강 CAPEX 2건
+  출처 부재**(F19) · **`_alt` 행의 용도 미실현**(F19) · **감사기의 이름 매칭 한계**(F18) ·
+  **§7이 드러낸 실질 공백 2건** · **CCfD 시험 가능화**(F13) · **MCI 사업소 상한 검증**(O13) ·
+  **③ 번호 오기**(F13).
+- **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5),
+  `get_affordability` 통화 경고(F8).
