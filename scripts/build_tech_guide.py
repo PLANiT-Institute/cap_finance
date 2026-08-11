@@ -850,8 +850,10 @@ def gen_diagnostic_drift():
         f"the drift exists but is unquantified. The drift is a property of the **baseline**, not "
         f"of the perturbation — an arm and its own control move together — so the *differences* "
         f"quoted from these files stay internally consistent while the *levels* in them do not "
-        f"match §6. Re-running the diagnostics after a base re-solve is what closes this; "
-        f"`scripts/gate.py` checks staleness for `out/e5` only.")
+        f"match §6. Re-running the diagnostics after a base re-solve is what closes this, and "
+        f"until it is closed `scripts/gate.py` names these files and their lag in its `sidecars` "
+        f"check — a warning rather than a failure, because a stale diagnostic is work not yet "
+        f"re-run, not a defect in the code.")
 
 
 def gen_headline():
@@ -1492,8 +1494,89 @@ def gen_crossmodel_band():
            "Both EFF trees agree on the candidate file, so the verdict is tree-invariant."))
 
 
+def gen_criterion_swap():
+    """The robustness axis that changes what the model calls optimal.
+
+    F23: §6.2 listed the perturbations the ranking survives — discount rate, price
+    process, shock normalisation, scenario bundles — and left out the one that swaps
+    the objective itself. `docs/robustness_structural.md` has carried it since I2: pick
+    each firm's plan by minimising P90 instead of P50 and the ordering is unchanged,
+    but the tail is nothing like the same thickness in the two sectors. The guide cited
+    that document once (§1, claim P2) and never carried its table.
+
+    Recomputed here from `out/e5/frontier_points.csv` through the same `pick` the
+    document uses, so the two cannot drift apart.
+    """
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from robustness_structural import CONAME, SECTOR, pick  # noqa: E402
+
+    fp = ROOT / "out" / "e5" / "frontier_points.csv"
+    if not fp.exists():
+        return "_out/e5/frontier_points.csv not available — cannot re-select on P90._"
+    fr = pd.read_csv(fp).query("scenario=='NZ15' and support=='none'")
+    g = fr[~fr.is_disclosed & fr.budget_ok]
+    if g.empty:
+        return "_No budget-feasible plan in out/e5 — cannot re-select on P90._"
+
+    p50, p90 = pick(g, "p50"), pick(g, "p90")
+    order = lambda d: [c for c in d.sort_values("lcoa").index]  # noqa: E731
+    EN = {"철강": "Steel", "석화": "Petrochemicals"}
+
+    rows, mult = [], {}
+    for c in order(p50):
+        if c not in p90.index:
+            continue
+        a, b = float(p50.loc[c, "lcoa"]), float(p90.loc[c, "lcoa"])
+        mult[c] = b / a
+        rows.append([f"**{CONAME[c]}**", EN.get(SECTOR[c], SECTOR[c]),
+                     f"{a:,.0f}", f"{b:,.0f}", f"**×{b / a:.1f}**"])
+    if not rows:
+        return "_No firm carries both a P50-optimal and a P90-optimal plan._"
+
+    tbl = _md(rows, ["Firm", "Sector", "② risk-neutral (minimise P50)",
+                     "② risk-averse (minimise P90)", "Tail multiple"])
+    band = lambda k: (min(v for c, v in mult.items() if SECTOR[c] == k),  # noqa: E731
+                      max(v for c, v in mult.items() if SECTOR[c] == k))
+    st, pc = band("철강"), band("석화")
+    same = order(p50) == order(p90)
+    verdict = ("**unchanged** — the criterion swap does not change which firm the model "
+               "points at" if same else
+               "**reversed** — which firm looks cheap depends on the risk attitude")
+    lo50 = min(float(p50.loc[c, "lcoa"]) for c in mult)
+    hi50 = max(float(p50.loc[c, "lcoa"]) for c in mult)
+    lo90 = min(float(p90.loc[c, "lcoa"]) for c in mult)
+    hi90 = max(float(p90.loc[c, "lcoa"]) for c in mult)
+    return tbl + (
+        f"\n\nThe ordering is {verdict}. What the swap does change is how far the bad "
+        f"case sits from the expected one, and that is **sector-specific**: steel "
+        f"×{st[0]:.1f}–{st[1]:.1f} against petrochemicals ×{pc[0]:.1f}–{pc[1]:.1f}. "
+        f"Cheapest to dearest firm spans {hi50 / lo50:.1f}× on expected cost and "
+        f"{hi90 / lo90:.1f}× on the bad case. The petrochemical problem is the "
+        f"**variance** of the cost, not its level.")
+
+
+def gen_gate_checks():
+    """How many checks the gate runs, and how many can fail it.
+
+    F23: this count was hand-written as "Eight checks … Five of the eight are hard",
+    and F22 added a ninth (`sidecars`) without the guide following. Reading it off
+    `gate.CHECKS`/`gate.HARD` means the next check added cannot leave the guide behind.
+    """
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from gate import CHECKS, HARD  # noqa: E402
+
+    keys = [k for k, _, _ in CHECKS]
+    hard = [k for k in keys if k in HARD]
+    soft = [k for k in keys if k not in HARD]
+    fmt = lambda ks: ", ".join(f"`{k}`" for k in ks)  # noqa: E731
+    return (f"**{len(CHECKS)} checks.** {len(hard)} are hard — a non-zero exit: "
+            f"{fmt(hard)}. The other {len(soft)} report and do not block: {fmt(soft)}.")
+
+
 BLOCKS = {
     "stamp": gen_stamp,
+    "criterion_swap": gen_criterion_swap,
+    "gate_checks": gen_gate_checks,
     "crossmodel_band": gen_crossmodel_band,
     "limits": gen_limits,
     "gap_figure": gen_gap_figure,

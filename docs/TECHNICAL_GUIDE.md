@@ -1034,6 +1034,36 @@ identical ② ordering). Read that for what it is: the
 ranking is over **four firms**, and four items are hard to reorder. It is evidence that the pipeline
 is not chaotic, not evidence that the ordering would survive a fifth firm (§9, O1).
 
+**The ranking also survives a change in what "optimal" means**, which none of the perturbations
+above touch: they all vary an input and keep the objective. Re-selecting each firm's plan from the
+same menu by minimising the **90th percentile** cost rather than the median is a risk-averse
+decision-maker rather than a risk-neutral one, and it is the one axis on which a reader can
+reasonably say the model has assumed the answer
+([`docs/robustness_structural.md`](robustness_structural.md)).
+
+<!-- GEN:criterion_swap -->
+| Firm | Sector | ② risk-neutral (minimise P50) | ② risk-averse (minimise P90) | Tail multiple |
+|---|---|---|---|---|
+| **POSCO** | Steel | 115 | 170 | **×1.5** |
+| **Nippon Steel** | Steel | 156 | 221 | **×1.4** |
+| **Mitsui Chemicals** | Petrochemicals | 242 | 911 | **×3.8** |
+| **LOTTE Chemical** | Petrochemicals | 279 | 1,085 | **×3.9** |
+
+The ordering is **unchanged** — the criterion swap does not change which firm the model points at. What the swap does change is how far the bad case sits from the expected one, and that is **sector-specific**: steel ×1.4–1.5 against petrochemicals ×3.8–3.9. Cheapest to dearest firm spans 2.4× on expected cost and 6.4× on the bad case. The petrochemical problem is the **variance** of the cost, not its level.
+<!-- /GEN:criterion_swap -->
+
+Two caveats belong in the same breath as those multiples. The first is that **P90 is our own
+simulation's P90**, so the tail multiple inherits the prior volatilities of **A-17** — h₂ at 0.25
+with identity correlation — which are injected, not estimated. Read the ×1.4-against-×3.8 contrast
+between the sectors as the result; the absolute thickness is only as good as that prior. The second
+is that this is a **re-selection, not a re-solve**: E2 enumerated the plan menu under the P50
+objective, and a plan a risk-averse decision-maker would have built but E2 never generated cannot be
+chosen here. That is the same ceiling §4.3 puts on the bundles that were re-scored without
+re-planning, and it cuts the same way — towards understating how much the criterion matters. What
+the swap *does* change within the menu is the contract wrapper rather than the steel: the physical
+schedule is identical under both criteria and only the hedges attached to it differ (§1, claim P2,
+where the hedge available to the petrochemical firms covers 0% of their tail).
+
 **Levels are not.** TCaR moves 41–48% on the price-process choice alone, and petrochemical ② moves
 71–73% on the shock-normalisation choice. Any use of these numbers as absolute magnitudes needs the
 sensitivity annexe alongside.
@@ -1059,7 +1089,7 @@ but two unfalsifiable points on one axis (§7).
 | `out/scenarios` bundle matrix | 2026-08-10 08:53 | `bundle=base` | 2 | +0.80% (Nippon Steel, B20) | +1.88% (Nippon Steel, B20) |
 | `out/m8` ε-constraint sweep | 2026-08-10 06:44 | none — unmeasurable | — | — | — |
 
-**Not all of these are measured against the run in §6.** The base pipeline was last written 2026-08-10 10:00; `out/process`, `out/scenarios`, `out/m8` predate it and were computed against an earlier E2 plan set. Where a diagnostic carries a control arm configured identically to the headline, the table measures how far that arm has drifted; where it carries none, the drift exists but is unquantified. The drift is a property of the **baseline**, not of the perturbation — an arm and its own control move together — so the *differences* quoted from these files stay internally consistent while the *levels* in them do not match §6. Re-running the diagnostics after a base re-solve is what closes this; `scripts/gate.py` checks staleness for `out/e5` only.
+**Not all of these are measured against the run in §6.** The base pipeline was last written 2026-08-10 10:00; `out/process`, `out/scenarios`, `out/m8` predate it and were computed against an earlier E2 plan set. Where a diagnostic carries a control arm configured identically to the headline, the table measures how far that arm has drifted; where it carries none, the drift exists but is unquantified. The drift is a property of the **baseline**, not of the perturbation — an arm and its own control move together — so the *differences* quoted from these files stay internally consistent while the *levels* in them do not match §6. Re-running the diagnostics after a base re-solve is what closes this, and until it is closed `scripts/gate.py` names these files and their lag in its `sidecars` check — a warning rather than a failure, because a stale diagnostic is work not yet re-run, not a defect in the code.
 <!-- /GEN:diagnostic_drift -->
 
 ### 6.3 The frontier is thinner than it looks
@@ -1267,9 +1297,13 @@ place either repository now says so.
 .venv/bin/python scripts/gate.py
 ```
 
-Eight checks: test suite, implementation independence, data audit, MCP `tools/list`, CLI wiring,
-output freshness against inputs **and model code**, run provenance against `config.yaml`, and git
-state. Five of the eight are hard — a non-zero exit — and the audit is one of them, but **what makes
+<!-- GEN:gate_checks -->
+**9 checks.** 5 are hard — a non-zero exit: `tests`, `independence`, `audit`, `mcp`, `cli`. The other 4 report and do not block: `freshness`, `sidecars`, `provenance`, `git`.
+<!-- /GEN:gate_checks -->
+
+In order: test suite, implementation independence, data audit, MCP `tools/list`, CLI wiring, output
+freshness against inputs **and model code**, staleness of the side diagnostics against the base run
+(§6.2), run provenance against `config.yaml`, and git state. The audit is hard, but **what makes
 the audit exit non-zero is narrow**: synthetic sample data reaching a production input, or an input
 file missing altogether ([`audit_data.py:main`](../scripts/audit_data.py)). Unused, partially filled
 and unsourced columns are counted and named, not fatal. Four unsourced warnings stand green right

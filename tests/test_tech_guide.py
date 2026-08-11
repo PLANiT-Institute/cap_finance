@@ -822,3 +822,88 @@ def test_crossmodel_band_reads_the_committed_eff_copy():
         "§7이 대역 검사를 대칭적인 검사처럼 되돌려 팔고 있다 — 이 검사는 위쪽으로만 실패한다")
     assert "not tree-invariant" in guide, (
         "§7이 두 EFF 트리가 이 판정을 갈라놓는다는 사실을 더 이상 적지 않는다")
+
+
+def test_gate_check_count_is_read_off_gate_not_hand_written():
+    """가이드가 게이트 항목 수를 손으로 세고 있었고, 그 수가 틀려 있었다 (F23).
+
+    F22가 `sidecars`를 아홉 번째 항목으로 넣었으나 §7은 "Eight checks … Five of the
+    eight are hard"를 그대로 들고 있었다 — 외부 독자에게 검사 하나를 숨긴 셈이다.
+    이제 그 문장은 `gate.CHECKS`/`gate.HARD`에서 생성된다. 이 테스트는 (a) 생성된
+    수가 실제 항목 수와 맞는지, (b) 손으로 센 옛 문장이 되살아나지 않았는지를 본다.
+    """
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from gate import CHECKS, HARD
+
+    guide = " ".join(GUIDE.read_text(encoding="utf-8").split())
+    hard = [k for k, _, _ in CHECKS if k in HARD]
+
+    assert f"**{len(CHECKS)} checks.**" in guide, (
+        f"§7이 게이트 항목 수를 {len(CHECKS)}로 적지 않는다 — 생성기를 다시 돌려라")
+    assert f"{len(hard)} are hard" in guide, (
+        f"§7의 hard 항목 수가 gate.HARD({len(hard)}개)와 다르다")
+    for key, _, _ in CHECKS:
+        assert f"`{key}`" in guide, f"§7이 게이트 항목 `{key}`를 이름으로 싣지 않는다"
+    assert "Eight checks" not in guide, (
+        "손으로 센 항목 수가 §7에 되살아났다 — 검사가 하나 늘면 다시 틀린다")
+
+
+def test_criterion_swap_carries_the_tail_not_just_the_ranking():
+    """결정 기준을 바꾸는 축이 §6.2에 없었다 (F23).
+
+    §6.2는 할인율·가격과정·충격 정규화·시나리오 묶음을 흔들어 순위가 불변임을 보이지만,
+    그 넷은 전부 **입력**을 흔들고 목적함수는 그대로 둔다. `robustness_structural.md`가
+    I2 이래 목적함수 자체를 흔든 결과(P90 최소화)를 들고 있었고 가이드는 §1 P2 행에서
+    그 문서를 한 번 인용할 뿐 표를 싣지 않았다. 이 테스트는 (a) 각 기업의 꼬리 배수가
+    `out/e5`에서 다시 계산한 값과 맞는지, (b) 순위 불변 진술이 실제 재계산과 맞는지,
+    (c) 두 약점(A-17 사전값 의존, 재계획이 아닌 재선택)이 같은 자리에 남아 있는지를 본다.
+    """
+    pd = pytest.importorskip("pandas")
+    fp = ROOT / "out" / "e5" / "frontier_points.csv"
+    if not fp.exists():
+        pytest.skip("out/ 없음")
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from robustness_structural import CONAME, pick
+
+    fr = pd.read_csv(fp).query("scenario=='NZ15' and support=='none'")
+    g = fr[~fr.is_disclosed & fr.budget_ok]
+    assert not g.empty, "예산 정합 계획이 없다 — e5 먼저 실행"
+    p50, p90 = pick(g, "p50"), pick(g, "p90")
+    guide = " ".join(GUIDE.read_text(encoding="utf-8").split())
+
+    for c in p50.index:
+        if c not in p90.index:
+            continue
+        a, b = float(p50.loc[c, "lcoa"]), float(p90.loc[c, "lcoa"])
+        assert f"{b:,.0f}" in guide, (
+            f"§6.2에 {CONAME[c]}의 P90 기준 단가 {b:,.0f}가 없다 — 생성기를 다시 돌려라")
+        assert f"×{b / a:.1f}" in guide, (
+            f"§6.2에 {CONAME[c]}의 꼬리 배수 ×{b / a:.1f}가 없다")
+
+    order = lambda d: list(d.sort_values("lcoa").index)  # noqa: E731
+    same = order(p50) == order(p90)
+    assert ("The ordering is **unchanged**" in guide) == same, (
+        "§6.2의 순위 불변 진술이 재계산과 어긋난다 — 기준을 바꾸면 순위가 "
+        f"{'바뀌지 않는다' if same else '바뀐다'}")
+
+    assert "P90 is our own\nsimulation's P90".replace("\n", " ") in guide, (
+        "§6.2가 꼬리 배수의 절대값이 A-17 사전 변동성에 걸려 있다는 사실을 더 이상 적지 않는다")
+    assert "re-selection, not a re-solve" in guide, (
+        "§6.2가 이것이 재계획이 아니라 재선택이라는 한계를 더 이상 적지 않는다 — "
+        "E2가 만들지 않은 계획은 어느 기준으로도 고를 수 없다")
+
+
+def test_guide_does_not_say_the_gate_ignores_the_side_diagnostics():
+    """F22가 `sidecars` 검사를 넣은 뒤에도 §6.2는 게이트가 out/e5만 본다고 적고 있었다 (F23).
+
+    낡은 곁가지 산출물이 §6.2에 인용되는 것이 이 문단의 주제이므로, 그것을 게이트가
+    이제 이름으로 말한다는 사실이 빠지면 문단이 실제보다 어두운 그림을 판다.
+    """
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from gate import CHECKS
+
+    guide = " ".join(GUIDE.read_text(encoding="utf-8").split())
+    assert "checks staleness for `out/e5` only" not in guide, (
+        "§6.2가 게이트에 곁가지 낡음 검사가 없다고 적는다 — gate.CHECKS에 있다")
+    if any(k == "sidecars" for k, _, _ in CHECKS):
+        assert "`sidecars`" in guide, "§6.2가 게이트의 sidecars 검사를 이름으로 적지 않는다"
