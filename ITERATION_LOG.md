@@ -4624,3 +4624,89 @@ out/ 전체가 입력보다 새것으로 보인다. 지금 e5는 아홉 파일�
 - **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
   미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5),
   `get_affordability` 통화 경고(F8).
+
+## F29 (08:52) — 가이드가 "가용 연도는 시나리오마다 다르다"고 적고 있었다: 그 표는 헤더뿐이다
+
+**한 일.** F28 인계의 규칙("낙관적 집계·범위 훑기의 남은 절반은 `src/cap/`")을 실행했다.
+`avail`·`applies_to`·`any`·`.max()`를 전수로 봤고, 걸린 것은 낙관적 집계가 아니라
+**존재하지 않는 입력이었다.**
+
+**결함 — 시나리오 기술 가용성이 데이터에 없다.** `e1_constraints.py:103`은 D2b에서
+`tech_avail_*` 경로를 골라 시나리오별 최초 가용 연도를 만든다. D2b의 변수는 여섯 개
+(`elec_price`·`h2_price`·`co2_price`·`coal_price`·`gas_price`·`re_price`)뿐이고
+`tech_avail_*`는 **한 줄도 없다.** 그래서 `out/e1/tech_availability.csv`는 헤더 한 줄이다.
+E2의 `av.get(tech_id, tk.avail_year)`는 언제나 D3의 정적 `avail_year`로 떨어진다.
+C4의 $\max(a^0_k, a^{0,\sigma,\text{region}}_k)$은 코드로는 계산되지만 **데이터가 그 항을
+채운 적이 없다.**
+
+가이드 §3.8의 다섯 번째 판정은 "이것은 test 2와 달리 시나리오마다 갈릴 수 있다 —
+가용 연도가 시나리오 의존이므로"라고 적고 있었다. 갈릴 수 없다. 그리고 **같은 절의 생성
+블록이 "두 시나리오에서 판정이 동일하다"고 적고 있었다** — 한 절이 자기를 부정한 채로
+아홉 사이클을 지났다. 생성 블록 쪽 문장은 손으로 박혀 있어(측정된 값이 아니었다) 어긋남을
+드러내지 못했다.
+
+E1에 빈 표 경고를 넣었다가 **뺐다**: 출력이 한 글자도 바뀌지 않는 `print` 한 줄이
+`src/cap/` mtime을 올려 게이트가 `cap all` 재실행(~20분)을 요구했다. 사이클 안에 못 끝낼
+작업은 시작하지 않는다(§6). 사실은 가이드·METHODOLOGY·테스트 세 곳에 남았고 셋 다 검사된다.
+
+### 가이드에서 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | §3.8 test 5 | "unlike test 2 this one **can flip between scenarios**, since availability years are scenario-dependent" | 갈릴 수 없다. `out/e1/tech_availability.csv` 0행 — D2b에 `tech_avail_*` 없음. 모든 가용성 판정이 D3의 정적 `avail_year`로 환원된다. D2b 변수 여섯 개를 이름으로 적고 C4의 시나리오 항이 미사용임을 밝힌다 | `data/prepared/D2b_scenario_prices.csv` (6변수) · `out/e1/tech_availability.csv` (1줄) · `e2_milp.py:148` |
+| 2 | §3.8 산문 | NSC 킴 2030은 "the scenario availability year E1 derives from D3" 때문 | D3의 `steel_h2dri.avail_year = 2030` + `build_years = 4`. 시나리오가 아니라 **모형 날짜**다 | `data/prepared/D3_tech_options.csv` |
+| 3 | §3.8 생성 블록 | "the **two** `high` rows … Verdicts are identical across **both** scenarios." — 손으로 박은 수 | 측정한다: 침묵 탈락 3건 중 `high` 2건, 판정 갈림 0건. 그리고 **같은 이유**(가용성 표 0행)를 그 자리에서 적는다 | `scripts/build_tech_guide.py::gen_d7_enforcement` |
+| 4 | §8 (신설 10) | 시나리오가 기술 도입 시점을 앞당긴다는 읽기를 막는 문장이 없었다 | 두 시나리오는 예산과 가격만 다르다. "야심찬 시나리오가 수소환원을 앞당긴다"는 이 모형이 낼 수 없는 그림이다 | 위와 동일 |
+| 5 | §8 꼬리 문장 | "Claims **4, 7 and 8** carry their size in the sentence itself (71–73%, 2 of 4 firms, ~8%)" — 손으로 박은 목록·수치. 10번을 더하면 그대로 틀린다 | §8의 번호를 읽고 표가 덮는 것을 빼서 계산한다 → "Claims 4, 7, 8 and 10". 출처 없는 괄호 수치는 지웠다 | `gen_limits()` |
+
+METHODOLOGY C4에도 같은 사실을 넣었다(정본이 가이드와 어긋나면 안 된다).
+
+### 검증
+
+```
+.venv/bin/python scripts/build_tech_guide.py           # 31 blocks, 142,175 chars
+.venv/bin/python scripts/build_tech_guide.py --check   # generated blocks current
+.venv/bin/python scripts/gate.py                       # gate: OK — pytest 100 passed, 9항목 PASS
+```
+
+수치 출처: D2b 6변수 = `data/prepared/D2b_scenario_prices.csv` · 가용성 표 0행 =
+`out/e1/tech_availability.csv` · 2030/4년 = `data/prepared/D3_tech_options.csv` ·
+침묵 탈락 3·`high` 2 = `gen_d7_enforcement`의 판정 집합.
+
+테스트 1개 추가(99 → 100).
+- `test_availability_is_described_as_scenario_dependent_only_if_it_is` — **양방향이다.**
+  표가 비어 있으면 가이드가 D2b 변수 여섯 개를 이름으로 적고 행 수를 세야 하고,
+  D2b에 `tech_avail_*`가 생겨 표가 채워지면 "never binds"가 남아 있는 것으로 실패한다.
+  덧붙여 §3.8의 2030/2034가 D3의 `avail_year + build_years`와 같은지 대조한다.
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | 유지 | gate audit `ok 68, UNUSED 1, PARTIAL 3` 불변. 다만 **공백 1건이 새로 이름을 얻었다**: D2b에 기술 가용성 경로가 없다 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | **정직해짐** | 시나리오 축이 기술 *시점*을 움직이지 못한다는 사실이 §8에 수치와 함께 적혔다. 도구의 능력이 준 것이 아니라 광고가 실제와 맞춰졌다 |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선** | Arc가 "시나리오가 다르면 무엇이 달라지는가"를 물으면 답이 "예산과 가격, 그리고 그것뿐"으로 정확해진다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | 유지 | 게이트 9항목·MCP 11도구 불변 |
+| ⑤ 산출물 — 다른 형식이 있는가 | 유지 | md / HTML / SVG / 데이터 패키지 |
+
+### 인계
+
+- **수집 대상 1건(새로 이름 얻음)**: D2b의 `tech_avail_*` 경로. NGFS/GCAM 시나리오에서
+  기술 가용 연도를 뽑아 넣으면 C4의 시나리오 항이 처음으로 산다. 넣기 전까지 §8-10과
+  §3.8 test 5의 문장이 정확하다 — 그리고 새 테스트가 넣는 순간 붉어져 문장을 부른다.
+- **`src/cap/` 규칙 훑기 완료.** 남은 거짓 양성: `e2_milp.py:295`의 `has_incumbent = any(...)`
+  는 warm-start 유무 판정이라 `any`가 맞다. `e5_metrics.py:229`의 `prof.capex_k.any()`는
+  0-CAPEX 계획에서 peak_year를 None으로 두려는 것이라 맞다. `e2_milp.py:354`의
+  `ppa_rows.max()`는 D7에 `ppa` 행이 없어 실행된 적이 없다(현재 항상 0.0).
+- **mtime 교훈**: 출력이 안 바뀌는 편집이라도 `src/cap/`을 건드리면 게이트가 20분 재실행을
+  요구한다. 사이클 안에 못 끝낼 것은 손대지 말고, 손댔다면 `git checkout` 후 **mtime까지**
+  되돌려라(`touch -r`). F28이 테스트에서 겪은 것과 같은 함정이다.
+- **`gen_frontier_shape`의 `rank.max()`**(F28, 미해결) · **동시 실행 정리**(F27 최우선,
+  이번 사이클 시작 시 `pgrep` 비어 있었다) · **`reline_cheap` 재계획**(~20분) ·
+  **추첨 대상을 밴드 보유로도 열기**(F27) · **EFF 두 사본 불일치**(F22) ·
+  **EFF·FIN 확률과정 정량 분해**(F20) · **EFF 철강 CAPEX 2건 출처 부재**(F19) ·
+  **`_alt` 행의 용도 미실현**(F19) · **감사기의 이름 매칭 한계**(F18) ·
+  **§7이 드러낸 실질 공백 2건** · **CCfD 시험 가능화**(F13) · **MCI 사업소 상한 검증**(O13).
+- **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5),
+  `get_affordability` 통화 경고(F8).

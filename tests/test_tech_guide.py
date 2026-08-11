@@ -1313,3 +1313,53 @@ def test_band_vs_convention_numbers_come_from_the_band_comparison():
         rank = list(r.base_param).index("tech.capex") + 1
         assert f"it ranks {rank} of {len(r)} in the screen" in guide, (
             f"§4.5가 tech.capex의 화면 순위를 실제({rank}/{len(r)})와 다르게 적는다")
+
+
+def test_availability_is_described_as_scenario_dependent_only_if_it_is():
+    """§3.8 test 5가 "가용 연도는 시나리오마다 다르다"고 적고 있었다 (F29).
+
+    C4의 식은 `max(D3.avail_year, 시나리오 가용연도)`이고 코드도 그렇게 계산한다.
+    그러나 시나리오 항은 `out/e1/tech_availability.csv`에서 오고, D2b에는
+    `tech_avail_*` 경로가 한 줄도 없어 그 파일은 헤더뿐이다 — 판정은 절대
+    시나리오마다 갈리지 못한다. 가이드는 갈릴 수 있다고 적고 있었고, **같은 절의
+    생성 블록은 "두 시나리오에서 판정이 동일하다"고 적고 있었다.** 한 절이 자기를
+    부정했다.
+
+    이 테스트는 양방향이다: 표가 비어 있으면 가이드가 그 사실을 말해야 하고,
+    표가 채워지면 "never binds"라고 적힌 채로 남아 있으면 안 된다.
+    """
+    import pandas as pd
+
+    d2b = pd.read_csv(ROOT / "data" / "prepared" / "D2b_scenario_prices.csv")
+    avail = pd.read_csv(ROOT / "out" / "e1" / "tech_availability.csv")
+    guide = GUIDE.read_text(encoding="utf-8")
+    lines = guide.splitlines()
+    i = next(n for n, ln in enumerate(lines) if ln.startswith("5. The technology is available"))
+    test5 = " ".join(" ".join(lines[i:]).split()[:200])
+
+    if len(avail):
+        assert "never binds" not in guide and "it cannot, on this data" not in test5, (
+            f"시나리오 가용성 표가 {len(avail)}행으로 채워졌는데 가이드는 여전히 "
+            "그 항이 무의미하다고 적는다 — §3.8 test 5와 생성 블록을 다시 써라")
+        return
+
+    assert not any(v.startswith("tech_avail_") for v in d2b.variable), (
+        "D2b에 tech_avail_* 경로가 생겼는데 E1의 표는 비어 있다 — E1을 다시 돌려라")
+    assert "availability years are scenario-dependent" not in guide, (
+        "가이드가 가용 연도를 시나리오 의존이라고 적는다 — "
+        "out/e1/tech_availability.csv는 헤더뿐이라 그럴 수 없다")
+    for var in sorted(d2b.variable.unique()):
+        assert f"`{var}`" in test5, (
+            f"§3.8 test 5가 D2b 변수 목록을 적으면서 {var}를 빠뜨린다")
+    assert f"has {len(avail)} rows" in guide, (
+        "생성 블록이 시나리오 가용성 표의 행 수를 세지 않는다 — "
+        "판정이 시나리오마다 같은 *이유*가 출처 없이 남는다")
+
+    # 그리고 그 사실이 실제로 코드에서 그렇게 쓰이는가: NSC 킴 commitment의 2030은
+    # D3의 정적 avail_year이지 시나리오 값이 아니다.
+    d3 = pd.read_csv(ROOT / "data" / "prepared" / "D3_tech_options.csv").set_index("tech_id")
+    h2 = d3.loc["steel_h2dri"]
+    assert f"an `avail_year` of {int(h2.avail_year)}" in guide, (
+        f"§3.8이 steel_h2dri의 avail_year를 D3의 {int(h2.avail_year)}와 다르게 적는다")
+    assert f"adopt {int(h2.avail_year)} (operational {int(h2.avail_year + h2.build_years)})" in guide, (
+        "§3.8의 D7 표가 D3의 avail_year + build_years와 어긋난다")

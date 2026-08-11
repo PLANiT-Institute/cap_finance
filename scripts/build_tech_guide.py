@@ -640,13 +640,28 @@ def gen_d7_enforcement():
     n_forced = sum("forced" in v for vs in verdicts.values() for v in vs)
     n_silent = sum("silently" in v for vs in verdicts.values() for v in vs)
     n_rec = sum("recorded" in v for vs in verdicts.values() for v in vs)
+    silent_keys = [k for k, vs in verdicts.items() if any("silently" in v for v in vs)]
+    n_high_silent = sum(d7.resolution.loc[i] == "high" for _, i in silent_keys)
+    # scenario-invariance is measured, and when it holds the reason is named: the
+    # scenario availability table E1 writes is what could have split a verdict.
+    n_split = sum(1 for vs in verdicts.values() if len(vs) > 1)
+    if n_split:
+        scen = (f" Verdicts differ between scenarios for {n_split} of the "
+                f"{len(verdicts)} rows.")
+    elif not len(avail):
+        scen = (f" Verdicts are identical across all {len(cfg.scenarios)} scenarios, and not by "
+                f"coincidence: `out/e1/tech_availability.csv` has {len(avail)} rows, so the "
+                "scenario term in the availability test never binds (test 5 above).")
+    else:
+        scen = (f" Verdicts are identical across all {len(cfg.scenarios)} scenarios even though "
+                f"the scenario availability table carries {len(avail)} rows.")
     note = (f"\n\nOf the {len(d7)} rows, **{n_forced} become a forced decision**, "
             f"{n_rec} are dropped with a reason written to `out/e2/disclosed_skipped.csv`, and "
             f"**{n_silent} are dropped without a trace** — the skip file has no line for them, so a "
             "reader counting that file undercounts what the disclosed coordinate is missing. "
-            "`resolution` appears in none of it: the two `high` rows that are dropped silently are "
-            "dropped for the same reason a `mid` row would be. Verdicts are identical across "
-            "both scenarios."
+            f"`resolution` appears in none of it: {n_high_silent} of the {n_silent} silently "
+            "dropped rows are tagged `high`, and they go for the same reason a `mid` row would."
+            + scen
             if len({v for vs in verdicts.values() for v in vs}) else "")
     if levers and all(l == (0.0, 0, 0) for l in levers.values()):
         note += (" The same call also fixes the three contract levers: because D7 contains no "
@@ -1649,9 +1664,21 @@ def gen_limits():
             f"neighbourhood of the disclosed plan at all",
             "`out/e5/frontier_points.csv` × `out/e5/gap.csv`"])
 
+    # which claims the table does *not* cover is read off §8 itself — hand-typing the
+    # list left it naming three claims after a fourth had been added (F29).
+    sec8 = (GUIDE.read_text(encoding="utf-8")
+            .split("## 8. What we do not claim")[-1].split("<!-- GEN:limits -->")[0])
+    stated = [int(n) for n in re.findall(r"^(\d+)\. ", sec8, re.M)]
+    covered = {int(r[0].split(" —")[0]) for r in rows}
+    rest = [str(n) for n in stated if n not in covered]
+    if not rest:
+        return _md(rows, ["Claim", "The size of it", "Recomputed from"]) + (
+            f"\n\nEvery one of the {len(stated)} claims above is sized here.")
+    tail = (rest[0] if len(rest) == 1
+            else ", ".join(rest[:-1]) + f" and {rest[-1]}")
     return _md(rows, ["Claim", "The size of it", "Recomputed from"]) + (
-        "\n\nClaims 4, 7 and 8 carry their size in the sentence itself (71–73%, 2 of 4 "
-        "firms, ~8%). The table is the ones that did not.")
+        f"\n\n{'Claim' if len(rest) == 1 else 'Claims'} {tail} carry their size in the "
+        "sentence itself. The table is the ones that did not.")
 
 
 def gen_crossmodel_band():

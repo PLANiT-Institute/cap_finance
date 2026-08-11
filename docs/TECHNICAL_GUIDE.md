@@ -665,8 +665,14 @@ trace**:
 3. `tech_id` exists in D3 — recorded, with a reason.
 4. The technology's `applies_to_unit` equals that unit's `unit_type`, exact string match (§3.4) —
    recorded, with a reason.
-5. The technology is available before the horizon ends. **Silent again**, and unlike test 2 this one
-   can flip between scenarios, since availability years are scenario-dependent.
+5. The technology is available before the horizon ends. **Silent again.** The availability year the
+   test uses is `max(D3.avail_year, scenario availability)` (constraint C4), which reads as though a
+   verdict could flip between scenarios — **it cannot, on this data.** The scenario term comes from
+   `out/e1/tech_availability.csv`, and that file is a header and nothing else: D2b carries six
+   variables (`elec_price`, `h2_price`, `co2_price`, `coal_price`, `gas_price`, `re_price`) and no
+   `tech_avail_*` path, so E1 has nothing to derive a scenario availability year from. Every
+   availability test in this document therefore resolves to D3's single static `avail_year`, and
+   the scenario branch in C4 is code we run but never exercise.
 
 Start year is then back-computed as `year_stated − build_years` and clamped into the feasible
 range, so a commitment that predates the technology's availability is enforced at the earliest
@@ -688,7 +694,7 @@ feasible year rather than disappearing. Row by row, on the current data:
 | Mitsui Chemicals | `timing` | `MCI_ICH_CR` | — | 2027 | `high` | context only (`timing`) |
 | Mitsui Chemicals | `timing` | `MCI_OSK_CR` | — | 2030 | `high` | context only (`timing`) |
 
-Of the 12 rows, **2 become a forced decision**, 2 are dropped with a reason written to `out/e2/disclosed_skipped.csv`, and **3 are dropped without a trace** — the skip file has no line for them, so a reader counting that file undercounts what the disclosed coordinate is missing. `resolution` appears in none of it: the two `high` rows that are dropped silently are dropped for the same reason a `mid` row would be. Verdicts are identical across both scenarios. The same call also fixes the three contract levers: because D7 contains no `ppa`, `epc` or `ccfd` rows, every disclosed coordinate is solved with `ppa = 0, epc = 0, ccfd = 0` while the optimum may buy all three. Part of every frontier gap is therefore a hedging difference no firm ever disclosed either way (§6.4).
+Of the 12 rows, **2 become a forced decision**, 2 are dropped with a reason written to `out/e2/disclosed_skipped.csv`, and **3 are dropped without a trace** — the skip file has no line for them, so a reader counting that file undercounts what the disclosed coordinate is missing. `resolution` appears in none of it: 2 of the 3 silently dropped rows are tagged `high`, and they go for the same reason a `mid` row would. Verdicts are identical across all 2 scenarios, and not by coincidence: `out/e1/tech_availability.csv` has 0 rows, so the scenario term in the availability test never binds (test 5 above). The same call also fixes the three contract levers: because D7 contains no `ppa`, `epc` or `ccfd` rows, every disclosed coordinate is solved with `ppa = 0, epc = 0, ccfd = 0` while the optimum may buy all three. Part of every frontier gap is therefore a hedging difference no firm ever disclosed either way (§6.4).
 <!-- /GEN:d7_enforcement -->
 
 **If no commitment is enforceable, we do not produce a disclosed coordinate** (**A-16**). An empty
@@ -700,9 +706,10 @@ much* is missing, because tests 2 and 5 above never write to it.
 Two things follow that an external reader should have in hand before reading any gap number. **The
 disclosed coordinate is the disclosure as our model can express it, not the disclosure.** Nippon
 Steel's Kimitsu commitment is stated for 2026 and enforced at an adoption year of 2030 —
-operational 2034 — because H2-DRI is not available earlier under the scenario availability year E1
-derives from D3 (constraint C4 in [`METHODOLOGY.md`](../METHODOLOGY.md)); the clamp is logged, and
-it is an eight-year shift on the one steel commitment that survives. And the same call that forces commitments also **forces the contract levers off**: with
+operational 2034 — because D3 gives `steel_h2dri` an `avail_year` of 2030 and a four-year build
+(constraint C4 in [`METHODOLOGY.md`](../METHODOLOGY.md)); the clamp is logged, and it is an
+eight-year shift on the one steel commitment that survives. It is a **model** date, not a scenario
+date: per test 5 above, nothing in D2b moves it. And the same call that forces commitments also **forces the contract levers off**: with
 no `ppa`, `epc` or `ccfd` rows anywhere in D7, every disclosed solve runs with all three at zero
 while the optimum is free to buy them, so part of every gap is a hedging difference rather than a
 technology difference.
@@ -1414,6 +1421,12 @@ summary, package manifest. Facility-level detail is refused by default. See
    — a disclosed plan *below* the frontier's span, where interpolation would fabricate a gap —
    returns NaN by construction and does not arise in the current run. The holes in §6.4 are a
    different thing: no disclosed coordinate exists to measure from.
+10. **Our scenarios do not differ in technology timing.** They differ in carbon budgets and in the
+    price paths (§3.5); every measure becomes available in the same year under both, because D2b
+    carries no `tech_avail_*` path and the scenario availability table E1 writes is empty (§3.8).
+    Constraint C4 has the term and the code takes the `max`, but the data never fills it. Any
+    reading in which the ambitious scenario pulls hydrogen-DRI forward is outside what this model
+    can produce; scenario differences reach the technology mix only through prices and budgets.
 
 Each of the claims above that was stated without a magnitude has one here.
 
@@ -1427,7 +1440,7 @@ Each of the claims above that was stated without a magnitude has one here.
 | 6 — the plan-selection channel | **7 of 11** bundles were re-planned; every axis that E2 reads has now been solved through it, and none of the remaining bundles reaches E2. Re-planning changed the reading: the largest movers are `carbon_slow` on ③ (99.7%) and `retire_free` on ② (41.2%), both of which read 0.0% while they were only being re-priced (§4.3) | `out/m5/bundle_matrix.csv` × `scripts/run_scenarios.py::REPLAN_REQUIRED` |
 | 9 — the gaps are lower bounds | **4 of 4** cost legs and **3 of 4** risk legs are clamped to a frontier endpoint, the disclosed plan sitting 1.01×–477× above the tail risk of the riskiest plan on its own frontier. At the top of that range the frontier is not a neighbourhood of the disclosed plan at all | `out/e5/frontier_points.csv` × `out/e5/gap.csv` |
 
-Claims 4, 7 and 8 carry their size in the sentence itself (71–73%, 2 of 4 firms, ~8%). The table is the ones that did not.
+Claims 4, 7, 8 and 10 carry their size in the sentence itself. The table is the ones that did not.
 <!-- /GEN:limits -->
 
 ---

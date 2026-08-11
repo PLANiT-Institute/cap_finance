@@ -111,6 +111,10 @@ $$\sum_{f,a\le t}Q_f\,r_{f,a}\ \le\ \bar\rho\sum_f Q_f,\qquad \bar\rho=0.2$$
 
 **(C4) 기술 가용성** $x_{f,k,a}=0$ if $a<\max(a^0_k,\,a^{0,\sigma,\text{region}}_k)$ 또는 $a+b_k>t_{\max}$,
 그리고 $k$가 $f$의 설비 유형에 적용 가능할 때만 변수를 생성한다 (**A-10**).
+시나리오 항 $a^{0,\sigma,\text{region}}_k$은 E1의 `tech_availability.csv`에서 오는데, **현재
+데이터에서 그 표는 비어 있다** — D2b에 `tech_avail_*` 경로가 없어 E1이 도출할 것이 없다.
+따라서 지금의 모든 실행에서 C4는 D3의 정적 `avail_year`로 환원되고, 기술 도입 가능 시점은
+시나리오에 따라 달라지지 않는다.
 
 **(C5) ε-제약** $\;\mathcal R\le\varepsilon$ (경계 추적용).
 
