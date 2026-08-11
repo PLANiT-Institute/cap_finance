@@ -90,14 +90,28 @@ def check_cli():
 
 
 def _newest(*globs):
-    best = None
-    for g in globs:
-        for p in ROOT.glob(g):
-            if p.is_file():
-                m = p.stat().st_mtime
-                if best is None or m > best[0]:
-                    best = (m, p)
-    return best
+    return _pick(max, *globs)
+
+
+def _oldest(*globs):
+    return _pick(min, *globs)
+
+
+def _pick(how, *globs):
+    hits = [(p.stat().st_mtime, p) for g in globs for p in ROOT.glob(g) if p.is_file()]
+    return how(hits, key=lambda h: h[0]) if hits else None
+
+
+def _oldest_excluding(glob: str, *skip_dirs: str):
+    """가장 낡은 파일. `skip_dirs` 이름을 경로에 가진 것은 뺀다.
+
+    `out/scenarios/<묶음>/e1_local`은 `out/e1`을 copytree한 사본이고 `copy2`가 원본 mtime을
+    보존한다 — 낡은 것이 아니라 **정의상 원본과 같은 시각**이다. 세면 그 묶음이 영원히
+    `0h STALE`로 뜨고, 그 경고는 재실행으로 지울 수 없다. 지울 수 없는 경고는 읽히지 않는다.
+    """
+    hits = [(p.stat().st_mtime, p) for p in ROOT.glob(glob)
+            if p.is_file() and not set(skip_dirs) & set(p.parts)]
+    return min(hits, key=lambda h: h[0]) if hits else None
 
 
 def check_freshness():
@@ -130,6 +144,13 @@ def check_sidecars():
     `get_sensitivity`에 인용되고 있는 것이 발견됐다 — 게이트는 그 24시간 동안 그린이었다.
     이제 `out/` 아래 base(e1–e5)가 아닌 디렉터리를 전부 센다. 새 곁가지가 생겨도 숨을
     자리가 없다.
+
+    **디렉터리는 가장 낡은 파일로 판정한다.** F26까지 `_newest`를 썼고, 그래서 파일 하나만
+    다시 써도 디렉터리 전체가 최신으로 보였다. 실측된 거짓 그린 둘: `out/scenarios`가
+    "최신"이던 시각에 `disc65` 팔은 base보다 43시간 낡아 있었고(부분 재계획 중이었다),
+    `out/uncertainty`가 "최신"이던 시각에 `decomposition_bands.csv`는 이틀 낡은 채
+    `g2_band_impact.py:44`를 거쳐 가이드 §4.5의 밴드 열로 인용되고 있었다. 곁가지의
+    신선도는 그 안에서 가장 뒤처진 파일이다.
     """
     base = _newest("out/e5/*.csv")
     if base is None:
@@ -137,11 +158,12 @@ def check_sidecars():
     stale = []
     for name in sorted(p.name for p in (ROOT / "out").iterdir()
                        if p.is_dir() and p.name not in {"e1", "e2", "e3", "e4", "e5"}):
-        got = _newest(f"out/{name}/**/*.csv")
+        got = _oldest_excluding(f"out/{name}/**/*.csv", "e1_local")
         if got is None:
             stale.append(f"{name}(없음)")
         elif got[0] < base[0]:
-            stale.append(f"{name}({(base[0] - got[0]) / 3600:.0f}h)")
+            stale.append(f"{name}({(base[0] - got[0]) / 3600:.0f}h, "
+                         f"{got[1].relative_to(ROOT / 'out' / name)})")
     return not stale, ("all sidecar outputs at or newer than out/e5" if not stale
                        else f"STALE behind out/e5: {', '.join(stale)}")
 

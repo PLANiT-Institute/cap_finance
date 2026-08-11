@@ -322,7 +322,12 @@ def main() -> int:
             d = decompose(inc_price, np.concatenate(param_only), np.concatenate(joint))
             rows.append(dict(company_id=co, scenario=SCEN, support=SUPPORT,
                              width=width, draws=a.draws, sims=a.sims,
-                             bands=bool(a.bands), n_banded=len(used), **d, **pol[co]))
+                             bands=bool(a.bands), n_banded=len(used),
+                             # F26: 어느 파라미터를 뽑았는지가 결과의 일부다. 밴드 비교가
+                             # "아무것도 안 움직인다"로 나올 때, 그것이 밴드가 무해해서인지
+                             # 밴드가 붙은 파라미터가 추첨에서 빠져서인지를 이 열이 가른다.
+                             params="|".join(params),
+                             **d, **pol[co]))
             print(f"  [{width:.0%}] {co:6} price {d['tcar_price']:9,.0f} "
                   f"param {d['tcar_param']:9,.0f} joint {d['tcar_joint']:9,.0f} "
                   f"(param {d['param_share_pct']:.0f}%)", flush=True)

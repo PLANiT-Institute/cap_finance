@@ -1056,16 +1056,20 @@ def test_gate_sidecar_check_enumerates_out_rather_than_a_hand_written_list():
     names = [p.name for p in (ROOT / "out").iterdir()
              if p.is_dir() and p.name not in {"e1", "e2", "e3", "e4", "e5"}]
     assert "sensitivity" in names, "out/sensitivity가 없다"
-    expected = {n for n in names
-                if (gate._oldest(f"out/{n}/**/*.csv") or (0, None))[0] < base[0]}
+    old = {n: gate._oldest_excluding(f"out/{n}/**/*.csv", "e1_local") for n in names}
+    expected = {n for n, o in old.items() if o and o[0] < base[0]}
     ok, msg = gate.check_sidecars()
     for n in expected:
         assert n in msg, f"게이트가 낡은 곁가지 `{n}`를 이름으로 부르지 않는다"
     assert ok == (not expected)
     # 뒤처진 파일을 이름으로 부르지 않으면 재실행할 것을 찾는 데 또 한 사이클이 든다
     for n in expected:
-        lag = gate._oldest(f"out/{n}/**/*.csv")[1]
-        assert lag.name in msg, f"게이트가 `{n}`의 가장 낡은 파일 `{lag.name}`을 밝히지 않는다"
+        assert old[n][1].name in msg, (
+            f"게이트가 `{n}`의 가장 낡은 파일 `{old[n][1].name}`을 밝히지 않는다")
+    # `e1_local`은 out/e1의 mtime 보존 사본이라 지울 수 없는 경고를 만든다 — 세지 않는다
+    loc = list(ROOT.glob("out/scenarios/*/e1_local/*.csv"))
+    if loc:
+        assert "e1_local" not in msg, "게이트가 out/e1의 사본을 낡음으로 보고한다"
 
 
 def test_axis_impact_deltas_state_the_cells_they_are_maximised_over():
