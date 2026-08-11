@@ -3880,3 +3880,76 @@ out/에서 다시 계산해 생성 블록의 수와 맞추고, **팔을 다시 �
   **MCI 사업소 상한 검증**(O13) · **③ 번호 오기**(F13).
 - **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
   미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).
+
+## F21 (03:52) — A-13의 판정이 앵커 하나 위에 서 있었고, 그 앵커는 열 사이클 전에 철회됐다
+
+**한 일.** F20 인계의 마지막 미인용 부속 문서(`literature_map`)를 열었다. 인용을 붙이러
+열었더니 붙일 곳이 어긋나 있었다 — **F16·F17·F18·F19·F20·F21 여섯 번 연속**. 이번에 어긋난
+것은 판정 자체였고, 그 판정을 철회한 문서는 **2026-08-10부터 저장소 안에 있었다**.
+
+최우선 인계(곁가지 산출물 재실행)는 이번에도 시작하지 않았다. E3–E5 3회 + 11묶음 재평가는
+30분 창에 끝난다는 보장이 없고, 창 규칙상 못 끝낼 파이프라인은 시작하지 않는다.
+
+### 가이드에서 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | §4.1 A-13 · §7 | "**Fails external validation**: the injected blast-furnace replacement cost is 4.2× a disclosed actual (Kobe, 47)" — 두 곳 모두 **단일 관측**에 기댄 판정이고, "그 배수가 이 파라미터에 대한 전부"로 읽힌다 | **앵커는 셋이고 한 점으로 모이지 않는다.** 고베 실적 **47** · 문헌 개수 단가 €48/t = **70** · 기당 재조달비 300–1,000 M USD ÷ BF 능력 중앙값 5.02 Mt = **[81, 269]**. 우리 200은 앞의 둘보다 ×4.2·×2.9 크지만 **셋째 대역 안**이다. 판정은 우리 값의 오류가 아니라 **6배 산포**다. `validation_external.md` §1-1이 L1(08-10) 이래 이렇게 적고 있었고 **가이드만 옛 판정을 들고 나가고 있었다** | `docs/literature_map.md` §4-1 · `docs/validation_external.md` §1-1 · `cap-efficient/data/technology_cost_evidence.csv` · `data/prepared/D1a_facility_static.csv` |
+| 2 | §7 (신규) | — (약점이 어디에도 없었다) | 약한 근거를 같은 문장에 붙였다: **ACCR 원문이 통화를 밝히지 않는다**(USD 가정). AUD였다면 대역이 **[52, 175]**로 내려가 우리 200이 **대역 위로 나간다** — 'inside the band'는 무조건적 판정이 아니다. 그리고 **NATCOMM의 H2-DRI-EAF 값이 VOGL_2018과 정확히 같으므로** 그 개수 단가도 2차 인용일 수 있다 — **3점이 아니라 2.5점** | `data/raw/source_register.csv` (`ACCR_BF_RELINE_2025`·`NATCOMM_APA_2026` quality_note) · `scripts/validate_external.py:67-71` |
+| 3 | §4.3 표 · §4.3 산문 | `reline_cheap`의 Re-planned 칸이 "**not needed**" — 재계획이 필요 없는, 즉 **다 잰** 축으로 읽힌다 | **E2가 읽는 축이다.** `incumbent_capex_scale`은 `plancost.py:78`에서 좌초비용에 곱해지고 좌초비용은 E2 계획 탐색이 읽는다. 이 축의 본 효과는 **채택 시점을 앞당기는 것**이고, 계획 메뉴를 공유한 채 잰 2.0% / 0.3%는 **하한**이다. `build_scenario_page.py`의 `PARTIAL_EFFECT`가 이미 그렇게 적고 있었다 — 목록을 두 벌 두지 않고 그쪽을 읽는다 | `src/cap/plancost.py:78` · `scripts/build_scenario_page.py:36-41` · `scripts/run_scenarios.py:63-66` |
+| 4 | §7 (신규) | 개수 검증이 **실패 방향 한 건**만 실려 있었다 | 같은 문서의 **반대 방향 결과**를 처음 적었다 — 재투자 창 타이밍(`last_reline_year + 15/20년`, CAPEX 피크 연도를 직접 정하는 내부 가정)은 두 외부 표본과 어긋나지 않는다: 2030년까지 도래 **8/17기·능력 48.9%** 대 NATCOMM 철강 자산 42%, 2026–2035 도래 **12/17기·능력 73.8%** 대 ACCR "개수 의사결정의 70% 이상". 표본이 달라 검증은 아니고, 우리가 조금 이른 것은 한일 노후 고로 표본과 방향이 맞는다 | `docs/validation_external.md` §1-2 |
+
+### 검증
+
+```
+.venv/bin/python scripts/build_tech_guide.py      # 24 blocks (23 -> ), 132,387 chars (129,266 -> )
+.venv/bin/python scripts/build_guide_page.py      # 38 sections, 392 table rows (387 -> )
+.venv/bin/python scripts/build_site.py
+.venv/bin/python scripts/gate.py                  # gate: OK (pytest 83 passed)
+.venv/bin/python scripts/build_tech_guide.py --check   # 커밋 직후 current
+```
+
+수치 출처: 고베 47 = `cap-efficient/data/technology_cost_evidence.csv` (`COST_KOB_BF3_RELINE`) ·
+우리 200·BF 17기·능력 중앙값 5.02 Mt = `data/prepared/D1a_facility_static.csv` ·
+€48/t·300–1,000 M USD·환율 = `scripts/validate_external.py` (상수를 재선언하지 않고 import) ·
+재투자 창 대조 = `docs/validation_external.md` §1-2 · 2.0%/0.3% = `out/m5/bundle_matrix.csv`.
+
+테스트 2개 추가(81 → 83). `test_reline_verdict_uses_every_anchor_not_the_binding_one`은 세 앵커를
+출처에서 다시 계산해 가이드 표와 맞추고, **우리 200이 ACCR 대역 밖으로 나가면 실패**하며(그러면
+§7·§4.1을 다시 써야 한다), AUD 대역 [52, 175]가 빠지면 실패한다.
+`test_reline_cheap_is_not_sold_as_a_completed_check`는 `PARTIAL_EFFECT` 연결이 끊기거나
+`plancost.py`가 이 배수를 더 이상 읽지 않거나 표가 다시 "not needed"로 돌아가면 실패한다.
+
+**생성 블록은 하나 늘었다** (23 → 24, `reline_anchors` 신설). 손으로 쓴 산문 변경은 §4.1 A-13
+한 칸, §4.3 한 문장, §7 두 문단이고, 앵커 수치는 전부 생성기가 썼다.
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | 유지 | gate audit `ok 68, UNUSED 1, PARTIAL 3` 불변 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | **정확해짐 (약해진 쪽으로)** | 11 묶음 + base 불변이나, "다 잰 축"으로 읽히던 묶음이 하나 더 줄었다 — 재계획 미실시가 3건이 아니라 **3건 + 부분 1건**이다 |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선** | Arc가 "이 파라미터 틀린 거 아니냐"고 물으면 답이 "4.2배 틀렸다"가 아니라 "6배로 흩어져 있고 우리는 그 안이다, 다만 통화 가정에 걸려 있다"로 바뀐다. 방어 가능한 진술이고 과장이 아니다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | 유지 | 게이트 8항목 그린, MCP 11도구 불변 |
+| ⑤ 산출물 — 다른 형식이 있는가 | 유지 | md / HTML(38절 392행) / SVG / 데이터 패키지 |
+
+### 인계
+
+- **부속 문서 인용이 전부 붙었다.** F17 이후 6사이클 연속으로 "인용을 붙이러 열면 사실이
+  어긋나 있다"가 확인됐고, 목록이 소진됐다. **다음 사이클부터는 이 탐지기가 없다** — 대신
+  쓸 규칙이 필요하다. 후보: **가이드가 인용하는 부속 문서의 판정 날짜 대 가이드 문장의 판정**
+  (이번 F21 결함이 정확히 그것이다 — 문서는 08-10에 판정을 바꿨고 가이드는 열흘 뒤까지 옛
+  판정을 들고 있었다). 이것은 기계로 잡을 수 있다: 부속 문서 mtime > 가이드의 해당 문단 최종
+  수정 커밋이면 경고.
+- **`reline_cheap --replan` 미실시**(신규): §4.3이 이제 "하한"이라고 적지만 상한은 없다.
+  `run_scenarios.py --replan reline_cheap` 1회면 채택 시점 이동분이 나온다. 그리고 **대역
+  상단(×1.34)은 어떤 묶음도 돌린 적이 없다** — 저비용 쪽만 잰 비대칭 민감도다.
+- **곁가지 산출물 재실행**(F20, 최우선 유지): `out/process`·`out/scenarios`·`out/m8`이 base보다
+  오래됐다. `D6.capex_total` 소비(F18) · `reline_cheap --replan` · `carbon_slow`·`ppa_costly`·
+  `retire_free` 재계획을 **한 번의 파이프라인 창에 묶어라**.
+- **gate에 곁가지 낡음 검사 없음**(F20) · **EFF 철강 CAPEX 2건 출처 부재**(F19) ·
+  **`_alt` 행의 용도 미실현**(F19) · **EFF 트리가 둘**(F20) · **EFF·FIN 확률과정 정량 분해**(F20) ·
+  **감사기의 이름 매칭 한계**(F18) · **§7이 드러낸 실질 공백 2건** · **CCfD 시험 가능화**(F13) ·
+  **§6.1 시드 스윕 재실행** · **MCI 사업소 상한 검증**(O13) · **③ 번호 오기**(F13).
+- **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).
