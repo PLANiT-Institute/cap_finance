@@ -3798,3 +3798,85 @@ EFF 두 값에 출처가 붙으면 실패한다(=정정 문장을 갱신하라�
   **MCI 사업소 상한 검증**(O13) · **③ 번호 오기**(F13).
 - **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
   미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).
+
+## F20 (03:23) — §6.2가 인용하는 산출물 셋이 헤드라인보다 오래됐고, H4 요인 목록에 확률과정이 없었다
+
+**한 일.** F19 인계의 첫 후보(§6.2 GBM/OU 대조 ↔ `price_process_test`)를 열었다. 인용을
+붙이러 열었더니 붙일 곳이 어긋나 있었다 — **F16·F17·F18·F19·F20 다섯 번 연속**. 이번에
+어긋난 것은 문장이 아니라 **문장이 가리키는 파일들**이었다.
+
+### 가이드에서 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | §6.2 | "zero rank reversals across thirteen perturbations (`out/m5/bundle_matrix.csv` …; `out/process/{gbm,ou,gbm_median}` …)" — 열세 개가 모두 §6의 헤드라인에 대해 잰 것처럼 읽힌다 | **셋 다 base보다 오래됐다.** `out/process/*` 2026-08-09 21:28 · `out/scenarios` 08-10 08:53 · `out/m8` 08-10 06:44 대 base `out/e5` 08-10 10:00. `process_alternative.py`의 `_link_shared`가 E1·E2를 base에 **심볼릭 링크**하므로, base가 다시 풀린 뒤 그 팔은 디스크 위에서 자기 입력과 어긋난 트리가 된다. 크기를 측정했다: 명목상 헤드라인과 같은 설정인 `gbm` 통제군이 **NSC에 대해 ② +6.27%(165.4 대 155.6), ③ +4.63%(34,488 대 32,961)** 어긋난다. 나머지 세 기업은 정확히 일치한다 | `out/process/gbm/e5/metrics_company.csv` ↔ `out/e5/metrics_company.csv` · mtime · `scripts/process_alternative.py:47` |
+| 2 | §6.2 | "TCaR moves 41–48% on the price-process choice alone" — 그 41–48%가 확률과정 대안의 **범위**로 읽힌다 | **한 점이지 범위가 아니다.** OU 반감기 10년은 주입값이고, 짧을수록 TCaR은 더 줄고 무한대면 GBM으로 수렴한다(`process_alternative.md` 말미의 주의). 그리고 **자매 모형이 반감기 2.0년에 있다** — 같은 축 위, 다섯 배 빠른 곳. 따라서 41–48%는 이 채널의 **하한** | `docs/process_alternative.md` · `cap-efficient/data/price_process.json` |
+| 3 | §6.2 | "untestable"이 §8·§9에만 수로 있었고 §6.2에는 없었다 (`price_process_test.md`는 F17 이래 세 사이클째 미인용) | 검정력을 그 자리에 적고 인용을 붙였다: 유한표본 단위근 검정의 검정력 **4.9–5.4%**(명목 5%), **월별 480관측(40년)으로도 80%에 미달**, τ가 n이 아니라 √n으로 커지므로 반감기 10년에는 약 **395년**이 필요하다 | `docs/price_process_test.md` · `docs/price_process_test.csv` |
+| 4 | §7 (+ `docs/cross_model_check.md` §3·§4) | 구조 요인 목록이 "배출 경계 · 기술 집합 · 탄소비용 처리 · 설비 해상도 · 시나리오 정의" 다섯이고, TCaR 수준 비교 불가의 이유는 **분모**뿐이었다 | **분모를 맞춰도 남는 여섯 번째 요인이 있다 — 두 모형이 같은 난수 세계를 쓰지 않는다.** FIN은 GBM, EFF는 세 요인 전부 OU(전력 **반감기 2.0년** κ=0.35 · 수소 2.5 κ=0.28 · 자본 3.2 κ=0.22), 요인상관도 **단위행렬 대 0.55/0.25/0.35**, σ도 수소 0.250 대 0.18 · 자본비 0.060 대 0.14. 가이드 자신의 측정으로 이 채널이 **41–48%**이므로 목록에 있는 어떤 구조 요인보다 크다. 양쪽 다 데이터가 고른 값이 아니다 — FIN은 사전값(A-17), EFF는 파일 전체가 `illustrative_estimate` | `cap-efficient/data/price_process.json` · `out/e3/calibration_report.csv` · `docs/process_alternative.md` |
+
+### 부속 코드에서 고친 것
+
+- **`cap-efficient/docs/cross_model_check.md`가 조용히 낡아 있었다.** `cross_model_check.py`는
+  "양 저장소 동일 사본"이라고 적으면서 `~/Documents/cap-efficient/docs`(별도 git 저장소)에만
+  복사했다. **정작 이 저장소에 커밋되는 사본은 갱신되지 않았다.** 두 트리 모두에 쓰도록 고쳤다.
+- `cross_model_check.py`에 `eff_file()`을 넣어 EFF 파일을 두 트리 중 존재하는 쪽에서 읽는다.
+
+### 검증
+
+```
+.venv/bin/python scripts/cross_model_check.py     # docs/ + EFF 사본 2개
+.venv/bin/python scripts/build_tech_guide.py      # 23 blocks (22 -> ), 129,266 chars (125,519 -> )
+.venv/bin/python scripts/build_guide_page.py      # 38 sections, 387 table rows (383 -> )
+.venv/bin/python scripts/build_site.py
+.venv/bin/python scripts/gate.py                  # gate: OK (pytest 81 passed)
+.venv/bin/python scripts/build_tech_guide.py --check   # 커밋 직후 current
+```
+
+수치 출처: 드리프트·mtime = `out/process/gbm/e5/metrics_company.csv` ↔ `out/e5/metrics_company.csv` ·
+심볼릭 링크 = `scripts/process_alternative.py:47` (`_link_shared(dst, ["e1","e2"])`) ·
+검정력·임계값 = `docs/price_process_test.csv` · EFF κ·σ·상관 = `cap-efficient/data/price_process.json` ·
+FIN σ·상관 = `out/e3/calibration_report.csv` · 41–48% = `docs/process_alternative.md` §2.
+
+테스트 2개 추가(79 → 81). `test_diagnostic_drift_block_measures_the_real_gap`은 드리프트를
+out/에서 다시 계산해 생성 블록의 수와 맞추고, **팔을 다시 돌리면 검사 방향이 뒤집혀
+"모두 최신"이라고 적히는지를 본다**(같은 설정인데 0.05% 넘게 어긋나면 실패).
+`test_cross_model_causes_name_the_price_process`는 EFF의 κ에서 반감기를 다시 계산해 두 문서와
+맞추고, EFF가 GBM으로 바꾸거나 §7이 이 교란을 다시 분모 문제의 각주로 되돌리면 실패한다.
+
+**생성 블록은 하나 늘었다** (22 → 23, `diagnostic_drift` 신설). 손으로 쓴 산문 변경은 §6.2 한
+문단과 §7 한 문단이고, 드리프트 수치는 전부 생성기가 썼다.
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | 유지 | gate audit `ok 68, UNUSED 1, PARTIAL 3` 불변 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | **정확해짐 (약해진 쪽으로)** | 11 묶음 + base 불변이나, **그 묶음이 현행 base가 아닌 08:53 실행에 대해 잰 것**임이 처음으로 문서에 적혔다. 차이는 여전히 유효하고 수준만 어긋난다 |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선** | Arc가 "왜 GBM이냐"를 물으면 검정력 4.9–5.4%·40년 부족·395년 필요가 한 자리에 있다. 그리고 두 모형의 TCaR을 나란히 보여줄 때 섞이는 것이 무엇인지 처음으로 적혀 있다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | **개선** | 커밋되는 EFF 사본이 더 이상 낡지 않는다. 게이트 8항목 그린, MCP 11도구 불변 |
+| ⑤ 산출물 — 다른 형식이 있는가 | 유지 | md / HTML(38절 387행) / SVG / 데이터 패키지 |
+
+### 인계
+
+- **곁가지 산출물 재실행**(신규, 최우선): `out/process`(3팔) · `out/scenarios`(11묶음) ·
+  `out/m8`이 전부 현행 base보다 오래됐다. **이번 사이클에 시작하지 않았다** — E3–E5 3회 +
+  묶음 재평가는 30분 창에 끝난다는 보장이 없고, 창 규칙상 못 끝낼 파이프라인은 시작하지
+  않는다. 파이프라인 재실행 사이클에 `D6.capex_total` 소비(F18)와 **함께 묶어라**.
+  재실행하면 `diagnostic_drift` 블록이 저절로 "모두 최신"으로 바뀌고 새 테스트가 그쪽을 검사한다.
+- **gate에 곁가지 낡음 검사 없음**(신규): gate의 `out/ vs data/raw`는 `out/e5/affordability.csv`
+  하나만 본다. `out/process`·`out/scenarios`·`out/m8`은 아무도 보지 않아 F20까지 하루 넘게
+  낡은 채 인용됐다. 지금은 가이드 블록이 드러내지만 게이트는 여전히 통과시킨다.
+- **미인용 부속 문서 1개**(F19 목록에서 `price_process_test` 해소): `literature_map`.
+  **인용 부착 = 사실 대조가 다섯 번 연속 확인됐다** — 마지막 하나를 여는 이유다.
+- **EFF·FIN 확률과정 정량 분해 미실시**(신규): §3-5 표는 차이의 *크기*를 보이지만, TCaR 대조
+  차이에서 이 채널이 몇 %인지는 계산하지 않았다. FIN을 EFF의 κ로 한 번 돌리면 그 몫이 나온다.
+- **EFF 트리가 둘**(신규 관측): `~/Documents/cap-efficient`(별도 git, 08-11 20:53)와
+  `cap-efficient/`(이 저장소, 08-10 09:08). `price_process.json`은 동일하나 **`cross_model_check.py`가
+  읽는 `outputs/candidate_scenario_metrics.csv`는 별도 저장소 쪽이고, 그 값이 F19 이후 바뀌었다**
+  (POSCO EFF ② 26.6 → 58.3, TCaR 9.6 → 10.3). 어느 트리가 정본인지 결정해야 한다.
+- **EFF 철강 CAPEX 2건 출처 부재**(F19) · **`_alt` 행의 용도 미실현**(F19) ·
+  **`D6.capex_total` 소비**(F18) · **감사기의 이름 매칭 한계**(F18) ·
+  **§7이 드러낸 실질 공백 2건** · **CCfD 시험 가능화**(F13) · **§6.1 시드 스윕 재실행** ·
+  **MCI 사업소 상한 검증**(O13) · **③ 번호 오기**(F13).
+- **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).
