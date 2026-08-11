@@ -986,22 +986,36 @@ A frontier gap is computed for **2 of 4 firms**; §6.4 explains why the other tw
 
 ### 6.1 How precisely these should be read
 
-Five-seed repetition of E3–E5 gives the sampling error:
+Five-seed repetition of E3–E5 gives the sampling error, recorded in
+[`docs/seed_stability.md`](seed_stability.md) with the per-firm table and in `docs/seed_stability.csv`
+row by row. E1 and E2 are shared across the five, so this is the same plan re-evaluated on different
+random paths — n_sims = 10,000 each:
 
 | Metric | Coefficient of variation | Read to |
 |---|---|---|
 | ② P50 / abatement cost | 0.3–0.8% | The digits as printed |
 | ③ TCaR | 1.1–1.8% | **Two significant figures** — "33 trillion KRW", not "32,961 bn" |
-| ⑤ Flexibility | 3–9% | **One significant figure**; it is a lower bound, so more simulation buys nothing |
+| ⑤ Flexibility | 3–9% | **One significant figure** |
 
-Seed stability is precision, not accuracy. Every seed uses the same prior volatility (A-17); if that
-prior is wrong, all seeds are consistently wrong.
+The two remedies for a CV above 1% are fewer digits or more paths, and we take the digits: the CVs
+above are sampling noise, so a larger `n_sims` would shrink them, at a cost we have not judged worth
+paying for a quantity read directionally. Nothing here says the noise is irreducible.
+
+Seed stability is precision, not accuracy, and it measures **one** channel. Every seed uses the same
+prior volatility (A-17); if that prior is wrong, all seeds are consistently wrong. And the seeds move
+only the price paths — the plan menu is fixed across them, so **the stability of plan selection is
+not measured by this sweep at all**. The MILP's solution stability is tracked separately through
+`solve_status` (§2).
 
 The sweep is also **older than the current run**: in `docs/seed_stability.csv` the pinned-seed row
 for Nippon Steel carries ② 165.4 and ③ 34,488 against the 155.6 and 32,961 above, because its
 cost-minimising plan changed after the sweep was taken. The other three firms match to the digit. So
 the CVs are a measurement of the sampling channel, taken on a plan menu that has since moved once —
 read them as the order of magnitude of seed noise, not as an error bar on the table above.
+
+Nippon Steel is also the unmeasured channel showing itself, and the two channels are not the same
+size: the plan change moved ② by **−5.9%** (165.4 → 155.6) where five seeds moved it by 0.26%. The
+sweep measures the small one.
 
 ### 6.2 What is robust and what is not
 
@@ -1157,19 +1171,39 @@ their levels agree.
 .venv/bin/python scripts/gate.py
 ```
 
-Eight checks: test suite, implementation independence, data audit (no synthetic leakage, no unused or
-unsourced columns), MCP `tools/list`, CLI wiring, output freshness against inputs **and model code**,
-run provenance against `config.yaml`, and git state. Non-zero exit on any hard failure.
+Eight checks: test suite, implementation independence, data audit, MCP `tools/list`, CLI wiring,
+output freshness against inputs **and model code**, run provenance against `config.yaml`, and git
+state. Five of the eight are hard — a non-zero exit — and the audit is one of them, but **what makes
+the audit exit non-zero is narrow**: synthetic sample data reaching a production input, or an input
+file missing altogether ([`audit_data.py:main`](../scripts/audit_data.py)). Unused, partially filled
+and unsourced columns are counted and named, not fatal. Four unsourced warnings stand green right
+now (`PREP_ALLOC`, `PREP_BOTTOMUP`, `EST_D2A_V0`, `EST_D2B_V0` — §3.2, §3.3). Read the gate as a
+tripwire on fabrication, not as a certificate that every column is sourced and consumed.
 
 The data-audit check writes its verdict per column to [`docs/data_audit.md`](data_audit.md): 88
-columns across the 9 input files, currently 68 `ok`, 4 `PARTIAL`, 16 empty-or-unread by design with
-the reason recorded for each, and zero `CONSTANT`, `UNUSED` or `EMPTY`. The four partial columns are
-worth naming here because three of them are D6 company financials — `revenue` 95.5% filled,
-`capex_total` 50.0%, `net_debt` 40.9% — and metric ③ is built on two of those: it divides by
-`revenue` ([`e5_metrics.py:120`](../src/cap/e5_metrics.py#L120)) and adds `net_debt` to reach
-post-transition leverage ([`:122`](../src/cap/e5_metrics.py#L122)). The fourth is
-`D2b_scenario_prices.value` at 99.1%. Where a firm does not disclose, the ratio is `null` rather
-than imputed, so metric ③ is thinner than metric ① for exactly the firms that disclose least.
+columns across the 9 input files, currently 68 `ok`, 3 `PARTIAL`, 1 `UNUSED`, 16 empty-or-unread by
+design with the reason recorded for each, and zero `CONSTANT` or `EMPTY`. Two of the three partial
+columns are D6 company financials — `revenue` 95.5% filled and `net_debt` 40.9% — and metric ③ is
+built on both: it divides by `revenue` ([`e5_metrics.py:120`](../src/cap/e5_metrics.py#L120)) and
+adds `net_debt` to reach post-transition leverage ([`:122`](../src/cap/e5_metrics.py#L122)). The
+third is `D2b_scenario_prices.value` at 99.1%. Where a firm does not disclose, the ratio is `null`
+rather than imputed, so metric ③ is thinner than metric ① for exactly the firms that disclose least.
+
+**The one `UNUSED` column is `D6_company_financials.capex_total`** — the firms' own historical
+capital expenditure, collected for 11 of 22 firm-years and read by nothing. Metric ⑥ takes only
+`ebitda`, `revenue` and `net_debt` from D6 ([`e5_metrics.py:104-112`](../src/cap/e5_metrics.py#L104)),
+so the comparison a CFO would make first — *this transition is N× the capital programme you already
+run* — is the one denominator the model does not compute. It is one line of code and no new data
+away, and it is listed here rather than quietly dropped.
+
+That column read `PARTIAL` until this cycle, which is itself worth stating, because it shows what
+this audit can and cannot see. Utilisation is decided by searching the engine source for the column
+name, and E5's *output* carries a field also called `capex_total` (the plan's transition CAPEX,
+[`e5_metrics.py:377`](../src/cap/e5_metrics.py#L377)). The name matched, so a collected-but-unread
+input column reported as consumed. The collision is now recorded explicitly in
+[`audit_data.py`](../scripts/audit_data.py) (`NAME_COLLISION`), but the general defect stands: **an
+input column that shares a name with any computed field can be scored as used without being read.**
+Only per-frame dataflow tracing closes that, and this pipeline does not do it.
 
 The freshness and provenance checks exist because of specific failures: outputs four days older than
 the code they were attributed to, and a results ledger validated against a reduced-simulation run.

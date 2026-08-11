@@ -89,6 +89,19 @@ EXPECTED_GAP = {
         "시설 부지명 — 시설 단위 비공개 원칙(§8-2)상 모형이 읽지 않는 것이 맞다.",
 }
 
+# 이름만 보는 매칭이 **다른 표의 동명 컬럼**을 자기 것으로 착각한 자리. 여기 적힌
+# (파일, 컬럼)은 그 착각이 확인된 것 — 엔진이 읽는 것은 같은 이름의 다른 값이고,
+# 이 입력 열을 읽는 곳은 없다. 착각을 방치하면 감사가 `UNUSED`를 `ok`/`PARTIAL`로
+# 팔고, "수집한 것을 전부 쓰는가"라는 질문 자체가 무력해진다.
+# ponytail: 이름 매칭의 천장. 프레임 단위 데이터플로 추적으로만 일반 해결된다.
+NAME_COLLISION = {
+    ("D6_company_financials", "capex_total"):
+        "**UNUSED**. 엔진의 `capex_total`은 E5가 계산한 계획별 전환 CAPEX다 "
+        "(`e5_metrics.py:377` `best.capex_total`, `mcp_server.py:122` 산출 열 목록) — "
+        "D6의 이 열(기업 과거 자본지출)이 아니다. 지표 ⑥이 D6에서 읽는 것은 "
+        "`ebitda`·`revenue`·`net_debt` 셋뿐이다(`e5_metrics.py:104-112`).",
+}
+
 # columns the engine consumes through a rename/derivation rather than by name
 DERIVED_USE = {
     "unit_name": "e2 (capacity parsed from 내용적 in name — G3)",
@@ -151,9 +164,10 @@ def audit() -> tuple[pd.DataFrame, list[str]]:
             filled = int(ok_cell.sum())
             distinct = int(v[ok_cell].nunique())
             # word-boundary match so 'capacity' does not match 'capacity_unit'
-            used = bool(re.search(rf'["\'\[]{re.escape(col)}["\'\]]', code)) or bool(
-                re.search(rf"\.{re.escape(col)}\b", code)
-            )
+            used = (
+                bool(re.search(rf'["\'\[]{re.escape(col)}["\'\]]', code))
+                or bool(re.search(rf"\.{re.escape(col)}\b", code))
+            ) and (name, col) not in NAME_COLLISION
             in_schema = col in S.SCHEMAS[name]
 
             if filled == 0:
@@ -182,7 +196,10 @@ def audit() -> tuple[pd.DataFrame, list[str]]:
                     engine_reference=used,
                     verdict="설계상 정상" if (name, col) in EXPECTED_GAP and verdict != "ok"
                             else verdict,
-                    note=EXPECTED_GAP.get((name, col), DERIVED_USE.get(col, "")),
+                    note=EXPECTED_GAP.get(
+                        (name, col),
+                        NAME_COLLISION.get((name, col), DERIVED_USE.get(col, "")),
+                    ),
                 )
             )
 

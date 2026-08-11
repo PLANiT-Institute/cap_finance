@@ -476,3 +476,81 @@ def test_section_4_5_band_coverage_is_the_inventory_not_a_story():
     assert not set(d[t5 & band].group) & physical, (
         "T5 물리·비용 파라미터에 밴드가 붙었다 — §4.5의 'Not one T5 technology, facility or "
         "price_path parameter carries a range'가 더 이상 참이 아니다")
+
+
+def test_section_7_audit_tally_is_the_audit_not_a_memory():
+    """§7이 감사 결과를 기억으로 적고 있었다 (F18).
+
+    두 가지였다. (1) `D6.capex_total`을 `PARTIAL`(=일부만 채워졌지만 소비된다)로 적었는데
+    엔진은 이 열을 읽지 않는다 — 감사가 E5 산출의 동명 필드(`best.capex_total`)에 걸려
+    `UNUSED`를 놓쳤다. (2) 게이트가 "unused or unsourced columns"에서 실패한다고 적었는데
+    `audit_data.py`의 치명 조건은 합성 데이터 유출과 입력 파일 부재뿐이고, 지금도 UNSOURCED
+    경고 4건이 선 채로 게이트가 초록이다. 이 테스트는 §7이 감사 파일과 어긋나면 실패한다.
+    """
+    import pandas as pd
+
+    audit = ROOT / "docs" / "data_audit.csv"
+    if not audit.exists():
+        pytest.skip("감사 미실행 — scripts/audit_data.py")
+    d = pd.read_csv(audit)
+    tally = d.verdict.value_counts()
+    text = " ".join(GUIDE.read_text(encoding="utf-8").split())
+
+    assert f"{len(d)} columns across the {d.file.nunique()} input files" in text, (
+        f"§7의 컬럼·파일 수가 실제 {len(d)}/{d.file.nunique()}와 다르다")
+    stated = (f"{tally.get('ok', 0)} `ok`, {tally.get('PARTIAL', 0)} `PARTIAL`, "
+              f"{tally.get('UNUSED', 0)} `UNUSED`, {tally.get('설계상 정상', 0)} "
+              "empty-or-unread by design")
+    assert stated in text, f"§7의 감사 판정 집계가 실제와 다르다 — 실제는 '{stated}'"
+
+    unused = set(d[d.verdict == "UNUSED"].file + "." + d[d.verdict == "UNUSED"].column)
+    assert unused == {"D6_company_financials.capex_total"}, (
+        f"UNUSED 집합이 {sorted(unused)}로 바뀌었다 — §7이 이 열을 이름으로 적는다")
+    row = d[(d.file == "D6_company_financials") & (d.column == "capex_total")].iloc[0]
+    assert f"collected for {row.filled} of {row.rows} firm-years" in text, (
+        f"§7의 채움 수가 실제 {row.filled}/{row.rows}와 다르다")
+
+    # 게이트의 이빨을 과장하면 심사자가 한 번의 실행으로 잡는다
+    assert "no unused or" not in text, (
+        "§7이 다시 게이트가 미사용·미출처 컬럼에서 실패한다고 주장한다 — "
+        "audit_data.py의 치명 조건은 SYNTHETIC LEAK / MISSING INPUT뿐이다")
+
+
+def test_section_6_1_seed_sweep_matches_the_stability_record():
+    """§6.1이 잰 것과 재지 않은 것을 구분하지 않았다 (F18).
+
+    (1) "it is a lower bound, so more simulation buys nothing" — CV는 표본오차이므로
+    n_sims를 올리면 줄어든다. `docs/seed_stability.md`가 바로 그 둘(자릿수 축소 또는
+    n_sims 상향)을 남은 선택지로 적는다. (2) 시드는 가격 경로만 바꾸고 계획 메뉴는 고정이라
+    **계획 선택의 안정성은 이 스윕이 재지 않는다** — 그런데 §6.1이 드는 NSC 사례가 정확히
+    그 재지 않은 채널이다. 이 테스트는 두 채널의 크기가 기록과 어긋나면 실패한다.
+    """
+    import pandas as pd
+
+    sweep = ROOT / "docs" / "seed_stability.csv"
+    live = ROOT / "out" / "e5" / "metrics_company.csv"
+    if not (sweep.exists() and live.exists()):
+        pytest.skip("시드 스윕 또는 E5 산출 부재")
+    s = pd.read_csv(sweep)
+    pinned = s[s.seed == s.seed.min()]
+    nsc_old = pinned[pinned.company_id == "NSC"].iloc[0]
+    m = pd.read_csv(live)
+    nsc_now = m[(m.company_id == "NSC") & (m.scenario == "NZ15") & (m.support == "none")].iloc[0]
+
+    text = " ".join(GUIDE.read_text(encoding="utf-8").split())
+    assert f"② {nsc_old.cost_per_tco2_thkrw:.1f} and ③ {nsc_old.tcar_bnkrw:,.0f}" in text, (
+        "§6.1의 고정시드 NSC 값이 seed_stability.csv와 다르다")
+
+    plan_shift = 100 * (nsc_now.cost_per_tco2_thkrw - nsc_old.cost_per_tco2_thkrw) / nsc_old.cost_per_tco2_thkrw
+    assert f"−{abs(plan_shift):.1f}%" in text, (
+        f"§6.1의 계획 변경 폭이 실제 {plan_shift:+.1f}%와 다르다")
+    g = s[s.company_id == "NSC"].cost_per_tco2_thkrw
+    seed_cv = 100 * g.std(ddof=1) / g.mean()
+    assert f"{seed_cv:.2f}%" in text, f"§6.1의 NSC 시드 CV가 실제 {seed_cv:.2f}%와 다르다"
+    assert abs(plan_shift) > seed_cv, "두 채널의 크기 비교가 뒤집혔다 — §6.1 문장을 다시 써라"
+
+    assert "more simulation buys nothing" not in text, (
+        "§6.1이 다시 표본오차를 줄일 수 없다고 주장한다 — seed_stability.md는 n_sims 상향을 "
+        "남은 두 선택지 중 하나로 적는다")
+    assert "the stability of plan selection is not measured by this sweep" in text, (
+        "§6.1이 이 스윕이 재지 않는 채널을 더 이상 밝히지 않는다")

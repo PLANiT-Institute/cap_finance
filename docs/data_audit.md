@@ -6,8 +6,8 @@
 |---|---|---|
 | ok | 68 | 채워져 있고 엔진이 참조 |
 | CONSTANT | 0 | 전 행 동일값 — 변수 아님(자리표시자 의심) |
-| UNUSED | 0 | 수집했으나 엔진이 안 읽음 |
-| PARTIAL | 4 | 일부 행이 빈칸 — 보간·집계에서 조용히 번진다 |
+| UNUSED | 1 | 수집했으나 엔진이 안 읽음 |
+| PARTIAL | 3 | 일부 행이 빈칸 — 보간·집계에서 조용히 번진다 |
 | EMPTY | 0 | 스키마 필수인데 전부 빈칸 |
 | EMPTY-extra | 0 | 스키마 외 빈 컬럼 |
 | 설계상 정상 | 16 | 비었거나 안 쓰이는 것이 맞는 컬럼 — 사유 기재 |
@@ -18,8 +18,13 @@
 |---|---|---|---|
 | D2b_scenario_prices | value | 99.1 |  |
 | D6_company_financials | revenue | 95.5 |  |
-| D6_company_financials | capex_total | 50.0 |  |
 | D6_company_financials | net_debt | 40.9 |  |
+
+## UNUSED
+
+| 파일 | 컬럼 | 채움% | 사유·비고 |
+|---|---|---|---|
+| D6_company_financials | capex_total | 50.0 | **UNUSED**. 엔진의 `capex_total`은 E5가 계산한 계획별 전환 CAPEX다 (`e5_metrics.py:377` `best.capex_total`, `mcp_server.py:122` 산출 열 목록) — D6의 이 열(기업 과거 자본지출)이 아니다. 지표 ⑥이 D6에서 읽는 것은 `ebitda`·`revenue`·`net_debt` 셋뿐이다(`e5_metrics.py:104-112`). |
 
 ## 설계상 정상
 
