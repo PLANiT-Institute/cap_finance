@@ -31,6 +31,25 @@ def test_generated_blocks_are_current():
         "→ .venv/bin/python scripts/build_tech_guide.py 를 돌려 갱신하고 같이 커밋하라")
 
 
+def test_stamp_is_a_content_digest_not_a_commit_sha():
+    """스탬프가 커밋 SHA면 그 스탬프를 쓴 커밋이 만들어지는 순간 반드시 낡는다.
+
+    F16이 `data/` 아래 파일 하나를 지웠고, F17 시작 시 게이트가 이 이유로 빨갰다.
+    SHA를 상태 경로로 좁히는 것으로는 못 막는다 — 상태를 건드리는 커밋마다 재발한다.
+    내용 다이제스트는 커밋 전에 알 수 있으므로 자기 자신을 낡게 만들지 않는다.
+    """
+    import re
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import build_tech_guide as btg
+
+    m = re.search(r"hash to `([0-9a-f]{12})`", GUIDE.read_text(encoding="utf-8"))
+    assert m, "상태 스탬프가 사라졌거나 다이제스트 형식이 아니다"
+    assert m.group(1) == btg.state_digest(), "스탬프가 현재 상태와 다르다 — 빌더를 다시 돌려라"
+    resolved = subprocess.run(["git", "rev-parse", "--verify", "--quiet", f"{m.group(1)}^{{commit}}"],
+                              cwd=ROOT, capture_output=True, text=True)
+    assert resolved.returncode != 0, "스탬프가 커밋으로 해석된다 — SHA 스탬프로 되돌아갔다"
+
+
 def test_guide_makes_no_claim_it_cannot_source():
     """가장 흔한 사고: 원고에서 문장을 복사해 오면서 근거 파일 링크를 떼는 것.
 
@@ -423,3 +442,37 @@ def test_section_7_backtest_matches_the_backtest_record():
     for rec in ("docs/validation_external.md", "docs/validation_backtest.md",
                 "docs/cross_model_check.md", "tests/test_consistency.py"):
         assert rec in text, f"§7이 {rec}를 가리키지 않는다 — 검증 층의 기록을 찾을 수 없다"
+
+
+def test_section_4_5_band_coverage_is_the_inventory_not_a_story():
+    """§4.5가 팔던 그림이 데이터와 달랐다 (F17).
+
+    "가장 좋은 출처를 가진 파라미터가 밴드 없는 것들"은 T1(3행 중 2행이 밴드 보유)에서
+    성립하지 않고, 실제 사실은 그것보다 단순하다 — **415행 중 21행만 밴드를 가진다.**
+    그리고 T5 규약("범위 필수")은 155행 중 139행에서 지켜지지 않는다. 이 테스트는 §4.5의
+    수가 `docs/parameter_inventory.csv`에서 다시 계산되지 않으면 실패한다.
+    """
+    import pandas as pd
+
+    inv = ROOT / "docs" / "parameter_inventory.csv"
+    if not inv.exists():
+        pytest.skip("파라미터 인벤토리 미생성 — scripts/build_parameter_inventory.py")
+    d = pd.read_csv(inv)
+    band = d.value_low.notna() & d.value_high.notna()
+    text = " ".join(GUIDE.read_text(encoding="utf-8").split())
+
+    assert f"{band.sum()} of {len(d)} parameters" in text, (
+        f"§4.5의 밴드 보유 수가 실제 {band.sum()}/{len(d)}와 다르다")
+    t5 = d.evidence_tier == "T5"
+    assert f"{(t5 & ~band).sum()} of the {t5.sum()} T5 parameters carry no range" in text, (
+        f"§4.5의 T5 무밴드 수가 실제 {(t5 & ~band).sum()}/{t5.sum()}와 다르다")
+    cover = " ".join(f"T{i} {int((band & (d.evidence_tier == f'T{i}')).sum())}/"
+                     f"{int((d.evidence_tier == f'T{i}').sum())}" for i in range(1, 6))
+    assert cover.replace("T1", "T1", 1) in text.replace(",", ""), (
+        f"§4.5의 등급별 밴드 보유율이 실제 '{cover}'와 다르다")
+    # 밴드가 있는 T5는 우리가 고른 수(model_choice·policy_assumption·prep_injection)뿐이라는
+    # 것이 §4.5의 논지다 — 물리·비용 쪽에 하나라도 붙으면 그 문장을 다시 써야 한다.
+    physical = {"technology", "facility", "price_path"}
+    assert not set(d[t5 & band].group) & physical, (
+        "T5 물리·비용 파라미터에 밴드가 붙었다 — §4.5의 'Not one T5 technology, facility or "
+        "price_path parameter carries a range'가 더 이상 참이 아니다")

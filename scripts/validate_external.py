@@ -30,11 +30,17 @@ EFF = pathlib.Path.home() / "Documents" / "cap-efficient"
 DOCS = ROOT / "docs"
 
 # 환율: D6·D3 준비 단계와 동일 기준을 쓴다 (prepare_raw.py USDKRW/JPYKRW).
-# EUR는 준비 단계에 없어 여기서 처음 도입하므로 값·근거를 명시한다.
-USDKRW, JPYKRW, EURKRW = 1350.0, 9.2, 1450.0
-FX_NOTE = (f"USD {USDKRW:,.0f} · JPY {JPYKRW:.1f} · EUR {EURKRW:,.0f} KRW. "
-           "USD·JPY는 `prepare_raw.py`와 동일 기준. EUR는 이 문서에서 처음 쓰는 값으로 "
-           "2024–25 근사이며, 문헌이 €2022 기준이라 물가·환율 이중 근사가 들어간다 "
+# EUR는 준비 단계에 없지만 이 저장소가 이미 한 번 쓴 적이 있다 — `data/raw/tech_bands.csv`의
+# 밴드가 USDKRW 1350 x EURUSD 1.08 = 1,458로 환산돼 있고, D3의 `steel_h2dri.capex_unit` = 863
+# 자체가 그 환산의 산물이다. 여기서 1,450을 따로 들고 있었더니 같은 DIW 표에서 나온 같은 밴드가
+# 저장소 안에서 두 값(863-1,095 대 858-1,089)으로 갈렸고, 가이드가 §3.4와 §7에 그 둘을 나란히
+# 실었다. 환율은 한 곳에서만 정한다 — 모형 투입값을 만든 쪽이 정본이다.
+USDKRW, JPYKRW, EURUSD = 1350.0, 9.2, 1.08
+EURKRW = USDKRW * EURUSD
+FX_NOTE = (f"USD {USDKRW:,.0f} · JPY {JPYKRW:.1f} · EUR {EURKRW:,.0f} KRW "
+           f"(= USD {USDKRW:,.0f} x EURUSD {EURUSD}). "
+           "USD·JPY는 `prepare_raw.py`와 동일 기준. EUR는 `data/raw/tech_bands.csv`의 밴드 환산과 "
+           "같은 값이며, 문헌이 €2022 기준이라 물가·환율 이중 근사가 들어간다 "
            "— 배수 판정(0.5~2배)에는 견디지만 소수점 비교에는 쓸 수 없다.")
 
 # 문헌 앵커. 모두 source_register에 등록된 출처의 quality_note에서 그대로 옮긴 값이고
@@ -43,10 +49,16 @@ LIT_CAPEX = [
     # (라벨, 저·고 (원화 천원/t능력), source_id, 비고)
     ("EAF 문헌 중앙값", 254 * EURKRW / 1000, 254 * EURKRW / 1000, "DIW_DP2082", "€2022, 그린필드"),
     ("EAF 발표 프로젝트", 467 * EURKRW / 1000, 467 * EURKRW / 1000, "DIW_DP2082", "€2022"),
+    # 밴드 상단을 만드는 출처군. 이것이 표에 없어서 위 밴드의 835가 어디서 왔는지 문서만 보고는
+    # 추적되지 않았다 (`data/raw/tech_bands.csv`의 derivation 열에만 있었다).
+    ("EAF OECD 2015 (n=40)", 573 * EURKRW / 1000, 573 * EURKRW / 1000, "DIW_DP2082",
+     "€2022 환산, 밴드 상단"),
     ("POSCO 광양 EAF (DIW 수록)", 170.15 * EURKRW / 1000, 170.15 * EURKRW / 1000,
      "DIW_DP2082", "€2023, 기존 부지·인프라 재활용 추정"),
     ("DRP+EAF 문헌 (전해조 제외)", 592 * EURKRW / 1000, 592 * EURKRW / 1000,
      "DIW_DP2082", "€2022"),
+    ("DRP+EAF OECD 2015 (n=6)", 626 * EURKRW / 1000, 626 * EURKRW / 1000, "DIW_DP2082",
+     "€2022 환산, 밴드 안"),
     ("DRP+EAF 발표 프로젝트", 751 * EURKRW / 1000, 751 * EURKRW / 1000, "DIW_DP2082", "€2022"),
     ("H2-DRI 전체 (Vogl)", 574 * EURKRW / 1000, 574 * EURKRW / 1000, "VOGL_2018",
      "€2011, 전해조 160 포함 — 우리 모형은 수소를 사서 쓰므로 전해조분 제외 비교"),
@@ -58,15 +70,31 @@ LIT_CAPEX = [
 NATCOMM_RELINE_EUR_T = 48.0
 ACCR_RELINE_USD_M = (300.0, 1000.0)  # 고로 1기당, 통화 표기 없음 → USD 가정
 
-# 우리 기술 ↔ 어떤 문헌 항목과 비교 가능한가 (범위는 [저, 고] 천원/t능력)
-TECH_MAP = {
-    "steel_h2dri": ("DRP+EAF (전해조 제외)", 592 * EURKRW / 1000, 751 * EURKRW / 1000, "DIW_DP2082"),
-    "steel_hyrex": ("DRP+EAF (전해조 제외)", 592 * EURKRW / 1000, 751 * EURKRW / 1000, "DIW_DP2082"),
-    "steel_eaf": ("EAF (문헌~발표 범위)", 254 * EURKRW / 1000, 467 * EURKRW / 1000, "DIW_DP2082"),
-}
+# 우리 기술 ↔ 어떤 문헌 항목과 비교 가능한가 (범위는 [저, 고] 천원/t능력).
+# 밴드를 여기서 다시 만들지 않고 `data/raw/tech_bands.csv`에서 읽는다 — 그 파일이 D3b로
+# 준비돼 가이드 §3.4가 찍는 밴드이고, 여기에 한 벌 더 두었더니 같은 DIW 표에서 나온 EAF
+# 밴드가 370~835(전 출처군 min~max)와 370~681(문헌~발표만)로 갈렸다. 한 저장소가 같은
+# 파라미터에 밴드를 둘 팔고 있었다. 라벨만 여기서 붙인다.
+TECH_LABEL = {"steel_h2dri": "DRP+EAF (전해조 제외)", "steel_hyrex": "DRP+EAF (전해조 제외)",
+              "steel_eaf": "EAF (DIW 전 출처군)"}
+BAND_ALIAS = {"steel_hyrex": "steel_h2dri"}  # HyREX는 밴드 원문에 없고 DRP+EAF 경계를 공유한다
+
+
+def tech_map() -> dict:
+    b = pd.read_csv(ROOT / "data" / "raw" / "tech_bands.csv")
+    b = b[b.field == "capex_unit"].set_index("tech_id")
+    out = {}
+    for tech, label in TECH_LABEL.items():
+        row = b.loc[BAND_ALIAS.get(tech, tech)]
+        out[tech] = (label, float(row.value_low), float(row.value_high), row.source_id)
+    return out
 
 
 def verdict(v: float, lo: float, hi: float) -> str:
+    # 표가 찍는 자리수(천원/t 정수)로 맞춰 비교한다. `steel_h2dri`의 투입값 863은 밴드 하한과
+    # **같은 문헌 수치**(592 €/t)를 환산해 반올림한 값이라, 환산 잔차 0.14가 "범위 안"을
+    # "범위 밖 ×1.00"으로 뒤집는다. 그 판정은 대조 결과가 아니라 반올림의 그림자다.
+    v, lo, hi = round(v), round(lo), round(hi)
     if lo <= v <= hi:
         return "범위 안"
     ratio = v / (lo if v < lo else hi)
@@ -179,7 +207,7 @@ def main() -> int:
     L += ["## 2. 기술 CAPEX ↔ 문헌 범위", "",
           "| 우리 기술 | 우리 값 | 문헌 비교 대상 | 문헌 범위 | 판정 | 출처 |",
           "|---|---|---|---|---|---|"]
-    for tech, (label, lo, hi, sid) in TECH_MAP.items():
+    for tech, (label, lo, hi, sid) in tech_map().items():
         if tech not in d3.index:
             continue
         v = float(d3.loc[tech].capex_unit)

@@ -19,6 +19,7 @@ an external reader.
 """
 
 import argparse
+import hashlib
 import json
 import re
 import subprocess
@@ -88,23 +89,38 @@ def _span(df, col):
     return f"{lo}" if lo == hi else f"{lo}–{hi}"
 
 
-# Substantive state = code, inputs, config, results. Deliberately not HEAD: stamping
-# HEAD makes the guide stale the instant it is committed, because the commit that
-# writes the stamp becomes a commit the stamp does not name. That is what left the
-# gate red at the start of the F window, and it is a property of the stamp, not of
-# the cycle that hit it. A prose-only commit now leaves the stamp alone.
+# Substantive state = code, inputs, config, results. Deliberately not a commit SHA:
+# no SHA can be correct here, because the stamp is written inside the very commit it
+# would have to name — the guide goes stale the instant it is committed. Restricting
+# the SHA to commits touching these paths only narrows how often that happens; it did
+# not stop it (F16 deleted one file under data/ and the gate went red on the next
+# cycle). A digest of the *content* of these paths is knowable before the commit, so
+# it is stable across the commit that carries it, and it still moves whenever code,
+# inputs, config or results move. Prose-only commits leave it alone.
 STATE_PATHS = ["src", "data", "config.yaml", "out"]
 
 
+def state_digest() -> str:
+    files = subprocess.run(["git", "ls-files", "-z", *STATE_PATHS],
+                           cwd=ROOT, capture_output=True, text=True).stdout.split("\0")
+    h = hashlib.sha256()
+    for name in sorted(f for f in files if f):
+        p = ROOT / name
+        h.update(name.encode())
+        # a tracked path deleted in the working tree is a state change, not a crash
+        h.update(p.read_bytes() if p.is_file() else b"<absent>")
+    return h.hexdigest()[:12]
+
+
 def gen_stamp():
-    sha, when = subprocess.run(
-        ["git", "log", "-1", "--format=%h %cs", "--", *STATE_PATHS],
-        cwd=ROOT, capture_output=True, text=True).stdout.strip().split(maxsplit=1)
     man = ROOT / "out" / "run_manifest.json"
     run = json.loads(man.read_text())["e5"]["finished"] if man.exists() else "no run recorded"
-    return (f"> **Repository state.** Last commit to code, inputs or results: `{sha}` ({when}). "
-            f"Results in this document come from the pipeline run finished `{run}`. Regenerate the "
-            f"generated blocks with `python3 scripts/build_tech_guide.py`.")
+    return (f"> **Repository state.** Code, inputs, config and results "
+            f"(`{'`, `'.join(STATE_PATHS)}`) hash to `{state_digest()}`. Results in this document "
+            f"come from the pipeline run finished `{run}`. Rebuild the generated blocks with "
+            f"`python3 scripts/build_tech_guide.py`; `--check` fails if this document no longer "
+            f"matches that state. The stamp is a content digest, not a commit SHA, because a SHA "
+            f"is not knowable inside the commit that writes it.")
 
 
 def gen_dataset_inventory():

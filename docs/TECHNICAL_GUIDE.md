@@ -21,7 +21,7 @@ design narrative. [`docs/data_gap_registry.md`](data_gap_registry.md) records wh
 collect and where we were blocked. `paper/working_paper.md` is the manuscript.
 
 <!-- GEN:stamp -->
-> **Repository state.** Last commit to code, inputs or results: `4b44202` (2026-08-11). Results in this document come from the pipeline run finished `2026-08-10T10:00:24`. Regenerate the generated blocks with `python3 scripts/build_tech_guide.py`.
+> **Repository state.** Code, inputs, config and results (`src`, `data`, `config.yaml`, `out`) hash to `1131b4a83a82`. Results in this document come from the pipeline run finished `2026-08-10T10:00:24`. Rebuild the generated blocks with `python3 scripts/build_tech_guide.py`; `--check` fails if this document no longer matches that state. The stamp is a content digest, not a commit SHA, because a SHA is not knowable inside the commit that writes it.
 <!-- /GEN:stamp -->
 
 ---
@@ -882,8 +882,9 @@ dataset-level consequences of **A-01, A-03, A-20** also appear in §3.
 
 ### 4.5 Evidence grading
 
-Every parameter carries an evidence tier. T5 (our own estimate) additionally requires a
-`[low, high]` range.
+Every parameter carries an evidence tier. T5 (our own estimate) is additionally *required* to carry
+a `[low, high]` range — a requirement the inventory does not currently meet, which is the subject of
+the rest of this section.
 
 | Tier | Definition |
 |---|---|
@@ -910,9 +911,33 @@ Every parameter carries an evidence tier. T5 (our own estimate) additionally req
 T5 accounts for 155 of 415 parameters; 139 of those are still flagged as lacking a range. Models: FIN 295, EFF 120.
 <!-- /GEN:tier_distribution -->
 
-The distribution is itself a finding: **the parameters with the best sources are the ones without
-ranges.** A T2 company disclosure gives a point value and no uncertainty, while a T5 estimate is
-required to carry a band — so evidence quality and stated uncertainty run in opposite directions.
+The distribution is a finding, but not the one this section used to state. Start with the rule in
+the table above: it is a rule we do not meet. **139 of the 155 T5 parameters carry no range**, which
+is the count in the generated line and the `needs_range` column of
+[`docs/parameter_inventory.csv`](parameter_inventory.csv). Across all tiers, **21 of 415 parameters
+carry a `[low, high]` at all.** The 16 T5 bands that exist are entirely model choices (8), policy
+assumptions (4) and preparation-stage injections (4) — the discount rate and MILP settings in
+`config.yaml`, the post-2030 auction shares, the BF and NCC emission factors written in during
+preparation. **Not one T5 `technology`, `facility` or `price_path` parameter carries a range** (36,
+68 and 18 of them, none banded). Ranges exist where we chose a number, not where the physics and
+the capital costs sit.
+
+The tier ordering does not run cleanly in the other direction either. Band coverage is T1 2/3,
+T2 2/137, T3 1/41, T4 0/79, T5 16/155: T4 has none at all, and the two banded T1 rows are the 2025
+and 2030 K-ETS auction shares, where the statute itself states a range. So the defensible claim is
+narrower than "evidence quality and stated uncertainty run in opposite directions" — a T2 company
+disclosure gives a point value and no uncertainty, which means **the sources we trust most
+contribute no width, and the width in this model is mostly convention rather than evidence.**
+
+What that convention costs is measured, not asserted. The three technology cells that do carry
+literature bands (§3.4) are enough to show that the ±30% convention behind the parameter share of
+uncertainty is wrong in its *center*, not its width: the evidence puts `tech.capex` at [1.00, 3.48]×
+our central value and `tech.emission_factor` at [0.80, 1.00]×, both one-sided, while the convention
+draws symmetrically around 1. Re-solving with the bands in place of the convention moves the steel
+parameter share of TCaR from 21% to 37% (POSCO) and 23% to 36% (NSC) at ±15% width, and leaves the
+two petrochemical firms within a percentage point — [`docs/tech_band_upgrade.md`](tech_band_upgrade.md).
+That is what a missing band is worth here: on the two firms whose numbers decide the headline, it
+is the difference between a fifth and a third of their cost uncertainty.
 
 ---
 
@@ -1069,9 +1094,15 @@ zeroed one firm's emissions and nothing caught it until the last stage.
 costs: seven projects, and the binding one is not an EAF at all but Kobe Steel's 2016 No. 3
 blast-furnace reline at 47 thousand KRW/t of capacity against our injected 200. That is A-13's 4.2×.
 Model CAPEX against literature ranges: `steel_h2dri` and `steel_hyrex` at 863 sit inside DIW's
-858–1,089, while `steel_eaf` at 240 sits **below** the literature band 368–677, at 0.65× its lower
-bound. And the one petrochemical technology assumption anyone outside has confirmed — our 49%
-abatement for NCC fuel switching against Mitsui's disclosed ~44% at Osaka.
+863–1,095, while `steel_eaf` at 240 sits **below** the literature band 370–835, at 0.65× its lower
+bound. These are the same bands §3.4 prints, and until this cycle they were not: the check script
+carried its own copy of the band and its own EUR rate, so one repository sold two bands for one
+parameter (863–1,095 against 858–1,089, and 370–835 against 370–681). The band now comes from
+`data/raw/tech_bands.csv` in both places, and the rate is the one the model's own input was built
+with (`USD 1,350 × EURUSD 1.08`). Note what the `steel_h2dri` verdict is worth: our 863 *is* DIW's
+592 €/t converted, so "inside the band" there means "sitting on its lower edge by construction",
+not an independent agreement. And the one petrochemical technology assumption anyone outside has
+confirmed — our 49% abatement for NCC fuel switching against Mitsui's disclosed ~44% at Osaka.
 
 That layer's own record names a hole in it, so this guide should too. **Metric ② has not been
 compared against published hydrogen-DRI LCOA.** What §3 of that document does is bound the order of
@@ -1129,6 +1160,16 @@ their levels agree.
 Eight checks: test suite, implementation independence, data audit (no synthetic leakage, no unused or
 unsourced columns), MCP `tools/list`, CLI wiring, output freshness against inputs **and model code**,
 run provenance against `config.yaml`, and git state. Non-zero exit on any hard failure.
+
+The data-audit check writes its verdict per column to [`docs/data_audit.md`](data_audit.md): 88
+columns across the 9 input files, currently 68 `ok`, 4 `PARTIAL`, 16 empty-or-unread by design with
+the reason recorded for each, and zero `CONSTANT`, `UNUSED` or `EMPTY`. The four partial columns are
+worth naming here because three of them are D6 company financials — `revenue` 95.5% filled,
+`capex_total` 50.0%, `net_debt` 40.9% — and metric ③ is built on two of those: it divides by
+`revenue` ([`e5_metrics.py:120`](../src/cap/e5_metrics.py#L120)) and adds `net_debt` to reach
+post-transition leverage ([`:122`](../src/cap/e5_metrics.py#L122)). The fourth is
+`D2b_scenario_prices.value` at 99.1%. Where a firm does not disclose, the ratio is `null` rather
+than imputed, so metric ③ is thinner than metric ① for exactly the firms that disclose least.
 
 The freshness and provenance checks exist because of specific failures: outputs four days older than
 the code they were attributed to, and a results ledger validated against a reduced-simulation run.

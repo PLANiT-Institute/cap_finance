@@ -274,10 +274,10 @@ def main() -> int:
         return 0
 
     nav = "".join(f'<a class="l{lvl}" href="#{anc}">{html.escape(t)}</a>' for lvl, anc, t in toc)
-    stamp = re.search(r"Last commit to code, inputs or results: `(\w+)`", md)
+    stamp = re.search(r"hash to `(\w+)`", md)
     page = (PAGE.replace("__CSS__", CSS).replace("__TOC__", nav).replace("__BODY__", body)
             .replace("__BLOB__", BLOB)
-            .replace("__STAMP__", f"commit {stamp.group(1)}" if stamp else "unstamped"))
+            .replace("__STAMP__", f"state {stamp.group(1)}" if stamp else "unstamped"))
     WEB.mkdir(exist_ok=True)
     (WEB / "guide.html").write_text(DOCTYPE + page + "</body></html>", encoding="utf-8")
     print(f"[guide] web/guide.html ({(WEB / 'guide.html').stat().st_size:,} bytes) — "
