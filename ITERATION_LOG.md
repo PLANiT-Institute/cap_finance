@@ -3625,3 +3625,90 @@ F16의 실수가 아니라 **스탬프의 성질**이라는 것을 확인한 뒤
   (백로그, O13) · **③ 번호 오기**(백로그, F13).
 - **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
   미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).
+
+## F18 (02:12) — 감사가 "안 읽는 열"을 읽는다고 팔고 있었고, §7은 게이트의 이빨을 과장하고 있었다
+
+**한 일.** F17 인계의 신규 관측(`D6.capex_total` 미소비 의심)을 확인했다. 의심이 맞았고,
+원인은 데이터가 아니라 **감사기의 판정 규칙**이었다. 그것을 고치자 가이드 §7의 수가 바뀌었고,
+그 문단을 다시 읽다가 **게이트가 하지 않는 일을 한다고 적은 문장**을 찾았다. 인계의 둘째
+후보(§6.1 ↔ `seed_stability`)도 같이 집었고, 여기서도 같은 일이 났다 — 인용을 붙이러 연 곳의
+서술이 어긋나 있었다. F16·F17·F18 세 번 연속이다.
+
+### 가이드에서 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | §7 audit | 감사 집계 `68 ok / 4 PARTIAL / 0 UNUSED`, 그중 `D6.capex_total` 50.0%를 "일부만 채워졌지만 소비되는" 열로 열거 | **엔진이 이 열을 읽지 않는다.** 지표 ⑥이 D6에서 읽는 것은 `ebitda`·`revenue`·`net_debt` 셋뿐이다. 바른 집계는 `68 ok / 3 PARTIAL / 1 UNUSED` | `docs/data_audit.csv` · `src/cap/e5_metrics.py:104-112` |
+| 2 | §7 gate | "Eight checks: … data audit (**no unused or unsourced columns**) … Non-zero exit on any hard failure" — 미사용·미출처 컬럼이 게이트를 빨갛게 만든다고 읽힌다 | **만들지 않는다.** `audit_data.py`의 치명 조건은 `SYNTHETIC LEAK`와 `MISSING INPUT` 둘뿐이고, 지금 UNSOURCED 경고 4건(`PREP_ALLOC`·`PREP_BOTTOMUP`·`EST_D2A_V0`·`EST_D2B_V0`)이 선 채로 게이트가 초록이다. 심사자가 `gate.py` 한 번 돌리고 `data_audit.md` 끝을 보면 잡는다 | `scripts/audit_data.py:main` · `docs/data_audit.md` 경고 절 |
+| 3 | §6.1 | ⑤ 변동계수 3–9%에 대해 "it is a lower bound, **so more simulation buys nothing**" | **CV는 표본오차다 — n_sims를 올리면 줄어든다.** 출처 문서가 바로 그 둘(자릿수 축소 / n_sims 상향)을 남은 선택지로 적는다. 우리는 자릿수를 택한 것이고, 그것은 "줄일 수 없다"가 아니다 | `docs/seed_stability.md` 판정 절 |
+| 4 | §6.1 | 스윕이 재는 것을 "precision, not accuracy" 한 줄로만 한정 | **재지 않는 채널이 하나 더 있다** — 시드는 가격 경로만 바꾸고 계획 메뉴는 고정이므로 **계획 선택의 안정성은 이 스윕이 재지 않는다**(출처 문서가 명시). 그리고 §6.1이 이미 들고 있던 NSC 사례가 정확히 그 재지 않은 채널이다. 두 채널의 크기를 같은 자리에 붙였다: **계획 변경 −5.9%**(165.4 → 155.6) vs **시드 잡음 0.26%** | `docs/seed_stability.md` · `docs/seed_stability.csv` · `out/e5/metrics_company.csv` |
+| 5 | §6.1 | `seed_stability.md` 미인용(F17 인계의 미인용 부속 문서 4개 중 하나) | 인용 부착 + 스윕 조건(E1·E2 공유, n_sims 10,000)을 명시 | `docs/seed_stability.md` |
+
+### 코드에서 고친 것 (가이드 결함의 뿌리)
+
+`scripts/audit_data.py`의 활용 판정은 컬럼 이름을 **엔진 소스 전체**에서 찾는다. 그래서
+E5가 계산하는 동명 필드가 입력 열의 알리바이가 된다 — `best.capex_total`(`e5_metrics.py:377`)과
+MCP 산출 열 목록(`mcp_server.py:122`)이 D6 입력 열의 매칭을 만들어 냈다. `NAME_COLLISION`에
+충돌을 명시(사유 + 충돌 지점 파일:행)해 판정을 `UNUSED`로 되돌렸다.
+
+**일반 결함은 남았고 그렇게 적었다**: 계산 필드와 이름이 겹치는 입력 열은 읽히지 않아도
+사용으로 채점된다. 프레임 단위 데이터플로 추적으로만 닫히고 이 파이프라인은 그것을 하지
+않는다 — 가이드 §7에 그 한계를 그대로 썼다. `mcp_server.py`를 `ENGINE`에서 빼는 안은
+검토했다가 버렸다: 어느 입력 열도 "mcp_server에서만" 매칭되지 않아 아무것도 바뀌지 않는다.
+
+### 새로 드러난 실질 공백 1건
+
+`D6.capex_total`은 22 기업-연도 중 11개가 채워진 채 아무도 읽지 않는다. **CFO가 가장 먼저
+할 비교 — "이 전환은 당신이 이미 돌리는 자본 프로그램의 몇 배인가" — 가 모형에 없는 유일한
+분모다.** 코드 한 줄, 새 데이터 0. 이번 사이클에 넣지 않았다(E5 재실행이 필요하고, 창 규칙상
+끝낼 수 없는 파이프라인은 시작하지 않는다). §7에 조용히 버리지 않고 이름으로 적었다.
+
+### 검증
+
+```
+.venv/bin/python scripts/audit_data.py          # ok 68, UNUSED 1, PARTIAL 3, 설계상 정상 16
+.venv/bin/python scripts/build_tech_guide.py    # 21 blocks, 122,320 chars (119,608 -> )
+.venv/bin/python scripts/build_guide_page.py    # 38 sections, 383 table rows (불변)
+.venv/bin/python scripts/build_site.py
+.venv/bin/python scripts/gate.py                # gate: OK (pytest 77 passed)
+```
+
+수치 출처: 감사 집계·채움률 = `docs/data_audit.csv` · 게이트 치명 조건 = `scripts/audit_data.py:main` ·
+UNSOURCED 4건 = `docs/data_audit.md` 경고 절 · D6 소비 열 = `src/cap/e5_metrics.py:104-112` ·
+고정시드 NSC = `docs/seed_stability.csv`(seed 20260806) · 현행 NSC = `out/e5/metrics_company.csv` ·
+CV·미측정 채널 = `docs/seed_stability.md`.
+
+테스트 2개 추가(75 → 77). `test_section_7_audit_tally_is_the_audit_not_a_memory`는 §7의 집계를
+`data_audit.csv`에서 다시 세고, UNUSED 집합이 바뀌거나 "no unused or" 서술이 되살아나면 실패한다.
+`test_section_6_1_seed_sweep_matches_the_stability_record`는 두 채널의 크기를 CSV와 `out/`에서
+다시 계산하고, 크기 비교가 뒤집히거나 "more simulation buys nothing"이 되살아나면 실패한다.
+
+**생성 블록은 손대지 않았다.** 21개 불변. 바뀐 2,700자는 전부 §6.1·§7의 손으로 쓴 산문이다.
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | **정확해짐 (약해진 쪽으로)** | `ok 68, UNUSED 1, PARTIAL 3` — "전부 쓴다"가 처음으로 거짓이 됐다. 거짓이 된 게 아니라 원래 거짓이었고 감사가 못 봤다 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | 유지 | 11 가정 묶음 + base, 묶음당 16칸 (3묶음 미재계획 — F2) |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선** | §6.1이 "우리가 잰 것"과 "재지 않은 것"을 크기까지 붙여 구분한다. 심사자의 "그 CV가 오차막대냐"에 답이 생겼다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | **개선** | 감사기가 미소비 열을 다시 소비로 채점하지 않는다. MCP 표면 변화 없음 |
+| ⑤ 산출물 — 다른 형식이 있는가 | 유지 | md / HTML(38절 383행) / SVG / 데이터 패키지 |
+
+### 인계
+
+- **미인용 부속 문서 3개**(F17 목록에서 `seed_stability` 해소): `literature_map`·`price_process_test`·
+  `tech_cost_reconciliation`. 다음 후보는 **§3.4 ↔ `tech_cost_reconciliation`**(F17이 지목했으나
+  아직 안 열림), 그리고 §6.2의 GBM/OU 대조 ↔ `price_process_test`. **인용 부착 = 사실 대조라는
+  것이 F16·F17·F18 세 번 연속 확인됐다.**
+- **`D6.capex_total` 소비**(신규, 위 참조): `_affordability`에 `capex_total_to_own_capex` 한 줄.
+  E5 재실행이 필요하니 파이프라인 재실행을 하는 사이클에 묶어라.
+- **감사기의 이름 매칭 한계**(신규, 미해결): 계산 필드와 동명인 입력 열은 안 읽혀도 사용으로
+  채점된다. 지금은 `NAME_COLLISION` 1건으로 막았다 — 다른 열도 같은 착각일 수 있다. 확인하려면
+  입력 열 88개의 매칭 지점을 파일:행으로 뽑아 D* 표를 실제로 읽는 모듈인지 하나씩 봐야 한다.
+- **§7이 드러낸 실질 공백 2건**(변동 없음): 문헌 LCOA 미추출 · 교차대조 요인별 정량 분해 미실시.
+- **CCfD 시험 가능화**(백로그, F13) · **§6.1 시드 스윕 재실행**(백로그 — 이번에 §6.1이 스윕의
+  낡음을 수로 붙였으므로 재실행의 값이 더 분명해졌다) · **MCI 사업소 상한 검증**(백로그, O13) ·
+  **③ 번호 오기**(백로그, F13).
+- **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).
