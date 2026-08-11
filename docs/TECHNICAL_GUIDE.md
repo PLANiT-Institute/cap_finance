@@ -1034,6 +1034,30 @@ is not chaotic, not evidence that the ordering would survive a fifth firm (§9, 
 71–73% on the shock-normalisation choice. Any use of these numbers as absolute magnitudes needs the
 sensitivity annexe alongside.
 
+**That 41–48% is a floor on the price-process channel, not its range.** It is one point on a
+one-parameter family: the alternative is an Ornstein–Uhlenbeck process with a **half-life injected at
+10 years** (§5), and a shorter half-life reduces TCaR further while an infinite one converges back to
+GBM ([`docs/process_alternative.md`](process_alternative.md), closing note). Two things make the
+choice of 10 years worth stating rather than assuming. The first is that we cannot test it: a
+finite-sample unit-root test built on D4's own series has **4.9–5.4% power** against exactly this
+alternative at a nominal 5% size, and 480 monthly observations — 40 years — still fall short of 80%
+power, because τ grows in √n rather than n for a half-life this long
+([`docs/price_process_test.md`](price_process_test.md), which puts the observation count needed at
+roughly 395 years). "Untestable" here is a computed quantity, not a hedge. The second is that the
+sibling model in `cap-efficient/` runs mean reversion at **κ = 0.35/yr, a half-life of 2.0 years** —
+five times faster, and inside the same family — so the two implementations are not GBM-versus-nothing
+but two unfalsifiable points on one axis (§7).
+
+<!-- GEN:diagnostic_drift -->
+| Diagnostic | Written | Control arm | Firms drifted | Largest ② drift | Largest ③ drift |
+|---|---|---|---|---|---|
+| `out/process` price-process arms | 2026-08-09 21:28 | `gbm` | 1 | +6.27% (Nippon Steel, NZ15) | +4.63% (Nippon Steel, NZ15) |
+| `out/scenarios` bundle matrix | 2026-08-10 08:53 | `bundle=base` | 2 | +0.80% (Nippon Steel, B20) | +1.88% (Nippon Steel, B20) |
+| `out/m8` ε-constraint sweep | 2026-08-10 06:44 | none — unmeasurable | — | — | — |
+
+**Not all of these are measured against the run in §6.** The base pipeline was last written 2026-08-10 10:00; `out/process`, `out/scenarios`, `out/m8` predate it and were computed against an earlier E2 plan set. Where a diagnostic carries a control arm configured identically to the headline, the table measures how far that arm has drifted; where it carries none, the drift exists but is unquantified. The drift is a property of the **baseline**, not of the perturbation — an arm and its own control move together — so the *differences* quoted from these files stay internally consistent while the *levels* in them do not match §6. Re-running the diagnostics after a base re-solve is what closes this; `scripts/gate.py` checks staleness for `out/e5` only.
+<!-- /GEN:diagnostic_drift -->
+
 ### 6.3 The frontier is thinner than it looks
 
 Forcing technology schedules with an ε-constraint on cumulative emissions — an axis contracts cannot
@@ -1168,6 +1192,19 @@ decomposition is **qualitative**: no share of the abatement-cost difference has 
 any one cause, which would take re-running one model under the other's definitions one factor at a
 time. So the claim this layer supports is that the two models point the same direction — not that
 their levels agree.
+
+That list gained a sixth cause when this section was checked, and it is the one that bites hardest on
+the risk metric: **the two models do not simulate the same stochastic world.** We run GBM; the other
+model runs Ornstein–Uhlenbeck on all three factors — electricity at a **2.0-year half-life**, hydrogen
+2.5, construction 3.2 — with a non-identity correlation matrix (0.55 / 0.25 / 0.35) where ours is the
+identity. By our own measurement the process choice alone moves TCaR **41–48%** (§6.2), which is
+larger than any structural cause on the list. The cross-check already recorded that TCaR levels are
+not comparable, but attributed that to the denominator (amount here, unit cost there); the point now
+stated is that **equalising the denominator would not make them comparable**, because this confound
+survives it. Neither side's value is data-chosen — ours is a prior on two of three factors (A-17),
+theirs is flagged `illustrative_estimate` throughout, and a 2.0-year half-life is detectable at 8.1%
+power even with ten years of monthly data we do not have ([`docs/price_process_test.md`](price_process_test.md)).
+The table is §3, item 5 of [`docs/cross_model_check.md`](cross_model_check.md).
 
 Below the plan level, the two trees are reconciled parameter by parameter in
 [`docs/tech_cost_reconciliation.md`](tech_cost_reconciliation.md) — adopted value, difference and

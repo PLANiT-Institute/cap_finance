@@ -623,3 +623,80 @@ def test_section_3_4_excluded_rows_are_counted_not_typed():
         row = tech[tech.technology_id == tid].iloc[0]
         assert row.data_status == "model_estimate", (
             f"EFF {tid}에 출처가 붙었다 — §7과 tech_cost_reconciliation.md의 F19 정정을 갱신하라")
+
+
+def test_diagnostic_drift_block_measures_the_real_gap():
+    """§6.2가 인용하는 곁가지 산출물이 헤드라인 실행보다 오래된 것을 숨기지 않는가 (F20).
+
+    `out/process/*`는 `_link_shared`로 E1·E2를 base에 심볼릭 링크한다. base가 다시
+    풀리면 링크가 가리키는 계획집합이 바뀌지만 이미 계산된 E3–E5는 그대로 남는다 —
+    디스크 위에서 자기 입력과 어긋난 트리가 된다. F20에서 실제로 그랬다: 명목상
+    헤드라인과 같은 설정인 `gbm` 팔이 NSC에 대해 ② +6.3%, ③ +4.6% 어긋나 있었다.
+
+    이 테스트는 그 어긋남을 out/에서 다시 계산해 생성 블록의 수와 맞춘다. 팔을 다시
+    돌리면 블록은 저절로 "모두 최신"으로 바뀌고 이 테스트는 그 쪽을 검사한다.
+    """
+    import pandas as pd
+
+    base = ROOT / "out" / "e5" / "metrics_company.csv"
+    proc = ROOT / "out" / "process" / "gbm" / "e5" / "metrics_company.csv"
+    if not (base.exists() and proc.exists()):
+        pytest.skip("base 또는 process 팔 미실행")
+
+    text = " ".join(GUIDE.read_text(encoding="utf-8").split())
+
+    def nz(p):
+        m = pd.read_csv(p).query("scenario=='NZ15' and support=='none'")
+        return {r.company_id: (r.cost_per_tco2_thkrw, r.tcar_bnkrw) for r in m.itertuples()}
+
+    cur, arm = nz(base), nz(proc)
+    d2 = {k: 100 * (arm[k][0] / cur[k][0] - 1) for k in cur if k in arm}
+    worst = max(d2, key=lambda k: abs(d2[k]))
+
+    stale = proc.stat().st_mtime < base.stat().st_mtime
+    if not stale:
+        assert abs(d2[worst]) < 0.05, (
+            f"process 팔이 base보다 새로운데 gbm 통제군이 헤드라인과 {d2[worst]:+.2f}% "
+            "어긋난다 — 같은 설정이면 같은 수가 나와야 한다")
+        assert "Every diagnostic above post-dates the base run" in text, (
+            "곁가지 산출물이 모두 최신인데 §6.2가 여전히 낡았다고 적는다")
+        return
+
+    assert "predate it and were computed against an earlier E2 plan set" in text, (
+        "process/scenarios 팔이 base보다 오래됐는데 §6.2가 그 사실을 적지 않는다")
+    assert f"{d2[worst]:+.2f}%" in text, (
+        f"§6.2의 ② 최대 어긋남이 실제 {d2[worst]:+.2f}%와 다르다 — 블록을 다시 생성하라")
+
+
+def test_cross_model_causes_name_the_price_process():
+    """H4 요인 목록이 확률과정을 빠뜨리고 있었다 (F20).
+
+    두 문서 모두 TCaR 수준 비교 불가의 이유로 '분모가 다르다'만 적었다. 분모를 맞춰도
+    남는 요인이 하나 더 있다 — FIN은 GBM, EFF는 OU다. 가이드 자신의 §6.2가 그 크기를
+    41~48%로 재어 두었으므로, 목록에서 빠진 것은 사소한 누락이 아니라 목록에 있는 어떤
+    요인보다 큰 항목이었다. EFF가 GBM으로 바꾸거나 반감기가 달라지면 실패한다.
+    """
+    import json
+    import math
+
+    p = ROOT / "cap-efficient" / "data" / "price_process.json"
+    if not p.exists():
+        pytest.skip("EFF price_process.json 부재")
+    e = json.loads(p.read_text(encoding="utf-8"))
+    kappa = e.get("mean_reversion", {}).get("electricity")
+    assert kappa, "EFF가 더 이상 평균회귀를 쓰지 않는다 — §7과 cross_model_check.py를 다시 써라"
+    hl = math.log(2) / kappa
+
+    guide = " ".join(GUIDE.read_text(encoding="utf-8").split())
+    assert f"{hl:.1f}-year half-life" in guide, (
+        f"§7이 EFF 전력 반감기 {hl:.1f}년을 적지 않는다")
+    assert "equalising the denominator would not make them comparable" in guide, (
+        "§7이 이 교란을 분모 문제의 각주로 되돌려 적는다")
+
+    cmc = ROOT / "docs" / "cross_model_check.md"
+    if not cmc.exists():
+        pytest.skip("cross_model_check.md 미생성")
+    body = " ".join(cmc.read_text(encoding="utf-8").split())
+    assert "확률과정·변동성·요인상관" in body, (
+        "cross_model_check.md §4의 설명되는 차이 목록에 확률과정이 없다")
+    assert f"반감기 {hl:.1f}년" in body, "cross_model_check.md의 EFF 반감기가 실제와 다르다"

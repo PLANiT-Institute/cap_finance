@@ -19,6 +19,7 @@ an external reader.
 """
 
 import argparse
+import datetime as dt
 import hashlib
 import json
 import re
@@ -694,6 +695,97 @@ def gen_config():
     return _md(rows, ["Setting", "Value", "Note"]) + extra
 
 
+def _metrics(path, scen="NZ15", supp="none"):
+    """(company, scenario, support) -> (②, ③) for one metrics_company.csv."""
+    m = pd.read_csv(path)
+    if scen:
+        m = m[(m.scenario == scen) & (m.support == supp)]
+    return {(r.company_id, r.scenario, r.support):
+            (r.cost_per_tco2_thkrw, r.tcar_bnkrw) for r in m.itertuples()}
+
+
+def _drift(control, current):
+    """Largest signed % divergence of a diagnostic's own control from the live run.
+
+    Every off-pipeline diagnostic in `out/` carries an arm configured identically to the
+    headline. If that arm no longer reproduces the headline, the diagnostic was computed
+    against a base run that no longer exists — F20 found the price-process arms a full E2
+    re-solve behind, which is why this is measured rather than asserted.
+    """
+    hits = []
+    for k, v in control.items():
+        c = current.get(k)
+        if c is None:
+            continue
+        d2 = 100 * (v[0] / c[0] - 1) if c[0] else 0.0
+        dt = 100 * (v[1] / c[1] - 1) if c[1] else 0.0
+        if abs(d2) > 0.05 or abs(dt) > 0.05:
+            hits.append((k, d2, dt))
+    if not hits:
+        return 0, "—", "—"
+    firms = len({k[0] for k, _, _ in hits})
+    w2 = max(hits, key=lambda h: abs(h[1]))
+    wt = max(hits, key=lambda h: abs(h[2]))
+    return (firms,
+            f"{w2[1]:+.2f}% ({COMPANY_NAME.get(w2[0][0], w2[0][0])}, {w2[0][1]})",
+            f"{wt[2]:+.2f}% ({COMPANY_NAME.get(wt[0][0], wt[0][0])}, {wt[0][1]})")
+
+
+def _mtime(p):
+    return dt.datetime.fromtimestamp(p.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
+
+
+def gen_diagnostic_drift():
+    base = ROOT / "out" / "e5" / "metrics_company.csv"
+    if not base.exists():
+        return "_No pipeline run in `out/`. Run `python -m cap all`._"
+    cur_all = _metrics(base, scen=None)
+    cur_nz = {k: v for k, v in cur_all.items() if k[1] == "NZ15" and k[2] == "none"}
+
+    rows, stale = [], []
+    proc = ROOT / "out" / "process" / "gbm" / "e5" / "metrics_company.csv"
+    if proc.exists():
+        n, d2, dt_ = _drift(_metrics(proc), cur_nz)
+        rows.append([f"`out/process` price-process arms", _mtime(proc), "`gbm`", n, d2, dt_])
+        if _mtime(proc) < _mtime(base):
+            stale.append("`out/process`")
+    sc = ROOT / "out" / "scenarios" / "summary.csv"
+    if sc.exists():
+        s = pd.read_csv(sc)
+        ctl = {(r.company_id, r.scenario, r.support):
+               (r.cost_per_tco2_thkrw, r.tcar_bnkrw)
+               for r in s[s.bundle == "base"].itertuples()}
+        n, d2, dt_ = _drift(ctl, cur_all)
+        rows.append(["`out/scenarios` bundle matrix", _mtime(sc), "`bundle=base`", n, d2, dt_])
+        if _mtime(sc) < _mtime(base):
+            stale.append("`out/scenarios`")
+    m8 = ROOT / "out" / "m8" / "summary.csv"
+    if m8.exists():
+        rows.append(["`out/m8` ε-constraint sweep", _mtime(m8), "none — unmeasurable",
+                     "—", "—", "—"])
+        if _mtime(m8) < _mtime(base):
+            stale.append("`out/m8`")
+    if not rows:
+        return "_No side diagnostics in `out/`._"
+
+    head = _md(rows, ["Diagnostic", "Written", "Control arm",
+                      "Firms drifted", "Largest ② drift", "Largest ③ drift"])
+    if not stale:
+        return head + (f"\n\nEvery diagnostic above post-dates the base run "
+                       f"(`out/e5`, {_mtime(base)}), so the perturbations are measured "
+                       f"against the headline as printed.")
+    return head + (
+        f"\n\n**Not all of these are measured against the run in §6.** The base pipeline was last "
+        f"written {_mtime(base)}; {', '.join(stale)} predate it and were computed against an "
+        f"earlier E2 plan set. Where a diagnostic carries a control arm configured identically to "
+        f"the headline, the table measures how far that arm has drifted; where it carries none, "
+        f"the drift exists but is unquantified. The drift is a property of the **baseline**, not "
+        f"of the perturbation — an arm and its own control move together — so the *differences* "
+        f"quoted from these files stay internally consistent while the *levels* in them do not "
+        f"match §6. Re-running the diagnostics after a base re-solve is what closes this; "
+        f"`scripts/gate.py` checks staleness for `out/e5` only.")
+
+
 def gen_headline():
     p = ROOT / "out" / "e5" / "metrics_company.csv"
     if not p.exists():
@@ -1278,6 +1370,7 @@ BLOCKS = {
     "tier_distribution": gen_tier_distribution,
     "config": gen_config,
     "headline": gen_headline,
+    "diagnostic_drift": gen_diagnostic_drift,
 }
 
 

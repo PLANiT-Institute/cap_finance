@@ -34,6 +34,52 @@ def pct(a, b):
     return float("nan") if not b else 100 * (a - b) / abs(b)
 
 
+def eff_file(rel: str):
+    """EFF는 별도 저장소(`~/Documents/cap-efficient`)와 이 저장소의 사본 둘 다로 존재한다."""
+    for base in (EFF, ROOT / "cap-efficient"):
+        p = base / rel
+        if p.exists():
+            return p
+    return None
+
+
+def process_rows():
+    """확률과정·변동성·상관 — 두 모형이 꼬리위험을 서로 다른 난수 세계에서 잰다.
+
+    F20: §3의 '단위가 달라 TCaR 수준 비교 불가'는 분모 이야기이고, 분모를 맞춰도 남는
+    교란이 하나 더 있다. FIN은 GBM, EFF는 OU다. FIN 자신의 측정(`docs/process_alternative.md`)
+    으로 과정 선택만으로 TCaR이 41~48% 움직이므로, 이 칸은 §3의 각주가 아니라 별도 요인이다.
+    """
+    import json
+
+    cal = pd.read_csv(ROOT / "out" / "e3" / "calibration_report.csv").set_index("param").value
+    cfg = C.load()
+    p = eff_file("data/price_process.json")
+    if p is None:
+        return None
+    e = json.loads(p.read_text(encoding="utf-8"))
+    kappa, vol = e.get("mean_reversion", {}), e.get("annual_volatility", {})
+
+    def hl(k):
+        import math
+        return f"반감기 {math.log(2) / kappa[k]:.1f}년 (κ={kappa[k]})" if kappa.get(k) else "없음"
+
+    rows = [
+        ["확률과정", f"`{cfg['price_process']}` — 평균회귀 없음",
+         f"OU — 전력 {hl('electricity')}"],
+        ["전력 연 σ", f"{cal['vol_elec']:.3f} (D4 3계열 추정)",
+         f"{vol.get('electricity', float('nan')):.2f} (`{e.get('data_status', '?')}`)"],
+        ["수소 연 σ", f"{cal['vol_h2']:.3f} (사전값 — D4 미달, A-17)",
+         f"{vol.get('hydrogen_input', float('nan')):.2f} · {hl('hydrogen_input')}"],
+        ["자본비 연 σ", f"{cal['vol_capex']:.3f} (사전값 — D4 미달, A-17)",
+         f"{vol.get('construction_capex', float('nan')):.2f} · {hl('construction_capex')}"],
+        ["요인 상관", "단위행렬 (추정 부재)",
+         " / ".join(f"{x:.2f}" for x in (e["correlation"][0][1], e["correlation"][0][2],
+                                         e["correlation"][1][2]))],
+    ]
+    return rows
+
+
 def main() -> int:
     m = pd.read_csv(ROOT / "out" / "e5" / "metrics_company.csv").query(
         "scenario=='NZ15' and support=='none'").set_index("company_id")
@@ -145,11 +191,32 @@ def main() -> int:
           "4. **TCaR 단위가 다르다.** FIN은 금액(P90−P50, 십억원), EFF는 단가 기준"
           "(천원/tCO₂). 직접 비교하려면 FIN TCaR을 같은 분모로 나눠야 하는데, 분모 정의가 "
           "1번 때문에 다르므로 **현재 상태에서 TCaR은 수준 비교가 불가능하다** — 순위·부호만 "
-          "비교 가능하다.", ""]
+          "비교 가능하다.",
+          "5. **확률과정이 다르다 — 분모를 맞춰도 남는 교란.** 4번은 단위 이야기이고 이것은 "
+          "난수 세계 이야기다. FIN은 GBM(평균회귀 없음), EFF는 OU다. FIN 자신의 측정으로 "
+          "**과정 선택만으로 TCaR이 41~48% 움직인다**(`docs/process_alternative.md`) — 즉 "
+          "TCaR 분모를 통일하더라도 두 값의 차이에는 이 몫이 섞인 채로 남는다. 아래 표가 "
+          "그 크기다.", ""]
+
+    prow = process_rows()
+    if prow is not None:
+        L += ["| 항목 | FIN | EFF |", "|---|---|---|"]
+        L += [f"| {a} | {b} | {c} |" for a, b, c in prow]
+        L += ["", "양쪽 다 이 축에서는 데이터가 없다. FIN의 수소·자본비 σ는 D4 관측 부족으로 "
+              "사전값이고(A-17), 상관은 추정 부재라 단위행렬이다 — 독립성의 발견이 아니라 "
+              "추정의 부재다. EFF는 파일 전체를 `illustrative_estimate`로 표기한다. "
+              "그리고 EFF의 전력 반감기 2.0년은 FIN이 대안으로 돌린 10년보다 다섯 배 빠른데, "
+              "`docs/price_process_test.md`가 재어 둔 검정력으로는 **월별 120관측에서도 "
+              "반감기 2년을 8.1%로만 잡아낸다** — 어느 쪽 값도 데이터가 고른 것이 아니다. "
+              "따라서 이 요인은 '한쪽이 틀렸다'가 아니라 **두 모형의 꼬리위험이 서로 다른 "
+              "미검증 가정 위에서 계산된다**는 뜻이고, 정량 분해 전에는 TCaR 대조에서 이 몫을 "
+              "뺄 수 없다.", ""]
 
     L += ["## 4. 판정", "",
           "- **설명되는 차이**: 배출 경계(S1 vs S1+2), 기술 집합(BF→EAF 허용 여부), "
-          "탄소비용 처리(자원비용 vs 총비용), 설비 해상도(시설 vs 블록), 시나리오 정의.",
+          "탄소비용 처리(자원비용 vs 총비용), 설비 해상도(시설 vs 블록), 시나리오 정의, "
+          "**확률과정·변동성·요인상관**(위 §3-5 — 꼬리위험 대조에만 걸리고, F20까지 이 "
+          "목록에 없었다).",
           "- **아직 정량 분해되지 않은 것**: 위 요인 각각이 감축단가 차이에서 몇 %를 "
           "설명하는지는 계산하지 않았다. 그러려면 한쪽 모형에서 요인을 하나씩 상대 쪽 정의로 "
           "바꿔가며 재실행해야 하고, 그것이 이 항목의 다음 단계다.",
@@ -159,10 +226,15 @@ def main() -> int:
     DOCS.mkdir(exist_ok=True)
     out = DOCS / "cross_model_check.md"
     out.write_text("\n".join(L) + "\n", encoding="utf-8")
-    eff_docs = EFF / "docs"
-    if eff_docs.exists():
-        shutil.copy(out, eff_docs / "cross_model_check.md")
-        print(f"[cross] {out.relative_to(ROOT)} + EFF 사본")
+    # EFF 트리는 둘이다 — 별도 저장소와 이 저장소 안의 사본. F20까지 별도 저장소에만
+    # 복사해서, 커밋되는 쪽(`cap-efficient/docs/`)이 조용히 낡아 있었다.
+    copied = []
+    for eff_docs in (EFF / "docs", ROOT / "cap-efficient" / "docs"):
+        if eff_docs.exists():
+            shutil.copy(out, eff_docs / "cross_model_check.md")
+            copied.append(str(eff_docs))
+    if copied:
+        print(f"[cross] {out.relative_to(ROOT)} + EFF 사본 {len(copied)}개")
     else:
         print(f"[cross] {out.relative_to(ROOT)} (EFF docs 없음 — 사본 미생성)")
     print(df.round(1).to_string(index=False))
