@@ -820,7 +820,7 @@ grade: either an axis we **re-solved** and can therefore quote a number for, or 
 | **A-02** | Facility emissions = firm-reported total, distributed by capacity × route emission factor (steel); bottom-up (petchem) | Per-facility measured emissions are not publicly issued in Korea | **Largest single parameter — rank 1 in sensitivity screening, evidence tier T5.** Moves abatement cost by up to 154%, and by 3.4× the next parameter (§4.3) | Back-test; for Japan, replaced by T1 site disclosure (EEGS) — see §6.5 |
 | **A-17** | Factors with too few observations use prior volatility (h₂ 0.25, capex 0.06, identity correlation) | D4 has 1–19 observations per series | **Large — sets the level of metric ③.** Mean-reversion instead of GBM cuts TCaR by 41–48% | `docs/process_alternative.md`; D4 is too short to discriminate statistically, and we say so rather than reporting a test we have no power for |
 | **A-24** | Price shocks normalised so **E[shock] = 1** | D2b does not state whether its central path is a mean or a median | **Large — petrochemical metric ② moves +71–73% under the median convention.** Log-normal skew drags the median down: at σ=0.25 over 25 years the 2050 median is 0.47× the central path | `docs/process_alternative.md` §3 |
-| **A-07** | Auction share follows the confirmed K-ETS Phase 4 allocation plan (15% non-power, 2026–2030), then an assumed ramp to 100% by 2050 | Post-2030 allocation is not decided | **Large, measured.** `carbon_fast` (full auctioning by 2040) is the largest mover on ③ of any axis we have re-solved; on ② it is third, behind both hydrogen-price bundles. The looser direction, `carbon_slow`, has **not** been re-planned and its 0.0% is not a finding — §4.3 | `test_auction_share_follows_confirmed_allocation_plan`; §4.3 |
+| **A-07** | Auction share follows the confirmed K-ETS Phase 4 allocation plan (15% non-power, 2026–2030), then an assumed ramp to 100% by 2050 | Post-2030 allocation is not decided | **Large, measured, and symmetric in a way we did not expect.** Both directions have now been re-planned. `carbon_fast` (full auctioning by 2040) moves ③ by 61.5%; **`carbon_slow` — the *looser* policy — moves it by 99.7%, the largest of any axis in the sweep.** Slower auctioning is not a milder assumption, it is a different plan: the firm defers, and the deferred programme carries more tail risk than the accelerated one. Until 2026-08-12 this row reported `carbon_slow` at 0.0% because it had been re-priced without re-planning — §4.3 | `test_auction_share_follows_confirmed_allocation_plan`; §4.3 |
 | **A-03** | Energy and emission intensities are injected route standards (BF 2.15 tCO₂/t and similar), **with no range** | Firms do not disclose per-route intensities | **Small for steel, large for petrochemicals.** Steel intensities are rescaled to the firm's reported total, so an error in the injected value cancels; petrochemical intensities are not rescaled, so the injected number *is* the level of ② | Steel: the rescaling residual in E1. Petrochemicals: nothing — this is an open weakness, not a checked one |
 | **A-05** | Hydrogen is procured externally at a market price | Design decision (spec §5-1); the electrolyser formulation was discarded | **Large, and larger than the ledger said.** On each firm's cost-minimising plan under NZ15 hydrogen carries **34%–100%** of simulated cost variance (NSC 34%, POSCO 52%, both petrochemical firms 100% — `out/e5/variance_decomp.csv`); §9.1's 64–77% is the same quantity averaged over every plan. Read this as a variance share and not as a share of TCaR: quantiles do not decompose additively, which is why `docs/uncertainty_propagation.md` §1 leaves an interaction residual | `test_hydrogen_priced_from_data_not_structural_fallback`; `out/e5/variance_decomp.csv` |
 | **A-19** | Metric ② is a **resource cost**: carbon expenditure delta is subtracted | If carbon avoidance dominates, "transition is free" and the capital-allocation question disappears | Large on ②, none on ③ | `test_resource_cost_is_total_minus_carbon` |
@@ -832,14 +832,14 @@ grade: either an axis we **re-solved** and can therefore quote a number for, or 
 |---|---|---|
 | **A-06** | Firm budget = own base emissions × sector path ratio | Level from the firm, shape from the scenario. No inter-firm allocation of abatement — who abates when is E2's decision |
 | **A-10** | Blast-furnace conversion is hydrogen-DRI only; efficiency and partial-abatement measures are retrofits; wholesale BF→EAF conversion is disallowed; **CCUS is not in the option set at all** — both CCUS rows are dropped in preparation (`scripts/prepare_raw.py:303`), so no firm can be assigned a capture project at any price | User-confirmed scope decision. **This is why two of the four firms have no disclosed coordinate** — POSCO's Gwangyang EAF cannot be represented and LOTTE's disclosed measure is CCUS (§6.4, §3.4). Until F19 this row called CCUS a retrofit measure available to blast furnaces, the opposite of what the pipeline does, while §6.4 of the same document said it was excluded |
-| **A-09** | At most 20% of firm production may be retired early | Demand / market-position proxy. Without it, NZ15 carbon prices dwarf margins and full closure wins — an observation from the first unconstrained run, **not** a re-solved result: the `retire_free` bundle (cap raised to 40%) has never been re-planned, so its 0.0% measures nothing (§4.3) |
+| **A-09** | At most 20% of firm production may be retired early | Demand / market-position proxy, and **the single most consequential number in this table**. Re-planned on 2026-08-12: doubling the cap to 40% moves ② by **41.2%**, more than any other axis in the sweep, and ③ by 51.9% (§4.3). This row previously read 0.0% and said so was meaningless, because the cap is an E2 constraint and the bundle had only been re-priced. It is now measured, and the answer is that a proxy we chose for market realism, not for evidence, is worth more than the hydrogen price |
 | **A-11** | Budget-violation penalty floored at 300 thousand KRW/tCO₂ | Without a floor the optimiser buys violations instead of transitions. Registered T5 with a `[150, 600]` band whose `source_id` is `MODEL_CHOICE` — i.e. **the band has no external basis**. The floor is far above where it needs to be: early action stops winning only below ≈39 thousand KRW/tCO₂, and at a floor of 0 three of four firms flip while at 50 none do (`out/m5/penalty_axis.csv`) |
 | **A-04** | Margin is operating profit per tonne, lost on closure | One value per sector, not per facility or per product — the closure decision therefore cannot distinguish a marginal cracker from a profitable one |
 | **A-08** | Missing price anchors are dropped and flat-extrapolated **with a warning**, never silently | The failure mode being blocked is a quiet model retreat to a shorter horizon. Enforced by `test_central_price_paths_are_complete_and_finite` |
 | **A-16** | If a disclosure carries no enforceable commitment, **no coordinate is produced** and the reason is recorded | An empty "fix" is a second unconstrained optimisation, which would manufacture a gap of exactly zero. Reasons are split into "disclosure too coarse" and "we excluded the technology" — §6.4 |
 | **A-20** | Reference earnings for ⑥ = 3-year mean EBITDA | Smooths the cycle. Petrochemicals sit at a trough, so this is the assumption that decides whether ⑥ reads as "unaffordable" — and the underlying column is currency-mixed (§3.7) |
 | **A-14** | E2 is an ordering surrogate at a 2% relative gap | Cheap because E4 is authoritative — **but see §2: had we trusted the surrogate we would have been wrong in 8 of 8 bundles** |
-| **A-15** | Hedges enter the surrogate as a plan-independent linear deduction at the median | Avoids bilinearity. Conservative; E4 applies contracts non-linearly. The `ppa_costly` bundle that would bound it has also not been re-planned (§4.3) |
+| **A-15** | Hedges enter the surrogate as a plan-independent linear deduction at the median | Avoids bilinearity. Conservative; E4 applies contracts non-linearly. The `ppa_costly` bundle that bounds it was re-planned on 2026-08-12: doubling the PPA premium moves ② by 1.4% and ③ by 8.1% (§4.3). That is the one axis where the pre-re-planning 0.0% was close to the truth — the hedge channel really is small next to the plan channel |
 | **A-18** | CAPEX spread evenly across `build_years` | Charging it at adoption overstated peak funding need by up to `build_years`× |
 | **A-01** | Capacity = published, else inner volume × 913.3 t/m³·yr | Sensitivity rank 10. A 12% discrepancy against the independent implementation is open (workstream G3) |
 | **A-21** | Emission boundary = Scope 1 | Level-neutral given A-06; Scope 2 preserved but not charged |
@@ -847,34 +847,36 @@ grade: either an axis we **re-solved** and can therefore quote a number for, or 
 ### 4.3 What we actually re-solved
 
 Eleven bundles change one assumption each and re-run the pipeline; a twelfth run, `base`, is the
-reference they are differenced against and is not itself a perturbation. Δ② and Δ③ are the largest
-move across the **sixteen** firm × scenario × support cells (4 × 2 × 2), against the `base` bundle.
+reference they are differenced against and is not itself a perturbation. Δ② and Δ③ are differenced
+against the `base` bundle; the cells they are maximised over are stated with the table.
 
-The column to read first is **Re-planned**. Five axes are read only inside the plan optimiser (E2);
-running them without re-planning re-prices a plan that the assumption should have changed, and the
-result is a row of small or zero deltas that looks like robustness and is not. Two of those five have
-been re-planned. The other three are marked, and their numbers should be read as absent. A sixth,
-`reline_cheap`, reaches E2 as well but through the stranding term rather than a constraint, so it
-does move without re-planning — by less than it should. It is marked separately.
+The column to read first is **Re-planned**. Some axes are read only inside the plan optimiser (E2);
+running one of them without re-planning re-prices a plan that the assumption should have changed, and
+the result is a row of small or zero deltas that looks like robustness and is not. Which axes those
+are, and how many of them have actually been solved through E2 rather than merely re-priced, is
+counted under the table from the run itself — this paragraph deliberately states no number, because
+every hand-written count here has gone stale the first time a bundle was re-planned.
 
 <!-- GEN:axis_impact -->
 | Bundle | Assumption | What it varies | Re-planned | Δ② (max, %) | Δ③ (max, %) |
 |---|---|---|---|---|---|
+| `carbon_slow` | A-07 | auction share reaches only 60% by 2050 | yes | 39.0% | 99.7% |
 | `carbon_fast` | A-07 | full auctioning by 2040 (CBAM-alignment pressure) | yes | 19.7% | 61.5% |
-| `disc35` | — | discount rate 3.5% | yes | 6.1% | 39.2% |
+| `retire_free` | A-09 | early-retirement cap 20% → 40% | yes | 41.2% | 51.9% |
+| `disc35` | — | discount rate 3.5% | yes | 5.4% | 34.4% |
 | `h2_cheap` | A-05 | hydrogen price −30% | not needed | 27.0% | 30.4% |
 | `h2_expensive` | A-05 | hydrogen price +30% | not needed | 26.9% | 29.9% |
-| `disc65` | — | discount rate 6.5% | yes | 3.6% | 26.4% |
-| `elec_high` | — | grid and PPA electricity prices +30% | not needed | 5.9% | 19.3% |
-| `penalty_none` | A-11 | budget-violation floor 300 → 0 | yes | 1.5% | 5.9% |
-| `reline_cheap` | A-13 | BF replacement cost ×0.235, at the disclosed Kobe actual | **no — lower bound** | 2.0% | 0.3% |
-| `carbon_slow` | A-07 | auction share reaches only 60% by 2050 | **no — required** | 0.0% | 0.0% |
-| `ppa_costly` | A-15 | renewable PPA premium doubled | **no — required** | 0.0% | 0.0% |
-| `retire_free` | A-09 | early-retirement cap 20% → 40% | **no — required** | 0.0% | 0.0% |
+| `disc65` | — | discount rate 6.5% | yes | 1.2% | 26.4% |
+| `elec_high` | — | grid and PPA electricity prices +30% | not needed | 5.8% | 19.5% |
+| `ppa_costly` | A-15 | renewable PPA premium doubled | yes | 1.4% | 8.1% |
+| `penalty_none` | A-11 | budget-violation floor 300 → 0 | yes | 1.6% | 5.9% |
+| `reline_cheap` | A-13 | BF replacement cost ×0.235, at the disclosed Kobe actual | **no — lower bound** | 2.0% | 0.1% |
 
-Largest mover on ③ is `carbon_fast` (61.5%); on ② it is `h2_cheap` (27.0%) — not the same bundle, so no single axis dominates both metrics.
+**Δ② and Δ③ above are the largest move across the 4 firms in the headline cell (`NZ15`, `support=none`) — not across all 16 firm × scenario × support cells.** That is the definition §6 of the paper uses, and it is the narrower one: over all 16 cells the same sweep reaches **47.8%** on ② and **241.8%** on ③, both on `penalty_none`, whose headline figures are 1.6% and 5.9%. That widest ③ move is Mitsui Chemicals under `B20` with `support=current` — an assumption can bite several times harder outside the cell that is reported than inside it.
 
-**Read `carbon_slow`, `ppa_costly`, `retire_free` as unmeasured, not as flat.** Those axes are read only inside E2, so with the plan menu held fixed they can re-price a plan but not change it; their Δ② / Δ③ are an artefact of that. Re-planning each costs about ten minutes of solver time and has not been spent.
+Largest mover on ③ is `carbon_slow` (99.7%); on ② it is `retire_free` (41.2%) — not the same bundle, so no single axis dominates both metrics.
+
+**5 of the 5 E2-only axes have been re-planned** (`carbon_fast`, `carbon_slow`, `penalty_none`, `ppa_costly`, `retire_free`), so every axis in this table has been solved through the plan optimiser rather than merely re-priced. Re-planning one bundle costs about 20 minutes of solver time.
 
 **`reline_cheap` is measured, but what is measured is a lower bound.** The replacement cost enters E2 through the stranding term, so its main effect is to **pull adoption years forward**; with the plan menu shared, all that is left is the smaller write-off at an adoption year the assumption should have moved. `run_scenarios.py --replan reline_cheap` is what would measure it.
 
@@ -943,15 +945,25 @@ narrower than "evidence quality and stated uncertainty run in opposite direction
 disclosure gives a point value and no uncertainty, which means **the sources we trust most
 contribute no width, and the width in this model is mostly convention rather than evidence.**
 
-What that convention costs is measured, not asserted. The three technology cells that do carry
-literature bands (§3.4) are enough to show that the ±30% convention behind the parameter share of
-uncertainty is wrong in its *center*, not its width: the evidence puts `tech.capex` at [1.00, 3.48]×
-our central value and `tech.emission_factor` at [0.80, 1.00]×, both one-sided, while the convention
-draws symmetrically around 1. Re-solving with the bands in place of the convention moves the steel
-parameter share of TCaR from 21% to 37% (POSCO) and 23% to 36% (NSC) at ±15% width, and leaves the
-two petrochemical firms within a percentage point — [`docs/tech_band_upgrade.md`](tech_band_upgrade.md).
-That is what a missing band is worth here: on the two firms whose numbers decide the headline, it
-is the difference between a fifth and a third of their cost uncertainty.
+What that convention costs is measured, not asserted — and the measurement's own reach is the
+finding. The three technology cells that do carry literature bands (§3.4) show that the ±30%
+convention is wrong in its *center* rather than its width: the evidence sits to one side of 1,
+and the convention draws symmetrically around it.
+
+<!-- GEN:band_vs_convention -->
+The evidence puts `tech.capex` at [1.00, 3.48]× our central value and `tech.emission_factor` at [0.80, 1.00]×, both one-sided, while the convention draws symmetrically around 1. Substituting the bands for the convention moves the steel parameter share of TCaR from 21% to 21% (POSCO) and 21% to 21% (Nippon Steel) at ±15% width, and no firm by more than 0.0 percentage points. **That is not evidence that the convention is harmless.** Of the 10 parameters the decomposition draws, 1 carries a literature band, and `tech.capex` — the one whose band is wide and one-sided — is not among them: it ranks 13 of 25 in the screen that chooses what gets drawn (`out/sensitivity/ranking.csv`), below the cut. The one place we hold evidence against the ±30% convention is a place this test cannot reach.
+<!-- /GEN:band_vs_convention -->
+
+The record is [`docs/tech_band_upgrade.md`](tech_band_upgrade.md). Read that result as a statement
+about the **test**, not about the convention. `tech.capex` was inside the drawn set until the
+sensitivity screen was re-run on corrected facility data, and this same comparison moved the steel
+share substantially then; the parameter did not become harmless, it fell below the cut.
+That cut is not neutral ground. The screen that produces it perturbs every parameter by the same
+±30% whose centre we are trying to audit, and it does so with the plan menu held fixed (§4.3), so
+it understates anything acting through plan choice — capital cost most of all. **The width in this
+model is convention, and the one audit we can run against that convention is scoped by a ranking
+the convention itself helped produce.** Widening the draw to cover every banded parameter,
+irrespective of rank, is what would close this; it has not been done.
 
 ---
 
@@ -1005,11 +1017,17 @@ Five-seed repetition of E3–E5 gives the sampling error, recorded in
 row by row. E1 and E2 are shared across the five, so this is the same plan re-evaluated on different
 random paths — n_sims = 10,000 each:
 
+<!-- GEN:seed_cv -->
 | Metric | Coefficient of variation | Read to |
 |---|---|---|
-| ② P50 / abatement cost | 0.3–0.8% | The digits as printed |
-| ③ TCaR | 1.1–1.8% | **Two significant figures** — "33 trillion KRW", not "32,961 bn" |
-| ⑤ Flexibility | 3–9% | **One significant figure** |
+| ② P50 / abatement cost | 0.2–0.8% | The digits as printed |
+| ③ TCaR | 1.1–1.9% | **Two significant figures** |
+| ⑤ Flexibility | 2.0–9.2% | **One significant figure** |
+
+The binding row is ③: at 1.9% on Nippon Steel the printed 32,961 bn KRW carries about 621 bn of pure sampling noise, which is why §6 rounds it.
+
+The sweep is **taken on the plan menu now in `out/`**: its pinned-seed rows (`seed=20260806`) reproduce §6's ② and ③ for all 4 firms to within a twentieth of a percent, so these CVs are an error bar on the table above rather than a measurement on a menu that has since moved. That was not true before 2026-08-12, and the guide said so; what closed it was re-running the sweep, which costs seconds.
+<!-- /GEN:seed_cv -->
 
 The two remedies for a CV above 1% are fewer digits or more paths, and we take the digits: the CVs
 above are sampling noise, so a larger `n_sims` would shrink them, at a cost we have not judged worth
@@ -1021,15 +1039,11 @@ only the price paths — the plan menu is fixed across them, so **the stability 
 not measured by this sweep at all**. The MILP's solution stability is tracked separately through
 `solve_status` (§2).
 
-The sweep is also **older than the current run**: in `docs/seed_stability.csv` the pinned-seed row
-for Nippon Steel carries ② 165.4 and ③ 34,488 against the 155.6 and 32,961 above, because its
-cost-minimising plan changed after the sweep was taken. The other three firms match to the digit. So
-the CVs are a measurement of the sampling channel, taken on a plan menu that has since moved once —
-read them as the order of magnitude of seed noise, not as an error bar on the table above.
-
-Nippon Steel is also the unmeasured channel showing itself, and the two channels are not the same
-size: the plan change moved ② by **−5.9%** (165.4 → 155.6) where five seeds moved it by 0.26%. The
-sweep measures the small one.
+The channel this sweep does **not** measure is the larger one. Until 2026-08-12 the sweep sat on a
+superseded plan menu, and the gap that opened up was instructive: re-solving the menu had moved
+Nippon Steel's ② by about six percent where five seeds moved it by a quarter of one. The seed
+channel is the small one, and the size of the plan-selection channel is read off §4.3, where each
+bundle is re-planned rather than re-priced.
 
 ### 6.2 What is robust and what is not
 
@@ -1089,13 +1103,13 @@ five times faster, and inside the same family — so the two implementations are
 but two unfalsifiable points on one axis (§7).
 
 <!-- GEN:diagnostic_drift -->
-| Diagnostic | Written | Control arm | Firms drifted | Largest ② drift | Largest ③ drift |
-|---|---|---|---|---|---|
-| `out/process` price-process arms | 2026-08-09 21:28 | `gbm` | 1 | +6.27% (Nippon Steel, NZ15) | +4.63% (Nippon Steel, NZ15) |
-| `out/scenarios` bundle matrix | 2026-08-10 08:53 | `bundle=base` | 2 | +0.80% (Nippon Steel, B20) | +1.88% (Nippon Steel, B20) |
-| `out/m8` ε-constraint sweep | 2026-08-10 06:44 | none — unmeasurable | — | — | — |
+| Diagnostic | Oldest arm written | Arms behind base | Control arm | Firms drifted | Largest ② drift | Largest ③ drift |
+|---|---|---|---|---|---|---|
+| `out/process` price-process arms | 2026-08-12 06:49 | 0 of 3 | `gbm` | 0 | — | — |
+| `out/scenarios` bundle matrix | 2026-08-12 06:14 | 0 of 12 | `bundle=base` | 0 | — | — |
+| `out/m8` ε-constraint sweep | 2026-08-12 06:53 | — | none — unmeasurable | — | — | — |
 
-**Not all of these are measured against the run in §6.** The base pipeline was last written 2026-08-10 10:00; `out/process`, `out/scenarios`, `out/m8` predate it and were computed against an earlier E2 plan set. Where a diagnostic carries a control arm configured identically to the headline, the table measures how far that arm has drifted; where it carries none, the drift exists but is unquantified. The drift is a property of the **baseline**, not of the perturbation — an arm and its own control move together — so the *differences* quoted from these files stay internally consistent while the *levels* in them do not match §6. Re-running the diagnostics after a base re-solve is what closes this, and until it is closed `scripts/gate.py` names these files and their lag in its `sidecars` check — a warning rather than a failure, because a stale diagnostic is work not yet re-run, not a defect in the code.
+Every arm of every diagnostic above post-dates the base run (`out/e5`, 2026-08-10 10:00), so the perturbations are measured against the headline as printed.
 <!-- /GEN:diagnostic_drift -->
 
 ### 6.3 The frontier is thinner than it looks
@@ -1410,7 +1424,7 @@ Each of the claims above that was stated without a magnitude has one here.
 | 2 — petrochemical intensity | every petrochemical facility-year carries the same implied intensity (**0.95 tCO₂/t**, the injected NCC route factor), production is flat across 2022–2024 for **4 of 4** units, and the modelled units cover MCI 25%, LOTTE 55% of the company Scope 1 total | `D1b_facility_panel.csv` × `data/raw/facility_panel.csv` |
 | 3 — TCaR levels | the unit-root test rejects in **0 of 8** series (7–19 observations), and its power against a mean-reverting alternative with a 10-year half-life is **4.9–5.4%** at a nominal 5% size — the test cannot tell the two processes apart, so "untestable" is measured, not rhetorical | `docs/price_process_test.csv` |
 | 5 — the `support` axis | `gap.csv` holds 8 rows for **4 distinct gaps**, and the largest disagreement between `support=current` and `support=none` on any reported quantity is **0** | `out/e5/gap.csv` |
-| 6 — the plan-selection channel | **4 of 11** bundles were re-planned; **3** of the rest need re-planning to be read at all (`carbon_slow`, `ppa_costly`, `retire_free`), so their Δ② / Δ③ are unmeasured rather than flat (§4.3) | `out/m5/bundle_matrix.csv` × `scripts/run_scenarios.py::REPLAN_REQUIRED` |
+| 6 — the plan-selection channel | **7 of 11** bundles were re-planned; every axis that E2 reads has now been solved through it, and none of the remaining bundles reaches E2. Re-planning changed the reading: the largest movers are `carbon_slow` on ③ (99.7%) and `retire_free` on ② (41.2%), both of which read 0.0% while they were only being re-priced (§4.3) | `out/m5/bundle_matrix.csv` × `scripts/run_scenarios.py::REPLAN_REQUIRED` |
 | 9 — the gaps are lower bounds | **4 of 4** cost legs and **3 of 4** risk legs are clamped to a frontier endpoint, the disclosed plan sitting 1.01×–477× above the tail risk of the riskiest plan on its own frontier. At the top of that range the frontier is not a neighbourhood of the disclosed plan at all | `out/e5/frontier_points.csv` × `out/e5/gap.csv` |
 
 Claims 4, 7 and 8 carry their size in the sentence itself (71–73%, 2 of 4 firms, ~8%). The table is the ones that did not.
@@ -1433,7 +1447,7 @@ should ask, asked in their sharpest form, with our answer next to each. Where th
 | **O5** | *"Two of three risk factors have no market evidence — why quote ③ at all?"* | We quote its **ordering and decomposition, not its level**, and §8 claim 3 says the level depends on an untestable choice. The full force of the objection is worse than we had written: the factor carrying the largest share of cost variance is hydrogen, and hydrogen's volatility is the prior. The number is under the table below |
 | **O6** | *"Metric ⑥ mixes currencies and you still publish it."* | The guide's headline table (§6) deliberately carries ①②③ and **not** ⑥, for exactly this reason. But `out/e5/affordability.csv` and the MCP `get_affordability` tool do carry it, uncorrected, and a reader who takes the artefact rather than the document gets the uncorrected number with no warning attached. The warning lives in §3.7 and §8 claim 8 and not in the file |
 | **O7** | *"The `support` axis is a column with no signal."* | Yes — `current` and `none` return the same object (§3.6), and it is visible in the outputs: `out/e5/gap.csv` has 8 rows that are **4 distinct gaps duplicated across the axis**. The axis is kept because the day a subsidy row lands in D5 a test fails and the prose has to change; it is a wired-up placeholder, not a finding |
-| **O8** | *"Three of your eleven sensitivity axes were never re-run properly."* | Stated in §4.3 with the three named, and their 0.0% deltas marked as unmeasured rather than flat. Re-planning them costs about ten minutes of solver time each and has not been spent. The count is eleven and not twelve: `out/scenarios/summary.csv` holds twelve bundles because one of them is `base`, the reference the other eleven are differenced against |
+| **O8** | *"Three of your eleven sensitivity axes were never re-run properly."* | **It was true, it has been fixed, and fixing it changed the answer.** All five axes that E2 reads are now re-planned (2026-08-12); the three that had stood at 0.0% were not flat but unmeasured, and two of them turned out to be the largest movers in the whole sweep — `carbon_slow` at ③ **99.7%** and `retire_free` at ② **41.2%**, against `carbon_fast`'s 61.5% (§4.3). The firm ranking survives all thirteen perturbations, so the ordering claim is unharmed; what changed is that the magnitudes we had been quoting as an upper bound on assumption risk were low by a factor of several. The count is eleven and not twelve: `out/scenarios/summary.csv` holds twelve bundles because one of them is `base`, the reference the other eleven are differenced against |
 | **O9** | *"The emissions pathway you ship covers one support scenario."* | `result_emissions_pathway.csv` is computed under the first support scenario only (`src/cap/e5_metrics.py:289`) and carries **no `support` column at all**, so a question about the emissions path under `support=current` has no answer in the package and nothing in the file says a support scenario was chosen. Given O7 the two would be identical today — but that is an accident of D5's contents, not a property of the code |
 | **O10** | *"Your public package cannot be traced back to sources."* | Two of its files cannot: the firm-level aggregates destroy `source_id` (§3.10). The other twelve keep it |
 | **O11** | *"Your frontier is one investment programme in different contract wrappers, and the optimiser that produced it ranked that programme last."* | **Correct on both counts, and this is the sharpest objection in the document.** In 8 of 8 firm × scenario bundles every non-dominated point shares a single `base_plan_id` — identical facilities, technologies, adoption years and total CAPEX — and the points differ only in PPA share and the fixed-price EPC flag. Two qualifications, both of which make the objection sharper rather than softer. Half the bundles had only one schedule in their candidate set, so the claim is carried by the four that had two or three (§9.1). And no frontier point signs a CCfD **because none can**: E5 discards the contract choice E2 made and rebuilds every candidate with `ccfd=0`, while D5 holds no CCfD strike to price one with — so the third instrument in P2 is absent from every reported number, not rejected by them. So the frontier slopes on the financing axis and is a *point* on the technology axis, and a frontier gap measures contracting, not programme choice. Worse, that schedule is E2's most expensive plan in 5 of 8 bundles and in its bottom half in 7 of 8 (§9.1) — the surrogate that enumerates candidates does not agree with the authoritative revaluation about what is good (§2), so the frontier is the non-dominated set of a menu built by a ranking we have measured to be wrong |

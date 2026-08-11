@@ -735,6 +735,19 @@ def _mtime(p):
     return dt.datetime.fromtimestamp(p.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
 
 
+def _arms(root: Path, rel: str):
+    """A sidecar's per-arm result files, oldest first.
+
+    F26: the drift table dated each sidecar by its **summary** file and measured drift on
+    its **control arm alone**. Both are rewritten by a partial re-run, so a directory in
+    which one arm had been re-solved and ten had not reported itself fresh and undrifted —
+    which is precisely the state `out/scenarios` was in mid-campaign on 2026-08-12. Date a
+    sidecar by its oldest arm instead, and count how many arms predate the base run.
+    """
+    arms = [(d.name, (d / rel)) for d in sorted(root.iterdir()) if (d / rel).exists()]
+    return sorted(arms, key=lambda a: a[1].stat().st_mtime)
+
+
 def _eff_file(rel: str):
     """EFF exists twice — the copy committed here (canonical) and a separate repository."""
     for base in (ROOT / "cap-efficient", Path.home() / "Documents" / "cap-efficient"):
@@ -803,6 +816,120 @@ def gen_reline_anchors():
         f"×{hi / ours:.2f} — the upper end of the same band.")
 
 
+def gen_band_vs_convention():
+    """§4.5 — what the ±30% convention costs, read off `out/g2` rather than typed.
+
+    F26: this sentence was hand-written and the sidecar under it had been re-run, so it
+    carried NSC's pre-band parameter share as 23% where `out/g2/f3_compare.csv` says 21.4%.
+    The multipliers, the two steel firms and the petrochemical claim all come from the same
+    two files, so all of them are generated together.
+    """
+    b, f = ROOT / "out" / "g2" / "bands.csv", ROOT / "out" / "g2" / "f3_compare.csv"
+    if not (b.exists() and f.exists()):
+        return "_No band comparison in `out/g2`. Run `scripts/g2_band_impact.py`._"
+    bd, fc = pd.read_csv(b), pd.read_csv(f)
+    W = 0.15
+    d = fc[fc.width == W].set_index("company_id")
+    # `capex_unit` carries a band on two technology rows; the envelope across them is the
+    # claim, so aggregate rather than keeping whichever row happened to be last.
+    mult = {fl: (g.mult_low.min(), g.mult_high.max()) for fl, g in bd.groupby("field")}
+    steel = [c for c in ("POSCO", "NSC") if c in d.index]
+    moves = " and ".join(
+        f"{d.loc[c, 'param_share_pct_conv']:.0f}% to {d.loc[c, 'param_share_pct_band']:.0f}% "
+        f"({COMPANY_NAME.get(c, c)})" for c in steel)
+    worst = max((abs(d.loc[c, "param_share_pct_band"] - d.loc[c, "param_share_pct_conv"])
+                 for c in d.index), default=0.0)
+    lo, hi = mult.get("capex_unit", (0, 0))
+    elo, ehi = mult.get("emission_factor", (0, 0))
+    txt = (f"The evidence puts `tech.capex` at [{lo:.2f}, {hi:.2f}]× our central value and "
+           f"`tech.emission_factor` at [{elo:.2f}, {ehi:.2f}]×, both one-sided, while the "
+           f"convention draws symmetrically around 1. Substituting the bands for the convention "
+           f"moves the steel parameter share of TCaR from {moves} at ±{W:.0%} width, and no "
+           f"firm by more than {worst:.1f} percentage points.")
+    if worst >= 0.5:
+        return txt
+    # F26: the substitution costing nothing is not evidence that the convention is harmless.
+    # Say which banded parameter the decomposition actually draws, and where the one with the
+    # wide band sits in the screen that decides what gets drawn.
+    dec = ROOT / "out" / "uncertainty" / "decomposition_bands.csv"
+    rk = ROOT / "out" / "sensitivity" / "ranking.csv"
+    if not (dec.exists() and rk.exists()):
+        return txt
+    dc = pd.read_csv(dec).iloc[0]
+    drawn = str(dc.params).split("|") if "params" in dc.index else []
+    r = pd.read_csv(rk).reset_index(drop=True)
+    pos = {p: i + 1 for i, p in enumerate(r.base_param)}
+    absent = [p for p in ("tech.capex",) if p not in drawn]
+    return txt + (
+        f" **That is not evidence that the convention is harmless.** Of the {len(drawn)} "
+        f"parameters the decomposition draws, {int(dc.n_banded)} carries a literature band, and "
+        + (f"`{', '.join(absent)}` — the one whose band is wide and one-sided — is not among "
+           f"them: it ranks {pos.get(absent[0], 0)} of {len(r)} in the screen that chooses what "
+           f"gets drawn (`out/sensitivity/ranking.csv`), below the cut. The one place we hold "
+           f"evidence against the ±30% convention is a place this test cannot reach."
+           if absent else
+           "the band it carries is narrower than the convention on both sides."))
+
+
+def gen_seed_cv():
+    """§6.1 sampling-noise table.
+
+    F26: this table and the caveat under it were hand-written, and the seed sweep had moved
+    under them — `docs/seed_stability.csv` was 18h behind the base run, and re-running it
+    (17 seconds) changed every Nippon Steel row. A table of numbers that must be re-derived
+    whenever a sidecar is re-run belongs to the generator, and the "is the sweep current"
+    question is answered here by comparison rather than asserted in prose.
+    """
+    p = ROOT / "docs" / "seed_stability.csv"
+    cur_p = ROOT / "out" / "e5" / "metrics_company.csv"
+    if not (p.exists() and cur_p.exists()):
+        return "_No seed sweep in `docs/seed_stability.csv`. Run `scripts/seed_stability.py`._"
+    from cap import config as C
+    d = pd.read_csv(p)
+    cv = lambda x: 100 * x.std(ddof=1) / abs(x.mean())
+    rows, worst = [], {}
+    for label, col in [("② P50 / abatement cost", "cost_per_tco2_thkrw"),
+                       ("③ TCaR", "tcar_bnkrw"),
+                       ("⑤ Flexibility", "flex_value_bnkrw")]:
+        g = d.groupby("company_id")[col].agg(cv)
+        read = ("The digits as printed" if g.max() < 1 else
+                "**Two significant figures**" if g.max() < 3 else
+                "**One significant figure**")
+        rows.append([label, f"{g.min():.1f}–{g.max():.1f}%", read])
+        worst[col] = g.idxmax()
+    head = _md(rows, ["Metric", "Coefficient of variation", "Read to"])
+
+    seed = C.load().seed
+    pin = d[d.seed == seed].set_index("company_id")
+    cur = pd.read_csv(cur_p).query("scenario == 'NZ15' and support == 'none'") \
+                            .set_index("company_id")
+    off = []
+    for co in sorted(set(pin.index) & set(cur.index)):
+        for col, m in (("cost_per_tco2_thkrw", "②"), ("tcar_bnkrw", "③")):
+            a, b = float(pin.loc[co, col]), float(cur.loc[co, col])
+            if b and abs(a / b - 1) > 5e-4:
+                off.append(f"{COMPANY_NAME.get(co, co)} {m} {a:,.1f} against {b:,.1f}")
+    tc = worst["tcar_bnkrw"]
+    ex = (f"\n\nThe binding row is ③: at {d[d.company_id == tc].tcar_bnkrw.agg(cv):.1f}% on "
+          f"{COMPANY_NAME.get(tc, tc)} the printed "
+          f"{cur.loc[tc, 'tcar_bnkrw']:,.0f} bn KRW carries about "
+          f"{cur.loc[tc, 'tcar_bnkrw'] * d[d.company_id == tc].tcar_bnkrw.agg(cv) / 100:,.0f} bn "
+          f"of pure sampling noise, which is why §6 rounds it.")
+    if off:
+        return head + ex + (
+            f"\n\n**The sweep is older than the current run.** Its pinned-seed rows "
+            f"(`seed={seed}`) no longer reproduce §6: {'; '.join(off)}. The plan menu moved "
+            f"after the sweep was taken, so read these CVs as the order of magnitude of seed "
+            f"noise, not as an error bar on the table above. `scripts/seed_stability.py` "
+            f"re-runs it in under a minute.")
+    return head + ex + (
+        f"\n\nThe sweep is **taken on the plan menu now in `out/`**: its pinned-seed rows "
+        f"(`seed={seed}`) reproduce §6's ② and ③ for all {len(cur)} firms to within a "
+        f"twentieth of a percent, so these CVs are an error bar on the table above rather than "
+        f"a measurement on a menu that has since moved. That was not true before 2026-08-12, "
+        f"and the guide said so; what closed it was re-running the sweep, which costs seconds.")
+
+
 def gen_diagnostic_drift():
     base = ROOT / "out" / "e5" / "metrics_company.csv"
     if not base.exists():
@@ -810,50 +937,71 @@ def gen_diagnostic_drift():
     cur_all = _metrics(base, scen=None)
     cur_nz = {k: v for k, v in cur_all.items() if k[1] == "NZ15" and k[2] == "none"}
 
-    rows, stale = [], []
+    t_base = base.stat().st_mtime
+    rows, stale, partial = [], [], []
+
+    def _add(label, root, rel, ctl_file, ctl_label, ctl_map, cur):
+        """One sidecar row. Dated by its **oldest** arm, not by its summary file."""
+        arms = _arms(root, rel) if root else []
+        behind = [a for a, p in arms if p.stat().st_mtime < t_base]
+        oldest = _mtime(arms[0][1]) if arms else _mtime(ctl_file)
+        n, d2, dt_ = _drift(ctl_map, cur) if ctl_map is not None else ("—", "—", "—")
+        rows.append([label, oldest,
+                     f"{len(behind)} of {len(arms)}" if arms else "—",
+                     ctl_label, n, d2, dt_])
+        if behind or (not arms and ctl_file.stat().st_mtime < t_base):
+            stale.append(f"`{label.split('`')[1]}`")
+        # 대조 팔은 새것인데 섭동 팔이 낡은 경우 — 표의 drift 열이 0을 보고하면서
+        # 그 0이 아무것도 보증하지 않는 상태다. F26에서 실제로 그렇게 됐다.
+        if behind and n == 0:
+            partial.append((label.split('`')[1], len(behind), len(arms)))
+
     proc = ROOT / "out" / "process" / "gbm" / "e5" / "metrics_company.csv"
     if proc.exists():
-        n, d2, dt_ = _drift(_metrics(proc), cur_nz)
-        rows.append([f"`out/process` price-process arms", _mtime(proc), "`gbm`", n, d2, dt_])
-        if _mtime(proc) < _mtime(base):
-            stale.append("`out/process`")
+        _add("`out/process` price-process arms", ROOT / "out" / "process",
+             "e5/metrics_company.csv", proc, "`gbm`", _metrics(proc), cur_nz)
     sc = ROOT / "out" / "scenarios" / "summary.csv"
     if sc.exists():
         s = pd.read_csv(sc)
         ctl = {(r.company_id, r.scenario, r.support):
                (r.cost_per_tco2_thkrw, r.tcar_bnkrw)
                for r in s[s.bundle == "base"].itertuples()}
-        n, d2, dt_ = _drift(ctl, cur_all)
-        rows.append(["`out/scenarios` bundle matrix", _mtime(sc), "`bundle=base`", n, d2, dt_])
-        if _mtime(sc) < _mtime(base):
-            stale.append("`out/scenarios`")
+        _add("`out/scenarios` bundle matrix", ROOT / "out" / "scenarios",
+             "e5/metrics_company.csv", sc, "`bundle=base`", ctl, cur_all)
     m8 = ROOT / "out" / "m8" / "summary.csv"
     if m8.exists():
-        rows.append(["`out/m8` ε-constraint sweep", _mtime(m8), "none — unmeasurable",
-                     "—", "—", "—"])
-        if _mtime(m8) < _mtime(base):
-            stale.append("`out/m8`")
+        _add("`out/m8` ε-constraint sweep", None, "", m8, "none — unmeasurable", None, None)
     if not rows:
         return "_No side diagnostics in `out/`._"
 
-    head = _md(rows, ["Diagnostic", "Written", "Control arm",
+    head = _md(rows, ["Diagnostic", "Oldest arm written", "Arms behind base", "Control arm",
                       "Firms drifted", "Largest ② drift", "Largest ③ drift"])
+    warn = "".join(
+        f"\n\n**`{d}` is part re-run, and its drift column is therefore not evidence.** "
+        f"{n} of its {t} arms predate the base run while the control arm does not, so the control "
+        f"reproduces the headline exactly and the table reads 0 — the arms that are actually "
+        f"behind are the ones the control cannot see. Read this row as unmeasured until the "
+        f"campaign completes."
+        for d, n, t in partial)
     if not stale:
-        return head + (f"\n\nEvery diagnostic above post-dates the base run "
+        return head + (f"\n\nEvery arm of every diagnostic above post-dates the base run "
                        f"(`out/e5`, {_mtime(base)}), so the perturbations are measured "
-                       f"against the headline as printed.")
+                       f"against the headline as printed.") + warn
     return head + (
         f"\n\n**Not all of these are measured against the run in §6.** The base pipeline was last "
-        f"written {_mtime(base)}; {', '.join(stale)} predate it and were computed against an "
-        f"earlier E2 plan set. Where a diagnostic carries a control arm configured identically to "
-        f"the headline, the table measures how far that arm has drifted; where it carries none, "
-        f"the drift exists but is unquantified. The drift is a property of the **baseline**, not "
-        f"of the perturbation — an arm and its own control move together — so the *differences* "
-        f"quoted from these files stay internally consistent while the *levels* in them do not "
-        f"match §6. Re-running the diagnostics after a base re-solve is what closes this, and "
-        f"until it is closed `scripts/gate.py` names these files and their lag in its `sidecars` "
-        f"check — a warning rather than a failure, because a stale diagnostic is work not yet "
-        f"re-run, not a defect in the code.")
+        f"written {_mtime(base)}; {', '.join(stale)} "
+        f"{'carries' if len(stale) == 1 else 'carry'} at least one arm that predates it and "
+        f"was computed against an earlier E2 plan set. Each row is dated by its **oldest** arm, "
+        f"not by its summary file, because a summary is rewritten by a partial re-run and would "
+        f"otherwise date a mostly-stale directory as fresh. Where a diagnostic carries a control "
+        f"arm configured identically to the headline, the table measures how far that arm has "
+        f"drifted; where it carries none, the drift exists but is unquantified. The drift is a "
+        f"property of the **baseline**, not of the perturbation — an arm and its own control move "
+        f"together — so the *differences* quoted from these files stay internally consistent while "
+        f"the *levels* in them do not match §6. Re-running the diagnostics after a base re-solve "
+        f"is what closes this, and until it is closed `scripts/gate.py` names these files and "
+        f"their lag in its `sidecars` check — a warning rather than a failure, because a stale "
+        f"diagnostic is work not yet re-run, not a defect in the code.") + warn
 
 
 def gen_headline():
@@ -910,9 +1058,12 @@ AXIS = {
 def gen_axis_impact():
     p = ROOT / "out" / "m5" / "bundle_matrix.csv"
     if not p.exists():
-        return "_No bundle sweep in `out/m5`. Run `python -m cap m5`._"
+        # F26: this used to send the reader to an `m5` CLI stage. There is none —
+        # the CLI has e1–e5, render, all; `out/m5` is written by the script below.
+        return ("_No bundle sweep in `out/m5`. Run `scripts/run_scenarios.py` then "
+                "`scripts/robustness_section_table.py`._")
     sys.path.insert(0, str(ROOT / "scripts"))
-    from run_scenarios import REPLAN_REQUIRED
+    from run_scenarios import REPLAN_MINUTES, REPLAN_REQUIRED
     # F21: "not needed" was printed for every bundle outside REPLAN_REQUIRED, including
     # `reline_cheap` — whose scale reaches E2 through `stranded_cost_k`, so holding the plan
     # menu fixed measures the write-off saving at an adoption year the assumption should have
@@ -929,16 +1080,51 @@ def gen_axis_impact():
     head = _md(rows, ["Bundle", "Assumption", "What it varies", "Re-planned",
                       "Δ② (max, %)", "Δ③ (max, %)"])
     stale = sorted(set(b[~b.replanned].bundle) & REPLAN_REQUIRED)
+    # F26: the prose above this block claimed these were maxima over all sixteen
+    # firm × scenario × support cells. They are not — `robustness_section_table.py`
+    # computes them on the headline cell only, and the two are far apart. Say which
+    # cells they are here, where the generator owns it, and print both.
+    from robustness_section_table import SCEN, SUPP
+    s = pd.read_csv(ROOT / "out" / "scenarios" / "summary.csv")
+    n_cells = len(s.query("bundle == 'base' and scenario == @SCEN and support == @SUPP"))
+    n_all = len(s[s.bundle == "base"])
+    w = b.loc[b.d_tcar_pct_all.idxmax()]
+    # F26: which cell the wide maximum sits in was asserted in prose ("the B20 scenario and
+    # the support=current cells"). Read it off instead — the answer moves with the sweep.
+    idx = ["company_id", "scenario", "support"]
+    base = s[s.bundle == "base"].set_index(idx).tcar_bnkrw
+    x = s[s.bundle == w.bundle].set_index(idx).tcar_bnkrw
+    r = (x / base.reindex(x.index) - 1).abs()
+    co, scen, supp = r.idxmax()
     note = (
+        f"\n\n**Δ② and Δ③ above are the largest move across the {n_cells} firms in the "
+        f"headline cell (`{SCEN}`, `support={SUPP}`) — not across all {n_all} "
+        f"firm × scenario × support cells.** That is the definition §6 of the paper uses, "
+        f"and it is the narrower one: over all {n_all} cells the same sweep reaches "
+        f"**{b.d_m2_pct_all.max():.1f}%** on ② and **{b.d_tcar_pct_all.max():.1f}%** on ③, "
+        f"both on `{w.bundle}`, whose headline figures are {w.d_m2_pct:.1f}% and "
+        f"{w.d_tcar_pct:.1f}%. That widest ③ move is "
+        f"{COMPANY_NAME.get(co, co)} under `{scen}` with `support={supp}` — an assumption can "
+        f"bite several times harder outside the cell that is reported than inside it.")
+    note += (
         f"\n\nLargest mover on ③ is `{b.iloc[0].bundle}` ({b.iloc[0].d_tcar_pct:.1f}%); "
         f"on ② it is `{b.loc[b.d_m2_pct.idxmax()].bundle}` ({b.d_m2_pct.max():.1f}%) — "
         f"not the same bundle, so no single axis dominates both metrics.")
+    # F26: this count was hand-written above the block ("Two of those five have been
+    # re-planned") and went stale the moment a bundle was re-planned. The generator owns it.
+    done = sorted(set(b[b.replanned].bundle) & REPLAN_REQUIRED)
+    note += (
+        f"\n\n**{len(done)} of the {len(REPLAN_REQUIRED)} E2-only axes have been re-planned** "
+        f"({', '.join('`' + s + '`' for s in done)})"
+        + (f"; `{'`, `'.join(stale)}` still have not." if stale else
+           ", so every axis in this table has been solved through the plan optimiser rather "
+           "than merely re-priced.")
+        + f" Re-planning one bundle costs about {REPLAN_MINUTES} minutes of solver time.")
     if stale:
         note += (
             f"\n\n**Read {', '.join('`' + s + '`' for s in stale)} as unmeasured, not as flat.** "
             f"Those axes are read only inside E2, so with the plan menu held fixed they can "
-            f"re-price a plan but not change it; their Δ② / Δ③ are an artefact of that. "
-            f"Re-planning each costs about ten minutes of solver time and has not been spent.")
+            f"re-price a plan but not change it; their Δ② / Δ③ are an artefact of that.")
     partial = sorted(set(b[~b.replanned].bundle) & set(PARTIAL_EFFECT))
     if partial:
         note += (
@@ -1406,12 +1592,23 @@ def gen_limits():
         from run_scenarios import REPLAN_REQUIRED
         b = pd.read_csv(bm)
         stale = sorted(set(b[~b.replanned].bundle) & REPLAN_REQUIRED)
-        rows.append([
-            "6 — the plan-selection channel",
+        # F26: the empty case rendered as "**0** of the rest need re-planning ()" — write the
+        # closed state as a sentence instead, and say what re-planning them turned up.
+        top2 = b.sort_values("d_tcar_pct", ascending=False).iloc[0]
+        m2 = b.loc[b.d_m2_pct.idxmax()]
+        note = (
             f"**{int(b.replanned.sum())} of {len(b)}** bundles were re-planned; "
-            f"**{len(stale)}** of the rest need re-planning to be read at all "
-            f"({', '.join('`' + s + '`' for s in stale)}), so their Δ② / Δ③ are "
-            f"unmeasured rather than flat (§4.3)",
+            + (f"**{len(stale)}** of the rest need re-planning to be read at all "
+               f"({', '.join('`' + s + '`' for s in stale)}), so their Δ② / Δ③ are "
+               f"unmeasured rather than flat (§4.3)"
+               if stale else
+               f"every axis that E2 reads has now been solved through it, and none of the "
+               f"remaining bundles reaches E2. Re-planning changed the reading: the largest "
+               f"movers are `{top2.bundle}` on ③ ({top2.d_tcar_pct:.1f}%) and `{m2.bundle}` "
+               f"on ② ({m2.d_m2_pct:.1f}%), both of which read 0.0% while they were only "
+               f"being re-priced (§4.3)"))
+        rows.append([
+            "6 — the plan-selection channel", note,
             "`out/m5/bundle_matrix.csv` × `scripts/run_scenarios.py::REPLAN_REQUIRED`"])
 
     fpp = ROOT / "out" / "e5" / "frontier_points.csv"
@@ -1671,6 +1868,8 @@ BLOCKS = {
     "tier_distribution": gen_tier_distribution,
     "config": gen_config,
     "headline": gen_headline,
+    "band_vs_convention": gen_band_vs_convention,
+    "seed_cv": gen_seed_cv,
     "diagnostic_drift": gen_diagnostic_drift,
     "reline_anchors": gen_reline_anchors,
 }

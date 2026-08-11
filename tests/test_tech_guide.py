@@ -10,6 +10,7 @@ failure, not a housekeeping item.
 Run: .venv/bin/pytest tests/test_tech_guide.py -q
 """
 
+import datetime as _dt
 import pathlib
 import subprocess
 import sys
@@ -138,10 +139,14 @@ def test_section9_hand_written_counts_still_hold():
 def test_seed_sweep_staleness_is_described_as_it_is():
     """§6.1이 시드 표를 '한 번 낡았다'고 밝힌다 — 그 판정 자체가 낡을 수 있다.
 
-    `docs/seed_stability.csv`의 정본 시드 행은 NSC에서만 `out/`과 어긋난다(그 회사의
-    최소비용 계획이 스윕 이후 바뀌었다). 스윕을 다시 뜨면 어긋남이 사라지고 §6.1의
-    단락은 거짓이 되며, 반대로 다른 회사까지 어긋나면 그 단락은 실제보다 약하게 적은
-    것이 된다. 어느 쪽이든 산문을 고쳐야 하므로 여기서 잡는다.
+    `docs/seed_stability.csv`의 정본 시드 행이 `out/`과 어긋나면 §6.1의 변동계수는 지금
+    돌아가는 계획 메뉴의 오차범위가 아니다. 스윕을 다시 뜨면 어긋남이 사라지고, 반대로
+    파이프라인만 다시 돌면 어긋남이 생긴다 — 어느 쪽이든 산문이 뒤집힌다.
+
+    **F26까지 이 테스트는 어긋나는 회사가 정확히 {NSC}라고 못박고 있었다.** 스윕을
+    17초에 다시 돌리자 어긋남이 사라졌고 테스트가 붉어졌다 — 실패가 아니라 사실이
+    바뀐 것이었다. 이제는 방향을 못박지 않고, 가이드의 주장과 실제 어긋남이 **같은
+    방향인가**만 본다.
     """
     import csv
 
@@ -159,9 +164,14 @@ def test_seed_sweep_staleness_is_described_as_it_is():
             continue
         if round(float(r["tcar_bnkrw"]), 3) != round(float(cur[r["company_id"]]["tcar_bnkrw"]), 3):
             drift.add(r["company_id"])
-    assert drift == {"NSC"}, (
-        f"§6.1은 시드 스윕이 NSC에서만 현재 실행과 어긋난다고 적었는데 지금 어긋나는 것은 {drift or '없다'}"
-        " — 문단을 고치거나 지워라")
+    text = GUIDE.read_text(encoding="utf-8")
+    fresh = "The sweep is **taken on the plan menu now in `out/`**" in text
+    assert fresh == (not drift), (
+        f"§6.1은 시드 스윕을 {'현행' if fresh else '낡음'}으로 적는데 고정 시드 행이 "
+        f"실제로 어긋나는 회사는 {sorted(drift) or '없다'} — 문단을 고치거나 스윕을 다시 떠라")
+    if drift:
+        assert "**The sweep is older than the current run.**" in text, (
+            "고정 시드 행이 어긋나는데 §6.1이 그 사실을 밝히지 않는다")
 
 
 def test_gap_legs_are_clamped_as_the_figure_and_prose_say():
@@ -522,33 +532,19 @@ def test_section_6_1_seed_sweep_matches_the_stability_record():
     (1) "it is a lower bound, so more simulation buys nothing" — CV는 표본오차이므로
     n_sims를 올리면 줄어든다. `docs/seed_stability.md`가 바로 그 둘(자릿수 축소 또는
     n_sims 상향)을 남은 선택지로 적는다. (2) 시드는 가격 경로만 바꾸고 계획 메뉴는 고정이라
-    **계획 선택의 안정성은 이 스윕이 재지 않는다** — 그런데 §6.1이 드는 NSC 사례가 정확히
-    그 재지 않은 채널이다. 이 테스트는 두 채널의 크기가 기록과 어긋나면 실패한다.
-    """
-    import pandas as pd
+    **계획 선택의 안정성은 이 스윕이 재지 않는다** — §6.1은 그 사실을 밝혀야 한다.
 
+    **F26에서 셋째 검사를 뺐다.** 이 테스트는 §6.1이 인용하던 NSC 수치(고정 시드 ② 165.4,
+    계획 변경 −5.9%)를 대조하고 있었는데, 스윕을 다시 뜨자 그 수치가 어느 파일에도 남지
+    않았다 — 가이드의 모든 수치는 살아 있는 파일에서 나와야 하므로 문장과 함께 지웠다.
+    잰 것과 재지 않은 것을 구분하라는 F18의 요구는 아래 두 문장 검사로 남는다.
+    """
     sweep = ROOT / "docs" / "seed_stability.csv"
     live = ROOT / "out" / "e5" / "metrics_company.csv"
     if not (sweep.exists() and live.exists()):
         pytest.skip("시드 스윕 또는 E5 산출 부재")
-    s = pd.read_csv(sweep)
-    pinned = s[s.seed == s.seed.min()]
-    nsc_old = pinned[pinned.company_id == "NSC"].iloc[0]
-    m = pd.read_csv(live)
-    nsc_now = m[(m.company_id == "NSC") & (m.scenario == "NZ15") & (m.support == "none")].iloc[0]
 
     text = " ".join(GUIDE.read_text(encoding="utf-8").split())
-    assert f"② {nsc_old.cost_per_tco2_thkrw:.1f} and ③ {nsc_old.tcar_bnkrw:,.0f}" in text, (
-        "§6.1의 고정시드 NSC 값이 seed_stability.csv와 다르다")
-
-    plan_shift = 100 * (nsc_now.cost_per_tco2_thkrw - nsc_old.cost_per_tco2_thkrw) / nsc_old.cost_per_tco2_thkrw
-    assert f"−{abs(plan_shift):.1f}%" in text, (
-        f"§6.1의 계획 변경 폭이 실제 {plan_shift:+.1f}%와 다르다")
-    g = s[s.company_id == "NSC"].cost_per_tco2_thkrw
-    seed_cv = 100 * g.std(ddof=1) / g.mean()
-    assert f"{seed_cv:.2f}%" in text, f"§6.1의 NSC 시드 CV가 실제 {seed_cv:.2f}%와 다르다"
-    assert abs(plan_shift) > seed_cv, "두 채널의 크기 비교가 뒤집혔다 — §6.1 문장을 다시 써라"
-
     assert "more simulation buys nothing" not in text, (
         "§6.1이 다시 표본오차를 줄일 수 없다고 주장한다 — seed_stability.md는 n_sims 상향을 "
         "남은 두 선택지 중 하나로 적는다")
@@ -653,16 +649,20 @@ def test_diagnostic_drift_block_measures_the_real_gap():
     d2 = {k: 100 * (arm[k][0] / cur[k][0] - 1) for k in cur if k in arm}
     worst = max(d2, key=lambda k: abs(d2[k]))
 
-    stale = proc.stat().st_mtime < base.stat().st_mtime
-    if not stale:
+    # F26: 낡음 판정은 팔 하나가 아니라 **모든 팔**을 본다. `out/process`의 arm 중 하나만
+    # 다시 돌아도 gbm 통제군은 새것이 되므로, 통제군 시각만으로는 디렉터리를 판정할 수 없다.
+    arms = [d / "e5" / "metrics_company.csv" for d in sorted((ROOT / "out" / "process").iterdir())
+            if (d / "e5" / "metrics_company.csv").exists()]
+    behind = sum(1 for a in arms if a.stat().st_mtime < base.stat().st_mtime)
+    if not behind:
         assert abs(d2[worst]) < 0.05, (
             f"process 팔이 base보다 새로운데 gbm 통제군이 헤드라인과 {d2[worst]:+.2f}% "
             "어긋난다 — 같은 설정이면 같은 수가 나와야 한다")
-        assert "Every diagnostic above post-dates the base run" in text, (
-            "곁가지 산출물이 모두 최신인데 §6.2가 여전히 낡았다고 적는다")
+        assert f"| 0 of {len(arms)} | `gbm` |" in text, (
+            "`out/process`의 팔이 전부 최신인데 §6.2의 'Arms behind base' 칸이 0이 아니다")
         return
 
-    assert "predate it and were computed against an earlier E2 plan set" in text, (
+    assert "at least one arm that predates it" in text, (
         "process/scenarios 팔이 base보다 오래됐는데 §6.2가 그 사실을 적지 않는다")
     assert f"{d2[worst]:+.2f}%" in text, (
         f"§6.2의 ② 최대 어긋남이 실제 {d2[worst]:+.2f}%와 다르다 — 블록을 다시 생성하라")
@@ -1039,6 +1039,13 @@ def test_gate_sidecar_check_enumerates_out_rather_than_a_hand_written_list():
     F22가 네 곳을 이름으로 박았고, 그 목록에 없던 `out/sensitivity`가 base보다 24시간
     낡은 채 §4와 MCP에 인용됐다 — 게이트는 그동안 그린이었다. 이제 base(e1–e5)가 아닌
     `out/` 디렉터리를 전부 센다.
+
+    **F26에서 판정 기준을 가장 새 파일에서 가장 낡은 파일로 바꿨다.** 열거만으로는
+    부족했다 — 디렉터리 안 파일 하나만 다시 써도 전체가 최신으로 보였고, 그 상태에서
+    `out/scenarios`의 `disc65` 팔이 43시간, `out/uncertainty`의 `decomposition_bands.csv`가
+    이틀 낡은 채 게이트는 그린이었다. 후자는 `g2_band_impact.py:44`를 거쳐 가이드 §4.5의
+    밴드 열로 인용되고 있었다. 이 테스트도 그때 `_newest`로 기대값을 만들고 있었으므로
+    같은 맹점을 공유했다.
     """
     sys.path.insert(0, str(ROOT / "scripts"))
     import gate
@@ -1050,8 +1057,195 @@ def test_gate_sidecar_check_enumerates_out_rather_than_a_hand_written_list():
              if p.is_dir() and p.name not in {"e1", "e2", "e3", "e4", "e5"}]
     assert "sensitivity" in names, "out/sensitivity가 없다"
     expected = {n for n in names
-                if (gate._newest(f"out/{n}/**/*.csv") or (0, None))[0] < base[0]}
+                if (gate._oldest(f"out/{n}/**/*.csv") or (0, None))[0] < base[0]}
     ok, msg = gate.check_sidecars()
     for n in expected:
         assert n in msg, f"게이트가 낡은 곁가지 `{n}`를 이름으로 부르지 않는다"
     assert ok == (not expected)
+    # 뒤처진 파일을 이름으로 부르지 않으면 재실행할 것을 찾는 데 또 한 사이클이 든다
+    for n in expected:
+        lag = gate._oldest(f"out/{n}/**/*.csv")[1]
+        assert lag.name in msg, f"게이트가 `{n}`의 가장 낡은 파일 `{lag.name}`을 밝히지 않는다"
+
+
+def test_axis_impact_deltas_state_the_cells_they_are_maximised_over():
+    """§4.3의 Δ②·Δ③이 어느 칸의 최대인지 가이드가 사실대로 적는가 (F26).
+
+    F26까지 가이드는 "sixteen firm × scenario × support cells (4 × 2 × 2)의 최대"라고
+    적었으나, `robustness_section_table.py`는 `SCEN`·`SUPP` 한 칸(기업 4개)만 본다.
+    좁은 정의를 넓은 정의로 광고한 것이고, 둘은 멀다 — penalty_none이 5.9% 대 241.8%다.
+    이 테스트는 두 수를 `out/`에서 다시 계산해 가이드와 대조한다. 생산자의 필터가
+    바뀌거나 옛 문장이 되살아나면 실패한다.
+    """
+    import pandas as pd
+
+    bm = ROOT / "out" / "m5" / "bundle_matrix.csv"
+    if not bm.exists():
+        pytest.skip("out/m5 없음")
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from robustness_section_table import SCEN, SUPP
+
+    guide = GUIDE.read_text(encoding="utf-8")
+    b = pd.read_csv(bm)
+
+    s = pd.read_csv(ROOT / "out" / "scenarios" / "summary.csv")
+    n_cells = len(s.query("bundle == 'base' and scenario == @SCEN and support == @SUPP"))
+    assert f"largest move across the {n_cells} firms in the headline cell " \
+           f"(`{SCEN}`, `support={SUPP}`)" in guide, (
+        f"§4.3이 Δ의 최대 범위를 {n_cells}개 헤드라인 칸으로 적지 않는다")
+    assert "largest\nmove across the **sixteen**" not in guide, (
+        "16칸 최대라는 옛 주장이 되살아났다 — 생산자는 헤드라인 한 칸만 본다")
+
+    # 16칸 최대를 요약표에서 직접 다시 계산해 대장 열과 가이드 문장 양쪽에 대조한다
+    idx = ["company_id", "scenario", "support"]
+    base = s[s.bundle == "base"].set_index(idx)
+    for col, ledger in (("cost_per_tco2_thkrw", "d_m2_pct_all"),
+                        ("tcar_bnkrw", "d_tcar_pct_all")):
+        for n, d in s[s.bundle != "base"].groupby("bundle"):
+            x = d.set_index(idx)
+            bb = base[col].reindex(x.index)
+            m = bb.abs() > 1e-9
+            v = round(float(((x[col][m] / bb[m] - 1) * 100).abs().max()), 1)
+            assert v == b.set_index("bundle").loc[n, ledger], (
+                f"{n}의 {ledger}가 summary.csv에서 다시 센 값({v})과 다르다")
+    w = b.loc[b.d_tcar_pct_all.idxmax()]
+    assert f"**{b.d_m2_pct_all.max():.1f}%** on ② and " \
+           f"**{b.d_tcar_pct_all.max():.1f}%** on ③, both on `{w.bundle}`" in guide, (
+        "16칸 최대가 bundle_matrix.csv와 다르다")
+
+
+def test_guide_never_names_a_pipeline_stage_that_does_not_exist():
+    """가이드의 재현 지시가 실행 가능한가 (F26).
+
+    §4.3 대체 문구가 `python -m cap m5`를 시키고 있었다. CLI에는 e1–e5·render·all뿐이고
+    m5는 `scripts/robustness_section_table.py`가 쓴다 — 지시대로 하면 아무것도 안 나온다.
+    """
+    import re
+
+    sys.path.insert(0, str(ROOT / "src"))
+    from cap.__main__ import STAGES
+
+    src = (ROOT / "scripts" / "build_tech_guide.py").read_text(encoding="utf-8")
+    ok = set(STAGES) | {"all", "--help"}
+    for used in re.findall(r"python -m cap ([a-z0-9_]+)", src + GUIDE.read_text("utf-8")):
+        assert used in ok, f"`python -m cap {used}`는 없는 단계다. 있는 것: {sorted(ok)}"
+
+
+def test_diagnostic_drift_dates_each_sidecar_by_its_oldest_arm():
+    """§6.2가 곁가지를 **가장 낡은 팔**로 날짜 짓는가 (F26).
+
+    F26까지 이 표는 곁가지를 그 **요약 파일**의 시각으로 날짜 짓고, 드리프트를 그
+    **대조 팔 하나**에서만 쟀다. 둘 다 부분 재실행이 다시 쓴다 — 그래서 팔 하나만
+    다시 푼 디렉터리가 스스로를 "방금 쓰였고 드리프트 0"으로 보고한다. 2026-08-12
+    재계획 캠페인 도중 `out/scenarios`가 정확히 그 상태였다: summary.csv는 06:14,
+    대조 팔 base는 새것, 그런데 12개 팔 중 6개가 base 실행보다 낡아 있었다.
+
+    이 테스트는 표의 "Arms behind base" 열을 파일 시각에서 다시 세어 대조한다.
+    생성기가 요약 파일 시각으로 돌아가면 실패한다.
+    """
+    base = ROOT / "out" / "e5" / "metrics_company.csv"
+    if not base.exists():
+        pytest.skip("파이프라인 미실행")
+    guide = GUIDE.read_text(encoding="utf-8")
+    t_base = base.stat().st_mtime
+
+    assert "| Diagnostic | Oldest arm written | Arms behind base |" in guide, (
+        "§6.2가 곁가지를 요약 파일 시각으로 날짜 짓는 옛 표로 되돌아갔다")
+
+    for label, root in (("out/process", ROOT / "out" / "process"),
+                        ("out/scenarios", ROOT / "out" / "scenarios")):
+        if not root.exists():
+            continue
+        arms = [d / "e5" / "metrics_company.csv" for d in sorted(root.iterdir())
+                if (d / "e5" / "metrics_company.csv").exists()]
+        assert arms, f"{label}에 팔이 하나도 없다"
+        behind = sum(1 for a in arms if a.stat().st_mtime < t_base)
+        oldest = min(a.stat().st_mtime for a in arms)
+        stamp = _dt.datetime.fromtimestamp(oldest).strftime("%Y-%m-%d %H:%M")
+        assert f"| {stamp} | {behind} of {len(arms)} |" in guide, (
+            f"`{label}`가 표에 '{stamp} | {behind} of {len(arms)}'로 실려 있지 않다 — "
+            f"가장 낡은 팔이 아니라 요약 파일로 날짜 지은 것이다")
+        # 대조 팔은 새것인데 섭동 팔이 낡은 경우, 0을 증거로 읽지 말라는 경고가 붙는가
+        if behind and f"`{label}` bundle matrix | {stamp} | {behind} of" in guide:
+            assert f"**`{label}` is part re-run" in guide, (
+                f"{label}의 팔 {behind}개가 낡았는데 드리프트 0에 경고가 없다")
+
+
+def test_seed_cv_table_is_recomputed_from_the_sweep_not_hand_written():
+    """§6.1 표본잡음 표가 `docs/seed_stability.csv`에서 다시 나오는가 (F26).
+
+    F26까지 이 표는 손으로 적혀 있었고, 스윕이 base 실행보다 18시간 낡은 채로 그 밑에
+    "스윕이 현행보다 낡았다"는 단서가 붙어 있었다. 스윕을 다시 돌리자(17초) 세 행이
+    전부 틀렸다 — 0.3–0.8 대 0.2–0.8, 1.1–1.8 대 1.1–1.9, 3–9 대 2.0–9.2. 곁가지를
+    다시 돌릴 때마다 손으로 고쳐야 하는 표는 생성기의 것이다.
+    """
+    import pandas as pd
+
+    p = ROOT / "docs" / "seed_stability.csv"
+    cur_p = ROOT / "out" / "e5" / "metrics_company.csv"
+    if not (p.exists() and cur_p.exists()):
+        pytest.skip("시드 스윕 또는 파이프라인 미실행")
+    guide = GUIDE.read_text(encoding="utf-8")
+    d = pd.read_csv(p)
+
+    for label, col in [("② P50 / abatement cost", "cost_per_tco2_thkrw"),
+                       ("③ TCaR", "tcar_bnkrw"),
+                       ("⑤ Flexibility", "flex_value_bnkrw")]:
+        g = d.groupby("company_id")[col].agg(
+            lambda x: 100 * x.std(ddof=1) / abs(x.mean()))
+        assert f"| {label} | {g.min():.1f}–{g.max():.1f}% |" in guide, (
+            f"§6.1의 {label} 변동계수가 seed_stability.csv에서 다시 센 값과 다르다")
+    # 신선도 판정 자체는 test_seed_sweep_staleness_is_described_as_it_is가 본다.
+
+
+def test_band_vs_convention_numbers_come_from_the_band_comparison():
+    """§4.5의 밴드-대-규약 문장이 `out/g2`에서 나오는가 (F26).
+
+    F26까지 이 문장은 손으로 적혀 있었고, NSC의 규약 기준 파라미터 몫을 23%로 적고
+    있었다 — `out/g2/f3_compare.csv`는 21.4%다. 곁가지를 다시 돌릴 때마다 손으로 따라
+    고쳐야 하는 수치는 생성기의 것이다. `tech.capex` 승수는 밴드가 붙은 기술 행이 둘이라
+    그 **포락선**(min low, max high)이 주장이고, 마지막 행이 아니다.
+    """
+    import pandas as pd
+
+    b, f = ROOT / "out" / "g2" / "bands.csv", ROOT / "out" / "g2" / "f3_compare.csv"
+    if not (b.exists() and f.exists()):
+        pytest.skip("out/g2 없음")
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from build_tech_guide import COMPANY_NAME
+
+    guide = GUIDE.read_text(encoding="utf-8")
+    bd, fc = pd.read_csv(b), pd.read_csv(f)
+    d = fc[fc.width == 0.15].set_index("company_id")
+
+    cap = bd[bd.field == "capex_unit"]
+    assert f"`tech.capex` at [{cap.mult_low.min():.2f}, {cap.mult_high.max():.2f}]×" in guide, (
+        "§4.5의 tech.capex 승수 구간이 bands.csv의 포락선과 다르다")
+    for co in ("POSCO", "NSC"):
+        if co not in d.index:
+            continue
+        assert (f"{d.loc[co, 'param_share_pct_conv']:.0f}% to "
+                f"{d.loc[co, 'param_share_pct_band']:.0f}% "
+                f"({COMPANY_NAME[co]})") in guide, (
+            f"§4.5의 {co} 파라미터 몫이 f3_compare.csv에서 다시 읽은 값과 다르다")
+
+    # 밴드 치환이 아무것도 안 움직일 때, 그것을 "규약은 무해하다"로 읽히게 두지 않는가.
+    # 2026-08-12에 실제로 그렇게 됐다: 민감도 화면을 다시 돌리자 `tech.capex`가 추첨
+    # 상위 10에서 13위로 밀려났고, 밴드가 넓은 유일한 파라미터가 검정에서 빠졌다.
+    worst = max(abs(d.param_share_pct_band - d.param_share_pct_conv))
+    dec = ROOT / "out" / "uncertainty" / "decomposition_bands.csv"
+    rk = ROOT / "out" / "sensitivity" / "ranking.csv"
+    if worst >= 0.5 or not (dec.exists() and rk.exists()):
+        return
+    dc = pd.read_csv(dec).iloc[0]
+    assert "params" in dc.index, (
+        "decomposition_bands.csv가 추첨 파라미터 목록을 남기지 않는다 — "
+        "밴드 비교가 0인 이유를 가이드가 출처 있게 말할 수 없다")
+    drawn = str(dc.params).split("|")
+    assert "**That is not evidence that the convention is harmless.**" in guide, (
+        "§4.5가 0을 규약의 무해함으로 읽히게 둔다")
+    if "tech.capex" not in drawn:
+        r = pd.read_csv(rk).reset_index(drop=True)
+        rank = list(r.base_param).index("tech.capex") + 1
+        assert f"it ranks {rank} of {len(r)} in the screen" in guide, (
+            f"§4.5가 tech.capex의 화면 순위를 실제({rank}/{len(r)})와 다르게 적는다")

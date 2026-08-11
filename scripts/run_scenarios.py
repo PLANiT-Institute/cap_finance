@@ -6,7 +6,7 @@
 **공유하는 것과 다시 하는 것**
   - E1·E2는 심볼릭 링크로 공유한다. 즉 **계획 메뉴는 고정**이고, 묶음이 바꾸는 것은
     "같은 메뉴를 다른 세계에서 평가했을 때의 값"이다. 할인율처럼 계획 선택 자체를
-    바꿀 수 있는 축은 `--replan`으로 E2까지 다시 풀어야 정확하다 (묶음당 ~10분).
+    바꿀 수 있는 축은 `--replan`으로 E2까지 다시 풀어야 정확하다 (묶음당 `REPLAN_MINUTES`분).
   - E3부터는 전부 다시 계산하므로 변동성·가격경로 변경이 제대로 반영된다.
 
     .venv/bin/python scripts/run_scenarios.py            # 전 묶음
@@ -75,6 +75,14 @@ BUNDLES: dict[str, tuple[str, dict]] = {
 # 읽는 사람에게는 "흔들어 봤는데 안 변했다"로 보였다. 흔든 적이 없다. 아래 묶음은 --replan
 # 없이 도는 것을 막는다.
 REPLAN_REQUIRED = {"carbon_slow", "carbon_fast", "ppa_costly", "retire_free", "penalty_none"}
+
+# 재계획 1묶음의 실측 벽시계(분). 문서 넷이 "약 10분"을 적고 있었다. F26에서 여섯 묶음을
+# 실제로 돌려 쟀다: penalty_none 12 · carbon_fast 14 · ppa_costly 21 · disc35 26 ·
+# retire_free 32 · disc65 29 (2~3개 동시 실행, 10코어). 중앙값 근처인 20을 쓴다. **묶음마다
+# 크게 다르고, 제약을 푸는 묶음(retire_free)이 가장 비싸다** — 상한을 40%로 올리면 탐색
+# 공간이 넓어지니 당연하지만, 미루는 판단은 그 사실 없이 "약 10분"에 기대고 있었다
+# (F20 이래 7사이클). 여기가 정본이고, 가이드 §4.3과 논문 §6.2는 이 상수를 인용한다.
+REPLAN_MINUTES = 20
 
 
 def build_cfg(name: str) -> C.Config:
@@ -173,7 +181,7 @@ def main() -> int:
     ap.add_argument("--force", action="store_true",
                     help="재계획본을 평가 전용 결과로 덮어쓴다 (기본은 보존)")
     ap.add_argument("--replan", action="store_true",
-                    help="E2 MILP까지 다시 푼다 (계획 선택 채널 포함, 묶음당 ~10분)")
+                    help=f"E2 MILP까지 다시 푼다 (계획 선택 채널 포함, 묶음당 ~{REPLAN_MINUTES}분)")
     a = ap.parse_args()
     names = a.bundles or list(BUNDLES)
     bad = [n for n in names if n not in BUNDLES]
@@ -184,7 +192,7 @@ def main() -> int:
         if a.bundles:                    # 이름을 찍어 부른 것 — 침묵하면 가짜 결과가 남는다
             raise SystemExit(f"{inert}: E2에서만 읽히는 축이다. --replan 없이 돌리면 base와 "
                              f"같은 수가 나오고 그것이 요약표에 '검증됨'으로 남는다. "
-                             f"--replan을 붙여라 (묶음당 ~10분).")
+                             f"--replan을 붙여라 (묶음당 ~{REPLAN_MINUTES}분).")
         print(f"[scenario] --replan 없음 — E2 전용 축 {inert} 건너뜀", flush=True)
         names = [n for n in names if n not in inert]
 

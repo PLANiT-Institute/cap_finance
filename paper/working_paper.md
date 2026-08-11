@@ -42,14 +42,14 @@
 | frontier_single_schedule_groups | 16 | out/e5/frontier_points.csv |
 | frontier_groups_total | 16 | out/e5/frontier_points.csv |
 | gap_companies | 2 | out/e5/gap.csv |
-| tcar_param30_posco | 11664.9 | out/uncertainty/decomposition.csv |
-| tcar_param30_nsc | 15573.9 | out/uncertainty/decomposition.csv |
-| tcar_param30_mci | 229.1 | out/uncertainty/decomposition.csv |
-| tcar_param30_lotte | 590.9 | out/uncertainty/decomposition.csv |
-| param_share30_posco | 41.2 | out/uncertainty/decomposition.csv |
-| param_share30_nsc | 44.1 | out/uncertainty/decomposition.csv |
-| param_share30_mci | 26.4 | out/uncertainty/decomposition.csv |
-| param_share30_lotte | 26.2 | out/uncertainty/decomposition.csv |
+| tcar_param30_posco | 11694.2 | out/uncertainty/decomposition.csv |
+| tcar_param30_nsc | 14539.9 | out/uncertainty/decomposition.csv |
+| tcar_param30_mci | 214.1 | out/uncertainty/decomposition.csv |
+| tcar_param30_lotte | 557.8 | out/uncertainty/decomposition.csv |
+| param_share30_posco | 41.8 | out/uncertainty/decomposition.csv |
+| param_share30_nsc | 41.5 | out/uncertainty/decomposition.csv |
+| param_share30_mci | 25.7 | out/uncertainty/decomposition.csv |
+| param_share30_lotte | 25.8 | out/uncertainty/decomposition.csv |
 | tcar_co2only_posco | 16319.6 | out/uncertainty/decomposition.csv |
 | co2_increment_posco | 3064.0 | out/uncertainty/decomposition.csv |
 | tcar_co2only_nsc | 15285.6 | out/uncertainty/decomposition.csv |
@@ -83,15 +83,15 @@
 | inv_banded_t2t3t4 | 3 | out/m3/summary.csv |
 | g2_bands_added | 3 | out/g2/summary.csv |
 | g2_bands_outside | 1 | out/g2/summary.csv |
-| f3_param_share_steel_band_w15 | 36 | out/uncertainty/decomposition_bands.csv |
-| f3_param_share_steel_conv_w15 | 22 | out/uncertainty/decomposition.csv |
+| f3_param_share_steel_band_w15 | 21 | out/uncertainty/decomposition_bands.csv |
+| f3_param_share_steel_conv_w15 | 21 | out/uncertainty/decomposition.csv |
 | inv_src_registered | 279 | out/m3/summary.csv |
 | inv_src_sentinel | 129 | out/m3/summary.csv |
 | inv_src_eff | 7 | out/m3/summary.csv |
 | inv_src_unresolved | 0 | out/m3/summary.csv |
-| top10_t3plus | 5 | out/m3/summary.csv |
+| top10_t3plus | 4 | out/m3/summary.csv |
 | top10_t5 | 4 | out/m3/summary.csv |
-| audit_partial_cols | 4 | out/m3/summary.csv |
+| audit_partial_cols | 3 | out/m3/summary.csv |
 | m4_frontier_points | 24 | out/m4/summary.csv |
 | m4_support_cells_identical | 8 | out/m4/summary.csv |
 | m4_support_cells_total | 8 | out/m4/summary.csv |
@@ -122,9 +122,9 @@
 | m5_checks_total | 8 | out/m5/summary.csv |
 | m5_checks_rank_preserved | 3 | out/m5/summary.csv |
 | m5_bundles_total | 12 | out/m5/summary.csv |
-| m5_bundles_inert | 2 | out/m5/summary.csv |
-| m5_bundles_headline_inert | 3 | out/m5/summary.csv |
-| m5_bundles_replanned | 4 | out/m5/summary.csv |
+| m5_bundles_inert | 0 | out/m5/summary.csv |
+| m5_bundles_headline_inert | 0 | out/m5/summary.csv |
+| m5_bundles_replanned | 7 | out/m5/summary.csv |
 | m5_bundle_rank_reversals | 0 | out/m5/summary.csv |
 | m5_d_m2_pct_carbon_fast | 19.7 | out/m5/summary.csv |
 | m5_d_tcar_pct_carbon_fast | 61.5 | out/m5/summary.csv |
@@ -307,12 +307,15 @@ LOTTE는 후보 기술 일정 자체가 1개라 선택집합이 없다.
    D15에 그중 하나(`carbon_fast`, 2040년 전량 유상)를 `--replan`으로 다시 풀었고 **판정이
    뒤집혔다**: ② 19.7% · ③ **61.5%**로, ③에서는 우리가 흔든 모든 축 중 가장 크다(§6.2.1).
    순위는 보존됐다. 즉 D14가 팔 뻔했던 "유상할당 가속에도 순위가 안 바뀐다"는 결과적으로
-   참이지만, **같은 재계획이 조달부담은 6할 넘게 올린다**고 말한다. 남은 셋
-   (`m5_bundles_headline_inert` = 3) 중 둘(`ppa_costly`·`retire_free`)은 모든 열에서 base와
-   같고(`m5_bundles_inert` = 2), `carbon_slow`는 탄소 포함 P50을 22조원 움직이면서도 계획은
-   못 바꾼다. `carbon_fast`가 그만큼 움직인 이상 `carbon_slow`가 평평하다고 가정할 근거는
-   없다. `REPLAN_REQUIRED`가 재계획 없는 실행을 막고 `tests/test_scenario_bundles.py`가
-   설명되지 않은 '변화 0'을 잡는다. 남은 두 묶음의 재계획은 미착수다(묶음당 ~10분).
+   참이지만, **같은 재계획이 조달부담은 6할 넘게 올린다**고 말한다. F26에서 남은 셋을 전부
+   재계획했고 **판정은 세 번 다 뒤집혔다**(`m5_bundles_headline_inert` = 0,
+   `m5_bundles_inert` = 0, `m5_bundles_replanned` = 7). "모든 열에서 base와 같다"고 적었던
+   `retire_free`는 ② **41.2%** · ③ **51.9%**로 ②에서 우리가 흔든 모든 축 중 가장 크고,
+   `carbon_slow`는 ② **39.0%** · ③ **99.7%**, `ppa_costly`는 ② 1.4% · ③ 8.1%다. 순위는
+   셋 다 보존됐다(`m5_bundle_rank_reversals` = 0). **평평해 보인 축은 하나도 평평하지
+   않았다** — 다섯 축 전부가 그랬으므로, 이제 이 표의 '변화 0'은 축의 성질이 아니라 실행
+   규약의 산물이었다고 확정해 적을 수 있다. `REPLAN_REQUIRED`가 재계획 없는 실행을 막고
+   `tests/test_scenario_bundles.py`가 설명되지 않은 '변화 0'을 잡는다.
 
 ## 7. 타깃 저널 후보
 
@@ -400,9 +403,10 @@ CVaR이 아니라 "이 계획을 실행하려면 기준 시나리오보다 추�
 
 - **지원 축이 비어 있다.** 보조금·CCfD 지원 8칸이 전부 동일한 값을 낸다(§5.4). 지원이
   결론을 바꾸지 않는 것이 아니라, 확보한 지원 데이터가 계획 선택에 닿지 못한다.
-- **시나리오 묶음 셋은 아직 헤드라인에 닿을 통로가 없다**(`m5_bundles_headline_inert` = 3).
-  넷째였던 유상할당 가속은 재계획하자 ③ 조달부담을 **61.5%** 올리는 최대 축으로 드러났고,
-  순위만 보존됐다(§6.2.1). 남은 셋도 평평하다고 가정할 근거가 없다.
+- **'헤드라인에 닿지 않는 축'은 이제 하나도 없다**(`m5_bundles_headline_inert` = 0). E2에서만
+  읽히는 다섯 축을 전부 재계획했고 다섯 번 다 평평하지 않았다 — 유상할당 가속은 ③을
+  **61.5%**, 폐쇄 상한 완화는 ②를 **41.2%**, 유상할당 완화는 ③을 **99.7%** 움직인다(§6.2.1).
+  순위는 전부 보존됐다. 평평해 보였던 것은 축이 아니라 E2를 공유한 실행 규약이었다.
 - **조기 전환을 지지하는 근거는 가격 전망이 아니라 제도 사실이다.** 총비용 기준 역방향
   후회는 네 회사 중 셋에서 음수다 — 돈만 보면 지연이 이긴다(§5.3.1). 조기 전환이 이기는
   것은 탄소예산 초과에 실제 제재가 붙을 때뿐이고, 그 제재의 크기는 우리 설정에서 출처 없는
@@ -757,34 +761,43 @@ F3(§6-9)의 파라미터 불확실성이 근거 밴드가 아니라 ±30%라는
 
 | 순위 | 파라미터 | 등급 | 점수 | T3 이상 |
 |---|---|---|---|---|
-| 1 | `fac.ef_inc` (시설 배출계수) | **T5** | 86.4 | ✗ |
-| 2 | `tech.emission_factor` | T3 | 85.8 | ✓ |
-| 3 | `cfg.discount` (할인율) | **T5** | 42.5 | ✗ |
-| 4 | `vol.h2` (수소가 변동성) | **T5** | 41.9 | ✗ |
-| 5 | `tech.h2_intensity` | T3 | 30.7 | ✓ |
-| 6 | `price.h2` | **T5** | 30.7 | ✗ |
-| 7 | `vol.elec` | T3 | 25.8 | ✓ |
-| 8 | `fac.capacity` | T2/T5 혼합 | 17.8 | ✗ |
-| 9 | `tech.capex` | T3 | 17.4 | ✓ |
-| 10 | `tech.elec_intensity` | T3 | 13.6 | ✓ |
+| 1 | `fac.ef_inc` (시설 배출계수) | **T5** | 154.1 | ✗ |
+| 2 | `vol.h2` (수소가 변동성) | **T5** | 45.1 | ✗ |
+| 3 | `tech.emission_factor` | T3 | 44.2 | ✓ |
+| 4 | `cfg.discount` (할인율) | **T5** | 35.8 | ✗ |
+| 5 | `vol.elec` | T3 | 33.5 | ✓ |
+| 6 | `tech.h2_intensity` | T3 | 30.3 | ✓ |
+| 7 | `price.h2` | **T5** | 30.3 | ✗ |
+| 8 | `tech.elec_intensity` | T3 | 20.8 | ✓ |
+| 9 | `price.re` | T4 | 20.8 | ✗ |
+| 10 | `fac.capacity` | T2/T5 혼합 | 14.0 | ✗ |
 
-**열 중 5개만 규약을 만족한다.** 나머지 다섯의 성격은 서로 다르고, 그 차이가 처방을 가른다.
+**열 중 4개만 규약을 만족한다.** 나머지 여섯의 성격은 서로 다르고, 그 차이가 처방을 가른다.
 
 - `fac.ef_inc`(1위)는 **데이터로 메울 수 있는 공백**이다. 회사 총량을 능력×루트EF로 배분한
   값이고, 사업장 실측이 있으면 사라진다. 일본은 이미 사라졌다 — EEGS 사업소 공시로 NSC 27개
   사업소를 확보했고(D1c), 고로 1기 사이트는 사실상 실측이 된다. 한국은 명세서가 NGMS에
   사업장 단위로 **존재하나 공개 발행되지 않는다**(G1). 즉 이 항목의 등급은 우리 노력이 아니라
   공시제도가 정한다.
-- `cfg.discount`(3위)는 **밴드가 아니라 선택**이다. 추첨으로 다룰 것이 아니라 I1이 이미
+- `cfg.discount`(4위)는 **밴드가 아니라 선택**이다. 추첨으로 다룰 것이 아니라 I1이 이미
   3.5/5.0/6.5%로 전 파이프라인을 다시 돌려 처리했다(§6 강건성).
 - `vol.h2`·`vol.elec`·`price.h2`는 **표본이 짧아서** T5다. 그리고 §3.5가 적었듯 이 계열의
   과정 선택은 데이터로 결정되지 않는다 — 반감기 10년 OU를 80% 검정력으로 배제하려면 월별
   4,740개(≈395년)가 필요하다.
-- `fac.capacity`(8위)는 공표 능력(T2)과 내용적×계수 추정(T5)이 섞여 있다. 섞인 채로 두는
+- `fac.capacity`(10위)는 공표 능력(T2)과 내용적×계수 추정(T5)이 섞여 있다. 섞인 채로 두는
   것이 문제이며, 독립 구현 EFF의 블록 능력과 12% 어긋나는 지점도 여기다(G3).
 
-**결론 영향**은 F3에서 이미 정량화됐다: 상위 10을 ±30%로 동시에 추첨하면 파라미터가 만드는
-몫이 결합 TCaR의 철강 41~44%, 석유화학 26~27%다. 그러므로 ③ TCaR의 **절대값은 이 표가
+**이 표가 무엇을 추첨할지도 정한다.** F3의 동시추첨은 이 상위 10을 뽑으므로, 표에서 밀려난
+파라미터는 불확실성 분해에 들어오지 못한다. 2026-08-12에 그 일이 실제로 일어났다 —
+시설 데이터 수정 뒤 화면을 다시 돌리자 `tech.capex`가 9위에서 **13위로 내려가 표 밖으로
+나갔다**. 하필 그 항목이 **문헌 밴드를 가진 셋 중 유일하게 넓고 한쪽으로 치우친**
+([1.00, 3.48]×) 파라미터다. 그래서 "증거 밴드를 규약 대신 넣으면 파라미터 몫이 얼마나
+달라지는가"라는 검정이 지금은 **아무것도 움직이지 않는다**(철강 21% → 21%). 규약이 무해해서가
+아니라, 규약을 반증할 증거를 가진 유일한 자리가 검정 밖으로 나갔기 때문이다. 추첨 대상을
+순위가 아니라 **밴드 보유 여부**로도 열어야 이 검정이 성립한다 — 미착수.
+
+**결론 영향**은 F3에서 정량화된다: 상위 10을 ±30%로 동시에 추첨하면 파라미터가 만드는
+몫이 결합 TCaR의 철강 41~42%, 석유화학 26%다. 그러므로 ③ TCaR의 **절대값은 이 표가
 개선되기 전까지 인용 대상이 아니고**, 기업 간 순서와 부호만 인용한다.
 
 ### 4.4 인용 무결성 — 415개 인용이 실제로 어디를 가리키는가
@@ -1043,42 +1056,48 @@ GX-ETS 가격 collar는 지원 시나리오와 무관하게 `auction_share`로 *
 몫(26~54%)과 자릿수가 같거나 더 크고, 이쪽은 데이터로 줄일 수 없다(§7 한계 8). **③은
 수준이 아니라 순서와 자릿수로만 인용해야 한다.**
 
-### 6.2 통로가 없던 묶음 넷 중 하나를 열었더니, 그것이 두 번째로 큰 축이었다
+### 6.2 통로가 없던 묶음을 전부 열었더니, '평평한 축'은 하나도 없었다
 
 `scripts/run_scenarios.py`는 기업이 실제로 묻는 질문 하나에 묶음 하나를 대응시킨다. base를
 포함해 12개다(`m5_bundles_total`). 그 표를 base와 대조하면 다음과 같다(NZ15·`none`).
 
 | 묶음 | E2 재계획 | ② 최대변화 | ③ 최대변화 | 탄소 포함 P50 최대변화 (십억원) | 순위 |
 |---|---|---|---|---|---|
-| h2_cheap (수소 −30%) | 아니오 | 27.0% | 30.4% | 2,760.6 | 보존 |
-| h2_expensive (수소 +30%) | 아니오 | 26.9% | 29.9% | 2,621.1 | 보존 |
-| **carbon_fast** (2040 전량 유상) | **예** | **19.7%** | **61.5%** | **24,980.4** | 보존 |
-| disc35 (할인율 3.5%) | **예** | 6.1% | 39.2% | 8,136.6 | 보존 |
-| elec_high (전력 +30%) | 아니오 | 5.9% | 19.3% | 3,125.8 | 보존 |
-| disc65 (할인율 6.5%) | **예** | 3.6% | 26.4% | 5,763.7 | 보존 |
-| reline_cheap (개수 ×0.235) | 아니오 | 2.0% | 0.3% | 1,066.3 | 보존 |
-| penalty_none (벌칙 바닥 300→0) | **예** | 1.5% | 5.9% | 3,475.7 | 보존 |
-| carbon_slow (유상할당 완화) | 아니오 | **0.0%** | **0.0%** | 22,145.4 | 보존 |
-| ppa_costly (PPA 프리미엄 ×2) | 아니오 | **0.0%** | **0.0%** | **0.0** | — |
-| retire_free (폐쇄 상한 40%) | 아니오 | **0.0%** | **0.0%** | **0.0** | — |
+| **retire_free** (폐쇄 상한 40%) | **예** | **41.2%** | **51.9%** | 18,662.2 | 보존 |
+| **carbon_slow** (유상할당 완화) | **예** | **39.0%** | **99.7%** | 18,830.6 | 보존 |
+| h2_cheap (수소 −30%) | 아니오 | 27.0% | 30.4% | 2,737.9 | 보존 |
+| h2_expensive (수소 +30%) | 아니오 | 26.9% | 29.9% | 2,653.3 | 보존 |
+| carbon_fast (2040 전량 유상) | **예** | 19.7% | **61.5%** | 24,980.4 | 보존 |
+| elec_high (전력 +30%) | 아니오 | 5.8% | 19.5% | 3,115.1 | 보존 |
+| disc35 (할인율 3.5%) | **예** | 5.4% | 34.4% | 8,136.6 | 보존 |
+| reline_cheap (개수 ×0.235) | 아니오 | 2.0% | 0.1% | 1,054.6 | 보존 |
+| penalty_none (벌칙 바닥 300→0) | **예** | 1.6% | 5.9% | 3,374.7 | 보존 |
+| ppa_costly (PPA 프리미엄 ×2) | **예** | 1.4% | 8.1% | 28.8 | 보존 |
+| disc65 (할인율 6.5%) | **예** | 1.2% | 26.4% | 5,763.7 | 보존 |
 
-**세 묶음이 헤드라인 ②③을 한 자리도 바꾸지 않는다**(`m5_bundles_headline_inert` = 3). 우연이
-아니라 구조다. 이 축들(`carbon_auction_share`, `ppa_premium_pct`, `retire_max_share`)은
-**계획 선택에 관한 한 E2 MILP에서만 읽히는데**, 묶음은 계산을 아끼려 E1·E2를 심볼릭 링크로
-공유하고 E3–E5만 다시 돈다. 계획 메뉴가 고정된 채 평가만 다시 한 것이다.
+**표의 위 두 줄은 D14까지 '변화 0'으로 실려 있던 축이다.** `retire_free`(폐쇄 상한 40%)와
+`carbon_slow`(유상할당 완화)는 ②를 41.2%·39.0%, ③을 51.9%·99.7% 움직인다 — ②에서는
+`retire_free`가 우리가 흔든 모든 축 중 **가장 크다**. D14의 판정은 축이 평평해서가 아니라
+그 실행이 E2를 공유했기 때문에 나왔다. 이 축들(`carbon_auction_share`, `ppa_premium_pct`,
+`retire_max_share`)은 **계획 선택에 관한 한 E2 MILP에서만 읽히는데**, 묶음은 계산을 아끼려
+E1·E2를 심볼릭 링크로 공유하고 E3–E5만 다시 돌았다. 계획 메뉴가 고정된 채 평가만 다시 한
+것이다.
 
-셋이 다시 둘로 갈린다. `ppa_costly`와 `retire_free`는 **모든 열에서** base와 같다
-(`m5_bundles_inert` = 2) — 계약 프리미엄과 폐쇄 상한은 평가 단계에 아예 등장하지 않는다.
-`carbon_slow`는 계획을 못 바꾸지만 E5의 탄소지출에는 닿아 탄소 포함 P50을 22조원 움직인다.
-**낼 돈은 바뀌는데 할 일은 못 바꾼다.**
+**E2 전용 다섯 축을 전부 재계획했고, 다섯 번 다 평평하지 않았다**
+(`m5_bundles_headline_inert` = 0, `m5_bundles_inert` = 0, `m5_bundles_replanned` = 7).
+가장 작은 `ppa_costly`조차 ③을 8.1% 움직인다. 즉 이 표에서 '변화 0'은 **한 번도 축의
+성질이었던 적이 없다** — 전부 실행 규약의 산물이었다. 순위는 다섯 축 모두에서 보존됐다
+(`m5_bundle_rank_reversals` = 0). 결론의 순서는 견디고, 조달부담의 **크기**는 견디지 않는다.
 
 이것을 §5.4(빈 지원 축)와 같은 자리에 적는다. **표에 행이 있으면 독자는 "흔들어 봤는데
-헤드라인이 안 변했다"로 읽는다.** 재계획 전에는 헤드라인이 변할 통로가 없었다. 고치는 방법은
-단순하다 — 그 축들은 `--replan`으로 E2까지 다시 풀어야 한다(묶음당 약 10분).
-`run_scenarios.py`의 `REPLAN_REQUIRED`가 이제 재계획 없는 실행을 거부하므로 같은 값이 다시
+헤드라인이 안 변했다"로 읽는다.** 재계획 전에는 헤드라인이 변할 통로가 없었다.
+`run_scenarios.py`의 `REPLAN_REQUIRED`가 재계획 없는 실행을 거부하므로 같은 값이 다시
 요약표에 실릴 수 없고, `tests/test_scenario_bundles.py`가 설명되지 않은 '변화 0'을 잡는다.
-재계획된 묶음은 현재 넷이다(`m5_bundles_replanned` = 4). 남은 둘(`carbon_slow`·`ppa_costly`)은
-미착수다.
+재계획 비용은 묶음당 **약 20분**이다(`scripts/run_scenarios.py`의 `REPLAN_MINUTES`가 정본).
+F26에서 여섯 묶음을 실제로 재고 고쳤다 — `penalty_none` 12분에서 `retire_free` 32분까지
+벌어지고, **제약을 푸는 묶음이 가장 비싸다**(상한을 20%→40%로 올리면 탐색 공간이 넓어진다).
+이 절이 D14부터 밀린 이유가 "묶음당 약 10분"이라는 근거 없는 추정이었으므로, 실측으로
+바꿔 적는다. 실측은 2~3개 동시 실행(10코어) 중에 잰 값이라 단독 실행보다 길다.
 
 #### 6.2.1 유상할당 가속을 재계획했더니 결과가 뒤집혔다 — '무력'에서 두 번째로 큰 축으로
 

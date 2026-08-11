@@ -132,6 +132,13 @@ def checks(reg) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def _pct_all(x: pd.DataFrame, b: pd.DataFrame, col: str) -> float:
+    """모든 (기업 × 시나리오 × 지원) 칸에서의 최대 상대변화(%). base가 0인 칸은 뺀다."""
+    bb = b[col].reindex(x.index)
+    m = bb.abs() > 1e-9
+    return round(float(((x[col][m] / bb[m] - 1) * 100).abs().max()), 1)
+
+
 def bundle_matrix() -> pd.DataFrame:
     """묶음별 base 대비 변화. 0이면 그 묶음은 아무것도 흔들지 않았다."""
     s = pd.read_csv(ROOT / "out/scenarios/summary.csv")
@@ -158,7 +165,13 @@ def bundle_matrix() -> pd.DataFrame:
                                            - b.xs((SCEN, SUPP), level=(1, 2)).p50_incl_carbon_bnkrw
                                            ).abs().max()), 1),
             rank_preserved=int(_rank(v) == _rank(
-                s[s.bundle == "base"].query("scenario==@SCEN and support==@SUPP")))))
+                s[s.bundle == "base"].query("scenario==@SCEN and support==@SUPP"))),
+            # F26: d_m2_pct·d_tcar_pct는 헤드라인 칸(NZ15 · support=none) 4개만 본다.
+            # 가이드 §4.3은 그것을 16칸(4×2×2) 전체의 최대라고 적고 있었다 — 아래 두 열이
+            # 실제 16칸 최대이고, penalty_none에서 5.9% 대 240%로 갈린다. 헤드라인 열을
+            # 바꾸지 않는 이유는 §6이 그 정의로 쓰였기 때문이고, 대신 둘 다 싣는다.
+            d_m2_pct_all=_pct_all(x, b, "cost_per_tco2_thkrw"),
+            d_tcar_pct_all=_pct_all(x, b, "tcar_bnkrw")))
     return pd.DataFrame(rows).sort_values("bundle")
 
 
