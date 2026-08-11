@@ -735,6 +735,74 @@ def _mtime(p):
     return dt.datetime.fromtimestamp(p.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
 
 
+def _eff_file(rel: str):
+    """EFF exists twice — a separate repository and the copy vendored here."""
+    for base in (Path.home() / "Documents" / "cap-efficient", ROOT / "cap-efficient"):
+        p = base / rel
+        if p.exists():
+            return p
+    return None
+
+
+def gen_reline_anchors():
+    """Every external anchor on the blast-furnace reline replacement cost, not just one.
+
+    F21: the guide carried "fails external validation, 4.2x a disclosed actual" in two
+    places. That verdict is from a single observation and `docs/validation_external.md`
+    §1-1 retired it on 2026-08-10 (L1, `docs/literature_map.md` §4-1): with three anchors
+    our 200 is above two of them and *inside* the third. Constants and FX come from
+    `scripts/validate_external.py` so the two documents cannot print different anchors.
+    """
+    ev = _eff_file("data/technology_cost_evidence.csv")
+    if ev is None:
+        return "_EFF evidence file not found — cannot rebuild the reline anchors._"
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from validate_external import (ACCR_RELINE_USD_M, EURKRW,  # noqa: E402
+                                  NATCOMM_RELINE_EUR_T, USDKRW)
+    rl = pd.read_csv(ev)
+    rl = rl[rl.technology_id == "BF_RELINE"]
+    if rl.empty:
+        return "_No `BF_RELINE` row in the EFF evidence file._"
+    kobe = float(rl.normalized_capex_bn_krw_per_mtpa.iloc[0])
+
+    d1a = pd.read_csv(prepared() / "D1a_facility_static.csv")
+    bf = d1a[d1a.unit_type == "BF"]
+    ours = float(bf.incumbent_capex_unit.median())
+    cap = float(bf.capacity.median()) / 1e6          # Mt/yr
+    natcomm = NATCOMM_RELINE_EUR_T * EURKRW / 1000
+    lo, hi = (v * USDKRW / 1e3 / cap for v in ACCR_RELINE_USD_M)
+
+    rows = [
+        [f"Kobe Steel No. 3 reline, 2016 (shell reused, 90 days)", f"{kobe:,.0f}",
+         "disclosed project cost", "`KOBELCO_HBI_BF`", f"ours is {ours / kobe:.1f}× this"],
+        ["Literature reline unit cost", f"{natcomm:,.0f}", f"€{NATCOMM_RELINE_EUR_T:g}/t",
+         "`NATCOMM_APA_2026`", f"ours is {ours / natcomm:.1f}× this"],
+        ["Replacement cost per furnace ÷ our median BF capacity",
+         f"{lo:,.0f} – {hi:,.0f}",
+         f"US${ACCR_RELINE_USD_M[0]:,.0f}–{ACCR_RELINE_USD_M[1]:,.0f}M per furnace "
+         f"÷ {cap:.2f} Mt/yr", "`ACCR_BF_RELINE_2025`",
+         "**ours is inside this band**"],
+        [f"**Ours** (`incumbent_capex_unit`, median of {len(bf)} BFs)", f"**{ours:,.0f}**",
+         "injected per unit type", "—", "—"],
+    ]
+    head = _md(rows, ["Anchor", "thousand KRW/t capacity", "Original figure",
+                      "source_id", "Against ours"])
+    return head + (
+        f"\n\n**The three anchors do not converge — {kobe:,.0f}, {natcomm:,.0f}, "
+        f"[{lo:,.0f}, {hi:,.0f}] — so the finding is a {hi / kobe:.0f}× dispersion in the "
+        f"reline unit cost, not a point error in ours.** Two qualifications belong in the "
+        f"same sentence as the numbers. First, the ACCR figure is per furnace and its source "
+        f"does not state a currency; USD is assumed, and on the AUD reading the band falls to "
+        f"[{lo * 0.65:,.0f}, {hi * 0.65:,.0f}] and our {ours:,.0f} sits **above** it — the "
+        f"'inside the band' verdict is contingent on an assumption the source does not "
+        f"settle. Second, `NATCOMM_APA_2026`'s H2-DRI-EAF figure is exactly `VOGL_2018`'s, so "
+        f"its reline figure may be a secondary citation of the same lineage rather than an "
+        f"independent observation: count 2.5 anchors, not 3. What follows for the model is a "
+        f"range, not a replacement: only the low end has been re-run "
+        f"(`reline_cheap`, ×{kobe / ours:.3f}), and nothing has been run at "
+        f"×{hi / ours:.2f} — the upper end of the same band.")
+
+
 def gen_diagnostic_drift():
     base = ROOT / "out" / "e5" / "metrics_company.csv"
     if not base.exists():
@@ -843,11 +911,17 @@ def gen_axis_impact():
         return "_No bundle sweep in `out/m5`. Run `python -m cap m5`._"
     sys.path.insert(0, str(ROOT / "scripts"))
     from run_scenarios import REPLAN_REQUIRED
+    # F21: "not needed" was printed for every bundle outside REPLAN_REQUIRED, including
+    # `reline_cheap` — whose scale reaches E2 through `stranded_cost_k`, so holding the plan
+    # menu fixed measures the write-off saving at an adoption year the assumption should have
+    # moved. The scenario page already says so; take its list rather than keeping a second one.
+    from build_scenario_page import PARTIAL_EFFECT
     b = pd.read_csv(p).sort_values("d_tcar_pct", ascending=False)
     rows = [[f"`{r.bundle}`", AXIS.get(r.bundle, ("—", "—"))[0],
              AXIS.get(r.bundle, ("—", r.bundle))[1],
              ("yes" if r.replanned else
-              "**no — required**" if r.bundle in REPLAN_REQUIRED else "not needed"),
+              "**no — required**" if r.bundle in REPLAN_REQUIRED else
+              "**no — lower bound**" if r.bundle in PARTIAL_EFFECT else "not needed"),
              f"{r.d_m2_pct:.1f}%", f"{r.d_tcar_pct:.1f}%"]
             for r in b.itertuples()]
     head = _md(rows, ["Bundle", "Assumption", "What it varies", "Re-planned",
@@ -863,6 +937,15 @@ def gen_axis_impact():
             f"Those axes are read only inside E2, so with the plan menu held fixed they can "
             f"re-price a plan but not change it; their Δ② / Δ③ are an artefact of that. "
             f"Re-planning each costs about ten minutes of solver time and has not been spent.")
+    partial = sorted(set(b[~b.replanned].bundle) & set(PARTIAL_EFFECT))
+    if partial:
+        note += (
+            f"\n\n**{', '.join('`' + s + '`' for s in partial)} is measured, but what is "
+            f"measured is a lower bound.** The replacement cost enters E2 through the "
+            f"stranding term, so its main effect is to **pull adoption years forward**; with "
+            f"the plan menu shared, all that is left is the smaller write-off at an adoption "
+            f"year the assumption should have moved. `run_scenarios.py --replan "
+            f"{partial[0]}` is what would measure it.")
     r = ROOT / "out" / "sensitivity" / "ranking.csv"
     if r.exists():
         s = pd.read_csv(r).head(5)
@@ -1371,6 +1454,7 @@ BLOCKS = {
     "config": gen_config,
     "headline": gen_headline,
     "diagnostic_drift": gen_diagnostic_drift,
+    "reline_anchors": gen_reline_anchors,
 }
 
 

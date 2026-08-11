@@ -818,7 +818,7 @@ grade: either an axis we **re-solved** and can therefore quote a number for, or 
 | **A-03** | Energy and emission intensities are injected route standards (BF 2.15 tCO₂/t and similar), **with no range** | Firms do not disclose per-route intensities | **Small for steel, large for petrochemicals.** Steel intensities are rescaled to the firm's reported total, so an error in the injected value cancels; petrochemical intensities are not rescaled, so the injected number *is* the level of ② | Steel: the rescaling residual in E1. Petrochemicals: nothing — this is an open weakness, not a checked one |
 | **A-05** | Hydrogen is procured externally at a market price | Design decision (spec §5-1); the electrolyser formulation was discarded | **Large, and larger than the ledger said.** On each firm's cost-minimising plan under NZ15 hydrogen carries **34%–100%** of simulated cost variance (NSC 34%, POSCO 52%, both petrochemical firms 100% — `out/e5/variance_decomp.csv`); §9.1's 64–77% is the same quantity averaged over every plan. Read this as a variance share and not as a share of TCaR: quantiles do not decompose additively, which is why `docs/uncertainty_propagation.md` §1 leaves an interaction residual | `test_hydrogen_priced_from_data_not_structural_fallback`; `out/e5/variance_decomp.csv` |
 | **A-19** | Metric ② is a **resource cost**: carbon expenditure delta is subtracted | If carbon avoidance dominates, "transition is free" and the capital-allocation question disappears | Large on ②, none on ③ | `test_resource_cost_is_total_minus_carbon` |
-| **A-13** | Stranding cost = residual straight-line book value of the campaign asset; ±1 year grace around a relining anchor. Replacement cost is injected **per unit type, not per asset** — 200 thousand KRW/t for all 17 blast furnaces, 150 NCC, 250 EAF, 300 FINEX | Spec §2 | Large on investment timing | **Fails external validation: the injected blast-furnace replacement cost is 4.2× a disclosed actual (Kobe, 47 thousand KRW/t).** Over-penalises early conversion. The `reline_cheap` bundle bounds the effect |
+| **A-13** | Stranding cost = residual straight-line book value of the campaign asset; ±1 year grace around a relining anchor. Replacement cost is injected **per unit type, not per asset** — 200 thousand KRW/t for all 17 blast furnaces, 150 NCC, 250 EAF, 300 FINEX | Spec §2 | Large on investment timing | **Three external anchors, and they do not converge: 47 (a disclosed Kobe reline), 70 (a literature unit cost), and a band of 81–269 (replacement cost per furnace ÷ our median blast-furnace capacity). Our 200 is 4.2× the first and 2.9× the second, and inside the third** — so the finding is a 6× dispersion in this parameter, not a point error in ours (§7). The `reline_cheap` bundle re-runs the low end only, and only with the plan menu held fixed, which is the wrong place for this assumption to act — §4.3 |
 
 ### 4.2 Structural choices that are visible, not hidden
 
@@ -847,7 +847,9 @@ move across the **sixteen** firm × scenario × support cells (4 × 2 × 2), aga
 The column to read first is **Re-planned**. Five axes are read only inside the plan optimiser (E2);
 running them without re-planning re-prices a plan that the assumption should have changed, and the
 result is a row of small or zero deltas that looks like robustness and is not. Two of those five have
-been re-planned. The other three are marked, and their numbers should be read as absent.
+been re-planned. The other three are marked, and their numbers should be read as absent. A sixth,
+`reline_cheap`, reaches E2 as well but through the stranding term rather than a constraint, so it
+does move without re-planning — by less than it should. It is marked separately.
 
 <!-- GEN:axis_impact -->
 | Bundle | Assumption | What it varies | Re-planned | Δ② (max, %) | Δ③ (max, %) |
@@ -859,7 +861,7 @@ been re-planned. The other three are marked, and their numbers should be read as
 | `disc65` | — | discount rate 6.5% | yes | 3.6% | 26.4% |
 | `elec_high` | — | grid and PPA electricity prices +30% | not needed | 5.9% | 19.3% |
 | `penalty_none` | A-11 | budget-violation floor 300 → 0 | yes | 1.5% | 5.9% |
-| `reline_cheap` | A-13 | BF replacement cost ×0.235, at the disclosed Kobe actual | not needed | 2.0% | 0.3% |
+| `reline_cheap` | A-13 | BF replacement cost ×0.235, at the disclosed Kobe actual | **no — lower bound** | 2.0% | 0.3% |
 | `carbon_slow` | A-07 | auction share reaches only 60% by 2050 | **no — required** | 0.0% | 0.0% |
 | `ppa_costly` | A-15 | renewable PPA premium doubled | **no — required** | 0.0% | 0.0% |
 | `retire_free` | A-09 | early-retirement cap 20% → 40% | **no — required** | 0.0% | 0.0% |
@@ -867,6 +869,8 @@ been re-planned. The other three are marked, and their numbers should be read as
 Largest mover on ③ is `carbon_fast` (61.5%); on ② it is `h2_cheap` (27.0%) — not the same bundle, so no single axis dominates both metrics.
 
 **Read `carbon_slow`, `ppa_costly`, `retire_free` as unmeasured, not as flat.** Those axes are read only inside E2, so with the plan menu held fixed they can re-price a plan but not change it; their Δ② / Δ③ are an artefact of that. Re-planning each costs about ten minutes of solver time and has not been spent.
+
+**`reline_cheap` is measured, but what is measured is a lower bound.** The replacement cost enters E2 through the stranding term, so its main effect is to **pull adoption years forward**; with the plan menu shared, all that is left is the smaller write-off at an adoption year the assumption should have moved. `run_scenarios.py --replan reline_cheap` is what would measure it.
 
 One-at-a-time parameter screening, top 5 by worst-metric move: `fac.ef_inc` (T5, 86%), `tech.emission_factor` (T3, 86%), `cfg.discount` (T5, 42%), `vol.h2` (T5, 42%), `tech.h2_intensity` (T3, 31%).
 <!-- /GEN:axis_impact -->
@@ -1134,7 +1138,30 @@ zeroed one firm's emissions and nothing caught it until the last stage.
 **External comparison** — `scripts/validate_external.py` →
 [`docs/validation_external.md`](validation_external.md). Model CAPEX against disclosed actual project
 costs: seven projects, and the binding one is not an EAF at all but Kobe Steel's 2016 No. 3
-blast-furnace reline at 47 thousand KRW/t of capacity against our injected 200. That is A-13's 4.2×.
+blast-furnace reline at 47 thousand KRW/t of capacity against our injected 200 — A-13's 4.2×. That
+multiple was the whole verdict on this parameter until the literature pass added two more anchors
+([`docs/literature_map.md`](literature_map.md) §4-1), and with three anchors the reading changes:
+
+<!-- GEN:reline_anchors -->
+| Anchor | thousand KRW/t capacity | Original figure | source_id | Against ours |
+|---|---|---|---|---|
+| Kobe Steel No. 3 reline, 2016 (shell reused, 90 days) | 47 | disclosed project cost | `KOBELCO_HBI_BF` | ours is 4.2× this |
+| Literature reline unit cost | 70 | €48/t | `NATCOMM_APA_2026` | ours is 2.9× this |
+| Replacement cost per furnace ÷ our median BF capacity | 81 – 269 | US$300–1,000M per furnace ÷ 5.02 Mt/yr | `ACCR_BF_RELINE_2025` | **ours is inside this band** |
+| **Ours** (`incumbent_capex_unit`, median of 17 BFs) | **200** | injected per unit type | — | — |
+
+**The three anchors do not converge — 47, 70, [81, 269] — so the finding is a 6× dispersion in the reline unit cost, not a point error in ours.** Two qualifications belong in the same sentence as the numbers. First, the ACCR figure is per furnace and its source does not state a currency; USD is assumed, and on the AUD reading the band falls to [52, 175] and our 200 sits **above** it — the 'inside the band' verdict is contingent on an assumption the source does not settle. Second, `NATCOMM_APA_2026`'s H2-DRI-EAF figure is exactly `VOGL_2018`'s, so its reline figure may be a secondary citation of the same lineage rather than an independent observation: count 2.5 anchors, not 3. What follows for the model is a range, not a replacement: only the low end has been re-run (`reline_cheap`, ×0.236), and nothing has been run at ×1.34 — the upper end of the same band.
+<!-- /GEN:reline_anchors -->
+
+The same document's second reline check goes the other way. The **timing** of the reinvestment
+window — `last_reline_year + 15/20 years`, which sets the CAPEX peak year — was a purely internal
+assumption until it was put beside two outside samples, and it does not conflict with either: 8 of
+our 17 blast furnaces (48.9% of capacity) fall due by 2030 against 42% of steel assets in
+`NATCOMM_APA_2026`, and 12 of 17 (73.8% of capacity) fall due in 2026–2035 against ACCR's "over 70%
+of reline decisions". Different samples, so this is agreement and not verification, and our being
+slightly early is what a Korea–Japan sample of ageing furnaces should look like
+([`docs/validation_external.md`](validation_external.md) §1-2).
+
 Model CAPEX against literature ranges: `steel_h2dri` and `steel_hyrex` at 863 sit inside DIW's
 863–1,095, while `steel_eaf` at 240 sits **below** the literature band 370–835, at 0.65× its lower
 bound. These are the same bands §3.4 prints, and until this cycle they were not: the check script

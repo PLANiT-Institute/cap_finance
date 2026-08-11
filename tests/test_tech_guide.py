@@ -700,3 +700,81 @@ def test_cross_model_causes_name_the_price_process():
     assert "확률과정·변동성·요인상관" in body, (
         "cross_model_check.md §4의 설명되는 차이 목록에 확률과정이 없다")
     assert f"반감기 {hl:.1f}년" in body, "cross_model_check.md의 EFF 반감기가 실제와 다르다"
+
+
+def test_reline_verdict_uses_every_anchor_not_the_binding_one():
+    """A-13의 판정이 단일 관측 위에 서 있었다 (F21).
+
+    가이드는 §4.1과 §7 두 곳에서 "외부 검증 실패 — 공시 실적의 4.2배"라고 적었다.
+    그 판정은 고베 1건에 기댄 것이고, `docs/validation_external.md` §1-1이 L1 문헌
+    지도(2026-08-10) 이후 이미 철회했다 — 앵커가 셋이면 우리 200은 앞의 둘보다 크지만
+    셋째 대역 **안**이다. 이 테스트는 세 앵커를 출처에서 다시 계산해 가이드와 맞추고,
+    '4.2배'가 다시 최종 판정 자리로 돌아가면 실패한다.
+    """
+    import pandas as pd
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from validate_external import (ACCR_RELINE_USD_M, EURKRW, NATCOMM_RELINE_EUR_T,
+                                   USDKRW)
+
+    ev = None
+    for base in (pathlib.Path.home() / "Documents" / "cap-efficient", ROOT / "cap-efficient"):
+        p = base / "data" / "technology_cost_evidence.csv"
+        if p.exists():
+            ev = p
+            break
+    if ev is None:
+        pytest.skip("EFF technology_cost_evidence.csv 부재")
+    rl = pd.read_csv(ev).query("technology_id == 'BF_RELINE'")
+    kobe = float(rl.normalized_capex_bn_krw_per_mtpa.iloc[0])
+
+    d1a = pd.read_csv(ROOT / "data" / "prepared" / "D1a_facility_static.csv")
+    bf = d1a[d1a.unit_type == "BF"]
+    ours = float(bf.incumbent_capex_unit.median())
+    cap = float(bf.capacity.median()) / 1e6
+    natcomm = NATCOMM_RELINE_EUR_T * EURKRW / 1000
+    lo, hi = (v * USDKRW / 1e3 / cap for v in ACCR_RELINE_USD_M)
+
+    guide = " ".join(GUIDE.read_text(encoding="utf-8").split())
+    for v in (kobe, natcomm, lo, hi, ours):
+        assert f"{v:,.0f}" in guide, f"§7의 개수 앵커 표에 {v:,.0f} 천원/t가 없다"
+
+    assert lo <= ours <= hi, (
+        f"우리 {ours:,.0f}이 더 이상 ACCR 대역 [{lo:,.0f}, {hi:,.0f}] 안이 아니다 "
+        "— §7의 'inside this band'와 §4.1의 판정을 다시 써라")
+    assert "**ours is inside this band**" in guide
+    assert "not a point error in ours" in guide, (
+        "가이드가 단일 관측 판정('외부 검증 실패')으로 되돌아갔다")
+    # 약한 근거는 같은 문장에서 밝힌다 — ACCR의 통화가 USD 가정이라는 것과, AUD였다면
+    # 우리 값이 대역 위로 나간다는 것.
+    assert f"[{lo * 0.65:,.0f}, {hi * 0.65:,.0f}]" in guide, (
+        "AUD 해석에서 대역이 어디로 내려가는지 적지 않는다 — 'inside the band'가 무조건적으로 읽힌다")
+
+
+def test_reline_cheap_is_not_sold_as_a_completed_check():
+    """`reline_cheap`이 "not needed"로 찍히고 있었다 (F21).
+
+    `incumbent_capex_scale`은 `plancost.py`에서 좌초비용에 곱해지고 그 값은 E2 계획
+    탐색이 읽는다 — 즉 이 축의 본 효과는 채택 시점 이동이고, 계획 메뉴를 공유한 채
+    돌린 2.0% / 0.3%는 하한이다. `build_scenario_page.py`가 이미 그렇게 적고 있었으므로
+    목록을 두 벌 두지 않고 그쪽을 읽는다. 이 테스트는 그 연결이 끊기면 실패한다.
+    """
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from build_scenario_page import PARTIAL_EFFECT
+    from run_scenarios import BUNDLES, REPLAN_REQUIRED
+
+    assert "reline_cheap" in PARTIAL_EFFECT, (
+        "시나리오 페이지가 reline_cheap을 부분효과 목록에서 뺐다 — 가이드 §4.3도 같이 고쳐라")
+    assert "reline_cheap" not in REPLAN_REQUIRED, (
+        "reline_cheap이 --replan 강제 목록에 들어갔다 — 이제 표의 표기는 "
+        "'**no — required**'여야 하고 §4.3 산문의 '여섯 번째' 문장은 틀린다")
+    assert "incumbent_capex_scale" in str(BUNDLES["reline_cheap"][1]), (
+        "reline_cheap이 더 이상 개수 재조달가를 흔들지 않는다")
+
+    src = (ROOT / "src" / "cap" / "plancost.py").read_text(encoding="utf-8")
+    assert "incumbent_capex_scale" in src, (
+        "좌초비용이 더 이상 이 배수를 읽지 않는다 — 그렇다면 '하한'이라는 서술의 근거가 없다")
+
+    guide = " ".join(GUIDE.read_text(encoding="utf-8").split())
+    assert "| **no — lower bound** |" in guide, (
+        "§4.3 표가 reline_cheap을 다시 'not needed'로 찍는다")
+    assert "pull adoption years forward" in guide
