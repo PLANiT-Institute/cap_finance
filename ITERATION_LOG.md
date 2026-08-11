@@ -3533,3 +3533,95 @@ uncommitted로 남아 게이트 ⑧을 WARN으로 붙들고 있던 것이다.
 - **③ 번호 오기**(백로그 유지, F13): 파이프라인 재실행 사이클에 같이 넣어라.
 - **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
   미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).
+
+## F17 (01:40) — 게이트가 스탬프 자신 때문에 빨갰고, 같은 DIW 표의 밴드가 저장소 안에서 두 값이었다
+
+**한 일.** 창 시작 시 `gate: FAILED (tests)`였다. 지도보다 이것을 먼저 끝냈고, 그 원인이
+F16의 실수가 아니라 **스탬프의 성질**이라는 것을 확인한 뒤 성질 쪽을 고쳤다. 그 다음 F16
+인계의 첫 후보(§4.5 ↔ `tech_band_upgrade.md`·`data_audit.md` 인용)를 집었는데, F16에서와
+똑같은 일이 났다 — **인용을 붙이러 연 곳의 서술이 어긋나 있었다.**
+
+### 게이트 복구 (지도보다 먼저)
+
+`docs/TECHNICAL_GUIDE.md`의 `GEN:stamp`가 커밋 SHA를 찍는다. 그 SHA를 담은 커밋이 만들어지는
+순간 스탬프는 자기가 이름 부르지 못하는 커밋 하나를 남기고 낡는다. **커밋 전에 알 수 없는 것을
+스탬프에 넣었다는 것이 결함이다.** F1이 SHA 대상을 상태 경로(`src`·`data`·`config.yaml`·`out`)로
+좁혀 완화했지만 재발 빈도만 줄였다 — F16이 `data/~$...xlsx` 잠금 파일을 지웠고 다음 사이클에서
+같은 실패가 났다. 스탬프를 그 경로들의 **내용 다이제스트**(추적 파일 70개, 844KB, sha256 앞 12자)로
+바꿨다. 내용은 커밋 전에 알 수 있으므로 자기 자신을 낡게 만들지 않는다. **실증: 이번 커밋 직후
+`build_tech_guide.py --check`가 `generated blocks current`다.**
+
+### 가이드에서 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | §7 external | `steel_h2dri` 863이 DIW **858–1,089** 안, `steel_eaf` 240은 **368–677** 하단 아래 | **같은 문서 §3.4가 같은 파라미터에 다른 밴드(863–1,095 / 370–835)를 찍고 있었다.** 원인 둘: (a) EUR 환율이 두 벌 — 모형 투입값을 만든 1,458(=USD 1,350 × EURUSD 1.08)과 `validate_external.py`가 따로 든 1,450, (b) EAF 밴드 상단 정의가 두 벌 — DIW 전 출처군(OECD2015 573 → 835)과 발표 프로젝트만(467 → 681). Arc가 두 절을 나란히 읽으면 어느 쪽이 우리 밴드인지 답이 없다 | `data/raw/tech_bands.csv` `derivation` 열 · `scripts/validate_external.py:34` |
+| 2 | §7 external | `steel_h2dri` "범위 안"을 독립적 외부 일치처럼 읽히게 서술 | **구성상 하한에 앉은 것이다.** 우리 투입값 863은 밴드 하한과 **같은 문헌 수치**(DIW 592 €/t)를 환산·반올림한 값이다. 환율을 통일하자 판정이 "범위 밖 ×1.00"으로 뒤집혔는데, 그것은 대조 결과가 아니라 반올림 잔차 0.14의 그림자였다 | `docs/validation_external.md` §2 |
+| 3 | §4.5 | "**가장 좋은 출처를 가진 파라미터가 밴드 없는 것들**" — 등급과 폭이 반대 방향으로 간다 | **T1에서 성립하지 않는다** (3행 중 2행이 밴드 보유 — K-ETS 유상할당 비율은 법령이 범위를 준다). 등급별 보유율은 T1 2/3 · T2 2/137 · T3 1/41 · T4 0/79 · T5 16/155로 단조가 아니다. 방어 가능한 진술은 더 좁다: 가장 믿는 출처가 폭을 하나도 기여하지 않으므로 **이 모형의 폭은 대체로 증거가 아니라 규약이다** | `docs/parameter_inventory.csv` |
+| 4 | §4.5 머리 | "T5는 `[low, high]`를 **요구한다**" — 규약을 통제로 읽히게 | **155행 중 139행에서 지켜지지 않는다.** 같은 절의 생성 블록이 이미 그 수를 찍고 있었는데 산문이 규약을 사실처럼 팔았다. 415행 중 밴드 보유는 **21행**뿐이고, 지켜진 T5 16행은 전부 우리가 고른 수(`model_choice` 8 · `policy_assumption` 4 · `prep_injection` 4)다. **물리·비용 쪽(`technology` 36 · `facility` 68 · `price_path` 18)에는 하나도 없다** | `docs/parameter_inventory.csv` |
+| 5 | §7 "한 명령" | `scripts/audit_data.py`를 실행만 시키고 판정 기록을 가리키지 않음 | 인용 부재. 88열 중 `ok` 68 · `PARTIAL` 4 · 설계상 정상 16 · `CONSTANT`/`UNUSED`/`EMPTY` 0을 붙였고, **PARTIAL 넷 중 셋이 지표 ③이 실제로 나누는 D6 재무 열**(`revenue` 95.5% · `capex_total` 50.0% · `net_debt` 40.9%)이라는 것과 미공시 시 대체 없이 `null`이라는 것을 같은 자리에 적었다 | `docs/data_audit.md` · `src/cap/e5_metrics.py:120,122` |
+
+### 코드에서 고친 것 (가이드 결함의 뿌리)
+
+- `scripts/validate_external.py`: 밴드를 스스로 만들지 않고 `data/raw/tech_bands.csv`에서 읽는다
+  (`tech_map()`). 환율은 `USDKRW × EURUSD`로 한 곳에서 정한다. **밴드가 저장소에 한 벌만 남았다.**
+- 같은 파일 `verdict()`: 표가 찍는 자리수로 비교. 반올림 잔차가 판정을 뒤집지 못한다.
+- 같은 파일 앵커 표에 `EAF OECD 2015 (n=40)` 573 €/t = 835 천원/t을 실었다 — **밴드 상단 835가
+  어디서 왔는지 문서만 보고는 추적되지 않았다**(`tech_bands.csv`의 `derivation` 열에만 있었다).
+- `scripts/build_tech_guide.py`: `state_digest()` 도입, `gen_stamp()`가 SHA 대신 그것을 찍는다.
+- `scripts/build_guide_page.py`: 푸터가 `commit xxx` 대신 `state xxx`.
+
+### 덧붙인 정량 사실 (전부 기록 문서에서)
+
+- 밴드 부재의 값: 증거 밴드로 다시 풀면 철강 파라미터 몫이 **21%→37%(POSCO)·23%→36%(NSC)**
+  (±15% 폭), 석화 2사는 1%p 안에서 그대로. 규약(±30% 대칭)이 틀린 것은 폭이 아니라 **중심**이다
+  — `tech.capex` 증거 승수 구간이 [1.00, 3.48]로 한쪽만 열려 있다.
+
+### 검증
+
+```
+.venv/bin/python scripts/validate_external.py   # 159 lines (157 -> )
+.venv/bin/python scripts/build_tech_guide.py    # 21 blocks, 119,608 chars (115,805 -> )
+.venv/bin/python scripts/build_guide_page.py    # 38 sections, 383 table rows (불변)
+.venv/bin/python scripts/build_site.py
+.venv/bin/python scripts/gate.py                # gate: OK (pytest 75 passed, audit ok 68/PARTIAL 4 불변)
+.venv/bin/python scripts/build_tech_guide.py --check   # 커밋 직후 current — 스탬프 수정의 실증
+```
+
+수치 출처: 밴드 = `data/raw/tech_bands.csv` · 환산 앵커 = `docs/validation_external.md` §2 ·
+등급별 밴드 보유 = `docs/parameter_inventory.csv` · 파라미터 몫 이동 = `docs/tech_band_upgrade.md` §3 ·
+열 감사 = `docs/data_audit.md` · 지표 ③ 계산 = `src/cap/e5_metrics.py:119–122`.
+
+테스트 2개 추가(73 → 75). `test_stamp_is_a_content_digest_not_a_commit_sha`는 스탬프가 커밋으로
+해석되면(=SHA 스탬프로 되돌아가면) 실패한다. `test_section_4_5_band_coverage_is_the_inventory_not_a_story`는
+21/415·139/155·등급별 보유율을 인벤토리에서 다시 계산해 대조하고, T5 물리·비용 파라미터에 밴드가
+하나라도 붙으면 §4.5 문장을 다시 쓰라고 실패한다.
+
+**생성 블록은 손대지 않았다.** 21개 불변. 바뀐 3,800자는 §4.5·§7의 손으로 쓴 산문이고,
+스탬프 블록만 생성기를 고쳐 바뀌었다.
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | 유지 | gate audit `ok 68, PARTIAL 4` 불변. PARTIAL 4가 이제 가이드 본문에 이름으로 적힌다 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | 유지 | 11 가정 묶음 + base, 묶음당 16칸 (3묶음 미재계획 — F2) |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선** | 밴드가 한 벌이 됐다. 그리고 "밴드가 없다"의 값이 처음으로 수로 붙었다(21%→37%) — 심사자가 "왜 ±30%냐"를 물을 때 답이 생겼다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | **개선** | 게이트가 스탬프 때문에 주기적으로 빨개지던 것이 끝났다 (커밋 직후 `--check` current로 실증) |
+| ⑤ 산출물 — 다른 형식이 있는가 | 유지 | md / HTML(38절 383행) / SVG / 데이터 패키지 |
+
+### 인계
+
+- **미인용 부속 문서 4개**(F16 목록에서 `tech_band_upgrade`·`data_audit` 해소): `literature_map`·
+  `price_process_test`·`seed_stability`·`tech_cost_reconciliation`. **인용을 붙이는 작업이 곧 사실
+  대조 작업이라는 것이 F16·F17 두 번 연속 확인됐다** — 붙일 곳을 열면 서술이 어긋나 있다.
+  다음 후보는 §6.1 ↔ `seed_stability`(§6.1이 스스로 낡았다고 적고 있다), §3.4 ↔
+  `tech_cost_reconciliation`.
+- **`D6.capex_total` 미소비 의심**(신규 관측): 스키마에 있고 감사가 `PARTIAL`(50%)로 분류하는데
+  `src/cap/`에서 이 **입력 열**을 읽는 곳을 못 찾았다(`capex_total_bnkrw`는 모형이 계산한 별개 값).
+  `UNUSED`여야 할 것이 `PARTIAL`로 분류되는 것이면 감사기의 판정 규칙 결함이다. 확인 필요.
+- **§7이 드러낸 실질 공백 2건**(변동 없음): 문헌 LCOA 미추출 · 교차대조 요인별 정량 분해 미실시.
+- **CCfD 시험 가능화**(백로그, F13) · **§6.1 시드 스윕 재실행**(백로그) · **MCI 사업소 상한 검증**
+  (백로그, O13) · **③ 번호 오기**(백로그, F13).
+- **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5), `get_affordability` 통화 경고(F8).
