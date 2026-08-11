@@ -1573,8 +1573,71 @@ def gen_gate_checks():
             f"{fmt(hard)}. The other {len(soft)} report and do not block: {fmt(soft)}.")
 
 
+def gen_frontier_degeneracy():
+    """The ε-constraint counts behind §6.3, read off `out/m8/summary.csv`.
+
+    F24: these were hand-written (4 of 32, one bundle, 7 of 8, 25 of 32). They were
+    correct, but `out/m8` is one of the stale side-diagnostics the gate's `sidecars`
+    check names — so the re-run that closes that warning would have falsified four
+    numbers in the guide with nothing to catch it. The guide already told the reader
+    which columns they come from; now it reads them.
+    """
+    p = ROOT / "out" / "m8" / "summary.csv"
+    if not p.exists():
+        return "_`out/m8/summary.csv` not available._"
+    m = pd.read_csv(p)
+    tried, nb = int(m.caps_tried.sum()), len(m)
+    head, l2 = int(m.nondominated_headline.sum()), int(m.nondominated_l2.sum())
+    hb = m[m.nondominated_headline > 0]
+    l2b = int((m.nondominated_l2 > 0).sum())
+    where = (" and those "
+             f"{head} are all in **one** bundle ({hb.iloc[0].company_id} under "
+             f"{hb.iloc[0].scenario}). In the other **{nb - len(hb)} of {nb}** bundles not a "
+             "single forced schedule survives, so the thinness is not a near-miss."
+             if len(hb) == 1 else
+             f" and they are spread over {len(hb)} of the {nb} bundles.")
+    return (f"Forcing technology schedules with an ε-constraint on cumulative emissions — an axis "
+            f"contracts cannot buy — shows that **all {tried} caps are feasible and every one "
+            f"yields a new schedule**: the degrees of freedom exist. But under the headline risk "
+            f"convention only **{head}** remain non-dominated in (P50, TCaR),{where}\n\n"
+            f"The mechanism is that abatement moves exposure *out of* carbon, which is "
+            f"deterministic, and *into* electricity, hydrogen and construction cost, which are "
+            f"stochastic. So **abating increases TCaR**. Under the alternative convention where "
+            f"carbon price is itself stochastic, {l2} of the same {tried} become non-dominated and "
+            f"the technology axis returns in {l2b} of {nb} bundles. The frontier's thinness is a "
+            f"property of the risk convention, not of the candidate generator.")
+
+
+def gen_capacity_basis():
+    """How many capacity figures are estimated, against how many are published.
+
+    F24: this was hand-written as "16 of the 23 rows, all blast furnaces", which
+    reads as *every* blast furnace while A-13 in §4.1 counts 17 of them. The gap
+    is the calibration anchor: the one blast furnace with a published capacity is
+    the point the multiplier was fitted on, so nothing here is out-of-sample.
+    """
+    p = prepared() / "D1a_facility_static.csv"
+    if not p.exists():
+        return "_D1a not available._"
+    d = pd.read_csv(p)
+    est = d.capacity_unit.astype(str).str.contains("추정")
+    bf = d.unit_type.astype(str).eq("BF")
+    anchors = d[bf & ~est]
+    names = ", ".join(f"`{t.facility_id}`" for t in anchors.itertuples()) or "none"
+    return (f"{int(est.sum())} of the {len(d)} rows are estimated and all of them are blast "
+            f"furnaces — but that is {int((est & bf).sum())} of the {int(bf.sum())} blast "
+            f"furnaces, not all of them. The {len(anchors)} blast furnace left out ({names}) is "
+            f"the one whose capacity is published, and it is also the single point the multiplier "
+            f"was calibrated on. **No estimated row can be checked against a published figure**, "
+            f"because the only blast furnace that carries one was spent fixing the constant. The "
+            f"remaining {int((~est & ~bf).sum())} published rows are not blast furnaces and are "
+            f"stated on other bases (§3.0), so they cannot check it either.")
+
+
 BLOCKS = {
     "stamp": gen_stamp,
+    "capacity_basis": gen_capacity_basis,
+    "frontier_degeneracy": gen_frontier_degeneracy,
     "criterion_swap": gen_criterion_swap,
     "gate_checks": gen_gate_checks,
     "crossmodel_band": gen_crossmodel_band,

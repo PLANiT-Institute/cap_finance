@@ -907,3 +907,75 @@ def test_guide_does_not_say_the_gate_ignores_the_side_diagnostics():
         "§6.2가 게이트에 곁가지 낡음 검사가 없다고 적는다 — gate.CHECKS에 있다")
     if any(k == "sidecars" for k, _, _ in CHECKS):
         assert "`sidecars`" in guide, "§6.2가 게이트의 sidecars 검사를 이름으로 적지 않는다"
+
+
+def test_capacity_estimate_count_separates_estimated_from_all_blast_furnaces():
+    """§3.1이 추정 행을 "16 of the 23 rows, all blast furnaces"로 적고 있었다 (F24).
+
+    같은 문서 §4.1의 A-13은 고로를 **17기**로 센다. 두 수를 나란히 읽은 독자는 어느
+    쪽이 맞는지 알 수 없고, 실제로는 둘 다 맞다 — 추정된 16기는 고로 17기 중 16기다.
+    빠진 한 기(`POSCO_GWY_BF1`)가 곱수를 맞춘 **바로 그 교정점**이므로, 추정값을
+    공표값과 대조할 수 있는 행은 하나도 없다. 이 테스트는 (a) 세 수가 D1a와 맞는지,
+    (b) 교정점이 이름으로 실려 있는지, (c) 대조 불가 진술이 지워지지 않았는지를 본다.
+    """
+    pd = pytest.importorskip("pandas")
+    p = ROOT / "data" / "prepared" / "D1a_facility_static.csv"
+    if not p.exists():
+        pytest.skip("D1a 없음")
+    d = pd.read_csv(p)
+    est = d.capacity_unit.astype(str).str.contains("추정")
+    bf = d.unit_type.astype(str).eq("BF")
+    guide = " ".join(GUIDE.read_text(encoding="utf-8").split())
+
+    assert f"{int(est.sum())} of the {len(d)} rows are estimated" in guide, (
+        f"§3.1의 추정 행 수가 D1a({int(est.sum())}/{len(d)})와 다르다 — 생성기를 다시 돌려라")
+    assert f"that is {int((est & bf).sum())} of the {int(bf.sum())} blast furnaces" in guide, (
+        f"§3.1이 추정 행을 고로 {int(bf.sum())}기 중 {int((est & bf).sum())}기로 적지 않는다 — "
+        "A-13의 고로 수와 어긋난 채로 남는다")
+    for t in d[bf & ~est].itertuples():
+        assert f"`{t.facility_id}`" in guide, (
+            f"§3.1이 공표 용량을 가진 고로 `{t.facility_id}`를 이름으로 싣지 않는다")
+    assert "No estimated row can be checked against a published figure" in guide, (
+        "교정점이 곧 유일한 공표 고로라는 사실(=표본 외 검증 0건)이 §3.1에서 지워졌다")
+    assert "16 of the 23 rows, all blast furnaces" not in guide, (
+        "손으로 쓴 옛 문장이 §3.1에 되살아났다 — 고로 수가 바뀌면 다시 어긋난다")
+
+
+def test_epsilon_sweep_counts_are_read_off_m8_everywhere_they_appear():
+    """§6.3과 §1 P1이 ε-스윕 수치를 손으로 들고 있었다 (F24).
+
+    네 수(32 캡 · 헤드라인 비지배 4 · 대체 규약 25 · 8묶음 중 7)는 지금 맞지만
+    `out/m8`은 게이트 `sidecars` 검사가 이름으로 부르는 **낡은 부속 산출물**이다.
+    최우선 인계인 그 재실행이 끝나는 순간 네 수는 조용히 거짓이 되고, 이전까지
+    아무 테스트도 그것을 잡지 못했다. §6.3은 이제 생성되고, §1 P1은 표 안이라
+    생성할 수 없으므로 이 테스트가 대신 붙잡는다 — 재실행 후 손으로 고치게 만든다.
+    """
+    pd = pytest.importorskip("pandas")
+    p = ROOT / "out" / "m8" / "summary.csv"
+    if not p.exists():
+        pytest.skip("out/m8 없음")
+    m = pd.read_csv(p)
+    tried, nb = int(m.caps_tried.sum()), len(m)
+    head, l2 = int(m.nondominated_headline.sum()), int(m.nondominated_l2.sum())
+    l2b = int((m.nondominated_l2 > 0).sum())
+    hb = m[m.nondominated_headline > 0]
+    guide = " ".join(GUIDE.read_text(encoding="utf-8").split())
+
+    assert f"all {tried} caps are feasible" in guide, (
+        f"§6.3의 캡 수가 m8({tried})과 다르다 — 생성기를 다시 돌려라")
+    assert f"only **{head}** remain non-dominated" in guide, (
+        f"§6.3의 헤드라인 비지배 수가 m8({head})과 다르다")
+    assert f"{l2} of the same {tried} become non-dominated" in guide, (
+        f"§6.3의 대체 규약 비지배 수가 m8({l2}/{tried})과 다르다")
+    assert f"technology axis returns in {l2b} of {nb} bundles" in guide, (
+        f"§6.3의 기술축 복귀 묶음 수가 m8({l2b}/{nb})과 다르다")
+
+    # §1 P1 — 표 안이라 생성 블록을 넣을 수 없다. 같은 수를 손으로 들고 있으므로 대조한다.
+    assert f"only {head} of {tried} forced technology schedules survive" in guide, (
+        f"§1 P1의 비지배 수가 m8({head}/{tried})과 다르다 — out/m8을 다시 돌렸다면 "
+        "§1 P1 행을 손으로 고쳐라 (§6.3은 자동으로 따라간다)")
+    if len(hb) == 1:
+        assert f"all {head} sit in one of the {nb} bundles" in guide, (
+            f"§1 P1이 비지배 계획이 한 묶음에 몰린 사실을 {nb}묶음 기준으로 적지 않는다")
+        assert f"in the other {nb - len(hb)} none survives" in guide, (
+            f"§1 P1의 '나머지 묶음' 수가 m8({nb - len(hb)})과 다르다")

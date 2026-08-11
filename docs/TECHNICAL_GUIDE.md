@@ -213,9 +213,14 @@ while decisions are made per *unit*. That mismatch is where the model's largest 
 see A-02 in §4.
 
 **How `capacity` is filled.** Where a published capacity exists it is used unchanged. Where it does
-not — 16 of the 23 rows, all blast furnaces — it is estimated as inner volume × 913.3 t/m³·yr,
-where the multiplier is fixed by a **single calibration point** (Gwangyang BF1, 6,000 m³ =
-5.48 Mt/yr; `prepare_raw.py:43-51`). Those rows are marked in `capacity_unit` as
+not, it is estimated as inner volume × 913.3 t/m³·yr, where the multiplier is fixed by a
+**single calibration point** (Gwangyang BF1, 6,000 m³ = 5.48 Mt/yr; `prepare_raw.py:43-51`).
+
+<!-- GEN:capacity_basis -->
+16 of the 23 rows are estimated and all of them are blast furnaces — but that is 16 of the 17 blast furnaces, not all of them. The 1 blast furnace left out (`POSCO_GWY_BF1`) is the one whose capacity is published, and it is also the single point the multiplier was calibrated on. **No estimated row can be checked against a published figure**, because the only blast furnace that carries one was spent fixing the constant. The remaining 6 published rows are not blast furnaces and are stated on other bases (§3.0), so they cannot check it either.
+<!-- /GEN:capacity_basis -->
+
+Those rows are marked in `capacity_unit` as
 `t용선/yr (내용적 추정)` and carry rank information rather than a defensible absolute (**A-01**).
 Two further fields are repaired the same way: a missing `next_reinvest_year` becomes
 `commissioning_year + 20`, floored at 2030, and a missing `last_reline_year` becomes
@@ -1094,21 +1099,17 @@ but two unfalsifiable points on one axis (§7).
 
 ### 6.3 The frontier is thinner than it looks
 
-Forcing technology schedules with an ε-constraint on cumulative emissions — an axis contracts cannot
-buy — shows that **all 32 caps are feasible and every one yields a new schedule**: the degrees of
-freedom exist. But under the headline risk convention only **4** remain non-dominated in
-(P50, TCaR), and those 4 are all in **one** bundle (LOTTE Chemical under NZ15). In the other **7 of
-8** bundles not a single forced schedule survives, so the thinness is not a near-miss.
+<!-- GEN:frontier_degeneracy -->
+Forcing technology schedules with an ε-constraint on cumulative emissions — an axis contracts cannot buy — shows that **all 32 caps are feasible and every one yields a new schedule**: the degrees of freedom exist. But under the headline risk convention only **4** remain non-dominated in (P50, TCaR), and those 4 are all in **one** bundle (LOTTE under NZ15). In the other **7 of 8** bundles not a single forced schedule survives, so the thinness is not a near-miss.
 
-The mechanism is that abatement moves exposure *out of* carbon, which is deterministic, and *into*
-electricity, hydrogen and construction cost, which are stochastic. So **abating increases TCaR**.
-Under the alternative convention where carbon price is itself stochastic, 25 of the same 32 become
-non-dominated and the technology axis returns in 7 of 8 bundles. The frontier's thinness is a
-property of the risk convention, not of the candidate generator.
+The mechanism is that abatement moves exposure *out of* carbon, which is deterministic, and *into* electricity, hydrogen and construction cost, which are stochastic. So **abating increases TCaR**. Under the alternative convention where carbon price is itself stochastic, 25 of the same 32 become non-dominated and the technology axis returns in 7 of 8 bundles. The frontier's thinness is a property of the risk convention, not of the candidate generator.
+<!-- /GEN:frontier_degeneracy -->
 
 This diagnostic is a separate run, not part of the pipeline: `scripts/frontier_tech_epsilon.py` →
-`out/m8/summary.csv`, written up in `docs/frontier_degeneracy.md`. The counts above are the
-`caps_tried`, `nondominated_headline` and `nondominated_l2` columns of that file.
+`out/m8/summary.csv`, written up in `docs/frontier_degeneracy.md`. The counts above are read off the
+`caps_tried`, `nondominated_headline` and `nondominated_l2` columns of that file at build time —
+which matters because `out/m8` is one of the stale side-diagnostics §6.2 names, so re-running it
+moves these numbers and not the surrounding prose.
 
 <!-- GEN:plan_distinct -->
 Separately, of 48 enumerated plans only **40** are distinct under authoritative evaluation. Every one of the 8 bundles collapses exactly one pair, which differs only in whether a CCfD is signed — under `support=none` the CCfD strike is undefined, so the two plans are numerically identical downstream while the surrogate charges a premium and prices them apart.
