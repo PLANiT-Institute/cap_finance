@@ -4710,3 +4710,75 @@ METHODOLOGY C4에도 같은 사실을 넣었다(정본이 가이드와 어긋나
 - **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
   미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5),
   `get_affordability` 통화 경고(F8).
+
+## F30 (02:07) — §7이 D6의 빈칸을 지표 ③의 결함으로 적고 있었다: 그 빈칸은 지표 ⑥에만 난다
+
+**한 일.** F29 인계대로 새 지도가 없어 §7(검증)을 감사 파일과 한 줄씩 대조했다. 걸린 것은
+집계가 아니라 **귀속**이다.
+
+**결함 — 부분 채움 컬럼이 잘못된 지표에 붙어 있었다.** §7은 D6의 `revenue`(95.5%)와
+`net_debt`(40.9%)를 두고 "metric ③ is built on both … so metric ③ is thinner than metric ①
+for exactly the firms that disclose least"라고 적고 있었다. 인용된 두 줄이 스스로를 부정한다 —
+`e5_metrics.py:120`은 `capex_total_to_revenue_pct`, `:122`는 `netdebt_to_ebitda_post`, 곧
+**지표 ⑥(재무 부담)**이다. 지표 ③(TCaR = P90 − P50)은 D6를 한 줄도 읽지 않는다.
+`docs/data_audit.md:27`은 처음부터 "지표 ⑥이 D6에서 읽는 것은 `ebitda`·`revenue`·`net_debt`
+셋뿐"이라 적고 있었으므로, 가이드가 자기 감사 파일과 어긋난 채 서 있었다. Arc가 읽는
+문장으로는 최악의 방향이다 — **리스크 지표가 미공시 재무데이터 위에 서 있다**는 읽기를
+만든다. 실제로는 리스크 지표가 16행 전부 채워져 있고, 비는 것은 감당가능성 쪽이다.
+
+빈칸을 세어 그 자리에 적었다: `out/e5/affordability.csv` 16행 중 **8행에 순부채 배수가 없고**
+(POSCO·LOTTE, §3.7 경계 문제), **4행에 EBITDA 비율 자체가 없다**(LOTTE, 기준 EBITDA 음수).
+`out/e5/metrics_company.csv`의 `tcar_bnkrw`는 16행 전부 채워져 있다. §3.10·§3.7·§8의 ⑥ 서술과
+이제 일관된다(그쪽은 처음부터 맞게 적혀 있었다 — 어긋난 것은 §7뿐이었다).
+
+### 가이드에서 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | §7 감사 문단 | "**metric ③** is built on both: it divides by `revenue` … adds `net_debt` …" | 그 두 줄은 지표 ⑥이다. ③은 D6를 읽지 않는다 | `src/cap/e5_metrics.py:120,122` · `docs/data_audit.md:27` |
+| 2 | §7 같은 문단 | "so **metric ③ is thinner than metric ①** for exactly the firms that disclose least" — 결측 수는 없이 | 얇아지는 것은 ⑥이다. 16행 중 순부채 배수 8행·EBITDA 비율 4행 결측, ③은 16/16 완전. 수를 문장에 넣었다 | `out/e5/affordability.csv` · `out/e5/metrics_company.csv` |
+
+### 검증
+
+```
+.venv/bin/python scripts/build_tech_guide.py           # 31 blocks
+.venv/bin/python scripts/build_tech_guide.py --check   # generated blocks current
+.venv/bin/python scripts/gate.py                       # gate: OK — pytest 101 passed, 9항목 PASS
+```
+
+수치 출처: 8·4·16 = `out/e5/affordability.csv`의 `netdebt_to_ebitda_post`·
+`capex_peak_to_ebitda` 결측 수 · 16/16 = `out/e5/metrics_company.csv`의 `tcar_bnkrw` ·
+95.5·40.9·99.1 = `docs/data_audit.md:19-21` · 줄 번호 120/122 = `src/cap/e5_metrics.py` 실측.
+
+테스트 1개 추가(100 → 101).
+- `test_partial_d6_columns_are_attributed_to_the_metric_that_reads_them` — **양방향이다.**
+  결측을 데이터에서 세어 §7의 수와 대조하고(수가 바뀌면 붉어진다), ③에 결측이 생기면
+  "complete on all 16 rows" 문장으로 붉어지며, 인용된 `e5_metrics.py:120/122`가 실제로
+  `revenue_latest_bnkrw`·`net_debt_bnkrw`를 만지는 줄인지 확인한다 — 줄 번호가 밀리면
+  가이드의 링크가 낡았다고 말한다.
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | 유지 | gate audit `ok 68, UNUSED 1, PARTIAL 3` 불변 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | 유지 | `out/scenarios/summary.csv` 12묶음, 곁가지 검사 PASS |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선** | "미공시 재무데이터가 리스크 수치를 갉는다"는 잘못된 읽기가 사라졌다. 결측이 어느 지표의 어느 행에 나는지 수로 적혔다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | 유지 | 게이트 9항목·MCP 11도구 불변 |
+| ⑤ 산출물 — 다른 형식이 있는가 | 유지 | md / HTML / SVG / 데이터 패키지 |
+
+### 인계
+
+- **§7의 나머지 줄 인용은 미검사.** 이번에 검사기를 붙인 것은 `e5_metrics.py:120/122`
+  두 줄뿐이다. 가이드 전체에 `#L<n>` 링크가 더 있고, 줄 번호는 코드가 움직이면 조용히
+  낡는다 — 다음 사이클의 값싼 표적: 모든 `src/cap/*.py#L<n>` 링크를 한 테스트로 훑어
+  가리키는 줄에 그 문장이 말하는 식별자가 있는지 본다.
+- **`gen_frontier_shape`의 `rank.max()`**(F28, 미해결) · **D2b `tech_avail_*` 수집**(F29) ·
+  **동시 실행 정리**(F27, 이번 사이클 시작 시 `pgrep` 비어 있었다) · **`reline_cheap` 재계획**
+  (~20분) · **추첨 대상을 밴드 보유로도 열기**(F27) · **EFF 두 사본 불일치**(F22) ·
+  **EFF·FIN 확률과정 정량 분해**(F20) · **EFF 철강 CAPEX 2건 출처 부재**(F19) ·
+  **`_alt` 행의 용도 미실현**(F19) · **감사기의 이름 매칭 한계**(F18) ·
+  **§7이 드러낸 실질 공백 2건** · **CCfD 시험 가능화**(F13) · **MCI 사업소 상한 검증**(O13).
+- **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5),
+  `get_affordability` 통화 경고(F8).

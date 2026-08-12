@@ -1336,11 +1336,17 @@ tripwire on fabrication, not as a certificate that every column is sourced and c
 The data-audit check writes its verdict per column to [`docs/data_audit.md`](data_audit.md): 88
 columns across the 9 input files, currently 68 `ok`, 3 `PARTIAL`, 1 `UNUSED`, 16 empty-or-unread by
 design with the reason recorded for each, and zero `CONSTANT` or `EMPTY`. Two of the three partial
-columns are D6 company financials — `revenue` 95.5% filled and `net_debt` 40.9% — and metric ③ is
-built on both: it divides by `revenue` ([`e5_metrics.py:120`](../src/cap/e5_metrics.py#L120)) and
-adds `net_debt` to reach post-transition leverage ([`:122`](../src/cap/e5_metrics.py#L122)). The
-third is `D2b_scenario_prices.value` at 99.1%. Where a firm does not disclose, the ratio is `null`
-rather than imputed, so metric ③ is thinner than metric ① for exactly the firms that disclose least.
+columns are D6 company financials — `revenue` 95.5% filled and `net_debt` 40.9% — and what they feed
+is **metric ⑥, the financing burden, and not metric ③**: `revenue` is the denominator of
+`capex_total_to_revenue_pct` ([`e5_metrics.py:120`](../src/cap/e5_metrics.py#L120)) and `net_debt` is
+added to transition CAPEX to reach post-transition leverage
+([`:122`](../src/cap/e5_metrics.py#L122)). The third is `D2b_scenario_prices.value` at 99.1%. Where a
+firm does not disclose, the ratio is `null` rather than imputed: of the 16 rows in
+`out/e5/affordability.csv`, **8 carry no net-debt multiple** (POSCO and LOTTE, by the entity boundary
+of §3.7) and **4 carry no EBITDA ratio at all** (LOTTE, whose reference EBITDA is negative), while
+metric ③ is complete on all 16 rows of `out/e5/metrics_company.csv` — TCaR reads nothing from D6.
+It is the affordability read, not the risk metric, that is thinner for exactly the firms that
+disclose least.
 
 **The one `UNUSED` column is `D6_company_financials.capex_total`** — the firms' own historical
 capital expenditure, collected for 11 of 22 firm-years and read by nothing. Metric ⑥ takes only

@@ -1363,3 +1363,50 @@ def test_availability_is_described_as_scenario_dependent_only_if_it_is():
         f"§3.8이 steel_h2dri의 avail_year를 D3의 {int(h2.avail_year)}와 다르게 적는다")
     assert f"adopt {int(h2.avail_year)} (operational {int(h2.avail_year + h2.build_years)})" in guide, (
         "§3.8의 D7 표가 D3의 avail_year + build_years와 어긋난다")
+
+
+def test_partial_d6_columns_are_attributed_to_the_metric_that_reads_them():
+    """§7이 D6의 부분 채움을 **지표 ③의 결함**으로 적고 있었다 (F30).
+
+    "metric ③ is built on both: it divides by `revenue` … adds `net_debt` … so metric ③ is
+    thinner than metric ① for exactly the firms that disclose least." 인용된 두 줄
+    (`e5_metrics.py:120`·`:122`)은 `capex_total_to_revenue_pct`와 `netdebt_to_ebitda_post`,
+    곧 **지표 ⑥**(재무 부담)이다. 지표 ③(TCaR = P90 − P50)은 D6를 한 줄도 읽지 않는다 —
+    `out/e5/metrics_company.csv`의 `tcar_bnkrw`는 16행 전부 채워져 있고, 비는 것은
+    `out/e5/affordability.csv` 쪽이다. `docs/data_audit.md`는 처음부터 "지표 ⑥"이라 적고
+    있었으므로 가이드가 자기 감사 파일과 어긋난 채였다.
+
+    이 테스트는 양방향이다. 결측이 실제로 ⑥에만 있는지 데이터에서 세고, 그 수가 §7 문장과
+    같은지 대조하며, 인용된 줄 번호가 실제로 revenue·net_debt를 만지는 줄인지 확인한다.
+    """
+    import pandas as pd
+
+    aff = ROOT / "out" / "e5" / "affordability.csv"
+    met = ROOT / "out" / "e5" / "metrics_company.csv"
+    if not (aff.exists() and met.exists()):
+        pytest.skip("E5 산출 부재")
+
+    a, m = pd.read_csv(aff), pd.read_csv(met)
+    text = " ".join(GUIDE.read_text(encoding="utf-8").split())
+
+    assert m.tcar_bnkrw.notna().all(), (
+        "지표 ③에 결측이 생겼다 — §7의 'metric ③ is complete on all rows' 문장을 다시 써라")
+    nd = int(a.netdebt_to_ebitda_post.isna().sum())
+    eb = int(a.capex_peak_to_ebitda.isna().sum())
+    assert nd and eb, "지표 ⑥의 결측이 사라졌다 — §7이 여전히 결측을 세고 있다"
+
+    assert f"**{nd} carry no net-debt multiple**" in text, (
+        f"§7의 net-debt 결측 수가 실제 {nd}/{len(a)}와 다르다")
+    assert f"**{eb} carry no EBITDA ratio at all**" in text, (
+        f"§7의 EBITDA 비율 결측 수가 실제 {eb}/{len(a)}와 다르다")
+    assert f"complete on all {len(m)} rows" in text, (
+        f"§7이 지표 ③의 완전성을 {len(m)}행과 다르게 적는다")
+    assert "metric ③ is thinner than metric ①" not in text, (
+        "§7이 다시 D6의 부분 채움을 지표 ③의 결함으로 적는다 — 읽는 것은 지표 ⑥이다")
+
+    src = (ROOT / "src" / "cap" / "e5_metrics.py").read_text(encoding="utf-8").splitlines()
+    for lineno, needle in ((120, "revenue_latest_bnkrw"), (122, "net_debt_bnkrw")):
+        assert f"e5_metrics.py#L{lineno}" in text or f"[`:{lineno}`]" in text, (
+            f"§7이 더 이상 e5_metrics.py:{lineno}을 인용하지 않는다")
+        assert needle in src[lineno - 1], (
+            f"e5_metrics.py:{lineno}이 더 이상 {needle}을 만지지 않는다 — §7의 줄 인용이 낡았다")
