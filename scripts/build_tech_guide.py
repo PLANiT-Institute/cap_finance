@@ -1288,7 +1288,7 @@ def _ccfd_note(f, pi):
         f"frontier point signs a CCfD, and none can.** E5 does not revalue the contracts E2 chose: "
         f"it dedupes E2's plans "
         f"down to technology schedules and rebuilds each one across a fixed contract grid with "
-        f"`ccfd=0` on every point (`src/cap/e5_metrics.py:200`), and D5 carries **{strikes}** CCfD "
+        f"`ccfd=0` on every point (`src/cap/e5_metrics.py:201`), and D5 carries **{strikes}** CCfD "
         f"strike rows, so a signed CCfD would price identically anyway "
         f"(`src/cap/plancost.py:258`). E2 signs a CCfD in **{signed} of {total}** enumerated plans "
         f"— it is credited there against a proxy carbon-volatility term the authoritative "
@@ -1473,6 +1473,13 @@ def gen_gap_figure():
     point sits outside the frontier's span on the axis being measured — so the leg does
     not end on the frontier at all in that case, which no amount of prose had made
     visible. The caption counts the clamped legs rather than asserting anything.
+
+    `_gap` has THREE outcomes per leg, not two: interpolate inside the span, clamp
+    beyond the high end, and NaN below the low end (clamping there would fabricate a
+    gap the frontier cannot reach — `e5_metrics.py:61-81` says so in its own docstring).
+    Counting only the clamped legs left the other two indistinguishable, so a leg that
+    is blank in `out/e5/gap.csv` would have been reported as a measured distance. All
+    three are counted here and cross-checked against the nulls in the file itself.
     """
     fp = ROOT / "out" / "e5" / "frontier_points.csv"
     if not fp.exists():
@@ -1482,7 +1489,13 @@ def gen_gap_figure():
     g_all = pd.read_csv(ROOT / "out" / "e5" / "gap.csv")
     g = g_all[g_all.support == "none"]
 
-    panels, clamp_cost, clamp_risk, overshoot = [], 0, 0, []
+    def _state(v, lo, hi):
+        """Which of `_gap`'s three branches this leg lands in."""
+        return "clamped" if v > hi else ("unmeasurable" if v < lo else "interpolated")
+
+    panels, overshoot = [], []
+    cost = {"clamped": 0, "interpolated": 0, "unmeasurable": 0}
+    risk = {"clamped": 0, "interpolated": 0, "unmeasurable": 0}
     for row, scen in enumerate(["NZ15", "B20"]):
         for col, co in enumerate(["POSCO", "NSC", "LOTTE", "MCI"]):
             d = f[(f.company_id == co) & (f.scenario == scen)]
@@ -1496,11 +1509,14 @@ def gen_gap_figure():
                 continue
             fr = d[d.on_frontier]
             p = d[d.is_disclosed].iloc[0]
+            # the cost leg is measured along TCaR, the risk leg along P50 (`_gap`)
+            cost[_state(p.tcar, fr.tcar.min(), fr.tcar.max())] += 1
+            risk[_state(p.p50, fr.p50.min(), fr.p50.max())] += 1
             if p.tcar > fr.tcar.max():
-                clamp_cost += 1
                 overshoot.append(p.tcar / fr.tcar.max() if fr.tcar.max() else float("inf"))
-            if p.p50 > fr.p50.max():
-                clamp_risk += 1
+    # read the same fact from the other side: a NaN leg is a blank cell in the file
+    null_cost = int(g.gap_cost_bnkrw.isna().sum())
+    null_risk = int(g.gap_risk_bnkrw.isna().sum())
 
     w, h = PW * COLS, PH * 2 + 30
     legend = (f'<g transform="translate({PW * COLS - 480},{h - 10})">'
@@ -1523,21 +1539,31 @@ def gen_gap_figure():
     FIGURE.parent.mkdir(parents=True, exist_ok=True)
     FIGURE.write_text(svg, encoding="utf-8")
 
+    span = (f"Every disclosed plan sits above the frontier's whole tail-risk span — by "
+            f"{_x(min(overshoot))} to {_x(max(overshoot))} the tail risk of the riskiest plan "
+            f"on its own frontier — so a cost leg is never an interpolated distance, it is the "
+            f"distance to the frontier's riskiest endpoint. "
+            if overshoot and cost["clamped"] == len(g) else "")
+
     return (f"![Efficient frontier, disclosed coordinate and frontier gap, "
             f"per firm and scenario](figures/frontier_gap.svg)\n\n"
             f"Each panel is one firm under one scenario, on its own axes. The dashed legs are the "
-            f"two gap numbers, and where they end is the point of the figure: `_gap` "
-            f"(`src/cap/e5_metrics.py:61`) interpolates along the frontier only while the disclosed "
-            f"point lies within the frontier's span on the axis being measured, and otherwise "
-            f"clamps to the endpoint. Of the {len(g)} distinct gaps in `out/e5/gap.csv`, "
-            f"**{clamp_cost} of {len(g)} cost legs and {clamp_risk} of {len(g)} risk legs are "
-            f"clamped**: every disclosed plan sits above the frontier's whole tail-risk span — by "
-            f"{_x(min(overshoot))} to {_x(max(overshoot))} the tail risk of the riskiest plan on "
-            f"its own frontier — so a cost leg is never an interpolated distance, it is the "
-            f"distance to the frontier's riskiest endpoint. Clamped legs are lower bounds by "
+            f"two gap numbers, and where they end is the point of the figure. `_gap` "
+            f"(`src/cap/e5_metrics.py:61-81`) has **three** outcomes per leg, not two: it "
+            f"interpolates along the frontier while the disclosed point lies within the frontier's "
+            f"span on the axis being measured; beyond the high end it clamps to the endpoint; and "
+            f"below the low end it returns **NaN rather than extrapolating**, because a frontier "
+            f"that cannot reach that risk or cost level has no distance to report and clamping "
+            f"there would fabricate one. Of the {len(g)} distinct gaps in `out/e5/gap.csv`, "
+            f"**cost legs are {cost['clamped']} clamped, {cost['interpolated']} interpolated and "
+            f"{cost['unmeasurable']} unmeasurable; risk legs {risk['clamped']}, "
+            f"{risk['interpolated']} and {risk['unmeasurable']}**. Read from the other side the "
+            f"file agrees: {null_cost} blank cost legs and {null_risk} blank risk legs. "
+            f"{span}Clamped legs are lower bounds by "
             f"construction: that endpoint reaches the same cost saving with *less* risk than an "
-            f"interpolated point would have. {len(g_all)} rows appear in the file because the "
-            f"`support` axis duplicates each one (§3.6, O7).")
+            f"interpolated point would have. An unmeasurable leg is not a zero gap — it is no "
+            f"number at all, and §6 reports none where it occurs. {len(g_all)} rows appear in the "
+            f"file because the `support` axis duplicates each one (§3.6, O7).")
 
 
 def gen_limits():

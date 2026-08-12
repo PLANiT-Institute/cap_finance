@@ -4782,3 +4782,85 @@ for exactly the firms that disclose least"라고 적고 있었다. 인용된 두
 - **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
   미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5),
   `get_affordability` 통화 경고(F8).
+
+## F31 (03:56) — 가이드의 줄 인용 36건 중 아무도 검사하지 않았고, 이미 두 건이 밀려 있었다
+
+**한 일.** 사이클 시작 시 작업 트리에 F30 이후의 미커밋 변경 3파일이 남아 있었다(앞선 실행이
+커밋 전에 끊긴 것으로 보인다). §2 규칙대로 지도보다 **미완 작업을 먼저 완결**했다 — 내용을
+한 줄씩 검증하고, 빌드·게이트를 다시 돌려 통과시킨 뒤 이 사이클의 성과로 커밋했다.
+
+**결함 1 — `_gap`이 두 갈래로 적혀 있었다. 세 갈래다.** §2의 그림 설명은 "interpolates …
+only while the disclosed point lies within the frontier's span …, and otherwise **clamps** to the
+endpoint"였다. `e5_metrics.py:61-81`의 `_gap`은 구간 위쪽 밖이면 끝점으로 clamp하지만 **아래쪽
+밖이면 NaN을 돌려준다** — 코드가 자기 docstring에 "np.interp clamping would fabricate a gap
+there"라고 이유까지 적어 둔 의도적 선택이다. 세는 쪽도 같은 결함이었다: clamp만 세면 보간
+다리와 NaN 다리가 한 덩어리가 되어, `out/e5/gap.csv`에 **빈칸으로 남은 다리가 "측정된 0"으로
+읽힌다.** 이제 세 갈래를 각각 세고(cost 4/0/0, risk 3/1/0), 반대편에서 파일의 빈칸 수(0, 0)와
+대조해 같은 사실을 두 번 말한다. §9 용어집은 처음부터 맞게 적고 있었다 — 어긋난 것은 §2뿐.
+
+**결함 2 — 드롭되지 않은 것을 "한 줄 위에서 드롭된다"고 적고 있었다.** §4.3은 니폰스틸 두
+기(Yawata·Hirohata)를 두고 "dropped one line earlier, at `e2_milp.py:325`"라 했다. `:325`는
+루프 자신의 `if r.item_type == "tech_commit" and r.facility_id in cf.index …` **가드**다. 두 기는
+그 블록에 **들어가지도 못하고**, 그래서 `dropped` 목록에 오르지도 않는다. 결론(¥630.2bn 공시가
+§6.4에 보이지 않는다)은 같지만 기전이 달랐고, 링크를 따라간 사람은 드롭 코드가 아니라 조건문을
+본다. 문장을 기전대로 고쳤다.
+
+**결함 3·4 — 줄 번호 두 건이 조용히 밀려 있었다.** `ccfd=0`은 `e5_metrics.py:200`이 아니라
+`:201`, 스케줄 키는 `:186-189`가 아니라 `:187-188`. 코드가 움직이면 줄 인용은 아무 소리 없이
+낡는다. F30이 두 건에만 검사기를 붙였고 나머지 **34건은 아무도 보지 않았다.**
+
+### 가이드에서 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | §2 그림 설명 | `_gap`은 "interpolates … and otherwise **clamps** to the endpoint" — 두 갈래 | 세 갈래다. 구간 아래쪽 밖 → **NaN**(외삽하지 않는다). 세 갈래를 각각 세고 파일의 빈칸과 대조한다 | `src/cap/e5_metrics.py:61-81` docstring · `out/e5/gap.csv` |
+| 2 | §2 같은 문단 | "**4 of 4** cost legs and **3 of 4** risk legs are clamped" — 나머지가 보간인지 NaN인지 말하지 않음 | cost 4 clamped / 0 interpolated / 0 unmeasurable, risk 3 / 1 / 0. 빈칸 대조 0·0 | `out/e5/frontier_points.csv` · `out/e5/gap.csv` |
+| 3 | §4.3 | 니폰스틸 두 기는 "**dropped** one line earlier, at `e2_milp.py:325`" | `:325`는 루프의 `if … facility_id in cf.index` 가드다. 블록에 진입하지 못하는 것이지 드롭되는 것이 아니다 | `src/cap/e2_milp.py:325` |
+| 4 | §6.2 | `ccfd=0` 자리 = `e5_metrics.py:200` | `:201` | `src/cap/e5_metrics.py` 실측 |
+| 5 | §9 용어집 | 스케줄 키 = `e5_metrics.py:186-189` | `:187-188` | `src/cap/e5_metrics.py` 실측 |
+
+### 검증
+
+```
+.venv/bin/python scripts/build_tech_guide.py           # 31 blocks, 143,149 chars
+.venv/bin/python scripts/build_tech_guide.py --check   # generated blocks current
+.venv/bin/python scripts/gate.py                       # gate: OK — pytest 103 passed, 8 PASS + git WARN(커밋 전)
+```
+
+수치 출처: 다리 집계 4/0/0·3/1/0 = `out/e5/frontier_points.csv`의 프론티어 구간과
+공시 좌표 비교 · 빈칸 0·0 = `out/e5/gap.csv`의 `gap_cost_bnkrw`·`gap_risk_bnkrw` 결측 수 ·
+줄 번호 61·201·187·325 = `src/cap/*.py` 실측 · 인용 36건 = 가이드 정규식 훑기.
+
+테스트 2개 추가(101 → 103).
+- `test_gap_legs_are_counted_in_all_three_of_gap_s_branches` — **양방향이다.** 세 갈래를
+  데이터에서 다시 세어 §2의 수와 대조하고(수가 바뀌면 붉어진다), "NaN rather than
+  extrapolating"이 사라지면 붉어지며, 센 NaN 수가 파일의 빈칸 수와 같은지 반대편에서 본다.
+- `test_every_source_line_citation_in_the_guide_points_at_what_it_claims` — **가이드 전체를
+  훑는다.** (1) `file.py:N` 36건이 전부 존재하는 파일의 존재하는 줄인가. (2) 15건의 앵커는
+  그 줄에 문장이 이름으로 말하는 식별자(`INC_CAPEX`·`ccfd=0`·`def _gap(`·
+  `facility_id in cf.index` 등)가 실제로 있는가. 코드가 밀리면 이제 조용히 낡지 않는다.
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | 유지 | gate audit `ok 68, UNUSED 1, PARTIAL 3` 불변 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | 유지 | `out/scenarios/summary.csv` 12묶음, 곁가지 검사 PASS |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선** | 프론티어 갭이 "0"인지 "잴 수 없음"인지 구분되어 적힌다. 그리고 Arc가 코드 링크를 따라가면 문장이 말한 줄이 나온다 — 문서 신뢰의 값싼 기반 |
+| ④ GitHub·MCP — 도구로 작동하는가 | 유지 | 게이트 9항목·MCP 11도구 불변 |
+| ⑤ 산출물 — 다른 형식이 있는가 | 유지 | md / HTML / SVG / 데이터 패키지 |
+
+### 인계
+
+- **앵커 표는 15건뿐이다.** 인용 36건 중 나머지 21건은 "존재하는 줄인가"까지만 검사된다.
+  다음 사이클의 값싼 표적: 앵커 표를 채워 각 인용이 무엇을 말하는지 식별자로 못박기.
+- **`gen_frontier_shape`의 `rank.max()`**(F28, 미해결) · **D2b `tech_avail_*` 수집**(F29) ·
+  **동시 실행 정리**(F27, 이번 사이클 시작 시 `pgrep` 비어 있었다) · **`reline_cheap` 재계획**
+  (~20분) · **추첨 대상을 밴드 보유로도 열기**(F27) · **EFF 두 사본 불일치**(F22) ·
+  **EFF·FIN 확률과정 정량 분해**(F20) · **EFF 철강 CAPEX 2건 출처 부재**(F19) ·
+  **`_alt` 행의 용도 미실현**(F19) · **감사기의 이름 매칭 한계**(F18) ·
+  **§7이 드러낸 실질 공백 2건** · **CCfD 시험 가능화**(F13) · **MCI 사업소 상한 검증**(O13).
+- **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5),
+  `get_affordability` 통화 경고(F8).
+- **게이트 소요 ~4분**(pytest 226s). 사이클 안에 두 번 돌릴 수 있다.

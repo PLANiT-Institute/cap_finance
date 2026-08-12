@@ -124,7 +124,7 @@ coordinate's distance from it — are the whole method in one picture:
 <!-- GEN:gap_figure -->
 ![Efficient frontier, disclosed coordinate and frontier gap, per firm and scenario](figures/frontier_gap.svg)
 
-Each panel is one firm under one scenario, on its own axes. The dashed legs are the two gap numbers, and where they end is the point of the figure: `_gap` (`src/cap/e5_metrics.py:61`) interpolates along the frontier only while the disclosed point lies within the frontier's span on the axis being measured, and otherwise clamps to the endpoint. Of the 4 distinct gaps in `out/e5/gap.csv`, **4 of 4 cost legs and 3 of 4 risk legs are clamped**: every disclosed plan sits above the frontier's whole tail-risk span — by 1.01× to 477× the tail risk of the riskiest plan on its own frontier — so a cost leg is never an interpolated distance, it is the distance to the frontier's riskiest endpoint. Clamped legs are lower bounds by construction: that endpoint reaches the same cost saving with *less* risk than an interpolated point would have. 8 rows appear in the file because the `support` axis duplicates each one (§3.6, O7).
+Each panel is one firm under one scenario, on its own axes. The dashed legs are the two gap numbers, and where they end is the point of the figure. `_gap` (`src/cap/e5_metrics.py:61-81`) has **three** outcomes per leg, not two: it interpolates along the frontier while the disclosed point lies within the frontier's span on the axis being measured; beyond the high end it clamps to the endpoint; and below the low end it returns **NaN rather than extrapolating**, because a frontier that cannot reach that risk or cost level has no distance to report and clamping there would fabricate one. Of the 4 distinct gaps in `out/e5/gap.csv`, **cost legs are 4 clamped, 0 interpolated and 0 unmeasurable; risk legs 3, 1 and 0**. Read from the other side the file agrees: 0 blank cost legs and 0 blank risk legs. Every disclosed plan sits above the frontier's whole tail-risk span — by 1.01× to 477× the tail risk of the riskiest plan on its own frontier — so a cost leg is never an interpolated distance, it is the distance to the frontier's riskiest endpoint. Clamped legs are lower bounds by construction: that endpoint reaches the same cost saving with *less* risk than an interpolated point would have. An unmeasurable leg is not a zero gap — it is no number at all, and §6 reports none where it occurs. 8 rows appear in the file because the `support` axis duplicates each one (§3.6, O7).
 <!-- /GEN:gap_figure -->
 
 ---
@@ -455,9 +455,9 @@ The `steel_eaf` row is the consequential one, because the disclosed-plan file is
 it: D7 carries **three `high`-resolution EAF commitments** (POSCO Gwangyang, Nippon Steel Yawata
 and Hirohata). None of them can be enforced. Gwangyang's is dropped with a stated reason —
 `e2_milp.py:332` classifies it as a model-boundary exclusion, not a disclosure-quality one — and
-the two Nippon Steel units are dropped one line earlier, at `e2_milp.py:325`, because those
-facility IDs are not in the register at all; that path prints nothing and adds nothing to the
-dropped list. **The only disclosed commitment in D7 that states an investment figure — ¥630.2bn
+the two Nippon Steel units never enter that block at all, failing the `facility_id in cf.index`
+guard on the loop's own `if` (`e2_milp.py:325`), because those facility IDs are not in the register;
+that path prints nothing and adds nothing to the dropped list. **The only disclosed commitment in D7 that states an investment figure — ¥630.2bn
 plus ¥140bn for 2.5 Mt/yr of EAF conversion at the two Nippon Steel sites — is therefore invisible
 to the frontier-gap comparison in §6.4**, and invisible without leaving a trace. It is
 recorded as gap F4 in [`docs/data_gap_registry.md`](data_gap_registry.md); the fix is a register
@@ -1491,7 +1491,7 @@ The efficient frontier is **2 to 8 plans** per firm × scenario, out of 10–31 
 
 The column to read first is *Distinct schedules on frontier*. In **8 of 8** bundles every non-dominated point is a contract variant of a **single** technology schedule — same facilities, same technologies, same years, same total CAPEX — differing only in PPA share and the fixed-price EPC flag. Read that against the column before it: in **4 of 8** bundles the candidate set holds only one schedule to begin with, so there the collapse is arithmetic and not a finding. The claim rests on the other 4 bundles, where the optimiser did offer a choice of two or three schedules — and there the frontier still keeps one, in **4 of 4**. The frontier therefore slopes along the *financing* axis and is a single point on the *technology* axis, so a frontier gap answers "could this firm have contracted its programme better" and not "could it have chosen a better programme". And that schedule is not one the surrogate liked: it is the surrogate's most expensive plan in **5 of 8** bundles and in its bottom half in **7 of 8**, which is the same failure §2 measures, seen from the frontier's side (O11).
 
-The third contract instrument is absent from all of this by construction. **No frontier point signs a CCfD, and none can.** E5 does not revalue the contracts E2 chose: it dedupes E2's plans down to technology schedules and rebuilds each one across a fixed contract grid with `ccfd=0` on every point (`src/cap/e5_metrics.py:200`), and D5 carries **0** CCfD strike rows, so a signed CCfD would price identically anyway (`src/cap/plancost.py:258`). E2 signs a CCfD in **26 of 48** enumerated plans — it is credited there against a proxy carbon-volatility term the authoritative revaluation does not carry (`src/cap/e2_milp.py:263`) — and not one of those signatures reaches a reported number. P2 (§1) is therefore untested for CCfD in this run, and the frontier's financing axis is PPA share and fixed-price EPC only.
+The third contract instrument is absent from all of this by construction. **No frontier point signs a CCfD, and none can.** E5 does not revalue the contracts E2 chose: it dedupes E2's plans down to technology schedules and rebuilds each one across a fixed contract grid with `ccfd=0` on every point (`src/cap/e5_metrics.py:201`), and D5 carries **0** CCfD strike rows, so a signed CCfD would price identically anyway (`src/cap/plancost.py:258`). E2 signs a CCfD in **26 of 48** enumerated plans — it is credited there against a proxy carbon-volatility term the authoritative revaluation does not carry (`src/cap/e2_milp.py:263`) — and not one of those signatures reaches a reported number. P2 (§1) is therefore untested for CCfD in this run, and the frontier's financing axis is PPA share and fixed-price EPC only.
 
 And the axis that gap is measured on is the one with no market evidence: hydrogen carries 64%–77% of cost variance across the four firms, while its volatility is the prior of 0.25, not an estimate (§3.5). Tail-risk *levels*, and therefore `gap_risk` levels, inherit that.
 <!-- /GEN:frontier_shape -->
@@ -1520,7 +1520,7 @@ The two are unrelated and the counts differ; §4.3 and §9.1 are the respective 
 
 **Technology schedule** (`base_plan_id`). The investment programme itself: the set of
 (facility, technology, adoption year) triples. Two plans with the same schedule build the same
-things in the same years for the same total CAPEX (`src/cap/e5_metrics.py:186-189`).
+things in the same years for the same total CAPEX (`src/cap/e5_metrics.py:187-188`).
 
 **Contract variant.** The same technology schedule wrapped in a different financing decision — PPA
 share and the fixed-price EPC flag. E5 enumerates these on a fixed grid rather than taking them from

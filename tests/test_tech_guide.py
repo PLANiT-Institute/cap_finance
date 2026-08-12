@@ -1410,3 +1410,118 @@ def test_partial_d6_columns_are_attributed_to_the_metric_that_reads_them():
             f"§7이 더 이상 e5_metrics.py:{lineno}을 인용하지 않는다")
         assert needle in src[lineno - 1], (
             f"e5_metrics.py:{lineno}이 더 이상 {needle}을 만지지 않는다 — §7의 줄 인용이 낡았다")
+
+
+def test_gap_legs_are_counted_in_all_three_of_gap_s_branches():
+    """§2의 그림 설명이 `_gap`을 두 갈래로 적고 있었다 (F31).
+
+    "interpolates … only while the disclosed point lies within the frontier's span …,
+    and otherwise clamps to the endpoint." `_gap`(`e5_metrics.py:61-81`)은 세 갈래다 —
+    구간 안이면 보간, 위쪽 밖이면 끝점으로 clamp, **아래쪽 밖이면 NaN**이다. 세 번째는
+    코드가 자기 docstring에 "np.interp clamping would fabricate a gap there"라고
+    적어 둔 의도적 선택이고, §9 용어집은 처음부터 맞게 적고 있었다 — 어긋난 것은 §2뿐.
+
+    수를 세는 쪽도 같은 결함이었다: clamp만 세면 보간 다리와 NaN 다리가 구분되지 않아,
+    `out/e5/gap.csv`에 빈칸으로 남은 다리가 "측정된 거리"로 읽힌다.
+
+    양방향이다. 세 갈래를 데이터에서 다시 세어 §2의 수와 대조하고(수가 바뀌면 붉어진다),
+    NaN 갈래가 문장에 이름으로 남아 있는지 보며, 세어 낸 NaN 수가 파일의 빈칸 수와
+    같은지 반대편에서 확인한다.
+    """
+    import pandas as pd
+
+    fp = ROOT / "out" / "e5" / "frontier_points.csv"
+    gp = ROOT / "out" / "e5" / "gap.csv"
+    if not (fp.exists() and gp.exists()):
+        pytest.skip("E5 산출 부재")
+
+    f = pd.read_csv(fp)
+    f = f[f.support == "none"]
+    g = pd.read_csv(gp)
+    g = g[g.support == "none"]
+    text = " ".join(GUIDE.read_text(encoding="utf-8").split())
+
+    def state(v, lo, hi):
+        return "clamped" if v > hi else ("unmeasurable" if v < lo else "interpolated")
+
+    cost = {"clamped": 0, "interpolated": 0, "unmeasurable": 0}
+    risk = dict(cost)
+    for _, r in g.iterrows():
+        d = f[(f.company_id == r.company_id) & (f.scenario == r.scenario)]
+        fr, p = d[d.on_frontier], d[d.is_disclosed].iloc[0]
+        cost[state(p.tcar, fr.tcar.min(), fr.tcar.max())] += 1
+        risk[state(p.p50, fr.p50.min(), fr.p50.max())] += 1
+
+    assert (f"**cost legs are {cost['clamped']} clamped, {cost['interpolated']} interpolated "
+            f"and {cost['unmeasurable']} unmeasurable; risk legs {risk['clamped']}, "
+            f"{risk['interpolated']} and {risk['unmeasurable']}**") in text, (
+        f"§2의 다리 집계가 실측과 다르다 — 실측 cost {cost}, risk {risk}")
+    assert "NaN rather than extrapolating" in text, (
+        "§2가 `_gap`의 세 번째 갈래(구간 아래 → NaN)를 다시 지웠다 — 두 갈래로 적으면 "
+        "빈칸 다리가 측정된 거리로 읽힌다")
+
+    nulls = (int(g.gap_cost_bnkrw.isna().sum()), int(g.gap_risk_bnkrw.isna().sum()))
+    assert nulls == (cost["unmeasurable"], risk["unmeasurable"]), (
+        f"gap.csv의 빈칸 {nulls}이 프론티어 구간에서 센 NaN 갈래 "
+        f"({cost['unmeasurable']}, {risk['unmeasurable']})와 다르다 — `_gap`의 분기와 "
+        "산출물이 어긋났다")
+    assert f"{nulls[0]} blank cost legs and {nulls[1]} blank risk legs" in text, (
+        "§2의 빈칸 대조 수가 gap.csv와 다르다")
+
+    src = (ROOT / "src" / "cap" / "e5_metrics.py").read_text(encoding="utf-8").splitlines()
+    assert "def _gap(" in src[60], (
+        "§2·§9가 인용하는 e5_metrics.py:61이 더 이상 `_gap` 정의가 아니다")
+
+
+def test_every_source_line_citation_in_the_guide_points_at_what_it_claims():
+    """가이드의 `file.py:N` 인용 34건은 코드가 움직이면 조용히 낡는다 (F30 인계).
+
+    F30이 두 건(`e5_metrics.py:120`·`:122`)에만 검사기를 붙였다. 나머지는 아무도 보지
+    않았고, F31의 훑기에서 두 건이 이미 밀려 있었다 — `ccfd=0`은 `:200`이 아니라 `:201`,
+    스케줄 키는 `:186-189`가 아니라 `:187-188`. 줄 번호가 밀린 인용은 틀린 문장보다
+    나쁘다: Arc가 링크를 따라가 다른 코드를 읽고 문서를 믿지 않게 된다.
+
+    두 겹이다. (1) 가이드의 모든 줄 인용이 존재하는 파일의 존재하는 줄을 가리키는가.
+    (2) 아래 표의 인용은 그 자리에 문장이 말하는 식별자가 실제로 있는가.
+    """
+    import re
+
+    text = GUIDE.read_text(encoding="utf-8")
+    cited = re.findall(r"([a-z][a-z0-9_]*\.py)[:#]L?(\d+)(?:-L?(\d+))?", text)
+    assert len(cited) >= 25, f"줄 인용이 {len(cited)}건뿐 — 정규식이 형식 변화를 놓쳤다"
+
+    def source(name):
+        for d in (ROOT / "src" / "cap", ROOT / "scripts"):
+            if (d / name).exists():
+                return (d / name).read_text(encoding="utf-8").splitlines()
+        pytest.fail(f"가이드가 인용하는 {name}이 저장소에 없다")
+
+    for name, lo, hi in cited:
+        lines = source(name)
+        end = int(hi or lo)
+        assert 1 <= int(lo) <= end <= len(lines), (
+            f"가이드가 {name}:{lo}-{end}을 인용하지만 파일은 {len(lines)}줄이다")
+
+    # 문장이 이름으로 말하는 것이 그 줄에 있어야 한다
+    anchors = [
+        ("prepare_raw.py", 73, "INC_CAPEX"),
+        ("prepare_raw.py", 80, "MARGIN"),
+        ("prepare_raw.py", 100, "ROUTE"),
+        ("prepare_raw.py", 303, "ccus"),
+        ("e2_milp.py", 148, "applies_to_unit"),
+        ("e2_milp.py", 263, "ccfd"),
+        ("e2_milp.py", 325, "facility_id in cf.index"),
+        ("e2_milp.py", 332, "applies_to_unit"),
+        ("calibration.py", 24, "FACTOR_SERIES"),
+        ("e5_metrics.py", 61, "def _gap("),
+        ("e5_metrics.py", 165, "CONTRACT_GRID"),
+        ("e5_metrics.py", 187, "adopt_year"),
+        ("e5_metrics.py", 201, "ccfd=0"),
+        ("e5_metrics.py", 289, "support_scenarios[0]"),
+        ("plancost.py", 258, "p.ccfd"),
+    ]
+    for name, lineno, needle in anchors:
+        assert f"{name}:{lineno}" in text or f"{name}:{lineno}-" in text, (
+            f"가이드가 더 이상 {name}:{lineno}을 인용하지 않는다 — 표에서 빼거나 문장을 되살려라")
+        assert needle in source(name)[lineno - 1], (
+            f"{name}:{lineno}이 더 이상 {needle!r}을 담고 있지 않다 — 가이드의 줄 인용이 낡았다")
