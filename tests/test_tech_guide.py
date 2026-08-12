@@ -1481,14 +1481,26 @@ def test_every_source_line_citation_in_the_guide_points_at_what_it_claims():
     스케줄 키는 `:186-189`가 아니라 `:187-188`. 줄 번호가 밀린 인용은 틀린 문장보다
     나쁘다: Arc가 링크를 따라가 다른 코드를 읽고 문서를 믿지 않게 된다.
 
-    두 겹이다. (1) 가이드의 모든 줄 인용이 존재하는 파일의 존재하는 줄을 가리키는가.
+    세 겹이다. (1) 가이드의 모든 줄 인용이 존재하는 파일의 존재하는 줄을 가리키는가.
     (2) 아래 표의 인용은 그 자리에 문장이 말하는 식별자가 실제로 있는가.
+    (3) **인용 하나하나가 표에 있는가** — F31의 표는 33건 중 15건만 덮고 있었고,
+    나머지는 "존재하는 줄인가"까지만 검사됐다. 존재하는 줄은 코드가 밀려도 계속
+    존재한다. 덮이지 않은 인용은 조용히 다른 코드를 가리키게 된다. 표를 완비로
+    만들고, 새 인용이 표 없이 들어오면 이 테스트가 붉어진다.
+
+    인용 형식은 `file.py:43-51`, `file.py#L104`, 그리고 **`file.py:36-37,54-55`처럼
+    쉼표로 이어 붙인 것**이 있다. F31의 정규식은 마지막 형식의 첫 구간만 읽어
+    `e2_milp.py:54-55`·`prepare_raw.py:190`·`:211` 3건을 아예 보지 못했다.
     """
     import re
 
     text = GUIDE.read_text(encoding="utf-8")
-    cited = re.findall(r"([a-z][a-z0-9_]*\.py)[:#]L?(\d+)(?:-L?(\d+))?", text)
-    assert len(cited) >= 25, f"줄 인용이 {len(cited)}건뿐 — 정규식이 형식 변화를 놓쳤다"
+    cited = []
+    for m in re.finditer(r"([a-z][a-z0-9_]*\.py)[:#]L?(\d+(?:-L?\d+)?(?:,\d+(?:-\d+)?)*)", text):
+        for part in m.group(2).split(","):
+            lo, _, hi = part.partition("-")
+            cited.append((m.group(1), int(lo), int(hi.lstrip("L") or lo)))
+    assert len(cited) >= 35, f"줄 인용이 {len(cited)}건뿐 — 정규식이 형식 변화를 놓쳤다"
 
     def source(name):
         for d in (ROOT / "src" / "cap", ROOT / "scripts"):
@@ -1498,30 +1510,52 @@ def test_every_source_line_citation_in_the_guide_points_at_what_it_claims():
 
     for name, lo, hi in cited:
         lines = source(name)
-        end = int(hi or lo)
-        assert 1 <= int(lo) <= end <= len(lines), (
-            f"가이드가 {name}:{lo}-{end}을 인용하지만 파일은 {len(lines)}줄이다")
+        assert 1 <= lo <= hi <= len(lines), (
+            f"가이드가 {name}:{lo}-{hi}을 인용하지만 파일은 {len(lines)}줄이다")
 
-    # 문장이 이름으로 말하는 것이 그 줄에 있어야 한다
-    anchors = [
-        ("prepare_raw.py", 73, "INC_CAPEX"),
-        ("prepare_raw.py", 80, "MARGIN"),
-        ("prepare_raw.py", 100, "ROUTE"),
-        ("prepare_raw.py", 303, "ccus"),
-        ("e2_milp.py", 148, "applies_to_unit"),
-        ("e2_milp.py", 263, "ccfd"),
-        ("e2_milp.py", 325, "facility_id in cf.index"),
-        ("e2_milp.py", 332, "applies_to_unit"),
-        ("calibration.py", 24, "FACTOR_SERIES"),
-        ("e5_metrics.py", 61, "def _gap("),
-        ("e5_metrics.py", 165, "CONTRACT_GRID"),
-        ("e5_metrics.py", 187, "adopt_year"),
-        ("e5_metrics.py", 201, "ccfd=0"),
-        ("e5_metrics.py", 289, "support_scenarios[0]"),
-        ("plancost.py", 258, "p.ccfd"),
-    ]
-    for name, lineno, needle in anchors:
-        assert f"{name}:{lineno}" in text or f"{name}:{lineno}-" in text, (
+    # 문장이 이름으로 말하는 것이 그 줄에 있어야 한다. 인용된 시작 줄 전부가 여기 있어야 한다.
+    anchors = {
+        ("prepare_raw.py", 43): "6,000m3 = 5.48Mt/yr",   # 능력 추정의 단일 캘리브레이션 점
+        ("prepare_raw.py", 54): "폐쇄예정",               # 제외 3검사의 첫째
+        ("prepare_raw.py", 64): "reinvest",              # 재투자·개수 연도 보수
+        ("prepare_raw.py", 73): "INC_CAPEX",
+        ("prepare_raw.py", 80): "MARGIN",
+        ("prepare_raw.py", 100): "ROUTE",
+        ("prepare_raw.py", 190): "prod * ef[2]",         # 철강: 에너지 = 생산 x 루트 상수
+        ("prepare_raw.py", 211): "prod * ef[0]",         # 석화: 상향식 같은 주입
+        ("prepare_raw.py", 303): "ccus",
+        ("e2_milp.py", 36): "GJ_PER_T_COAL = 28.0",      # GJ->t 환산 상수
+        ("e2_milp.py", 49): 'groupby("facility_id").mean',
+        ("e2_milp.py", 54): "GJ_PER_T_COAL",             # 그 상수가 실제로 나누는 자리
+        ("e2_milp.py", 111): "need = [",                 # NaN 계수 조기 중단
+        ("e2_milp.py", 148): "applies_to_unit",
+        ("e2_milp.py", 263): "ccfd",
+        ("e2_milp.py", 325): "facility_id in cf.index",
+        ("e2_milp.py", 332): "applies_to_unit",
+        ("calibration.py", 24): "FACTOR_SERIES",
+        ("plancost.py", 258): "p.ccfd",
+        ("e5_metrics.py", 51): "Lower-left envelope",    # 프론티어 정의
+        ("e5_metrics.py", 61): "def _gap(",
+        ("e5_metrics.py", 104): "ebitda",                # 지표 ⑥이 D6에서 읽는 세 컬럼
+        ("e5_metrics.py", 120): "capex_total_to_revenue_pct",
+        ("e5_metrics.py", 122): "netdebt_to_ebitda_post",
+        ("e5_metrics.py", 165): "CONTRACT_GRID",
+        ("e5_metrics.py", 184): "scheds",                # E2 계획 -> 고유 기술 일정
+        ("e5_metrics.py", 187): "adopt_year",
+        ("e5_metrics.py", 201): "ccfd=0",
+        ("e5_metrics.py", 210): "in variants",           # 증분은 시뮬레이션마다 계산된다
+        ("e5_metrics.py", 257): "argmin(p50 + λ·TCaR)",
+        ("e5_metrics.py", 289): "support_scenarios[0]",
+        ("e5_metrics.py", 377): "capex_total",           # 출력 쪽 동명 컬럼 (감사기 이름 충돌)
+    }
+    starts = {(n, lo) for n, lo, _ in cited}
+    uncovered = sorted(starts - set(anchors))
+    assert not uncovered, (
+        f"가이드의 줄 인용 {uncovered}이 앵커 표에 없다 — 존재하는 줄인지만 검사되고 "
+        "무엇을 가리키는지는 아무도 보지 않는다. 그 줄이 말하는 식별자를 표에 적어라")
+
+    for (name, lineno), needle in anchors.items():
+        assert (name, lineno) in starts, (
             f"가이드가 더 이상 {name}:{lineno}을 인용하지 않는다 — 표에서 빼거나 문장을 되살려라")
         assert needle in source(name)[lineno - 1], (
             f"{name}:{lineno}이 더 이상 {needle!r}을 담고 있지 않다 — 가이드의 줄 인용이 낡았다")

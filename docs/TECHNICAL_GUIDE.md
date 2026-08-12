@@ -1368,6 +1368,15 @@ The freshness and provenance checks exist because of specific failures: outputs 
 the code they were attributed to, and a results ledger validated against a reduced-simulation run.
 Both passed every hand check before they were automated.
 
+**This document's own references to source lines are tested.** Every `file.py:N` in this guide is
+read out of the text by [`tests/test_tech_guide.py`](../tests/test_tech_guide.py) and checked twice:
+the file must exist and be long enough, and the cited line must still contain the identifier the
+surrounding sentence names — `INC_CAPEX` at `prepare_raw.py:73`, `ccfd=0` at `e5_metrics.py:201`, and
+so on for every citation, with no citation exempt. This exists because line numbers rot in silence: a
+sentence that stays true while its link drifts two functions away is worse than a wrong sentence,
+because the reader who follows it stops trusting the ones that are right. Two such drifts were found
+by hand before the check was written.
+
 ### Reproducing from scratch
 
 ```bash
