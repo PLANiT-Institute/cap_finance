@@ -1524,6 +1524,7 @@ def test_every_source_line_citation_in_the_guide_points_at_what_it_claims():
         ("prepare_raw.py", 190): "prod * ef[2]",         # 철강: 에너지 = 생산 x 루트 상수
         ("prepare_raw.py", 211): "prod * ef[0]",         # 석화: 상향식 같은 주입
         ("prepare_raw.py", 303): "ccus",
+        ("prepare_raw.py", 423): "tech_bands.csv 없음",   # D3b는 있으면 쓰고 없으면 넘어간다
         ("e2_milp.py", 36): "GJ_PER_T_COAL = 28.0",      # GJ->t 환산 상수
         ("e2_milp.py", 49): 'groupby("facility_id").mean',
         ("e2_milp.py", 54): "GJ_PER_T_COAL",             # 그 상수가 실제로 나누는 자리
@@ -1559,3 +1560,56 @@ def test_every_source_line_citation_in_the_guide_points_at_what_it_claims():
             f"가이드가 더 이상 {name}:{lineno}을 인용하지 않는다 — 표에서 빼거나 문장을 되살려라")
         assert needle in source(name)[lineno - 1], (
             f"{name}:{lineno}이 더 이상 {needle!r}을 담고 있지 않다 — 가이드의 줄 인용이 낡았다")
+
+
+def test_every_prepared_file_outside_schemas_is_declared_as_outside(): 
+    """§3의 셈은 `SCHEMAS` 위의 셈인데 가이드는 그것을 말하지 않았다 (F33).
+
+    `data/prepared/`에는 파일이 10개 있고 `SCHEMAS`에는 9개뿐이다.
+    `D3b_tech_bands.csv`가 빠져 있다 — 그런데 §3.4는 그 파일을 입력처럼 서술하고,
+    §3 머리글("Seven input datasets")·§3.10("two of the nine input files")·
+    §7("88 columns across the 9 input files")은 전부 9를 세면서 그 9가 무엇 위의
+    9인지 밝히지 않았다. 그래서 열 번째 파일이 **적재 검사·감사·공개 패키지 어디에도
+    들어가지 않는다는 사실**이 문서 어디에도 없었다.
+
+    양방향이다. 스키마 밖 파일이 있으면 가이드가 하나하나 이름으로 그 사실을 말해야
+    하고, 전부 스키마 안으로 들어오면 "tenth file" 문단이 남아 있으면 안 된다.
+    """
+    from cap import schemas as S  # noqa: E402  (src/ is on the path via conftest)
+
+    prepared = ROOT / "data" / "prepared"
+    if not prepared.exists():
+        pytest.skip("준비 데이터 없음")
+    extra = sorted({p.stem for p in prepared.glob("*.csv")} - set(S.SCHEMAS))
+    guide = GUIDE.read_text(encoding="utf-8")
+
+    if not extra:
+        assert "tenth file" not in guide and "outside the schema contract" not in guide, (
+            "준비 파일이 전부 SCHEMAS 안으로 들어왔는데 가이드는 여전히 "
+            "스키마 밖 파일이 있다고 적는다 — §3·§3.4·§3.10·§7을 다시 써라")
+        return
+
+    for stem in extra:
+        assert f"`{stem}.csv`" in guide, (
+            f"{stem}.csv는 data/prepared/에 있으나 SCHEMAS에 없다 — "
+            "적재 시 열 검사도, 감사도, 패키지도 그 파일을 보지 않는다. "
+            "가이드가 그 사실을 이름으로 말해야 한다")
+
+    # 그리고 그 네 가지 부재가 실제로 사실인가 — 가이드가 주장만 하지 않도록 반대편에서 본다.
+    for stem in extra:
+        assert stem not in (ROOT / "docs" / "data_audit.md").read_text(encoding="utf-8"), (
+            f"{stem}이 감사 보고서에 나타났다 — 가이드의 '감사 밖' 서술이 낡았다")
+        assert not (ROOT / "data" / "package" / f"{stem}.csv").exists(), (
+            f"{stem}이 공개 패키지에 실렸다 — 가이드의 '패키지에 없다' 서술이 낡았다")
+
+    # §3·§3.10·§7의 9는 SCHEMAS 위의 9다. 스키마가 늘면 그 수들이 조용히 낡는다.
+    n = len(S.SCHEMAS)
+    for phrase in (f"the {_num(n)} schema-enforced input", f"across the {n} input files"):
+        assert phrase in guide, (
+            f"SCHEMAS가 {n}개인데 가이드가 {phrase!r}로 세지 않는다 — "
+            "§3.10·§7의 입력 파일 수가 스키마와 어긋났다")
+    assert "columns across the 9 input files" not in guide or n == 9
+
+
+def _num(n: int) -> str:
+    return {7: "seven", 8: "eight", 9: "nine", 10: "ten", 11: "eleven"}.get(n, str(n))

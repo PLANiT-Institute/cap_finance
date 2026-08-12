@@ -151,6 +151,17 @@ numeric column stops the run rather than propagating.
 9 files across 7 dataset families, 85 schema-required columns in total. Extra columns are permitted and preserved; required ones are not optional.
 <!-- /GEN:dataset_inventory -->
 
+**A tenth file sits in `data/prepared/` and is deliberately not in the table above.**
+`D3b_tech_bands.csv` (§3.4) is not a key in `SCHEMAS`, so every guarantee this section otherwise
+gives stops at its edge: `load_input` refuses it by name, no load-time column or numeric check runs
+on it, the data audit of §7 never reads its columns — including its `source_id` — and the public
+package of §3.10 does not ship it. It is optional in preparation as well: if
+`data/raw/tech_bands.csv` is absent, `prepare_raw.py:423` records that fact in the preparation log
+and the run continues with no bands at all. Nothing in `src/cap/` reads it; it is consumed only by
+the band diagnostics under `scripts/` and by the band table in §3.4. Read the counts in this
+section — here, in §3.10 and in §7 — as counts over the **nine schema-enforced inputs**, not over
+the prepared directory.
+
 The field tables below mark each column **[req]** if `SCHEMAS` in `src/cap/schemas.py` requires
 it and **[extra]** if it is an additional column the loader preserves and some stage reads. An
 extra column can disappear without the schema check noticing, so the ones that carry model
@@ -465,8 +476,10 @@ addition, not a model change.
 
 #### Evidence bands
 
-`D3b_tech_bands.csv` carries `[value_low, value_high]` evidence bands from the literature. The
-guide previously described these as bands "per (tech, field)", which overstates what is there:
+`D3b_tech_bands.csv` carries `[value_low, value_high]` evidence bands from the literature. It is
+the one prepared file outside the schema contract (§3): unchecked at load, unaudited, unshipped,
+and optional to produce. The guide previously described these as bands "per (tech, field)", which
+overstates what is there:
 
 <!-- GEN:d3b_bands -->
 | Tech | Field | Central | Band | Position | Tier |
@@ -727,10 +740,13 @@ are excluded from the package. What that exclusion does to the files themselves 
 
 ### 3.10 What the public package actually ships
 
-The package is **not** the input set described above. Two of the nine input files are replaced by
-firm-level aggregates before anything leaves the repository (design spec §8-2), and four result
+The package is **not** the input set described above. Two of the nine schema-enforced input files
+are replaced by firm-level aggregates before anything leaves the repository (design spec §8-2),
+and four result
 files and the source register are added. So a reader who downloads `data/package/` holds different
-columns from the ones the model reads, and the difference is not a subset relation.
+columns from the ones the model reads, and the difference is not a subset relation. The tenth
+prepared file, `D3b_tech_bands.csv`, is neither replaced nor shipped — it is simply absent, so the
+evidence bands of §3.4 are reproducible from this repository and not from the package.
 
 <!-- GEN:package -->
 | Package file | Kind | Rows | Columns | Defined in |
@@ -1335,8 +1351,10 @@ tripwire on fabrication, not as a certificate that every column is sourced and c
 
 The data-audit check writes its verdict per column to [`docs/data_audit.md`](data_audit.md): 88
 columns across the 9 input files, currently 68 `ok`, 3 `PARTIAL`, 1 `UNUSED`, 16 empty-or-unread by
-design with the reason recorded for each, and zero `CONSTANT` or `EMPTY`. Two of the three partial
-columns are D6 company financials — `revenue` 95.5% filled and `net_debt` 40.9% — and what they feed
+design with the reason recorded for each, and zero `CONSTANT` or `EMPTY`. The audit walks
+`SCHEMAS`, so `D3b_tech_bands.csv` is outside it entirely (§3) — its eight columns are neither
+counted nor checked for `source_id`, and its disappearance is not a `MISSING INPUT`. Two of the
+three partial columns are D6 company financials — `revenue` 95.5% filled and `net_debt` 40.9% — and what they feed
 is **metric ⑥, the financing burden, and not metric ③**: `revenue` is the denominator of
 `capex_total_to_revenue_pct` ([`e5_metrics.py:120`](../src/cap/e5_metrics.py#L120)) and `net_debt` is
 added to transition CAPEX to reach post-transition leverage

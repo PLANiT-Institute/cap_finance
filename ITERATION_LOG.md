@@ -4942,3 +4942,95 @@ there"라고 이유까지 적어 둔 의도적 선택이다. 세는 쪽도 같�
 - **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
   미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5),
   `get_affordability` 통화 경고(F8).
+
+## F33 (08:00) — §3이 세는 "입력 9개"는 준비 디렉터리의 10개가 아니었고, 열 번째 파일은 어디에서도 검사되지 않는다
+
+**한 일.** F32 인계의 값싼 표적(가이드가 거는 상대 링크 전수 확인)부터 시작했다. 링크
+25건 — `data_gap_registry.md`·`../METHODOLOGY.md`·`figures/frontier_gap.svg`·
+`../src/cap/e5_metrics.py#L377` 등 — 은 **전부 존재한다**. 결함 0건이었다. 그래서 같은
+훑기를 한 칸 넓혀 **가이드가 백틱으로 부르는 파일 경로 80건**을 대조했고, 거기서 이번
+사이클의 실물이 나왔다.
+
+**결함 — `data/prepared/`에는 파일이 10개인데 `SCHEMAS`에는 9개뿐이고, 가이드의 모든 셈이
+그 9 위에서 이루어지면서 그 사실을 말하지 않았다.** 빠진 것은 `D3b_tech_bands.csv`다.
+§3.4는 그 파일을 입력처럼 서술하고 밴드 표까지 생성한다. 그런데 그것은 `SCHEMAS`의 키가
+아니므로:
+
+- `load_input`이 이름으로 거부한다(`schemas.py:66-67`) — 적재 시 열 검사도 숫자 검사도 없다.
+- 감사기는 `for name in sorted(S.SCHEMAS)`로 돈다(`audit_data.py:146`) — **8개 열이 세지지도,
+  `source_id`가 확인되지도 않는다.** 파일이 사라져도 `MISSING INPUT`이 아니다.
+- 공개 패키지 빌더의 전달 목록은 D2a–D7뿐이다(`build_data_package.py:160-162`) — D3b는
+  집계로 대체되는 것이 아니라 **그냥 없다**.
+- 준비 단계에서도 선택적이다: `data/raw/tech_bands.csv`가 없으면 `prepare_raw.py:423`이
+  로그만 남기고 밴드 없이 진행한다.
+- `src/cap/` 어디도 읽지 않는다. 소비자는 `scripts/`의 밴드 진단 두 개
+  (`uncertainty_propagation.py:189`, `g2_band_impact.py:33`)와 가이드 생성기뿐이다.
+
+그래서 §3 머리글의 "9 files", §3.10의 "two of the nine input files", §7의 "88 columns across
+the 9 input files"는 **전부 맞는 수인데 무엇 위의 수인지가 없었다.** §3.4를 읽고 파일을
+세어 본 독자는 10을 얻고, 그 차이가 어디서 오는지 문서에서 찾지 못한다. Arc가 데이터셋
+정의를 자세히 묻고 있는 창에서 이것은 셈의 오류가 아니라 **경계의 누락**이다.
+
+### 가이드에서 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | §3 머리글 (인벤토리 표 뒤) | 준비 입력이 9개인 것처럼 읽힌다 — 열 번째 파일에 대한 언급 없음 | `data/prepared/`는 10개다. `D3b_tech_bands.csv`는 스키마 밖이라 적재 검사·감사·패키지 어디에도 들어가지 않고, 생성 자체가 선택적이다 | `src/cap/schemas.py:14` (9키) · `ls data/prepared` (10파일) · `scripts/prepare_raw.py:423` |
+| 2 | §3.4 밴드 절 | D3b를 다른 입력과 같은 지위로 서술 | 스키마 밖 유일 파일임을 첫 문단에서 밝힌다 | `src/cap/schemas.py:66-67` |
+| 3 | §3.10 | "Two of the **nine input files** are replaced by aggregates" — 9의 근거 없음, D3b의 행방 없음 | "nine **schema-enforced** input files". 열 번째는 대체도 탑재도 아닌 **부재** — 밴드는 패키지가 아니라 저장소에서만 재현된다 | `scripts/build_data_package.py:160-162` · `ls data/package` (D3b 없음) |
+| 4 | §7 감사 문단 | "88 columns across the 9 input files" — 감사 범위가 스키마임을 말하지 않음 | 감사는 `SCHEMAS`를 돈다. D3b의 8개 열은 세지도 `source_id`를 보지도 않으며, 소실이 `MISSING INPUT`이 아니다 | `scripts/audit_data.py:146` · `head -1 data/prepared/D3b_tech_bands.csv` (8열) |
+
+### 검증
+
+```
+.venv/bin/python scripts/build_tech_guide.py           # 31 blocks, 145,294 chars
+.venv/bin/python scripts/build_tech_guide.py --check   # generated blocks current
+.venv/bin/python -m pytest tests/test_tech_guide.py -q # 49 passed
+.venv/bin/python scripts/gate.py                       # gate: OK
+```
+
+수치 출처: 파일 10 vs 스키마 9 = `data/prepared/` 목록과 `src/cap/schemas.py`의 `SCHEMAS`
+키 · D3b 8열 = `data/prepared/D3b_tech_bands.csv` 헤더 · 패키지 부재 = `data/package/` 목록 ·
+링크 25건 = `docs/TECHNICAL_GUIDE.md` 정규식 훑기 후 `test -e` 전수(전건 존재).
+
+테스트 1개 추가(48 → 49).
+`test_every_prepared_file_outside_schemas_is_declared_as_outside` — **양방향이다.**
+`data/prepared/*.csv` − `SCHEMAS`를 계산해 스키마 밖 파일이 있으면 가이드가 그 파일을
+이름으로 부르는지 보고, 그 "감사 밖·패키지 밖"이 지금도 사실인지 `docs/data_audit.md`와
+`data/package/`에서 반대편으로 확인한다. 스키마가 늘거나 줄면 §3.10·§7의 입력 파일 수가
+같이 낡으므로 그 수도 `len(SCHEMAS)`와 대조한다. 준비 파일이 전부 스키마 안으로 들어오면
+이번에 쓴 문단이 남아 있는 것 자체가 실패다.
+
+F32의 인용 완비성 검사가 곧바로 값을 했다 — 새로 쓴 `prepare_raw.py:423`이 앵커 표에 없다고
+붉어졌다. 앵커(`"tech_bands.csv 없음"`)를 추가했다. 인용 34건 전건 앵커 유지.
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | **개선** | 감사 범위가 준비 디렉터리 전체가 아니라 `SCHEMAS`라는 사실이 문서에 처음 적혔다. `audit` 자체는 `ok 68, UNUSED 1, PARTIAL 3` 불변 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | 유지 | `out/scenarios/summary.csv` 12묶음 |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선** | Arc가 데이터셋 경계를 물으면 "9개"의 근거와 열 번째 파일의 지위가 같은 절에 있다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | 유지 | 게이트 9항목·MCP 11도구 불변 |
+| ⑤ 산출물 — 다른 형식이 있는가 | 유지 | md / HTML / SVG / 데이터 패키지 (패키지가 D3b를 담지 않는다는 사실이 이제 명시된다) |
+
+### 인계
+
+- **`test_generated_blocks_are_current`가 빌드 직후 한 번 붉어졌다가 재실행하면 통과한다.**
+  스탬프 다이제스트가 `out/`을 디스크에서 읽는데(`build_tech_guide.py:101,109`) 생성기 자신이
+  모델 코드를 실행하며 `out/`을 건드리는 것으로 보인다 — 즉 **스탬프가 한 실행 뒤처진다.**
+  이번 사이클 시작 시 게이트의 `1 failed`도 같은 것으로 보인다(HEAD 상태에서 그 테스트를
+  단독 실행하면 통과). 다음 사이클의 값싼 표적: 다이제스트가 자기 실행의 부산물을 세지
+  않게 하거나, 생성기가 `out/`에 쓰지 않게 하기.
+- **상대 링크는 전건 존재하지만 아무도 검사하지 않는다** — 이번에는 손으로 훑었다.
+  `test_*`로 굳히려면 25건 `test -e` 한 줄이면 된다. (이번 사이클은 D3b 쪽이 실물이라 그쪽을
+  택했다.)
+- **`gen_frontier_shape`의 `rank.max()`**(F28, 미해결) · **D2b `tech_avail_*` 수집**(F29) ·
+  **`prepare_raw.py:57-59`의 죽은 루프**(F32) · **`reline_cheap` 재계획**(~20분) ·
+  **추첨 대상을 밴드 보유로도 열기**(F27) · **EFF 두 사본 불일치**(F22) ·
+  **EFF·FIN 확률과정 정량 분해**(F20) · **EFF 철강 CAPEX 2건 출처 부재**(F19) ·
+  **`_alt` 행의 용도 미실현**(F19) · **감사기의 이름 매칭 한계**(F18) ·
+  **§7이 드러낸 실질 공백 2건** · **CCfD 시험 가능화**(F13) · **MCI 사업소 상한 검증**(O13).
+- **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5),
+  `get_affordability` 통화 경고(F8).
