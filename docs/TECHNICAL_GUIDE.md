@@ -1022,7 +1022,7 @@ irrespective of rank, is what would close this; it has not been done.
 | Violation price floor | 300 thousand KRW/tCO₂ | A-11 |
 | Seed | 20260806 | pinned in `config.yaml` |
 
-**Auction share ramp (A-07):** 2025 10% → 2030 15% → 2035 30% → 2040 50% → 2045 75% → 2050 100%. Anchored on the confirmed K-ETS Phase 4 non-power share; everything after 2030 is an assumption.
+**Auction share (A-07)** — the share of emissions that actually faces the carbon price, and what the model applies rather than what `config.yaml` states: 2025 10% · 2026–2030 15% (confirmed) · 2035 30% · 2040 50% · 2045 75% · 2050 100%, interpolated annually between anchors. `plancost.auction_share` interpolates the config ramp and then overwrites it inside every confirmed D5 allocation window (§3.6), so only the 2026–2030 block is confirmed allocation — K-ETS Phase 4, non-power. The config anchors at 2025, 2035, 2040, 2045, 2050 are assumptions. The config ramp's own 2026–2029 values (11%–14%) never reach the model.
 
 **Contract premia:** renewable PPA +8% over the central electricity price, fixed-price EPC +10% over central CAPEX, CCfD fee 3% of covered carbon cost.
 <!-- /GEN:config -->

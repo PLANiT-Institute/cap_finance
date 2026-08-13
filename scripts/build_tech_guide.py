@@ -33,6 +33,7 @@ ROOT = Path(__file__).resolve().parents[1]
 GUIDE = ROOT / "docs" / "TECHNICAL_GUIDE.md"
 sys.path.insert(0, str(ROOT / "src"))
 
+from cap import config as C  # noqa: E402
 from cap.schemas import SCHEMAS  # noqa: E402
 from cap.calibration import FALLBACK_VOL  # noqa: E402
 
@@ -692,8 +693,53 @@ def gen_tier_distribution():
     return _md(rows + [total], ["Group"] + tiers + ["Total"]) + note
 
 
+def _auction_ramp(c):
+    """A-07 as the model applies it, not as `config.yaml` states it.
+
+    `plancost.auction_share` interpolates the config ramp and then *overwrites* it
+    wherever D5 carries a confirmed allocation window. Printing the config ramp
+    alone therefore prints four years the model never uses (2026–2029 interpolate
+    to 11–14%, D5 forces 15%), and the sentence "everything after 2030 is an
+    assumption" quietly certifies 2025, which no allocation plan covers either.
+    Read the schedule off the function so it cannot drift from the run again.
+    """
+    import numpy as np
+
+    from cap.plancost import _d5_auction_windows, auction_share
+
+    years = np.arange(c.years.start, c.years.end + 1)
+    eff = auction_share(years, c)
+    windows = [(int(lo), int(hi), v) for lo, hi, v in _d5_auction_windows(str(C.data_dir(c)))]
+    confirmed = {y for lo, hi, _ in windows for y in range(lo, hi + 1)}
+
+    parts, shown = [], set()
+    for lo, hi, v in sorted(windows):
+        parts.append((lo, f"{lo}–{hi} {v:.0%} (confirmed)"))
+        shown |= set(range(lo, hi + 1))
+    for y in sorted(c.carbon_auction_share):
+        if y not in shown:
+            parts.append((y, f"{y} {eff[years == y][0]:.0%}"))
+    schedule = " · ".join(t for _, t in sorted(parts))
+
+    ramp = {int(y): float(s) for y, s in c.carbon_auction_share.items()}
+    ky = sorted(ramp)
+    overwritten = sorted(y for y in confirmed
+                         if abs(np.interp(y, ky, [ramp[k] for k in ky]) - eff[years == y][0]) > 1e-9)
+    assumed = sorted(y for y in ky if y not in confirmed)
+    lost = (f" The config ramp's own {overwritten[0]}–{overwritten[-1]} values "
+            f"({min(np.interp(overwritten, ky, [ramp[k] for k in ky])):.0%}–"
+            f"{max(np.interp(overwritten, ky, [ramp[k] for k in ky])):.0%}) never reach the model."
+            if overwritten else "")
+    return (f"**Auction share (A-07)** — the share of emissions that actually faces the carbon "
+            f"price, and what the model applies rather than what `config.yaml` states: {schedule}, "
+            f"interpolated annually between anchors. `plancost.auction_share` interpolates the "
+            f"config ramp and then overwrites it inside every confirmed D5 allocation window "
+            f"(§3.6), so only the {'/'.join(f'{lo}–{hi}' for lo, hi, _ in sorted(windows))} block "
+            f"is confirmed allocation — K-ETS Phase 4, non-power. The config anchors at "
+            f"{', '.join(str(y) for y in assumed)} are assumptions.{lost}")
+
+
 def gen_config():
-    from cap import config as C
     c = C.load()
     rows = [
         ["Horizon", f"{c.years.start}–{c.years.end}", "annual steps"],
@@ -716,10 +762,8 @@ def gen_config():
         ["Violation price floor", f"{c.milp['budget_violation_floor_thkrw']:,} thousand KRW/tCO₂", "A-11"],
         ["Seed", str(c.seed), "pinned in `config.yaml`"],
     ]
-    ramp = " → ".join(f"{y} {s:.0%}" for y, s in sorted(c.carbon_auction_share.items()))
     prem = c.contracts
-    extra = (f"\n\n**Auction share ramp (A-07):** {ramp}. Anchored on the confirmed K-ETS Phase 4 "
-             f"non-power share; everything after 2030 is an assumption.\n\n"
+    extra = ("\n\n" + _auction_ramp(c) + "\n\n"
              f"**Contract premia:** renewable PPA +{prem['ppa_premium_pct']:.0%} over the central "
              f"electricity price, fixed-price EPC +{prem['epc_premium_pct']:.0%} over central CAPEX, "
              f"CCfD fee {prem['ccfd_fee_pct']:.0%} of covered carbon cost.")

@@ -1663,5 +1663,73 @@ def test_the_ledger_map_places_every_methodology_identifier_in_the_right_section
             f"색인이 스스로 결함을 보고했다: {bad!r} — 블록 본문을 읽고 원장과 표를 맞춰라")
 
 
+def test_section_5_auction_ramp_is_the_schedule_the_model_applies():
+    """§5는 `config.yaml`의 램프를 인쇄했지 모델이 쓰는 일정을 인쇄하지 않았다 (F35).
+
+    `plancost.auction_share`는 config 램프를 보간한 뒤 **D5의 확정 할당 창에서
+    덮어쓴다**. 그래서 2026–2029의 실효값은 15%인데 §5는 보간값 11–14%를 인쇄하고
+    있었다 — 유상할당은 A-07이고, §4.3이 재계획으로 잰 축 중 ③를 99.7% 움직이는
+    가장 큰 축이다. 게다가 "everything after 2030 is an assumption"은 2030 이전이
+    전부 확정이라는 뜻이 되는데, 확정 창은 2026–2030뿐이고 2025는 그 밖이다.
+    §3.6과 §4.1은 옳게 적혀 있었으므로 가이드가 스스로와 어긋나 있었다.
+
+    검사는 생성기의 계산을 빌리지 않는다. 블록에 인쇄된 일정을 **문자열에서 다시
+    읽어** 연도별로 펼치고, 그것을 `auction_share()`가 실제로 내는 값과 전건
+    대조한다. 생성기가 틀리면 두 값이 갈라진다. 확정이라 이름 붙인 연도가 D5의
+    창과 다른 것도, 모델에 닿지 않는 값이 인쇄되는 것도 실패다.
+    """
+    import re
+
+    import numpy as np
+
+    from cap import config as C
+    from cap.plancost import _d5_auction_windows, auction_share
+
+    text = GUIDE.read_text(encoding="utf-8")
+    block = re.search(r"<!-- GEN:config -->(.*?)<!-- /GEN:config -->", text, re.S)
+    assert block, "§5의 GEN:config 블록이 없다"
+    body = block.group(1)
+    line = next((l for l in body.splitlines() if "Auction share" in l), None)
+    assert line, "§5가 유상할당 일정을 더 이상 인쇄하지 않는다 — A-07은 ③의 최대 축이다"
+
+    cfg = C.load()
+    years = np.arange(cfg.years.start, cfg.years.end + 1)
+    effective = auction_share(years, cfg)
+    windows = [(int(lo), int(hi)) for lo, hi, _ in _d5_auction_windows(str(C.data_dir(cfg)))]
+    confirmed = {y for lo, hi in windows for y in range(lo, hi + 1)}
+
+    # 인쇄된 앵커를 읽어 연도별로 펼친다. "2026–2030 15% (confirmed)"는 양 끝 모두 앵커다.
+    anchors, said_confirmed = {}, set()
+    for lo, hi, pct, tag in re.findall(
+            r"\b(\d{4})(?:–(\d{4}))? (\d+)%( \(confirmed\))?", line):
+        v = int(pct) / 100.0
+        anchors[int(lo)] = v
+        if hi:
+            anchors[int(hi)] = v
+        if tag:
+            said_confirmed |= set(range(int(lo), int(hi or lo) + 1))
+    assert len(anchors) >= 4, f"일정을 읽지 못했다 — 형식이 바뀌었다: {line!r}"
+
+    ky = sorted(anchors)
+    assert ky[0] == cfg.years.start and ky[-1] == cfg.years.end, (
+        f"인쇄된 일정이 지평 {cfg.years.start}–{cfg.years.end}의 양 끝을 덮지 않는다: {ky}")
+    printed = np.interp(years, ky, [anchors[k] for k in ky])
+    off = [(int(y), round(float(p), 4), round(float(e), 4))
+           for y, p, e in zip(years, printed, effective) if abs(p - e) > 1e-9]
+    assert not off, (
+        f"§5가 인쇄한 유상할당이 모델이 쓰는 값과 다르다 (연도, 인쇄, 실제): {off} — "
+        "config 램프가 아니라 plancost.auction_share의 출력을 인쇄해야 한다")
+
+    assert said_confirmed == confirmed, (
+        f"§5가 확정이라 이름 붙인 해는 {sorted(said_confirmed)}인데 D5의 확정 창은 "
+        f"{sorted(confirmed)}이다 — 확정 밖의 해를 확정이라 부르면 안 된다")
+    sent = re.search(r"config anchors at ([\d, ]+?) are assumptions", line)
+    assert sent, "§5가 어느 앵커가 가정인지 말하지 않는다"
+    assert {int(y) for y in sent.group(1).replace(",", " ").split()} == (
+        set(cfg.carbon_auction_share) - confirmed), (
+        f"§5가 가정이라 부른 앵커가 {sent.group(1)}인데 확정 창 밖의 config 앵커는 "
+        f"{sorted(set(cfg.carbon_auction_share) - confirmed)}이다")
+
+
 def _num(n: int) -> str:
     return {7: "seven", 8: "eight", 9: "nine", 10: "ten", 11: "eleven"}.get(n, str(n))
