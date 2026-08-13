@@ -1909,8 +1909,66 @@ def gen_capacity_basis():
             f"stated on other bases (§3.0), so they cannot check it either.")
 
 
+def _ledger_sections():
+    """Which section each A-id is treated in, read off the guide's own tables.
+
+    §4.4 used to name those sets in prose. §4.1 grew from five rows to eight over the
+    cycles and the prose did not: A-05 and A-07 ended up in no index, and A-19 was
+    filed under §4.2 where it has never been. The tables are the fact, so the index
+    is derived from them. Only `| **A-xx** |` row starts count, which is why the
+    sentence this produces — bold ids in running text — cannot feed itself.
+
+    The minor ids are the exception: no table carries them, so they are read from
+    §4.4's *first* paragraph, the one that names and explains them. Reading them
+    instead as `ledger - tabled` would be the same bug in a new place — a new
+    METHODOLOGY id nobody wrote about would be absorbed into "the ones above" and
+    the map would claim to place an id the guide never mentions.
+    """
+    text = GUIDE.read_text(encoding="utf-8")
+    sec, tables, in_three = "0", {}, set()
+    for line in text.split("\n"):
+        h = re.match(r"^#{2,4}\s+([0-9]+(?:\.[0-9]+)?)\b", line)
+        if h:
+            sec = h.group(1)
+        row = re.match(r"^\|\s*\*\*(A-\d{2})\*\*\s*\|", line)
+        if row:
+            tables.setdefault(sec, set()).add(row.group(1))
+        elif sec.startswith("3"):
+            in_three |= set(re.findall(r"\bA-\d{2}\b", line))
+    para = re.search(r"^### 4\.4[^\n]*\n\n(.*?)\n\n", text, re.S | re.M)
+    minor = set(re.findall(r"\*\*(A-\d{2})\*\*", para.group(1))) if para else set()
+    ledger = set(re.findall(r"\bA-\d{2}\b", (ROOT / "METHODOLOGY.md").read_text(encoding="utf-8")))
+    return tables, in_three, minor, ledger
+
+
+def _ids(s):
+    return ", ".join(f"**{a}**" for a in sorted(s))
+
+
+def gen_ledger_map():
+    tables, in_three, minor, ledger = _ledger_sections()
+    tabled = {a for s in tables.values() for a in s}
+    placed = tabled | minor
+    # §4 claims every ledger id appears somewhere in the guide. These two say when it stops being true.
+    missing = ledger - placed
+    extra = placed - ledger
+    out = [f"{_ids(tables.get('4.1', set()))} are treated in §4.1; "
+           f"{_ids(tables.get('4.2', set()))} in §4.2; "
+           f"{_ids(minor)} are the {len(minor)} named in the paragraph above."]
+    out.append(f"\n\nThat places {len(placed & ledger)} of the ledger's {len(ledger)} identifiers. "
+               f"Dataset-level consequences of {_ids(in_three & ledger)} additionally appear in §3 — "
+               f"an assumption is indexed here by where it is *stated*, not by everywhere it bites.")
+    if extra:
+        out.append(f"\n\n**{_ids(extra)} appear in this guide but not in the METHODOLOGY ledger.**")
+    if missing:
+        out.append(f"\n\n**{_ids(missing)} are in the ledger and in no index here** — §4's claim that "
+                   f"every identifier appears somewhere in this guide is currently false.")
+    return "".join(out)
+
+
 BLOCKS = {
     "stamp": gen_stamp,
+    "ledger_map": gen_ledger_map,
     "capacity_basis": gen_capacity_basis,
     "frontier_degeneracy": gen_frontier_degeneracy,
     "criterion_swap": gen_criterion_swap,

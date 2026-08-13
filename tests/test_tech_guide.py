@@ -1611,5 +1611,57 @@ def test_every_prepared_file_outside_schemas_is_declared_as_outside():
     assert "columns across the 9 input files" not in guide or n == 9
 
 
+def test_the_ledger_map_places_every_methodology_identifier_in_the_right_section():
+    """§4.4의 A-id 색인은 손으로 적혀 있었고, 표가 자라는 동안 그대로 남아 낡았다 (F34).
+
+    §4.1이 5행에서 8행으로 자라는 사이 색인 문장은 다섯 개만 셌다. 그래서
+    **A-05**·**A-07** — *large*로 등급된 가정 두 개 — 가 어느 색인에도 없었고,
+    **A-19**는 §4.2로 안내되었지만 그 표에 있던 적이 없다. §4 머리글은 그와 동시에
+    "Every A-id in that ledger appears somewhere in this guide"라고 적고 있었다.
+
+    이 테스트는 생성기의 파서를 빌려 쓰지 않는다 — 여기서 표·문단·원장을 따로 읽어
+    합집합이 원장과 정확히 일치하는지 보고, 그 다음 생성된 블록이 그 사실을 그대로
+    말하는지 본다. 파서가 틀리면 두 결과가 어긋나므로 이 테스트가 붉어진다.
+    """
+    import re
+
+    guide = GUIDE.read_text(encoding="utf-8")
+    ledger = set(re.findall(r"\bA-\d{2}\b", (ROOT / "METHODOLOGY.md").read_text(encoding="utf-8")))
+
+    sec, tables = "0", {}
+    for line in guide.split("\n"):
+        h = re.match(r"^#{2,4}\s+([0-9]+(?:\.[0-9]+)?)\b", line)
+        if h:
+            sec = h.group(1)
+        row = re.match(r"^\|\s*\*\*(A-\d{2})\*\*\s*\|", line)
+        if row:
+            tables.setdefault(sec, set()).add(row.group(1))
+    para = re.search(r"^### 4\.4[^\n]*\n\n(.*?)\n\n", guide, re.S | re.M)
+    assert para, "§4.4의 첫 문단을 찾지 못했다 — 부차 id는 그 문단에서만 읽힌다"
+    minor = set(re.findall(r"\*\*(A-\d{2})\*\*", para.group(1)))
+
+    tabled = {a for s in tables.values() for a in s}
+    assert not (tabled & minor), (
+        f"{sorted(tabled & minor)}가 표와 §4.4 문단 양쪽에 있다 — 색인이 둘로 갈린다")
+    assert ledger - tabled - minor == set(), (
+        f"{sorted(ledger - tabled - minor)}는 METHODOLOGY 원장에 있으나 §4 어느 표에도, "
+        "§4.4 문단에도 없다 — §4 머리글의 'every A-id appears somewhere'가 거짓이 된다")
+    assert (tabled | minor) - ledger == set(), (
+        f"{sorted((tabled | minor) - ledger)}는 가이드에만 있고 원장에 없다 — "
+        "둘 중 하나가 낡았다")
+
+    block = re.search(r"<!-- GEN:ledger_map -->\n(.*?)<!-- /GEN:ledger_map -->", guide, re.S)
+    assert block, "GEN:ledger_map 블록이 없다 — §4.4의 색인은 생성물이어야 한다"
+    text = block.group(1)
+    head = text.split("in §4.2;")[0]
+    for a in sorted(tables.get("4.1", set())):
+        assert f"**{a}**" in head, f"{a}는 §4.1 표에 있는데 색인의 §4.1 자리에 없다"
+    assert f"the {len(minor)} named in the paragraph above" in text, (
+        f"§4.4 문단이 부차 id {len(minor)}개를 이름으로 부르는데 색인의 셈이 다르다")
+    for bad in ("in no index here", "not in the METHODOLOGY ledger"):
+        assert bad not in text, (
+            f"색인이 스스로 결함을 보고했다: {bad!r} — 블록 본문을 읽고 원장과 표를 맞춰라")
+
+
 def _num(n: int) -> str:
     return {7: "seven", 8: "eight", 9: "nine", 10: "ten", 11: "eleven"}.get(n, str(n))

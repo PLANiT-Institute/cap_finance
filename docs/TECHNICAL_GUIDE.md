@@ -830,7 +830,9 @@ only through the repository, not through the package.
 
 The full ledger with equations lives in [`METHODOLOGY.md`](../METHODOLOGY.md) §8, which carries all
 24 identifiers **A-01 – A-24**. Reproduced here are the ones that move the conclusions. Every A-id in
-that ledger appears somewhere in this guide; §4.4 lists where the minor ones are.
+that ledger appears somewhere in this guide; §4.4 maps each one to the section that treats it. That
+map is read off the tables at build time rather than typed, and if an identifier ever falls out of
+every index the map prints that instead of the claim.
 
 An "impact" grade below is one of two different things, and the difference matters more than the
 grade: either an axis we **re-solved** and can therefore quote a number for, or a judgement we have
@@ -908,16 +910,25 @@ One-at-a-time parameter screening, top 5 by worst-metric move: `fac.ef_inc` (T5,
 
 ### 4.4 The rest of the ledger
 
-Three identifiers are not discussed above because they change reported precision or a second-order
-term rather than a conclusion: **A-12** (closure adds back the model's own energy saving, so closure
+The identifiers not discussed above are not discussed because they change reported precision or a
+second-order term rather than a conclusion: **A-12** (closure adds back the model's own energy saving, so closure
 is not rewarded twice), **A-22** (CAPEX shock amplitude scaled per technology by D3
 `capex_uncertainty`, worth about 1% of variance in the headline cell — and 6.9% averaged over every
 cell, rising to the *entire* variance in the two petrochemical B20 plans that adopt no hydrogen, so
 "second-order" is a statement about the headline and not about the file, `out/e5/variance_decomp.csv`),
 **A-23** (metric ⑤ re-optimisation subsample raised
-300 → 1,500, which fixed a 15% coefficient of variation on ⑤ and nothing else). **A-02, A-03, A-13,
-A-17, A-24** are treated in §4.1; **A-01, A-04, A-06, A-08–A-11, A-14–A-16, A-18–A-21** in §4.2;
-dataset-level consequences of **A-01, A-03, A-20** also appear in §3.
+300 → 1,500, which fixed a 15% coefficient of variation on ⑤ and nothing else).
+
+The roll-call below is read off the tables above rather than remembered. It went wrong once in
+exactly the way a remembered index does: §4.1 grew from five rows to eight and the sentence naming
+its contents did not, so **A-05** and **A-07** — two of the assumptions graded *large* — appeared in
+no index at all, and **A-19** was pointed at §4.2, where it is not.
+
+<!-- GEN:ledger_map -->
+**A-02**, **A-03**, **A-05**, **A-07**, **A-13**, **A-17**, **A-19**, **A-24** are treated in §4.1; **A-01**, **A-04**, **A-06**, **A-08**, **A-09**, **A-10**, **A-11**, **A-14**, **A-15**, **A-16**, **A-18**, **A-20**, **A-21** in §4.2; **A-12**, **A-22**, **A-23** are the 3 named in the paragraph above.
+
+That places 24 of the ledger's 24 identifiers. Dataset-level consequences of **A-01**, **A-02**, **A-03**, **A-04**, **A-05**, **A-06**, **A-10**, **A-13**, **A-16**, **A-17**, **A-18**, **A-19**, **A-20**, **A-21**, **A-22**, **A-24** additionally appear in §3 — an assumption is indexed here by where it is *stated*, not by everywhere it bites.
+<!-- /GEN:ledger_map -->
 
 ### 4.5 Evidence grading
 
