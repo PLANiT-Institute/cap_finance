@@ -1014,7 +1014,7 @@ irrespective of rank, is what would close this; it has not been done.
 | Flexibility subsample | 1,500 | metric ⑤ re-optimisation |
 | Price process | gbm | alternative: mean reversion, half-life 10 yr |
 | Shock normalisation | mean | A-24 — see §4.1 |
-| Frontier grid | 10 points | ε-constraint sweep |
+| E2 enumeration grid | 10 ε points per firm × scenario | targets on **risk**, not emissions — §6.3's ε-sweep is a different diagnostic. Dedup leaves 3–9 plans, and the frontier §6 reports is E5's rebuild: 2–8 non-dominated points per bundle |
 | MIP relative gap | 2% | surrogate objective (A-14) |
 | Solver time limit | 60 s | feasible solutions accepted |
 | Solver threads | 1 | **1 is a reproducibility requirement**, not a performance setting |

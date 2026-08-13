@@ -5228,3 +5228,112 @@ config 램프 = `config.yaml:65-70` · A-07의 99.7% = `docs/TECHNICAL_GUIDE.md`
 - **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
   미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5),
   `get_affordability` 통화 경고(F8).
+
+## F36 (03:05) — §5의 "Frontier grid 10 points"는 경계의 크기가 아니었고, 그 주석은 §6.3의 다른 진단 이름이었다
+
+**한 일.** 시작 시 작업 트리에 F35의 미완 작업(생성기·테스트·블록)이 커밋되지 않은 채
+있어 §1.3에 따라 그것을 먼저 검증했다 — 빌드 재현, `test_tech_guide` 51건 통과, 코드
+(`plancost.py:45-61`)로 문장 재확인. 그 사이 **F35 사이클이 병렬로 살아 있었고**
+02:25에 스스로 커밋·푸쉬·로그를 마쳤다(`382172d`). 중복 작업을 버리고 이번을 F36으로
+잡았다. 지도(§5-C)는 F16에서 끝나므로 우선순위 규칙에 따라 F35가 열어 둔 §5를 이어
+읽었고, 표의 나머지 행에서 결함이 나왔다.
+
+**결함 — `milp.frontier_points`는 경계의 점 개수가 아닌데 §5는 "Frontier grid | 10 points"라
+적었다.**
+
+그 설정이 실제로 하는 일은 `e2_milp.py:388`에 있다: E2가 최소위험 해와 최소비용 해 사이에
+**위험** 목표를 10개 벌려 계획을 열거한다. 그 다음 두 번의 축소가 일어난다.
+
+1. **중복 제거.** firm × scenario당 실제로 남는 계획은 10개가 아니라 **3–9개**다
+   (`out/e2/plan_index.csv`: POSCO NZ15 3 … MCI B20 9). 8묶음 합계 48.
+2. **E5의 재구성.** §6이 보고하는 경계는 E2의 계획 위에 서지 않는다 — E5가 계약 차원을
+   버리고 13개 기술 일정 × 10개 계약 변형으로 후보를 다시 만든다(§6.3에 이미 적혀 있다).
+   그 결과 묶음당 후보 10–31개, **비지배점 2–8개**(`out/e5/frontier_points.csv`, 16묶음 76점).
+
+즉 §5를 읽은 Arc는 "경계가 10점"이라고 믿게 되는데 어느 묶음도 10점이 아니다. 가장 많은
+묶음이 8점이다.
+
+**두 번째 결함, 같은 행의 주석.** "ε-constraint sweep"은 §6.3에서 **다른 것**의 이름이다 —
+`scripts/frontier_tech_epsilon.py`가 **누적배출**에 32개 상한을 거는 별도 진단이고
+파이프라인 밖이며 `out/m8`에 쓴다. §5의 10점은 **위험** 축이고 E2 안에 있다. 같은 문서가
+같은 말로 축도 파일도 다른 두 가지를 가리키고 있었다.
+
+**고침.** 행을 `_frontier_grid_row()`가 생성한다(`build_tech_guide.py:742-769`). 이름을
+"E2 enumeration grid"로 바꾸고, 값에 "per firm × scenario"를 붙여 전체 개수가 아님을
+밝히고, 축이 위험임을 명시해 §6.3과 구별하고, 두 축소를 `out/e2/plan_index.csv`와
+`out/e5/frontier_points.csv`에서 읽어 같은 칸에 적는다. 손으로 적은 수는 없다.
+
+### 가이드에서 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | §5 표 행 이름 | "**Frontier grid**" — 경계의 크기로 읽힌다 | E2의 **계획 열거** 격자다. §6의 경계는 E5가 다시 만든 후보에서 고른 **2–8점/묶음** | `src/cap/e2_milp.py:388` · `out/e5/frontier_points.csv`(`on_frontier`, 16묶음 76점) |
+| 2 | §5 표 행 값 | "10 points" — 10개가 존재한다는 뜻 | 10은 **시도 횟수의 상한**이다. 중복 제거 뒤 firm × scenario당 **3–9개**만 남는다 | `out/e2/plan_index.csv` 48행, 8묶음 groupby |
+| 3 | §5 표 행 주석 | "ε-constraint sweep" — §6.3이 **누적배출 32상한**의 별도 진단에 쓰는 이름 | §5의 것은 **위험** 축이고 E2 안이다. 축과 파일을 같은 칸에서 구별했다 | `docs/TECHNICAL_GUIDE.md` §6.3 · `scripts/frontier_tech_epsilon.py` → `out/m8/summary.csv` |
+
+### 검증
+
+```
+.venv/bin/python scripts/build_tech_guide.py           # 32 blocks, 146,983 chars
+.venv/bin/python -m pytest tests/test_tech_guide.py -q # 52 passed
+.venv/bin/python scripts/gate.py                       # gate: OK
+```
+
+수치 출처: 격자 10 = `config.yaml:33`(`milp.frontier_points`) ·
+중복 제거 후 3–9 = `out/e2/plan_index.csv`를 `(company_id, scenario)`로 groupby ·
+비지배 2–8 = `out/e5/frontier_points.csv`의 `on_frontier`를
+`(company_id, scenario, support)`로 groupby(16묶음, 76점) · 후보 10–31 = 같은 파일 전체(268행).
+
+테스트 1개 추가(51 → 52).
+`test_section_5_does_not_call_the_e2_grid_the_size_of_the_frontier` — 생성기의 계산을 빌리지
+않는다. 인쇄된 두 범위를 문자열에서 다시 읽어 두 CSV에서 따로 센 값과 대조하고, 격자 크기가
+config와 같은지, 축("risk")을 말하는지 본다. 되돌림 검사: 옛 행 `| Frontier grid | 10 points |
+ε-constraint sweep |`은 행 탐색(`ε points`)에서 걸려 붉어지고, 비지배 범위를 2–7로 한 자리
+흔들면 대조에서 붉어진다.
+
+**함께 대조하고 결함이 없던 것들**: §-참조 183건 전건이 실재 절을 가리킨다(32개 고유,
+dangling 0) · §6.2의 "TCaR 41–48%"·"석화 ② 71–73%" = `docs/process_alternative.md` §2·§3 표 ·
+"thirteen perturbations" = m5 11묶음 + `ou`·`gbm_median` 2 · `rank_preserved = 1` 11/11 =
+`out/m5/bundle_matrix.csv` · §6.4의 NSC gap 1,255/4,651 = `out/e5/gap.csv`(1254.55/4651.15) ·
+"disclosed_skipped.csv는 4행, NSC 없음" = 실측 4행(LOTTE×2, POSCO×2) · §3.8의 12행 분해
+(target 3 / tech_commit 7 / timing 2, `high` 7 / `mid` 5, 강제 2 · 사유기록 2 · 무흔적 3) ·
+§2의 "2% MIP gap, 60초" = `config.yaml:38,42` · NSC 기미쓰 +8년 클램프가 §3.8에 이미 적혀 있다.
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | 유지 | gate audit `ok 68, UNUSED 1, PARTIAL 3` 불변 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | 유지 | `out/scenarios/summary.csv` 12묶음 |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선** | approach 질문의 핵심 산출물인 "경계"의 크기가 §5에서 처음으로 실제 값이다. §5와 §6.3이 같은 말을 다른 뜻으로 쓰던 충돌도 없어졌다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | 유지 | 게이트 9항목·MCP 11도구 불변 |
+| ⑤ 산출물 — 다른 형식이 있는가 | 유지 | md / HTML / SVG / 데이터 패키지 |
+
+### 인계
+
+- **§4.5의 "the two banded T1 rows … where the statute itself states a range"는 틀렸다 —
+  이번 사이클에 근거까지 모아 두었으니 다음 사이클이 한 번에 고칠 수 있다.** 두 행의 밴드는
+  `FIN.config.auction_share.2025` 0.1 → [0.06, 0.14], `.2030` 0.15 → [0.09, 0.21]로
+  **양쪽 정확히 ±40%의 대칭 관행**이다(`docs/parameter_inventory.csv:2-3`). 법령이 말한
+  범위가 아니다 — 인용된 `KETS_P4_CONFIRM_2025`는 발전외 **15%라는 점값**을 말한다
+  (`data/raw/source_register.csv:17`). 게다가 그 출처의 `reporting_start`는 **2026-01-01**이라
+  2025년 행은 출처 자신의 기간 **밖**이다(F35 인계가 지목한 것과 같은 행). 고치면 §4.5의
+  결론("the width in this model is mostly convention rather than evidence")이 오히려
+  **강해진다** — 관행이 아니라고 남겨 둔 마지막 두 행마저 관행이기 때문이다. 시간이 모자라
+  이번에 손대지 않았다(게이트 재실행 비용). 인벤토리 쪽 등급·`source_id` 수정은 창 밖.
+- **게이트 전체는 10분을 넘겼지만 pytest는 아니었다** — pytest는 226초(107건)로 정상이고,
+  나머지 8항목이 나머지를 썼다. F34가 본 것은 pytest 자체가 페이징으로 막힌 경우였으므로
+  **증상이 다르다**: 다음에 게이트가 느리면 `[PASS] pytest` 줄의 초 수를 먼저 볼 것.
+  226초면 원인은 pytest 밖이다. 게이트를 배경으로 돌리고 그 사이 다른 검증을 진행하면 된다.
+- **동시 실행 주의.** 이 창에서 F35와 F36이 겹쳐 돌았다. 시작 시 `git log`로 마지막 커밋을
+  먼저 보고 `ITERATION_LOG.md` 꼬리와 대조할 것 — 작업 트리가 더러운 것이 "미완"이 아니라
+  "다른 창이 작업 중"일 수 있다.
+- **`gen_frontier_shape`의 `rank.max()`**(F28) · **D2b `tech_avail_*` 수집**(F29) ·
+  **`prepare_raw.py:57-59`의 죽은 루프**(F32) · **`reline_cheap` 재계획**(~20분) ·
+  **추첨 대상을 밴드 보유로도 열기**(F27) · **EFF 두 사본 불일치**(F22) ·
+  **EFF·FIN 확률과정 정량 분해**(F20) · **EFF 철강 CAPEX 2건 출처 부재**(F19) ·
+  **`_alt` 행의 용도 미실현**(F19) · **감사기의 이름 매칭 한계**(F18) ·
+  **§7이 드러낸 실질 공백 2건** · **CCfD 시험 가능화**(F13) · **MCI 사업소 상한 검증**(O13).
+- **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5),
+  `get_affordability` 통화 경고(F8).

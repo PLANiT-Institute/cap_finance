@@ -1731,5 +1731,61 @@ def test_section_5_auction_ramp_is_the_schedule_the_model_applies():
         f"{sorted(set(cfg.carbon_auction_share) - confirmed)}이다")
 
 
+def test_section_5_does_not_call_the_e2_grid_the_size_of_the_frontier():
+    """§5는 `milp.frontier_points`를 "Frontier grid — ε-constraint sweep"이라 적었다 (F36).
+
+    그 설정은 **경계의 점 개수가 아니다.** E2가 최소위험 해와 최소비용 해 사이에
+    위험 목표를 그 개수만큼 벌려 계획을 열거하는 격자이고, 중복 제거 뒤 실제로
+    남는 계획은 firm × scenario당 그보다 적다. 게다가 §6이 보고하는 경계는 E2의
+    계획 위에 서지 않는다 — E5가 계약 차원을 버리고 다시 만든 후보에서 비지배집합을
+    고른다(§6.3). 그래서 "Frontier grid 10 points"를 읽은 Arc는 경계가 10점이라고
+    믿게 되는데 묶음당 비지배점은 그보다 적다.
+
+    "ε-constraint sweep"이라는 주석도 §6.3과 충돌한다. §6.3에서 같은 말은
+    `scripts/frontier_tech_epsilon.py`가 **누적배출**에 32개 상한을 거는 별도
+    진단을 가리키며 파이프라인 밖이다. 축도 다르고 파일도 다르다.
+
+    검사는 생성기의 계산을 빌리지 않는다. 인쇄된 두 범위를 문자열에서 다시 읽어
+    `out/e2/plan_index.csv`·`out/e5/frontier_points.csv`에서 따로 센 값과 대조한다.
+    """
+    import re
+
+    import pandas as pd
+
+    from cap import config as C
+
+    idx = ROOT / "out" / "e2" / "plan_index.csv"
+    fp = ROOT / "out" / "e5" / "frontier_points.csv"
+    if not (idx.exists() and fp.exists()):
+        pytest.skip("파이프라인 미실행 — 열거 격자와 경계를 셀 수 없다")
+
+    text = GUIDE.read_text(encoding="utf-8")
+    block = re.search(r"<!-- GEN:config -->(.*?)<!-- /GEN:config -->", text, re.S)
+    assert block, "§5의 GEN:config 블록이 없다"
+    row = next((l for l in block.group(1).splitlines()
+                if l.startswith("|") and "ε points" in l), None)
+    assert row, "§5가 E2 열거 격자 행을 더 이상 인쇄하지 않는다"
+
+    n = int(C.load().milp["frontier_points"])
+    assert f"{n} ε points" in row, f"§5가 인쇄한 격자 크기가 config의 {n}과 다르다: {row!r}"
+    assert "risk" in row, (
+        "§5가 격자의 축을 말하지 않는다 — 배출 축의 §6.3 ε-sweep과 구별되지 않는다")
+
+    kept = pd.read_csv(idx).groupby(["company_id", "scenario"]).size()
+    pts = pd.read_csv(fp)
+    front = pts[pts.on_frontier.astype(bool)].groupby(
+        ["company_id", "scenario", "support"]).size()
+    printed = [(int(a), int(b)) for a, b in re.findall(r"(\d+)–(\d+)", row)]
+    assert (int(kept.min()), int(kept.max())) in printed, (
+        f"§5가 인쇄한 중복 제거 후 계획 수가 `out/e2/plan_index.csv`의 "
+        f"{kept.min()}–{kept.max()}와 다르다: {row!r}")
+    assert (int(front.min()), int(front.max())) in printed, (
+        f"§5가 인쇄한 비지배점 수가 `out/e5/frontier_points.csv`의 "
+        f"{front.min()}–{front.max()}와 다르다: {row!r}")
+    assert int(front.max()) <= n, (
+        f"묶음당 비지배점이 {front.max()}로 격자 크기 {n}을 넘는다 — 이 행의 문장이 "
+        "전제하는 관계가 깨졌으니 문장을 다시 써라")
+
+
 def _num(n: int) -> str:
     return {7: "seven", 8: "eight", 9: "nine", 10: "ten", 11: "eleven"}.get(n, str(n))

@@ -739,6 +739,36 @@ def _auction_ramp(c):
             f"{', '.join(str(y) for y in assumed)} are assumptions.{lost}")
 
 
+def _frontier_grid_row(c):
+    """`milp.frontier_points` sizes E2's enumeration, not the frontier §6 reports.
+
+    The row was labelled "Frontier grid — ε-constraint sweep", which reads as the
+    number of points on the reported frontier and collides with §6.3, where
+    "ε-constraint sweep" names a different diagnostic on a different axis
+    (cumulative emissions, 32 caps, `scripts/frontier_tech_epsilon.py`, outside the
+    pipeline). What the setting does is space `frontier_points` **risk** targets
+    between E2's min-risk and min-cost solves per firm × scenario; duplicates are
+    then dropped, and E5 discards E2's contract choice and rebuilds the candidate
+    set before anything is called non-dominated (§6.3). Read both shortfalls off the
+    run so the row cannot claim a size the frontier does not have.
+    """
+    n = c.milp["frontier_points"]
+    idx = ROOT / "out" / "e2" / "plan_index.csv"
+    fp = ROOT / "out" / "e5" / "frontier_points.csv"
+    label, value = "E2 enumeration grid", f"{n} ε points per firm × scenario"
+    if not (idx.exists() and fp.exists()):
+        return [label, value, "targets on **risk** — not the size of the frontier §6 reports"]
+    kept = pd.read_csv(idx).groupby(["company_id", "scenario"]).size()
+    pts = pd.read_csv(fp)
+    front = pts[pts.on_frontier.astype(bool)].groupby(
+        ["company_id", "scenario", "support"]).size()
+    return [label, value,
+            f"targets on **risk**, not emissions — §6.3's ε-sweep is a different "
+            f"diagnostic. Dedup leaves {kept.min()}–{kept.max()} plans, and the frontier "
+            f"§6 reports is E5's rebuild: {front.min()}–{front.max()} non-dominated "
+            f"points per bundle"]
+
+
 def gen_config():
     c = C.load()
     rows = [
@@ -753,7 +783,7 @@ def gen_config():
         ["Price process", c.price_process,
          f"alternative: mean reversion, half-life {c.ou_halflife_years} yr"],
         ["Shock normalisation", c.shock_normalisation, "A-24 — see §4.1"],
-        ["Frontier grid", f"{c.milp['frontier_points']} points", "ε-constraint sweep"],
+        _frontier_grid_row(c),
         ["MIP relative gap", f"{c.milp['mip_gap_rel']:.0%}", "surrogate objective (A-14)"],
         ["Solver time limit", f"{c.milp['solver_time_limit_s']} s", "feasible solutions accepted"],
         ["Solver threads", str(c.milp["solver_threads"]),
