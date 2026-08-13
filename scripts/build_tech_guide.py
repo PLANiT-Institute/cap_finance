@@ -921,6 +921,66 @@ def gen_reline_anchors():
         f"×{hi / ours:.2f} — the upper end of the same band.")
 
 
+def gen_band_coverage():
+    """§4.5 — band coverage per tier, and what the banded T1 rows actually are.
+
+    F37: the section read the two banded T1 rows as evidence-stated width — "the 2025
+    and 2030 K-ETS auction shares, where the statute itself states a range". Both bands
+    are exactly ±40% of the central value, the same rule the assumed post-2030 rows of
+    the same ramp carry, and the source they cite states point values. The coverage
+    counts were hand-written too. Read both off the inventory so neither can drift.
+    """
+    p = ROOT / "docs" / "parameter_inventory.csv"
+    if not p.exists():
+        return "_parameter_inventory.csv not available._"
+    pi = pd.read_csv(p, dtype=str)
+    val = pd.to_numeric(pi.value, errors="coerce")
+    lo = pd.to_numeric(pi.value_low, errors="coerce")
+    hi = pd.to_numeric(pi.value_high, errors="coerce")
+    banded = lo.notna() & hi.notna()
+    tiers = ["T1", "T2", "T3", "T4", "T5"]
+    cover = ", ".join(
+        f"{t} {int((banded & (pi.evidence_tier == t)).sum())}/{int((pi.evidence_tier == t).sum())}"
+        for t in tiers)
+
+    def side(i):
+        v = val[i]
+        return (float("nan"), float("nan")) if not v else (1 - lo[i] / v, hi[i] / v - 1)
+
+    def show(i):
+        d, u = side(i)
+        return (f"`{pi.param_id[i]}` ({val[i]:g}, [{lo[i]:g}, {hi[i]:g}] = "
+                f"−{d:.0%}/+{u:.0%})")
+
+    t1 = list(pi.index[banded & (pi.evidence_tier == "T1")])
+    if not t1:
+        return (f"Band coverage by tier is {cover}. No T1 parameter carries a band, so the "
+                "claim this block was written to check no longer has a subject.")
+    ents = set(pi.entity[t1])
+    sibs = [i for i in pi.index[banded] if i not in t1 and pi.entity[i] in ents]
+    rule = {round(side(i)[0], 6) for i in t1 + sibs}
+    same = (f"the same −{max(rule):.0%} rule the {len(sibs)} banded "
+            f"{'/'.join(sorted(set(pi.evidence_tier[i] for i in sibs)))} rows of the same ramp "
+            f"carry ({', '.join(show(i) for i in sibs)}; the upper end is clipped where the "
+            f"parameter is a share)" if sibs and len(rule) == 1 else
+            f"a convention, not a width read off the source")
+
+    reg, window = ROOT / "data" / "raw" / "source_register.csv", ""
+    if reg.exists():
+        sr = pd.read_csv(reg, dtype=str).set_index("source_id")
+        for i in t1:
+            sid = pi.source_id[i]
+            if sid not in sr.index:
+                continue
+            start, end = str(sr.loc[sid, "reporting_start"]), str(sr.loc[sid, "reporting_end"])
+            if str(pi.field[i]).isdigit() and not (start[:4] <= str(pi.field[i]) <= end[:4]):
+                window += (f" `{pi.param_id[i]}` also sits outside the reporting period of the "
+                           f"source it names — `{sid}` covers {start} to {end}.")
+    return (f"Band coverage by tier is {cover}. The {len(t1)} banded T1 "
+            f"{'row is' if len(t1) == 1 else 'rows are'} {', '.join(show(i) for i in t1)} — "
+            f"symmetric about the central value and {same}.{window}")
+
+
 def gen_band_vs_convention():
     """§4.5 — what the ±30% convention costs, read off `out/g2` rather than typed.
 
@@ -2069,6 +2129,7 @@ BLOCKS = {
     "tier_distribution": gen_tier_distribution,
     "config": gen_config,
     "headline": gen_headline,
+    "band_coverage": gen_band_coverage,
     "band_vs_convention": gen_band_vs_convention,
     "seed_cv": gen_seed_cv,
     "diagnostic_drift": gen_diagnostic_drift,

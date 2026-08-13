@@ -1787,5 +1787,78 @@ def test_section_5_does_not_call_the_e2_grid_the_size_of_the_frontier():
         "전제하는 관계가 깨졌으니 문장을 다시 써라")
 
 
+def test_section_4_5_does_not_call_a_convention_band_an_evidence_band():
+    """§4.5는 밴드를 가진 T1 두 행을 "법령이 범위를 말한 곳"이라 적었다 (F37).
+
+    두 행의 밴드는 `docs/parameter_inventory.csv`에서 중심값의 **정확히 ±40%**이고,
+    같은 램프의 post-2030 행 넷이 쓰는 것과 같은 규칙이다. 인용된 출처
+    `KETS_P4_CONFIRM_2025`는 발전외 15%라는 **점값**을 말하고, 게다가 그 출처의
+    보고 기간은 2026-01-01에 시작하므로 2025년 행은 출처 자신의 기간 밖이다.
+    그러므로 그 두 행은 "증거가 말한 폭"의 반례가 아니라 관행의 또 다른 사례다 —
+    §4.5의 결론("width in this model is mostly convention")은 이 정정으로 오히려
+    강해진다. 밴드 개수도 손으로 적혀 있었으므로 같이 생성으로 옮겼다.
+
+    검사는 생성기의 계산을 빌리지 않는다. 인벤토리를 따로 읽어 계층별 밴드 수와
+    각 행의 양쪽 폭을 다시 계산하고, 인쇄된 문자열에 그 값이 있는지 본다.
+    """
+    import re
+
+    import pandas as pd
+
+    inv = ROOT / "docs" / "parameter_inventory.csv"
+    if not inv.exists():
+        pytest.skip("parameter_inventory.csv 없음 — 밴드 수를 셀 수 없다")
+    pi = pd.read_csv(inv, dtype=str)
+    val = pd.to_numeric(pi.value, errors="coerce")
+    lo = pd.to_numeric(pi.value_low, errors="coerce")
+    hi = pd.to_numeric(pi.value_high, errors="coerce")
+    banded = lo.notna() & hi.notna()
+
+    text = GUIDE.read_text(encoding="utf-8")
+    m = re.search(r"<!-- GEN:band_coverage -->(.*?)<!-- /GEN:band_coverage -->", text, re.S)
+    assert m, "§4.5의 GEN:band_coverage 블록이 없다"
+    block = m.group(1)
+
+    for t in ("T1", "T2", "T3", "T4", "T5"):
+        want = f"{t} {int((banded & (pi.evidence_tier == t)).sum())}/{int((pi.evidence_tier == t).sum())}"
+        assert want in block, f"§4.5의 밴드 수가 인벤토리의 {want}와 다르다"
+
+    def width(i):
+        return f"−{1 - lo[i] / val[i]:.0%}/+{hi[i] / val[i] - 1:.0%}"
+
+    t1 = list(pi.index[banded & (pi.evidence_tier == "T1")])
+    assert t1, "T1에 밴드가 없다 — 이 검사가 지키는 문장의 대상이 사라졌으니 §4.5를 다시 써라"
+    for i in t1:
+        assert pi.param_id[i] in block, (
+            f"§4.5가 밴드를 가진 T1 행 `{pi.param_id[i]}`를 이름으로 밝히지 않는다")
+        assert width(i) in block, (
+            f"§4.5가 `{pi.param_id[i]}`의 폭을 인벤토리의 {width(i)}로 적지 않는다 — "
+            "밴드가 관행인지 증거인지 독자가 판별할 수 없다")
+
+    # 같은 램프의 다른 행이 같은 규칙을 쓰면, 그 사실이 같은 자리에 있어야 한다.
+    ents = set(pi.entity[i] for i in t1)
+    sibs = [i for i in pi.index[banded] if i not in t1 and pi.entity[i] in ents]
+    if sibs and {round(1 - lo[i] / val[i], 6) for i in t1 + sibs} == {
+            round(1 - lo[i] / val[i], 6) for i in t1}:
+        for i in sibs:
+            assert pi.param_id[i] in block, (
+                f"T1 행과 같은 폭 규칙을 쓰는 `{pi.param_id[i]}`가 §4.5에 없다 — "
+                "두 T1 밴드가 관행이라는 근거가 문장에서 빠졌다")
+
+    # 출처 기간 밖의 행은 그 사실을 같은 자리에서 밝힌다.
+    reg = ROOT / "data" / "raw" / "source_register.csv"
+    if reg.exists():
+        sr = pd.read_csv(reg, dtype=str).set_index("source_id")
+        for i in t1:
+            sid = pi.source_id[i]
+            if sid not in sr.index or not str(pi.field[i]).isdigit():
+                continue
+            start, end = str(sr.loc[sid, "reporting_start"]), str(sr.loc[sid, "reporting_end"])
+            if not (start[:4] <= str(pi.field[i]) <= end[:4]):
+                assert start in block and end in block, (
+                    f"`{pi.param_id[i]}`({pi.field[i]})는 출처 `{sid}`의 기간 "
+                    f"{start}–{end} 밖인데 §4.5가 그 사실을 말하지 않는다")
+
+
 def _num(n: int) -> str:
     return {7: "seven", 8: "eight", 9: "nine", 10: "ten", 11: "eleven"}.get(n, str(n))

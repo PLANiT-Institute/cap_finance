@@ -972,12 +972,23 @@ preparation. **Not one T5 `technology`, `facility` or `price_path` parameter car
 68 and 18 of them, none banded). Ranges exist where we chose a number, not where the physics and
 the capital costs sit.
 
-The tier ordering does not run cleanly in the other direction either. Band coverage is T1 2/3,
-T2 2/137, T3 1/41, T4 0/79, T5 16/155: T4 has none at all, and the two banded T1 rows are the 2025
-and 2030 K-ETS auction shares, where the statute itself states a range. So the defensible claim is
-narrower than "evidence quality and stated uncertainty run in opposite directions" — a T2 company
-disclosure gives a point value and no uncertainty, which means **the sources we trust most
-contribute no width, and the width in this model is mostly convention rather than evidence.**
+The tier ordering does not run cleanly in the other direction either, and the two rows that used
+to be this section's counter-example are not one.
+
+<!-- GEN:band_coverage -->
+Band coverage by tier is T1 2/3, T2 2/137, T3 1/41, T4 0/79, T5 16/155. The 2 banded T1 rows are `FIN.config.auction_share.2025` (0.1, [0.06, 0.14] = −40%/+40%), `FIN.config.auction_share.2030` (0.15, [0.09, 0.21] = −40%/+40%) — symmetric about the central value and the same −40% rule the 4 banded T5 rows of the same ramp carry (`FIN.config.auction_share.2035` (0.3, [0.18, 0.42] = −40%/+40%), `FIN.config.auction_share.2040` (0.5, [0.3, 0.7] = −40%/+40%), `FIN.config.auction_share.2045` (0.75, [0.45, 1] = −40%/+33%), `FIN.config.auction_share.2050` (1, [0.6, 1] = −40%/+0%); the upper end is clipped where the parameter is a share). `FIN.config.auction_share.2025` also sits outside the reporting period of the source it names — `KETS_P4_CONFIRM_2025` covers 2026-01-01 to 2030-12-31.
+<!-- /GEN:band_coverage -->
+
+This section previously read those two rows as evidence-stated width — "the 2025 and 2030 K-ETS
+auction shares, where the statute itself states a range". They are not. Both bands are the same
+symmetric ±40% rule the assumed post-2030 rows of the same ramp carry, and the source they cite,
+[`KETS_P4_CONFIRM_2025`](../data/raw/source_register.csv), records a point value for the non-power
+share rather than a range — and is itself a press report of the allocation plan, flagged in the
+register for cross-check against the official notice. So T4 carries no band at all, T1's two are convention, and a T2 company
+disclosure gives a point value and no uncertainty: **the sources we trust most contribute no width,
+and the width in this model is mostly convention rather than evidence.** Correcting the claim
+strengthens that conclusion rather than weakening it — the last two rows held out as evidence-stated
+width are drawn by the same rule as the rest.
 
 What that convention costs is measured, not asserted — and the measurement's own reach is the
 finding. The three technology cells that do carry literature bands (§3.4) show that the ±30%
