@@ -1534,6 +1534,8 @@ def test_every_source_line_citation_in_the_guide_points_at_what_it_claims():
         ("e2_milp.py", 325): "facility_id in cf.index",
         ("e2_milp.py", 332): "applies_to_unit",
         ("calibration.py", 24): "FACTOR_SERIES",
+        ("calibration.py", 99): "electrolyzer_capex",   # factor 밖에서 직접 열리는 계열
+        ("uncertainty_propagation.py", 49): "kau_krw",  # 캘리브레이션 밖의 유일한 D4 소비자
         ("plancost.py", 258): "p.ccfd",
         ("e5_metrics.py", 51): "Lower-left envelope",    # 프론티어 정의
         ("e5_metrics.py", 61): "def _gap(",
@@ -1858,6 +1860,132 @@ def test_section_4_5_does_not_call_a_convention_band_an_evidence_band():
                 assert start in block and end in block, (
                     f"`{pi.param_id[i]}`({pi.field[i]})는 출처 `{sid}`의 기간 "
                     f"{start}–{end} 밖인데 §4.5가 그 사실을 말하지 않는다")
+
+
+def test_section_3_5_does_not_confuse_named_by_no_factor_with_read_by_nothing():
+    """§3.5의 두 집합은 같지 않다 — 하나가 더 넓고, 그 차이가 수소 가격을 고정한다.
+
+    `FACTOR_SERIES`가 이름을 부르지 않는 계열은 변동성 추정에서 열리지 않는다. 그러나
+    `electrolyzer_capex`는 어느 factor도 부르지 않는데 `calibrate`가 직접 열고, 그 마지막
+    관측이 수소 가격 경로의 앵커다(§3.5 자신의 결론이 그 위에 선다). 두 집합을 같다고 쓰면
+    수를 틀리게 되고, 그 예외가 사라진다.
+
+    생성기의 계산을 빌리지 않는다 — D4와 `calibration.py`에서 따로 세고, 인쇄된 값과 대조한다.
+    """
+    import re
+
+    import pandas as pd
+
+    from cap.calibration import FACTOR_SERIES
+
+    d4 = ROOT / "data" / "prepared" / "D4_price_history.csv"
+    if not d4.exists():
+        pytest.skip("D4 없음 — 계열 수를 셀 수 없다")
+    present = set(pd.read_csv(d4, dtype=str).series_id)
+    by_factor = {s for ss in FACTOR_SERIES.values() for s in ss}
+
+    # factor 밖에서 직접 열리는 계열은 코드에서 확인한다 (생성기가 아니라)
+    src = (ROOT / "src" / "cap" / "calibration.py").read_text(encoding="utf-8")
+    direct = {s for s in re.findall(r'wide\.get\("([^"]+)"\)', src)} & present
+    assert direct, "calibrate가 직접 여는 계열이 없다 — §3.5의 예외 문장을 다시 써라"
+
+    named = present & by_factor
+    unnamed = len(present) - len(named)
+    unread = len(present - by_factor - direct)
+
+    text = GUIDE.read_text(encoding="utf-8")
+    sec = text[text.index("### 3.5 D4"):text.index("### 3.6 D5")]
+    m = re.search(r"<!-- GEN:price_series -->(.*?)<!-- /GEN:price_series -->", sec, re.S)
+    assert m, "§3.5의 GEN:price_series 블록이 없다"
+    block = m.group(1)
+    prose = re.sub(r"\s+", " ", sec[:m.start()] + sec[m.end():])
+
+    assert f"A factor names {len(named)} of the {len(present)} series present" in block, (
+        f"§3.5가 factor가 부르는 계열을 {len(named)}/{len(present)}로 적지 않는다")
+    assert f"{unnamed} are named by none" in block, (
+        f"§3.5가 factor가 부르지 않는 계열을 {unnamed}로 적지 않는다")
+    assert f"the calibration leaves {unread} and not {unnamed} unopened" in block, (
+        f"§3.5가 두 집합의 차이를 밝히지 않는다 — 읽히지 않는 것 {unread}, "
+        f"이름 없는 것 {unnamed}")
+    for s in direct:
+        assert f"`{s}`" in block, f"§3.5가 직접 열리는 계열 `{s}`를 이름으로 밝히지 않는다"
+
+    # 손으로 적은 계열 수는 곧 낡는다 — 수는 블록 안에만 있어야 한다.
+    stale = re.search(r"\d+ of the \d+ series", prose)
+    assert not stale, (
+        f"§3.5의 산문이 계열 수를 손으로 적는다: {stale.group(0)!r} — 블록으로 옮겨라")
+
+    # 예외 없는 절대 규칙은 §3.5 자신의 앵커 문장과 모순된다.
+    assert "never opened for volatility" in prose, (
+        "§3.5가 '열리지 않는다'를 변동성으로 한정하지 않는다 — "
+        "electrolyzer_capex가 그 규칙의 반례다")
+    for s in direct:
+        assert s in prose, f"§3.5의 산문이 예외 `{s}`를 이름으로 밝히지 않는다"
+
+
+def test_section_3_5_unread_series_are_not_all_d2b_provenance():
+    """"읽히지 않는다"와 "D2b의 출처다"는 둘 다 검사된 적이 없는 주장이었다.
+
+    §3.5는 캘리브레이션이 열지 않는 계열을 "level references and provenance for the price
+    paths in D2b"라고 불렀다. 두 가지가 틀렸다. (1) `kau_krw`는 `uncertainty_propagation`이
+    같은 추정기로 탄소가격 변동성을 뽑는 계열이다 — 읽히지 않는 것이 아니다. (2) D2가 인용하는
+    `source_id` 키를 가진 것은 PPA 세 계열뿐이고, 나머지는 어느 시나리오 파일과도 키를 공유하지
+    않는다. 두 사실을 생성기의 계산을 빌리지 않고 파일과 원시 소스에서 다시 확인한다.
+    """
+    import re
+
+    import pandas as pd
+
+    from cap.calibration import FACTOR_SERIES
+
+    d4p = ROOT / "data" / "prepared" / "D4_price_history.csv"
+    if not d4p.exists():
+        pytest.skip("D4 없음")
+    d4 = pd.read_csv(d4p, dtype=str)
+    cal = (ROOT / "src" / "cap" / "calibration.py").read_text(encoding="utf-8")
+    opened = {s for ss in FACTOR_SERIES.values() for s in ss}
+    opened |= set(re.findall(r'wide\.get\("([^"]+)"\)', cal))
+    unread = sorted(set(d4.series_id) - opened)
+
+    def keys(cells):                      # 분해 규칙을 audit_data에서 빌리지 않는다
+        out = set()
+        for cell in cells.dropna().astype(str):
+            for p in re.split(r"[;|+/]", re.sub(r"\(.*?\)", "", cell)):
+                if p.strip() and not p.strip().startswith("EST_"):
+                    out.add(p.strip())
+        return out
+
+    d2 = set()
+    for f in ("D2a_scenario_budget.csv", "D2b_scenario_prices.csv"):
+        d2 |= keys(pd.read_csv(ROOT / "data" / "prepared" / f, dtype=str).source_id)
+    shared = sorted(s for s in unread if keys(d4.loc[d4.series_id == s, "source_id"]) & d2)
+    assert shared and len(shared) < len(unread), (
+        "읽히지 않는 계열 전부가 D2와 키를 공유하거나 전부 공유하지 않는다 — "
+        "§3.5의 대조 문장을 다시 써라")
+
+    text = GUIDE.read_text(encoding="utf-8")
+    sec = text[text.index("### 3.5 D4"):text.index("### 3.6 D5")]
+    m = re.search(r"<!-- GEN:price_series -->(.*?)<!-- /GEN:price_series -->", sec, re.S)
+    block = m.group(1)
+    prose = re.sub(r"\s+", " ", sec[:m.start()] + sec[m.end():])
+
+    assert "provenance for the price paths in D2b" not in block + prose, (
+        "§3.5가 읽히지 않는 계열 전부를 D2b의 출처라고 부른다 — 키를 공유하는 것은 "
+        f"{len(shared)}개뿐이다: {shared}")
+    assert f"{len(shared)} of the {len(unread)} share a `source_id` key" in block, (
+        f"§3.5가 D2와 키를 공유하는 계열 수를 {len(shared)}/{len(unread)}로 적지 않는다")
+    for s in shared:
+        assert f"`{s}`" in block, f"§3.5가 D2와 키를 공유하는 `{s}`를 이름으로 밝히지 않는다"
+
+    # 저장소 안의 다른 소비자 — 이름이 코드에 있고(주석 아님), 블록이 그 위치를 적는가
+    up = ROOT / "scripts" / "uncertainty_propagation.py"
+    live = [f"{i}" for i, ln in enumerate(up.read_text(encoding="utf-8").splitlines(), 1)
+            if "kau_krw" in ln.split("#")[0]]
+    assert live, "uncertainty_propagation이 더는 kau_krw를 읽지 않는다 — §3.5를 다시 써라"
+    assert "kau_krw" in unread, "kau_krw가 이제 캘리브레이션에 열린다 — §3.5를 다시 써라"
+    assert f"`scripts/uncertainty_propagation.py:{live[0]}`" in block, (
+        f"§3.5가 kau_krw의 실제 소비자를 적지 않는다 (기대: 줄 {live[0]})")
+    assert "co2_vol" in prose, "§3.5의 산문이 kau_krw를 무엇에 쓰는지 말하지 않는다"
 
 
 def _num(n: int) -> str:

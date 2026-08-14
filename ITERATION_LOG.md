@@ -5337,3 +5337,162 @@ dangling 0) · §6.2의 "TCaR 41–48%"·"석화 ② 71–73%" = `docs/process_a
 - **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
   미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5),
   `get_affordability` 통화 경고(F8).
+
+## F37 (06:18) — §4.5가 "법령이 범위를 말한 곳"이라 부른 T1 두 행은 나머지와 같은 ±40% 관행이었다
+
+**이 절은 F38이 커밋 `7134afb`에서 복원해 적는다.** F37 사이클은 코드·가이드·테스트·웹을
+커밋하고 푸쉬했으나 `ITERATION_LOG.md`에 절을 남기지 않았다(커밋 파일 목록에 이 파일이 없다).
+사실 관계는 커밋 메시지와 그 diff에서 확인한 것만 적는다.
+
+**결함.** §4.5는 밴드를 가진 T1 두 행을 "증거가 폭을 말한" 반례로 들었다 — "the 2025 and 2030
+K-ETS auction shares, where the statute itself states a range". 세 가지가 틀렸다.
+
+1. 두 밴드는 중심값의 정확히 ±40%이고(0.1 → [0.06, 0.14], 0.15 → [0.09, 0.21]), 같은 램프의
+   post-2030 T5 네 행이 쓰는 규칙과 같다. 증거에서 읽은 폭이 아니라 대칭 관행이다.
+2. 인용된 `KETS_P4_CONFIRM_2025`은 범위가 아니라 점값(발전외 15%)을 말하고, 관보가 아니라
+   언론 기사다(`data/raw/source_register.csv`의 licence·quality_note).
+3. 2025년 행은 그 출처 자신의 보고 기간(2026-01-01 ~ 2030-12-31) 밖이다.
+
+**고침.** 계층별 밴드 수(손으로 적혀 있었다), 각 T1 행의 양쪽 폭, 같은 규칙을 쓰는 형제 행,
+출처 기간 밖 여부를 `gen_band_coverage`가 인벤토리와 레지스터에서 읽는다
+(`scripts/build_tech_guide.py`, +61줄). 정정은 §4.5의 결론을 약화시키지 않고 강화한다 —
+관행이 아니라고 남겨 둔 마지막 두 행마저 관행이므로 "the width in this model is mostly
+convention rather than evidence"가 예외 없이 성립한다.
+
+**검증(커밋 메시지 기록).** build_tech_guide 33블록 148,352자 재현 ·
+`pytest tests/test_tech_guide.py` 53건 · `gate.py` 9항목 OK(pytest 108건 240.76s).
+
+### 인계
+
+- **로그 절 누락은 이번 창에서 두 번째 종류의 미완이다**(F35는 커밋 전 작업 트리, F37은 커밋 후
+  로그). 다음 사이클은 `git log`의 마지막 F번호와 `ITERATION_LOG.md`의 마지막 `## F` 절을
+  **둘 다** 보고 시작할 것 — 하나만 보면 F37을 F37로 다시 하거나, 없었던 일로 지나친다.
+
+## F38 (08:31) — §3.5의 "factor가 부르지 않는 계열"과 "아무도 읽지 않는 계열"은 같은 집합이 아니었다
+
+**한 일.** 시작 시 `git log`(마지막 `7134afb` = F37)와 `ITERATION_LOG.md` 꼬리(마지막 절 F36)가
+어긋났다 — F37이 로그 절을 남기지 않았다. §1.3에 따라 그것을 먼저 완결하고(위 절), 이번을
+F38로 잡았다. 게이트는 시작 시 `gate: OK`(pytest 108건 228.09s). 지도(§5-C)는 F16에서 끝나므로
+우선순위 규칙에 따라 데이터셋 절을 계속 읽었고, Arc가 가장 자세히 요구한 §3에서 결함이 나왔다.
+
+**결함 1 — §3.5가 손으로 적은 계열 수가 두 가지 이유로 틀렸다.**
+
+`series_id` 행이 "11 of the 18 series present are named by no factor"라고 적었다. 실제로
+`FACTOR_SERIES`가 부르는 이름은 6개이고 그중 D4에 있는 것은 5개다(`equip_import_idx`는 없다).
+따라서 factor가 부르지 않는 현존 계열은 **13개**다. 11은 어느 셈으로도 나오지 않는다 —
+18 − 7(생성기가 세는 "calibration이 이름으로 여는 계열", `electrolyzer_capex` 포함)의 잔재로
+보인다. 같은 절의 GEN 블록은 "12 of them are read by nothing"을 맞게 인쇄하고 있었으므로,
+독자는 같은 절에서 11·12·13 중 두 수를 서로 다른 뜻으로 마주쳤다.
+
+**결함 2 — 그 옆의 절대 규칙이 §3.5 자신의 결론과 모순된다.**
+
+"**a series no factor names is never opened, however long it is.**" 이것이 참이면
+`electrolyzer_capex`는 열리지 않아야 한다 — 어느 factor도 그것을 부르지 않는다. 그런데
+`calibrate`가 `wide.get("electrolyzer_capex")`로 직접 열고(`src/cap/calibration.py:99-113`),
+그 마지막 관측이 수소 가격 경로의 앵커다. §3.5는 스무 줄 뒤에서 바로 그 사실을 결론으로
+쓴다("the electrolyzer capex path — which sets the hydrogen price … is anchored on a two-point
+series"). 즉 이 절은 자기가 세운 규칙의 반례 위에 자기 결론을 세우고 있었다. 표의
+"Read as" 열도 산문이 "that mapping"이라 부르는 `FACTOR_SERIES`가 아니다 — 생성기가
+`electrolyzer_capex → ez`를 따로 붙인다(`build_tech_guide.py:473`).
+
+**고침.** 수를 산문에서 걷어내 `gen_price_series`로 옮겼다. 블록이 이제 factor가 부르는 현존
+계열 수, 부르지 않는 수, 그 차이가 왜 "읽히지 않는 수"와 다른지를 D4와 `FACTOR_SERIES`에서
+읽어 한 자리에 적는다. 산문의 규칙은 "never opened **for volatility**"로 한정하고, 예외를
+이름과 코드 줄로 밝히고, "Read as" 열이 factor 지도 **더하기** 그 직접 읽기임을 말한다.
+
+### 가이드에서 고친 사실 오류
+
+| # | 어디 | 적혀 있던 것 | 실제 | 출처 |
+|---|---|---|---|---|
+| 1 | §3.5 `series_id` 행 | "**11** of the 18 series present are named by no factor" | **13**이다 — `FACTOR_SERIES`의 이름 6개 중 D4에 있는 것은 5개(`equip_import_idx` 부재) | `data/prepared/D4_price_history.csv`(18계열) · `src/cap/calibration.py:24-26` |
+| 2 | 같은 행 | 수를 손으로 적었다 | 수를 GEN 블록으로 옮겼고 산문에는 남기지 않는다 | `scripts/build_tech_guide.py:484-490`(`gen_price_series`) |
+| 3 | §3.5 산문 | "a series no factor names is **never opened**, however long it is" — 예외 없는 규칙 | 변동성 추정에 한해 참이다. `electrolyzer_capex`는 어느 factor도 부르지 않는데 `calibrate`가 직접 열고, 수소 가격 경로의 앵커다 | `src/cap/calibration.py:99-113` · 같은 절 §3.5 말미 |
+| 4 | §3.5 산문 | "The 'Read as' column below is **that mapping**"(= `FACTOR_SERIES`) | 그 지도 **더하기** 직접 읽기 하나(`ez`)다 | `scripts/build_tech_guide.py:473` |
+
+### 검증
+
+```
+.venv/bin/python scripts/build_tech_guide.py           # 33 blocks, 149,001 chars
+.venv/bin/python scripts/build_site.py                 # web/guide.html 재생성
+.venv/bin/python -m pytest tests/test_tech_guide.py -q # 54 passed
+.venv/bin/python -m pytest tests/ -q                   # 109 passed (306.01s)
+.venv/bin/python scripts/gate.py                       # gate: OK
+```
+
+**게이트가 한 번 붉었고, 원인은 이 변경이 아니라 호스트였다 — 다음 사이클을 위해 적는다.**
+변경 뒤 첫 게이트가 `[FAIL] pytest tests/ TimeoutExpired ... 900 seconds`로 끝났다. 같은
+스위트가 사이클 시작 시 228초에 통과했으므로 증상만 보면 이번 변경이 의심된다. 그러나 그
+프로세스는 **CPU 268초를 쓰면서 벽시계로 2시간 39분**을 썼다(`3% cpu 2:39:10 total`) —
+즉 계산이 아니라 대기였다. 확인해 보니 `Google Drive`가 13시간째 CPU 100%를 점유했고
+load average가 1/5/15분에 9 / 170 / **275**였다. 부하가 가라앉은 뒤 같은 스위트가 306초에
+**109건 전건 통과**했다. 판별 순서: `[FAIL] pytest`를 보면 (1) 그 줄이 초과(Timeout)인지
+실패(assert)인지, (2) 초과면 `ps -o time,%cpu`로 CPU 시간과 벽시계를 비교, (3) `uptime`의
+load average — 이 셋이면 코드 결함과 호스트 부하를 섞지 않는다.
+
+**게이트의 pytest 하위 프로세스는 타임아웃 뒤에도 살아남는다.** 900초 초과로 게이트가 끝난
+뒤에도 그 pytest(PID 97316)가 1시간 8분째 돌고 있었고, 다음 진단 실행과 경쟁했다. 재현
+실행 전에 `ps -ax | grep [p]ytest`로 고아 프로세스를 먼저 죽일 것 — 그러지 않으면 두 번째
+실행도 느려서 "재현되었다"고 잘못 읽는다.
+
+수치 출처: 현존 18계열·99관측 = `data/prepared/D4_price_history.csv` ·
+factor가 부르는 6개 이름과 그중 현존 5개 = `src/cap/calibration.py:24-26`(`FACTOR_SERIES`) ·
+직접 읽히는 1개 = `src/cap/calibration.py:99` · 6관측 문턱을 넘는 3개(`smp_monthly` 19,
+`indus_tariff` 10, `jepx_spot` 7) = 같은 CSV의 계열별 관측 수.
+
+테스트 1개 추가(53 → 54).
+`test_section_3_5_does_not_confuse_named_by_no_factor_with_read_by_nothing` — 생성기의 계산을
+빌리지 않는다. D4에서 계열을 직접 세고, factor 지도는 `cap.calibration`에서 import하고,
+직접 열리는 계열은 `calibration.py` 원문에서 `wide.get("...")`를 정규식으로 뽑아 확인한 뒤,
+인쇄된 세 수와 대조한다. 산문에 `\d+ of the \d+ series` 꼴이 남아 있으면 실패하고, 규칙이
+변동성으로 한정되지 않거나 예외를 이름으로 밝히지 않아도 실패한다. 되돌림 검사: `HEAD`의
+옛 본문에 같은 검사를 걸면 세 곳에서 붉어진다(`11 of the 18 series` 검출 · 한정 문구 부재 ·
+예외 이름 부재).
+
+F32의 줄 인용 검사에 `calibration.py:99 → electrolyzer_capex` 앵커를 추가했다 — 새 인용이
+"존재하는 줄"만 통과하고 무엇을 가리키는지는 아무도 보지 않는 상태로 들어가지 않도록.
+
+**함께 대조하고 결함이 없던 것들**: D1b 10열 전부 스키마 필수(§3.2의 "All ten columns")·
+`emissions_s2` 비영 63/69 · `re_price` 한국 175,000 / 일본 198,000 KRW/MWh 단일값 ·
+§3.5의 "electricity clears it three times over … mean of the three series' annualised
+volatilities"(`calibration.py:76-86`의 `np.mean(fv)`) · §3.6의 유상할당 문장(config
+2025 0.10 → 2030 0.15 보간 0.11–0.14를 D5의 15%가 2026–2030에 덮어쓴다, `config.yaml:65-71` ·
+`D5_policy_support.csv`) · `auction_share_power` 50%가 별도 키로 격리된다.
+
+### 사용자 5개 점검
+
+| 점검 | 판정 | 근거 |
+|---|---|---|
+| ① 데이터 — 가짜 없고 전부 쓰는가 | 유지 | gate audit `ok 68, UNUSED 1, PARTIAL 3` 불변 |
+| ② 시나리오 — 분석툴로 쓸 수 있는가 | 유지 | `out/scenarios/summary.csv` 12묶음 |
+| ③ 인사이트 — 팔 수 있는 그림인가 | **개선** | Arc가 가장 자세히 물은 데이터셋 절에서, 어느 계열이 실제로 모델에 들어가는지가 처음으로 한 벌의 수로 맞는다. 지표 ③(TCaR)의 근거를 세는 절이라 특히 그렇다 |
+| ④ GitHub·MCP — 도구로 작동하는가 | 유지 | 게이트 9항목·MCP 11도구 불변 |
+| ⑤ 산출물 — 다른 형식이 있는가 | 유지 | md / HTML / SVG / 데이터 패키지 |
+
+### 인계
+
+- **`equip_import_idx`는 `FACTOR_SERIES`가 부르지만 D4에 없다.** capex factor가 사전값
+  0.06으로 떨어지는 두 이유 중 하나다(다른 하나는 `constr_cost_idx` 3관측). 계열을 구하면
+  capex 변동성이 처음으로 추정치가 되고 상관행렬의 항등도 하나 풀린다 — 창 밖(데이터 수집)이라
+  여기 남긴다.
+- **동시 실행 — 이 커밋은 두 창의 작업을 함께 담는다.** 이 사이클이 호스트 부하로 게이트를
+  기다리는 동안(위 문단) **다른 창이 같은 작업 트리에서 같은 블록을 이어 고쳤다**(파일
+  mtime 14:43–14:52). 그 창은 이 사이클이 인계로 남기려던 것 — "12개가 D2b의 어느 앵커로
+  쓰였는지 §3.5가 말하지 않는다" — 을 바로 구현했다: `kau_krw`가
+  `scripts/uncertainty_propagation.py:49`에서 읽히므로 **어느 코드도 읽지 않는 계열은 11개**,
+  그중 3개(`re_ppa_*`)는 D2b `re_price` 앵커와 `source_id`를 공유하고 나머지 9개는 어느
+  시나리오 파일과도 키를 공유하지 않는다는 문장이 같은 블록에 들어갔다. 그 창은 이 사이클이
+  추가한 검사도 새 문구에 맞춰 고쳤고(`the calibration leaves 12 and not 13 unopened`),
+  `uncertainty_propagation.py:49 → kau_krw` 앵커를 F32 표에 넣었다. 커밋 시점의 트리는
+  `build_tech_guide.py --check` 통과 · `tests/test_tech_guide.py` **55건** 통과다.
+  다음 창은 이 커밋 뒤의 `git log`와 로그 절을 함께 보고 자기 번호를 정할 것.
+- **§4.5의 밴드 서술은 F37이 생성기로 옮겼다** — `docs/parameter_inventory.csv`의 T1 두 행
+  등급·`source_id` 수정은 여전히 창 밖 미결이다(F36 인계).
+- **`gen_frontier_shape`의 `rank.max()`**(F28) · **D2b `tech_avail_*` 수집**(F29) ·
+  **`prepare_raw.py:57-59`의 죽은 루프**(F32) · **`reline_cheap` 재계획**(~20분) ·
+  **추첨 대상을 밴드 보유로도 열기**(F27) · **EFF 두 사본 불일치**(F22) ·
+  **EFF·FIN 확률과정 정량 분해**(F20) · **EFF 철강 CAPEX 2건 출처 부재**(F19) ·
+  **`_alt` 행의 용도 미실현**(F19) · **감사기의 이름 매칭 한계**(F18) ·
+  **§7이 드러낸 실질 공백 2건** · **CCfD 시험 가능화**(F13) · **MCI 사업소 상한 검증**(O13).
+- **미해결 코드 수정 5건**(창 밖, 변동 없음): D6 통화 환산(F1), 광양 2고로 능력(F3),
+  미등록 `facility_id` 조용한 탈락(F4), `FACTOR_SERIES` 부재 계열(F5),
+  `get_affordability` 통화 경고(F8).

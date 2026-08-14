@@ -507,14 +507,18 @@ estimated), so it is worth reading in the table below rather than skipping as a 
 | Field | Definition | Unit |
 |---|---|---|
 | `date` **[req]** | Observation date, `YYYY-MM-DD`. Spacing is irregular — annual for most series, and the interval is never checked | date |
-| `series_id` **[req]** | Series key. A series is only opened if some factor names it in `FACTOR_SERIES` (`src/cap/calibration.py:24-26`); 11 of the 18 series present are named by no factor | — |
+| `series_id` **[req]** | Series key. Whether a series is opened at all is decided in code and not in this file — by `FACTOR_SERIES` (`src/cap/calibration.py:24-26`) for volatility, and by one direct read for the electrolyzer path. Counts are in the block below | — |
 | `value` **[req]** | The quoted level. Volatility is estimated from log differences of consecutive values, so only the shape matters, not the level — except for the electrolyzer series, whose last value anchors the hydrogen price path | see `unit` |
 | `unit` **[req]** | Free text carrying the series' basis and caveats, not a parseable unit code. **No stage converts on it**, so two series in different units may not be mixed inside one factor | — |
 | `source_id` **[req]** | Foreign key into `source_register` | — |
 
 The three factors are electricity, hydrogen and capex, and the mapping from factor to series is a
 constant in `calibration.py`, not a property of the file: **a series no factor names is never
-opened, however long it is.** The "Read as" column below is that mapping.
+opened for volatility, however long it is.** One series escapes that rule, and it is not a minor
+one — `electrolyzer_capex` is named by no factor, is opened by `calibrate` directly
+(`src/cap/calibration.py:99-113`), and its last observation anchors the hydrogen price path. So the
+"Read as" column below is the factor map **plus** that one direct read, shown as `ez`, and *named by
+no factor* is a wider set than *read by nothing*.
 
 <!-- GEN:price_series -->
 | Series | Obs | From | To | Read as | Unit |
@@ -538,8 +542,20 @@ opened, however long it is.** The "Read as" column below is that mapping.
 | `re_ppa_krw_mwh` | 1 | 2026-01 | 2026-01 | — | KRW/MWh (한국 태양광 PPA 170원대 중반) |
 | `re_ppa_wind_krw_mwh` | 1 | 2026-01 | 2026-01 | — | KRW/MWh (한국 육상풍력 PPA 180원 중반) |
 
-**18 series, 99 observations. 12 of them are read by nothing** — they are level references and provenance for the price paths in D2b, not inputs to the volatility calibration. Of the 7 series the calibration names, 3 clear the 6-observation floor (`smp_monthly`, `indus_tariff`, `jepx_spot`), and `equip_import_idx` is named but absent from D4. So 2 of the 3 factors take a prior instead of an estimate: `h2` (0.25), `capex` (0.06). The factor correlation matrix is the identity for the same reason — with two factors producing no return series there is nothing to correlate, so identity is the absence of an estimate, not a finding of independence. The electrolyzer capex path is anchored on the last of 2 observations (2,916,000 KRW/kW @2023) with its decline rate and volatility taken from priors (5%/yr, 0.10); note the two observations *rise* 32% while the imposed path falls.
+**18 series, 99 observations. 12 of them the calibration never opens.** Of those, `kau_krw` (read at `scripts/uncertainty_propagation.py:49`) is read by other code in this repo, so 11 are read by no code at all; and 3 of the 12 share a `source_id` key with D2a/D2b — `re_ppa_jp_krw_mwh` (REI_JP_PPA_2025), `re_ppa_krw_mwh` (KR_PPA_2026), `re_ppa_wind_krw_mwh` (KR_PPA_2026), the `re_price` anchor of §3.3. The other 9 share no key with either scenario file, so they document nothing in this model. A factor names 5 of the 18 series present, so 13 are named by none — but `electrolyzer_capex` is opened by `calibrate` directly (`src/cap/calibration.py:99-113`), which is why the calibration leaves 12 and not 13 unopened. Of the 7 series the calibration opens by name, 3 clear the 6-observation floor (`smp_monthly`, `indus_tariff`, `jepx_spot`), and `equip_import_idx` is named but absent from D4. So 2 of the 3 factors take a prior instead of an estimate: `h2` (0.25), `capex` (0.06). The factor correlation matrix is the identity for the same reason — with two factors producing no return series there is nothing to correlate, so identity is the absence of an estimate, not a finding of independence. The electrolyzer capex path is anchored on the last of 2 observations (2,916,000 KRW/kW @2023) with its decline rate and volatility taken from priors (5%/yr, 0.10); note the two observations *rise* 32% while the imposed path falls.
 <!-- /GEN:price_series -->
+
+Two things about the series the calibration leaves closed, because the block above counts them and
+the count is easy to over-read. `kau_krw` is not idle: `scripts/uncertainty_propagation.py` estimates
+the K-ETS carbon-price volatility from it with the *same* estimator the input-price factors use
+(`co2_vol`, line 156), which is what makes the L2 comparison in
+[`docs/uncertainty_propagation.md`](uncertainty_propagation.md) a like-for-like one. And the rest are
+not documentation of D2b either — only the three PPA series carry a key that a scenario file also
+cites. `steel_margin_krw_t` and `ethylene_naphtha_spread` do stand behind a model number, the lost
+margin `margin_kthou_t` in D1a, but as constants typed into `scripts/prepare_raw.py:80`
+(`MARGIN = {"steel": 70.0, "petchem": 290.0}`) — the series is never opened, so moving it would move
+nothing. The scan behind that count excludes `scripts/make_sample_data.py`, which writes a synthetic
+D4 rather than reading this one, and ignores comments.
 
 The 6-observation floor (5 log returns) is applied **per series, not per factor**: a factor
 estimates from whichever of its series clears the floor, and falls back to a prior only when none

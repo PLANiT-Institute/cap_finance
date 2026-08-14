@@ -456,6 +456,50 @@ def _eaf_evidence_note():
         "[`docs/tech_cost_reconciliation.md`](tech_cost_reconciliation.md).")
 
 
+def _unread_series_uses(df, unread_ids):
+    """What the series the calibration never opens are actually good for.
+
+    §3.5 asserted they were "level references and provenance for the price paths
+    in D2b". Two of the three checks that claim implies had never been run: a
+    shared `source_id` key with a D2 file (only the PPA series have one), and a
+    read anywhere else in the repository (`kau_krw` has one, and it sets the
+    carbon-price volatility of the L2 diagnostic). Both are read from the files
+    and the source tree rather than asserted in prose.
+
+    `make_sample_data.py` writes a synthetic D4 instead of reading this one, so
+    it is not a consumer; comments are stripped before matching so that a series
+    merely *mentioned* beside a hard-coded constant does not count as read.
+    """
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from audit_data import source_parts
+
+    def keys(cells):
+        out = set()
+        for cell in cells.dropna():
+            out |= {p for p in source_parts(str(cell)) if not p.startswith("EST_")}
+        return out
+
+    d2_keys = set()
+    for f in ("D2a_scenario_budget.csv", "D2b_scenario_prices.csv"):
+        p = prepared() / f
+        if p.exists():
+            d2_keys |= keys(pd.read_csv(p, dtype=str).source_id)
+    shared = {s: k for s in unread_ids
+              if (k := keys(df.loc[df.series_id == s, "source_id"]) & d2_keys)}
+
+    code = [p for p in sorted((ROOT / "src").rglob("*.py")) + sorted((ROOT / "scripts").rglob("*.py"))
+            if p.name not in {"build_tech_guide.py", "make_sample_data.py"}]
+    elsewhere = {}
+    for s in unread_ids:
+        for p in code:
+            hit = next((i for i, ln in enumerate(p.read_text(encoding="utf-8").splitlines(), 1)
+                        if s in ln.split("#")[0]), None)
+            if hit:
+                elsewhere[s] = f"{p.relative_to(ROOT)}:{hit}"
+                break
+    return shared, elsewhere
+
+
 def gen_price_series():
     """D4 series against the factors that actually read them.
 
@@ -484,13 +528,33 @@ def gen_price_series():
     used = [s for s in reads if s in g.index and g.loc[s, "n"] >= 6]
     unread = len(g) - len([s for s in reads if s in g.index])
     missing = [s for s in reads if s not in g.index]
+    # a factor names it (FACTOR_SERIES) vs `calibrate` opens it directly — not the same set
+    by_factor = {s for ss in FACTOR_SERIES.values() for s in ss}
+    factor_present = [s for s in g.index if s in by_factor]
+    direct = [s for s in reads if s in g.index and s not in by_factor]
     prior = [f"`{f}` ({FALLBACK_VOL[f]})" for f, ss in FACTOR_SERIES.items()
              if not any(s in g.index and g.loc[s, "n"] >= 6 for s in ss)]
+    unread_ids = [s for s in g.index if s not in reads]
+    d2_shared, elsewhere = _unread_series_uses(df, unread_ids)
     ez = df[df.series_id == "electrolyzer_capex"].sort_values("date")
     note = (f"\n\n**{len(g)} series, {int(g.n.sum())} observations. "
-            f"{unread} of them are read by nothing** — they are level references and "
-            "provenance for the price paths in D2b, not inputs to the volatility "
-            f"calibration. Of the {len(reads)} series the calibration names, "
+            f"{unread} of them the calibration never opens.** Of those, "
+            + (", ".join(f"`{s}` (read at `{w}`)" for s, w in sorted(elsewhere.items()))
+               + f" {'is' if len(elsewhere) == 1 else 'are'} read by other code in this repo, so "
+               f"{unread - len(elsewhere)} are read by no code at all"
+               if elsewhere else f"all {unread} are read by no code at all")
+            + f"; and {len(d2_shared)} of the {unread} share a `source_id` key with D2a/D2b — "
+            + (", ".join(f"`{s}` ({'/'.join(sorted(k))})" for s, k in sorted(d2_shared.items()))
+               + f", the `re_price` anchor of §3.3. The other {unread - len(d2_shared)} share no "
+                 "key with either scenario file, so they document nothing in this model."
+               if d2_shared else ".")
+            + f" A factor names {len(factor_present)} of the {len(g)} series present, so "
+            f"{len(g) - len(factor_present)} are named by none — but "
+            + ", ".join(f"`{s}`" for s in direct)
+            + (" is" if len(direct) == 1 else " are")
+            + " opened by `calibrate` directly (`src/cap/calibration.py:99-113`), which is why "
+            f"the calibration leaves {unread} and not {len(g) - len(factor_present)} unopened. "
+            f"Of the {len(reads)} series the calibration opens by name, "
             f"{len(used)} clear the 6-observation floor ({', '.join('`' + s + '`' for s in used)})"
             + (f", and {', '.join('`' + s + '`' for s in missing)} "
                f"{'is' if len(missing) == 1 else 'are'} named but absent from D4" if missing else "")
