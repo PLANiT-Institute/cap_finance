@@ -21,7 +21,7 @@ design narrative. [`docs/data_gap_registry.md`](data_gap_registry.md) records wh
 collect and where we were blocked. `paper/working_paper.md` is the manuscript.
 
 <!-- GEN:stamp -->
-> **Repository state.** Code, inputs, config, results and the derived records this document cites (`src`, `data`, `config.yaml`, `out`, `docs/*.csv` — 920 files, results read from disk because `out/` is not tracked) hash to `33d92a014e0b`. Results in this document come from the pipeline run finished `2026-08-10T10:00:24`. Rebuild the generated blocks with `python3 scripts/build_tech_guide.py`; `--check` fails if this document no longer matches that state. The stamp is a content digest, not a commit SHA, because a SHA is not knowable inside the commit that writes it.
+> **Repository state.** Code, inputs, config, results and the derived records this document cites (`src`, `data`, `config.yaml`, `out`, `docs/*.csv` — 919 files, results read from disk because `out/` is not tracked) hash to `38972cca9c54`. Results in this document come from the pipeline run finished `2026-08-30T21:13:20`. Rebuild the generated blocks with `python3 scripts/build_tech_guide.py`; `--check` fails if this document no longer matches that state. The stamp is a content digest, not a commit SHA, because a SHA is not knowable inside the commit that writes it.
 <!-- /GEN:stamp -->
 
 ---
@@ -205,7 +205,7 @@ row here.
 | `unit_name` **[req]** | Unit label as published, free text | — | Read by no stage; it is what makes a row checkable against its source |
 | `capacity` **[req]** | Nameplate annual capacity | **see `capacity_unit`** | Published capacity where available; otherwise inner volume × 913.3 t/m³·yr (**A-01**) |
 | `capacity_unit` **[req]** | The basis `capacity` is stated on | — | **Three bases occur in this one column** — hot metal, crude steel, ethylene (§3.0). See the caution below |
-| `commissioning_year` **[req]** | First operation | year | |
+| `commissioning_year` **[req]** | First operation | year | Blank in 9 of 23 rows (every Nippon Steel blast furnace), and read by no modelling stage — the loader's numeric check catches garbage text, not a genuinely blank required cell. Prep reads it only to backfill missing reline anchors before this file is written |
 | `last_reline_year` **[req]** | Most recent campaign renewal | year | Blast furnaces only |
 | `reinvest_cycle_yr` **[req]** | Campaign length | yr | Sets the reinvestment window |
 | `next_reinvest_year` **[req]** | Next campaign anchor | year | Early conversion before this anchor writes off residual book value (**A-13**) |
@@ -506,7 +506,7 @@ estimated), so it is worth reading in the table below rather than skipping as a 
 
 | Field | Definition | Unit |
 |---|---|---|
-| `date` **[req]** | Observation date, `YYYY-MM-DD`. Spacing is irregular — annual for most series, and the interval is never checked | date |
+| `date` **[req]** | Observation date. The granularity is mixed — bare `YYYY` and `YYYY-MM` both occur, no row carries a full `YYYY-MM-DD`, and `calibration.py` parses with `format="mixed"` by design. Spacing is irregular — annual for most series, and the interval is never checked | date |
 | `series_id` **[req]** | Series key. Whether a series is opened at all is decided in code and not in this file — by `FACTOR_SERIES` (`src/cap/calibration.py:24-26`) for volatility, and by one direct read for the electrolyzer path. Counts are in the block below | — |
 | `value` **[req]** | The quoted level. Volatility is estimated from log differences of consecutive values, so only the shape matters, not the level — except for the electrolyzer series, whose last value anchors the hydrogen price path | see `unit` |
 | `unit` **[req]** | Free text carrying the series' basis and caveats, not a parseable unit code. **No stage converts on it**, so two series in different units may not be mixed inside one factor | — |
@@ -1166,11 +1166,11 @@ but two unfalsifiable points on one axis (§7).
 <!-- GEN:diagnostic_drift -->
 | Diagnostic | Oldest arm written | Arms behind base | Control arm | Firms drifted | Largest ② drift | Largest ③ drift |
 |---|---|---|---|---|---|---|
-| `out/process` price-process arms | 2026-08-12 06:49 | 0 of 3 | `gbm` | 0 | — | — |
-| `out/scenarios` bundle matrix | 2026-08-12 06:14 | 0 of 12 | `bundle=base` | 0 | — | — |
-| `out/m8` ε-constraint sweep | 2026-08-12 06:53 | — | none — unmeasurable | — | — | — |
+| `out/process` price-process arms | 2026-08-30 22:47 | 0 of 3 | `gbm` | 0 | — | — |
+| `out/scenarios` bundle matrix | 2026-08-30 21:16 | 0 of 12 | `bundle=base` | 0 | — | — |
+| `out/m8` ε-constraint sweep | 2026-08-30 22:52 | — | none — unmeasurable | — | — | — |
 
-Every arm of every diagnostic above post-dates the base run (`out/e5`, 2026-08-10 10:00), so the perturbations are measured against the headline as printed.
+Every arm of every diagnostic above post-dates the base run (`out/e5`, 2026-08-30 21:13), so the perturbations are measured against the headline as printed.
 <!-- /GEN:diagnostic_drift -->
 
 ### 6.3 The frontier is thinner than it looks
