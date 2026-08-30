@@ -1,0 +1,6 @@
+# generated / working files — keep the markdown documents only
+_build/
+history/
+pdf/
+*.pdf
+.DS_Store
