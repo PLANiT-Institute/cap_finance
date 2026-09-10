@@ -86,7 +86,13 @@ def build():
         'net_trade: A = 시나리오별 E1 기업 예산경로 — K-ETS 4기 철강·석유화학 100% 무상할당(탄소누출업종, 2차 인용)·GX-ETS §34 목표기반 무상할당(법조문 확인)에 근거한 규칙 대용치; 업체별 공표 할당량 아님',
         dict(mv='v2.1-net-allocation')))
     candidates.to_csv(PUBLIC/'company-candidates.csv',index=False)
-    write_json(DEST/'src/lib/research.json',dict(version='v2.1',**v21,v2=v2,v1=v1))
+    v22_run=ROOT/'tmp/research_case_v2_2_struct/run'
+    candidates, v22=snapshot(v22_run, v2_cols, '2026-09-11', 'v2.2 · 검증 입력 정합 (정본)', v2_meta(v22_run,
+        'net_trade: A = 시나리오별 E1 기업 예산경로 (v2.1과 동일 규칙)',
+        dict(mv='v2.2-verified-inputs', h2_price_source='structural: 전력 중심가격×52 kWh/kg + 전해조 상각(IEA GHR 2024 앵커 2,916,000 KRW/kW, 하락률 0 — 검증 관측만 사용); D2b의 정책목표 3,500원/kg(MOTIE 2021)·JP 전략가는 v2.1에 보존',
+             co2_near_term_anchor='2026 KAU 장내 거래량가중 연평균 21,073원(KRX, 1/2–9/10)을 한국 두 시나리오의 2026 앵커로 추가',
+             scenario_labels={'NZ15':'NZE-anchored (IEA NZE 선진국 탄소가격·연료가격)','B20':'STEPS-anchored (IEA 공표정책 — 2°C 정합 아님; IEA WEO 2025에는 APS가 없어 2°C 앵커 부재)'})))
+    write_json(DEST/'src/lib/research.json',dict(version='v2.2',**v22,v21=v21,v2=v2,v1=v1))
 
     # D1 is aggregated before it enters the publication directory. No facility IDs.
     dd=ROOT/'tmp/research_case_v3/data'

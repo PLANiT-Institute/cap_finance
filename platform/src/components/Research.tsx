@@ -6,7 +6,7 @@ import {fmt,csvDownload} from '@/lib/format';
 const COMPANIES:Record<string,string>={POSCO:'POSCO',NSC:'Nippon Steel',LOTTE:'LOTTE Chemical',MCI:'Mitsui Chemicals'};
 type Row=Record<string,any>;
 // v2 (2026-09-10) is canonical; v1 (2026-09-05) is preserved so the change can be inspected side by side.
-const VERSIONS={v21:research as Row,v2:(research as Row).v2 as Row,v1:(research as Row).v1 as Row};
+const VERSIONS={v22:research as Row,v21:(research as Row).v21 as Row,v2:(research as Row).v2 as Row,v1:(research as Row).v1 as Row};
 const AXES:Record<string,{label:string;flag:string;note:string;v2only:boolean}>={
  es_abs:{label:'ES90 · 계획 자체 비용분포 (v2 정본)',flag:'on_mean_esabs_frontier',note:'계획의 절대 현금비용 상위 10% 평균 · 노출을 없앤 계획은 낮게 나옴',v2only:true},
  tcar_abs:{label:'TCaR90 · 계획 자체 비용분포',flag:'on_mean_tcarabs_frontier',note:'절대 비용의 P90 − P50',v2only:true},
@@ -14,7 +14,7 @@ const AXES:Record<string,{label:string;flag:string;note:string;v2only:boolean}>=
  tcar:{label:'TCaR90 · 증분(기준선 대비)',flag:'on_mean_tcar_frontier',note:'증분비용의 P90 − P50 · 기준선 추적오차를 재므로 감축이 위험으로 잡힘',v2only:false},
 };
 export default function Research() {
- const [version,setVersion]=useState<'v21'|'v2'|'v1'>('v21');
+ const [version,setVersion]=useState<'v22'|'v21'|'v2'|'v1'>('v22');
  const [company,setCompany]=useState('POSCO'); const [scenario,setScenario]=useState('NZ15');
  const [axisKey,setAxisKey]=useState<string>('es_abs'); const [criterion,setCriterion]=useState<'mean'|'risk'>('mean');
  const data=VERSIONS[version]; const meta=data.metadata as Row;
@@ -28,8 +28,8 @@ export default function Research() {
  const riskLabel=ax.label.split(' · ')[0];
  return <>
   <div className="section-heading"><div><span className="eyebrow">01 / CORPORATE RESEARCH</span><h1>기업 전환계획 비교</h1><p>같은 생산·감축 조건에서 투자 일정과 전력·건설 계약 후보의 비용과 위험을 비교합니다.</p></div><span className="status">{meta.label}</span></div>
-  <div className="control-strip"><label>방법론 판본<select value={version} onChange={e=>setVersion(e.target.value as 'v21'|'v2'|'v1')}><option value="v21">v2.1 · 순거래 p·(E−A) (정본)</option><option value="v2">v2.0 · 총의무 p·E (보존)</option><option value="v1">v1 · 2026-09-05 (보존)</option></select></label><label>분석 기업<select value={company} onChange={e=>setCompany(e.target.value)}>{Object.entries(COMPANIES).map(([id,name])=><option key={id} value={id}>{name}</option>)}</select></label><label>감축 시나리오<select value={scenario} onChange={e=>setScenario(e.target.value)}><option value="NZ15">NZ15 · 1.5°C 명칭의 EST_v0 대용 경로</option><option value="B20">B20 · 2°C 명칭의 EST_v0 대용 경로</option></select></label><label>위험 지표<select value={axis} onChange={e=>setAxisKey(e.target.value)}>{Object.entries(AXES).filter(([,a])=>version!=='v1'||!a.v2only).map(([k,a])=><option key={k} value={k}>{a.label}</option>)}</select></label><label>후보 선택<select value={criterion} onChange={e=>setCriterion(e.target.value as typeof criterion)}><option value="mean">평균 비용 최소</option><option value="risk">{riskLabel} 최소</option></select></label><button className="button secondary" onClick={()=>csvDownload(`${company}-${scenario}-${version}-candidates.csv`,rows)}>데이터 내려받기 ↓</button></div>
-  <div className="notice compact"><span className="notice-index">연구 가정</span>2027–2050 · 누적 Scope 1 예산(연간 상한을 전 기간 충족한 일정은 0개) · 고정 생산 · <b>탄소지출 포함</b>({version==='v21'?'순거래 p·(E−A), A = 시나리오 기업 예산경로 (규칙 대용치)':'총의무 p·E, 무상할당 미반영'}) · 시나리오는 다운로드한 NGFS/GCAM이 아닌 로컬 EST_v0 대용치 · 기업 전체가 아닌 추정 자산 포트폴리오</div>
+  <div className="control-strip"><label>방법론 판본<select value={version} onChange={e=>setVersion(e.target.value as 'v22'|'v21'|'v2'|'v1')}><option value="v22">v2.2 · 검증 입력 정합: 구조적 수소가·KAU 2026 (정본)</option><option value="v21">v2.1 · 순거래 p·(E−A), 정책목표 수소가 (보존)</option><option value="v2">v2.0 · 총의무 p·E (보존)</option><option value="v1">v1 · 2026-09-05 (보존)</option></select></label><label>분석 기업<select value={company} onChange={e=>setCompany(e.target.value)}>{Object.entries(COMPANIES).map(([id,name])=><option key={id} value={id}>{name}</option>)}</select></label><label>감축 시나리오<select value={scenario} onChange={e=>setScenario(e.target.value)}><option value="NZ15">NZ15 · IEA NZE 앵커 (선진국 탄소가·연료가)</option><option value="B20">B20 · IEA STEPS 앵커 (공표정책 — 2°C 정합 아님)</option></select></label><label>위험 지표<select value={axis} onChange={e=>setAxisKey(e.target.value)}>{Object.entries(AXES).filter(([,a])=>version!=='v1'||!a.v2only).map(([k,a])=><option key={k} value={k}>{a.label}</option>)}</select></label><label>후보 선택<select value={criterion} onChange={e=>setCriterion(e.target.value as typeof criterion)}><option value="mean">평균 비용 최소</option><option value="risk">{riskLabel} 최소</option></select></label><button className="button secondary" onClick={()=>csvDownload(`${company}-${scenario}-${version}-candidates.csv`,rows)}>데이터 내려받기 ↓</button></div>
+  <div className="notice compact"><span className="notice-index">연구 가정</span>2027–2050 · 누적 Scope 1 예산(연간 상한을 전 기간 충족한 일정은 0개) · 고정 생산 · <b>탄소지출 포함</b>({version==='v21'||version==='v22'?'순거래 p·(E−A), A = 시나리오 기업 예산경로 (규칙 대용치)':'총의무 p·E, 무상할당 미반영'}) · 시나리오는 IEA GEC 2025 앵커(탄소·연료) + EST 보간(전력·예산)이며 NGFS/GCAM 아님 · {version==='v22'?'수소 중심가 = 전력가×52 kWh/kg + 전해조 상각(구조적)':'수소 중심가 = 정책목표(3,500원/kg 등)'} · 기업 전체가 아닌 추정 자산 포트폴리오</div>
   {version!=='v1'?<div className="notice compact"><span className="notice-index">v2 변경</span>확률 요인은 검증 계열(KPX SMP·JEPX, KAU, World Bank 석탄·LNG 연간)로만 보정하고 상관을 실제 추정({(meta.correlation?.overlap?.['elec|gas']??'—')}개 연간 겹침) · 수소는 전력에서 구조 파생, 건설비는 결정론 · PPA는 전환이 추가한 전력에만 적용 · 정본 경계는 (평균 증분비용, 계획 자체 ES90)</div>
   :<div className="notice compact"><span className="notice-index">v1 한계</span>h2·capex 변동성은 사전값, 상관은 단위행렬, PPA가 기준선 공통 물량까지 고정, 경계 축은 (P50, 증분 TCaR) — 2026-09-10 외부감사에서 치명으로 분류된 규약입니다. 비교를 위해 보존합니다.</div>}
   {chosen&&<div className="kpis">

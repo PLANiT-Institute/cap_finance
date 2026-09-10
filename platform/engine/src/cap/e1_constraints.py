@@ -104,6 +104,27 @@ def run(cfg: C.Config) -> dict[str, pd.DataFrame]:
         rows += [[scen, region, var, int(y), float(v), unit] for y, v in zip(years, vals)]
     prices = pd.DataFrame(rows, columns=["scenario", "region", "variable", "year", "value", "unit"])
 
+    # v2.2 (L3, 2026-09-11): D2b h2_price rows are POLICY TARGETS (MOTIE 2021: 3,500
+    # KRW/kg by 2030; JP hydrogen strategy: 30 JPY/Nm3) that fall below the delivered
+    # cost implied by the same file's electricity path. `h2_price_source: structural`
+    # replaces them with the structural cost hydrogen_price(elec, electrolyzer capex):
+    # elec × kWh/kg + amortised electrolyser capex anchored on the last verified D4
+    # observation (IEA GHR annex). Two verified inputs, no target.
+    if str(cfg.get("h2_price_source", "d2b")).lower() == "structural":
+        from .calibration import calibrate_for, hydrogen_price
+        cal = calibrate_for(cfg, load_input(ddir, "D4_price_history"))
+        ez = cal.ez_central(years)
+        keep = prices[prices.variable != "h2_price"]
+        add = []
+        for (scen, region), g in prices[prices.variable == "elec_price"].groupby(["scenario", "region"]):
+            e = g.sort_values("year").value.to_numpy()
+            h = hydrogen_price(e, ez, cfg.hydrogen)
+            add += [[scen, region, "h2_price", int(y), float(v), "KRW/kg (structural: elec×kWh/kg + electrolyser amortisation)"]
+                    for y, v in zip(years, h)]
+        prices = pd.concat([keep, pd.DataFrame(add, columns=prices.columns)], ignore_index=True)
+        print(f"[e1] h2_price_source=structural — D2b policy-target hydrogen rows replaced; "
+              f"electrolyser anchor {cal.ez_anchor:,.0f} KRW/kW @{cal.ez_anchor_year}", flush=True)
+
     # tech availability: EVERY tech with a tech_avail_* path gets a row; a tech
     # never available in a scenario gets sentinel 9999 (absence must not silently
     # fall back to the D3 default in E2)
