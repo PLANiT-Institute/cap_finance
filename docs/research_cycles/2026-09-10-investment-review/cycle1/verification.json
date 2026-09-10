@@ -1,0 +1,26 @@
+{
+  "saved_incremental_draws_reconstructed": 30000,
+  "maximum_absolute_error": 1.0186340659856796e-10,
+  "additional_2045_draws_evaluated": 10000,
+  "analytic_means_matched": 3,
+  "terminal_translation_checks": 8,
+  "terminal_order_checks": 8,
+  "main_budget_choice_checks": 10,
+  "budget_evaluations": 36,
+  "mean_gap_2030_minus_2040": 2199.0982859746973,
+  "terminal_year_2030_renewal_present_value": 323.77740790184225,
+  "renewal_share_of_mean_gap": 0.1472318949847827,
+  "remaining_gap_if_only_2050_renewal_removed": 1875.320878072855,
+  "interpretation": "Removing renewal is a diagnostic, not a feasible replacement policy. Straight-line credits are sensitivity proxies, not realised cash or a validated continuation value. Requalification is conditional; budgets and grid paths have no probabilities.",
+  "new_corporate_simulation": false,
+  "new_price_paths": false,
+  "inputs": {
+    "data/research_v2/ncc_timing_frontier/annual_cash.csv": "2734ed5fd34a4f13a7b2daa46b21e735a196ca5b000da9f14440eaf3f790f290",
+    "data/research_v2/ncc_timing_frontier/annual_prices.npz": "ac485d7c6e1e11b9e91530497613f8ce9a58f56f7a0663059891731c297360d4",
+    "data/research_v2/ncc_timing_frontier/cost_draws.npz": "cb57aa27cee0f3b43cbe598e5a211503f6b7729becae381143f60b77baf404c6",
+    "data/research_v2/ncc_timing_frontier/risk_metrics.csv": "8f15b716c0828b94ab9108e15cf649631b20b89ec6abd9cd62b31c88338605e1",
+    "data/research_v2/ncc_timing_frontier/qualification.csv": "c07c77b7cff8d680877d08f803f1efc2691e5c8aeb58fc31a380463636b4bea3",
+    "data/research_v2/iea_2025_scenarios/curves.json": "8c04b84c124ac9cc567da43144e6b56b9219ff7423d5fbcf50917b98dbc19708"
+  },
+  "script_sha256": "92073cdf08f8ec332e62e97a6270f863bcf1def885070cc3cef106827777e721"
+}

@@ -1,0 +1,47 @@
+{
+  "source": "data/research_v2/price_history/aligned_monthly_log_returns.csv",
+  "source_sha256": "b58a88fff36e0be3716ff807eca08b27e30de0284997889cecf02879546e94f4",
+  "source_period": [
+    "2010M02",
+    "2025M12"
+  ],
+  "factors": [
+    "brent",
+    "thermal_coal_au",
+    "henry_hub",
+    "europe_gas",
+    "japan_lng",
+    "iron_ore"
+  ],
+  "paths": 10000,
+  "months": 60,
+  "seed": 20260907,
+  "models": [
+    "iid_gaussian",
+    "empirical_block_1",
+    "empirical_block_6",
+    "empirical_block_12",
+    "empirical_block_24"
+  ],
+  "anchor": "exact E[multiplier]=1 under declared process",
+  "annual_aggregation": "arithmetic mean of 12 monthly price multipliers; constant monthly purchases",
+  "joint_resampling": true,
+  "circular_blocks": false,
+  "block_length_fitted": false,
+  "calibration_uncertainty_included": false,
+  "long_run_mean_reversion": false,
+  "historical_crisis_frequency_reused": true,
+  "unobserved_crisis_probability_identified": false,
+  "gcam_forecast_residuals": false,
+  "company_prices_mapped": false,
+  "FIN_modified": false,
+  "implementation_status": "research candidate; not an externally validated cost distribution",
+  "limits": [
+    "Block boundaries break dependence beyond the block",
+    "A finite monthly support does not cap cumulative prices as horizon grows",
+    "Repeated crisis blocks may create long-run paths absent from history",
+    "Same mean across methods does not imply equal median, ES, or economic plausibility",
+    "Full history informed candidate design; no untouched holdout",
+    "No electricity, hydrogen, carbon, currency, basis or contract residuals"
+  ]
+}

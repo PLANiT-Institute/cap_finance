@@ -1,0 +1,5 @@
+company_id,year,source_id,revenue,ebitda,capex_total,total_debt,net_debt,interest_expense,cash,amount_unit,earnings_definition,boundary_status,verification_status
+POSCO,2025,POSCO_OFFICIAL_IR_SEPARATE_2025,35011.0,4230.0,,7056.0,1774.0,,5282.0,bn_KRW_2025,reported_ebitda,financing_entity_covers_modeled_assets,primary_verified
+NSC,2025,UNAVAILABLE_COMPARABLE_FINANCIAL_REFERENCE,,,,,,,,unavailable,unavailable,unverified,unverified
+LOTTE,2025,UNAVAILABLE_COMPARABLE_FINANCIAL_REFERENCE,,,,,,,,unavailable,unavailable,unverified,unverified
+MCI,2025,UNAVAILABLE_COMPARABLE_FINANCIAL_REFERENCE,,,,,,,,unavailable,unavailable,unverified,unverified

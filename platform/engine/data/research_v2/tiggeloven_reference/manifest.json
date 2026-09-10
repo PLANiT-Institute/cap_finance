@@ -1,0 +1,17 @@
+{
+  "observations": 39,
+  "source_visual_QA_complete": true,
+  "SEC_boundary_checks_passed": 2,
+  "derived_numeric_identities_checked": 7,
+  "full_corporate_cost": false,
+  "figure": "paper/methodology/figures/ncc_source_energy_boundaries.png",
+  "sha256": {
+    "tmp/pdfs/tcar_research_v2/tiggeloven_2023.pdf": "000e24d881ef43eba7fd9ec986434dbb5e6444e536822edeafba1303367c9b5c",
+    "scripts/build_tiggeloven_reference.py": "8995fffffcb78c58e56c33f6011f2af41b9959c5b1c7c5b8717a4dd4f3a29e1f",
+    "paper/methodology/figures/ncc_source_energy_boundaries.png": "1a34e6c918ebf818adac744b7602cc78cd04f969e3796dc26017a55c3b9271f9",
+    "data/research_v2/tiggeloven_reference/derived_quantities.csv": "bfa4e1a5f02a95e5ab0e2b178d043977bf52b6b4367c8e698bbc2338e7b125ef",
+    "data/research_v2/tiggeloven_reference/source_observations.csv": "b6986562d5da2e79fbea6994f34ce5cec2c5dbc3ec15326ba0a1aa4d6fd67f97",
+    "data/research_v2/tiggeloven_reference/package.json": "cb9efd31da646f85299f5840dd1b37766c25ee46747d8dd998874567edbae87f",
+    "data/research_v2/tiggeloven_reference/boundary_checks.json": "e56f62503656c597525c914ad57c6be4727578baf18f9d8b8fb8abfeac4cfdd5"
+  }
+}

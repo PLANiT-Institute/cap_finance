@@ -1,0 +1,19 @@
+{
+  "PAPER_EN.md": {
+    "original_figure_table_equation_tokens_preserved": true,
+    "new_sections_and_references_unique": true,
+    "audit_numbers_present": true
+  },
+  "REVIEW_KO.md": {
+    "original_figure_table_equation_tokens_preserved": true,
+    "new_sections_and_references_unique": true,
+    "audit_numbers_present": true
+  },
+  "current_manuscript_sha256": {
+    "paper/pilot_review/PAPER_EN.md": "0ac170f4cf63fa07dd99096d9cecfd4558981a12c077c83da77d0ebe2d775aae",
+    "paper/pilot_review/REVIEW_KO.md": "c907042f0ed47a04bf16e5569e866c2823b6060907e42658f2140bca66a64a95",
+    "paper/methodology/TCaR_METHOD_KO.md": "ed2fde78cd413371c5a44e770a692012b87509c27ba59013d6a2d8a14adf6fa2",
+    "paper/methodology/INVESTMENT_DECISION_REVIEW_KO.md": "419fbf9085b7058a8e8f168ecc1bbc6185edbc5723f83d54265cade4989a6cff"
+  },
+  "final_docx_pdf_rebuilt": false
+}

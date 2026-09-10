@@ -91,7 +91,10 @@ def test_e5_gap_nonnegative(pipeline):
 
 
 def test_e5_variance_shares_bounded(pipeline):
-    assert pipeline["dec"].variance_share.between(0, 1.2).all()
+    # v2 (2026-09-10): shares are SIGNED — freezing a channel that hedges another
+    # (coal vs electricity, corr 0.84) raises incremental variance, so a small
+    # negative share is information, not an error. Upper bound unchanged.
+    assert pipeline["dec"].variance_share.between(-1.0, 1.2).all()
 
 
 def test_schema_validation_fails_fast(cfg, tmp_path):
@@ -103,14 +106,14 @@ def test_schema_validation_fails_fast(cfg, tmp_path):
         load_input(tmp_path, "D3_tech_options")
 
 
-def test_gap_interpolation_concrete():
-    # regression: drisk previously used a decreasing xp in np.interp -> garbage
+def test_gap_uses_attainable_discrete_candidates():
+    # A line between discrete plans can overstate savings even with sorted axes.
     from cap.e5_metrics import _gap
     fr = pd.DataFrame({"tcar": [1.0, 2.0, 3.0], "p50": [10.0, 8.0, 5.0]})
     point = pd.Series({"tcar": 2.5, "p50": 9.0})
     dcost, drisk = _gap(fr, point)
-    assert dcost == pytest.approx(9.0 - 6.5)   # frontier cost at tcar 2.5 = 6.5
-    assert drisk == pytest.approx(2.5 - 1.5)   # frontier tcar at p50 9.0 = 1.5
+    assert dcost == pytest.approx(9.0 - 8.0)  # risk <= 2.5 permits cost 8, not 6.5
+    assert drisk == pytest.approx(2.5 - 2.0)  # cost <= 9 permits risk 2, not 1.5
     # below frontier range -> NaN, not a clamped fabricated gap
     below = pd.Series({"tcar": 0.5, "p50": 4.0})
     dcost2, drisk2 = _gap(fr, below)

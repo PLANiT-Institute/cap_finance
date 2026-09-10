@@ -11,13 +11,21 @@ from __future__ import annotations
 
 import pathlib
 import re
+import argparse
+import sys
 
 import numpy as np
 import pandas as pd
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-RAW = ROOT / "data" / "raw"
-OUT = ROOT / "data" / "prepared"
+sys.path.insert(0, str(ROOT / "src"))
+from cap.input_boundaries import company_observations
+_parser = argparse.ArgumentParser(description=__doc__)
+_parser.add_argument("--raw-dir", type=pathlib.Path, default=ROOT / "data/raw")
+_parser.add_argument("--out-dir", type=pathlib.Path, default=ROOT / "data/prepared")
+_args = _parser.parse_args()
+RAW = _args.raw_dir.resolve()
+OUT = _args.out_dir.resolve()
 OUT.mkdir(parents=True, exist_ok=True)
 LOG: list[str] = ["# 데이터 준비 로그 (scripts/prepare_raw.py 자동 생성)", ""]
 
@@ -107,11 +115,15 @@ log("에너지 원단위 전면 결측 → 루트 표준값 주입: " +
     "; ".join(f"{k}: EF {v[0]}, 전력 {v[1]}MWh/t, 원료탄 {v[2]}GJ/t, 가스 {v[3]}GJ/t" for k, v in ROUTE.items()))
 
 rows = []
+company_observation_tables = []
 years = [2022, 2023, 2024]
 for company, grp in d1a.groupby("company_id"):
-    tot = fp[fp.facility_id == {"POSCO": "POSCO_TOTAL", "NSC": "NSC_TOTAL",
-                                "LOTTE": "LOTTE_TOTAL", "MCI": "MITSUI_TOTAL"}[company]]
-    tot = tot[tot.year.isin(years)]
+    tot = company_observations(fp, company, years)
+    company_observation_tables.append(tot.assign(company_id=company))
+    for _, observed in tot.iterrows():
+        log(f"{company} {int(observed.year)} 회사 관측: Scope1={observed.emissions_s1} "
+            f"({observed.emissions_s1_basis}), Scope2={observed.emissions_s2} "
+            f"({observed.emissions_s2_basis}); 전체 사업장 범위, 크래커 실측 아님")
     # Scope 2 배분 가중치 = 시설 전력 소비 (구매전력 배출이므로 인과적으로 맞는 축).
     # 이전 판은 회사가 보고한 Scope 2를 전부 0으로 덮어썼다 — 원자료 36/37행에 값이
     # 있고 NSC는 11.9 MtCO₂(Scope 1의 19%)다. 수집한 것을 버리지 않는다.
@@ -199,11 +211,16 @@ for company, grp in d1a.groupby("company_id"):
         t24 = tot[tot.year == tot.year.max()]
         # Scope1이 상향식이므로 Scope2도 같은 경계로 맞춘다: 회사 보고 Scope2에
         # Scope1 커버리지를 곱한 뒤 전력 소비로 배분. 회사 전력 소비 공시가 없어
-        # 직접 배출강도를 쓸 수 없다 — 커버리지 정합이 차선의 정직한 선택.
-        cover = (cov_s1 / float(t24.emissions_s1.iloc[0])) if len(t24) else 1.0
+        # 직접 배출강도를 쓸 수 없다 — 같은 비율이라는 추가 가정이며 검증된 NCC 배출은 아니다.
+        reference_s1 = float(t24.emissions_s1.iloc[0]) if len(t24) else np.nan
+        if not np.isfinite(reference_s1) or reference_s1 <= 0:
+            raise ValueError(f"{company}: positive company Scope1 required for the declared Scope2 coverage approximation")
+        cover = cov_s1 / reference_s1
         for y in years:
             t = tot[tot.year == y]
-            s2_t = float(t.emissions_s2.iloc[0]) if len(t) and pd.notna(t.emissions_s2.iloc[0]) else 0.0
+            s2_t = float(t.emissions_s2.iloc[0]) if len(t) and pd.notna(t.emissions_s2.iloc[0]) else np.nan
+            if not np.isfinite(s2_t):
+                raise ValueError(f"{company} {y}: Scope2 unavailable; do not substitute zero")
             for fid, r in grp.set_index("facility_id").iterrows():
                 prod = r.capacity * util
                 ef = ROUTE[r.unit_type]
@@ -216,6 +233,7 @@ for company, grp in d1a.groupby("company_id"):
                 f"전력 가중 배분")
 d1b = pd.DataFrame(rows, columns=["facility_id", "year", "production", "emissions_s1", "emissions_s2",
                                   "energy_coal", "energy_gas", "energy_elec", "energy_naphtha", "source_id"])
+pd.concat(company_observation_tables, ignore_index=True).to_csv(OUT / "company_observation_reconciliation.csv", index=False)
 
 # 배분 항등식 — 철강은 회사 공시 총량에 재척도하므로 시설 합계가 총량과 같아야 한다.
 # 이 한 줄이 없어서 배분 버그(POSCO 배출 전량 0)가 파이프라인 20분을 지나 E5까지 갔다.
@@ -394,9 +412,11 @@ d6.to_csv(OUT / "D6_company_financials.csv", index=False)
 # ---------------------------------------------------------------- D7 disclosed
 dp = read("disclosed_plan")
 dp["company_id"] = dp.company_id.replace({"MITSUI": "MCI"})
-log("D7: EAF 신설 커밋(NSC_YAW_EAF1·NSC_HIR_EAF2·POSCO_GWY_EAF1)은 기존 시설의 '전환'이 아니라 "
-    "신설 경로 — BF→EAF 전환 불허 규칙에 따라 모형 커밋으로 미해석(경고로 드롭). "
-    "NSC 공시 좌표는 KIM_BF2 수소환원 실증 커밋으로 측정")
+if "mapping_status" not in dp:
+    dp["mapping_status"] = "unreviewed"
+log("D7: source-to-model mapping_status=validated_exact 검토가 없는 실제 커밋은 비교군에 사용하지 않는다. "
+    "수소취입/H2DRI, 암모니아/수소, 부분설비/전면전환 및 공시 가동일을 임의 대체하지 않는다. "
+    "표현 불가 커밋이 하나라도 있으면 공시조건부 비교군은 NA이며, 유효한 경우도 공시의 완전한 계획이 아닌 제약조건부 모형 완성안이다.")
 dp.to_csv(OUT / "D7_disclosed_plan.csv", index=False)
 
 d1a.to_csv(OUT / "D1a_facility_static.csv", index=False)
@@ -430,11 +450,13 @@ _sr = RAW / "source_register.csv"
 if _sr.exists():
     import csv as _csv
     _rows = list(_csv.DictReader(_sr.open(encoding="utf-8-sig")))
-    _dst = ROOT / "data" / "manifests" / "source_register.csv"
+    _dst = (ROOT / "data/manifests/source_register.csv" if OUT == ROOT / "data/prepared"
+            else OUT / "source_register.csv")
+    _dst.parent.mkdir(parents=True, exist_ok=True)
     with _dst.open("w", encoding="utf-8-sig", newline="") as _f:
         _w = _csv.DictWriter(_f, fieldnames=list(_rows[0]), quoting=_csv.QUOTE_ALL)
         _w.writeheader(); _w.writerows(_rows)
-    log(f"출처 등록부 공개 사본 동기화: {len(_rows)}건 -> data/manifests/source_register.csv")
+    log(f"출처 등록부 사본 동기화: {len(_rows)}건 -> {_dst}")
 
 (OUT / "PREP_LOG.md").write_text("\n".join(LOG) + "\n")
 print("\n".join(LOG))

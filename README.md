@@ -1,105 +1,86 @@
-# CAP — Capital Allocation Pathway (v2)
+# TCaR — 기후 전환비용의 불확실성과 기업 내 효율경계
 
-기업의 탈탄소 전환비용이 "얼마인가"가 아니라 **"무엇에 얼마나 흔들리며, 기업은 그 흔들림을 줄일 수단을 확보했는가"**를 측정하는 도구.
+설비 전환 일정과 전력·건설 계약을 같은 가격경로에서 비교하는 연구 도구다. POSCO·Nippon Steel(철강), LOTTE Chemical·Mitsui Chemicals(석유화학)의 회사 정보와 추정 자산 포트폴리오를 사용한다.
 
-대상 4사: POSCO · Nippon Steel (철강), LOTTE Chemical · Mitsui Chemicals (석유화학).
+[방법론 논문 v1](paper/methodology/TCaR_METHOD_KO.md), [v2 수정 노트 (2026-09-10, 정본 경계·검증 계열 요인)](paper/methodology/TCaR_METHOD_V2_KO.md), [기업 사례 Excel 사용법](docs/RESEARCH_CONTROL.md), [실제 시간 단위 연구 기록](docs/research_cycles/2026-09-07-hourly/RESEARCH_LOG.md)에서 정의·출처·계산·결론을 연결한다. [이전 검토 기록](docs/research_cycles/2026-09-05/RESEARCH_LOG.md)과 [영문 기술 가이드](docs/TECHNICAL_GUIDE.md)는 과거 실행의 감사 자료로 구분한다.
 
-기준 문서: [`REDESIGN_SPEC.md`](REDESIGN_SPEC.md) — 데이터셋(D1–D7)·엔진(E1–E5)·지표(①–⑤) 정의. ⑥ 조달부담은 v2.2 추가.
-기존 v1(cost-gap 설계)은 `archive/cap_kj_v1/`. 형식 명세: [`METHODOLOGY.md`](METHODOLOGY.md).
+2026-09-08 통합 갱신 v4: [공동 가격·NCC 부분 비용 Excel 사용법](docs/JOINT_RESEARCH_CONTROL_KO.md). IEA 시나리오·공동 월별 충격·나프타·전력·메탄 판매를 연결하고, Control의15개·NCC cash의18개 입력을 각각 읽어 두 FIN 모형을 함께 재계산하고, 두 결과 검증 후 기존 파일을 보존하며 새 파일을 생성한다. 이 부분 모듈을 아래 450개 기업 후보의 새로운 전체 비용 재평가로 해석하지 않는다.
 
-**모형을 심문하려는 독자는 여기부터**: [`docs/TECHNICAL_GUIDE.md`](docs/TECHNICAL_GUIDE.md) (영어)
-— 데이터셋 D1a–D7의 필드 정의와 소비 경로(§3) · 결론을 좌우하는 가정(§4.1) · 현재 결과가 무엇 위에
-서 있는가(§6) · **아직 할 수 없는 말**(§8) · 우리가 우리 결과에 대해 아는 가장 센 반론(§9) ·
-용어집(§10). 수치는 전부 `out/`·`config.yaml`·`docs/*.csv`에서 생성되며 `<!-- GEN:x -->` 블록으로
-표시된다 — 손으로 고치지 말고 `scripts/build_tech_guide.py`를 고쳐 다시 돌린다.
-웹 판은 `web/guide.html`([`scripts/build_guide_page.py`](scripts/build_guide_page.py) 렌더).
+## 무엇을 계산하는가
 
-## 방법 요약
+- 손실은 같은 경로의 무전환 기준선에 대한 할인 **증분 현금비용**이다. 건설·기존 설비 갱신·전환 설비 갱신을 포함하고 비현금 장부손실은 분리한다.
+- **TCaR90 = P90−P50**다. 중앙값 위 비용 간격이며 자금요구량이 아니다. MC 평균·P50·P90·ES90와 표본 손실 지배 검사를 함께 제공한다.
+- 경계는 실제 평가한 유한 후보의 비지배점이다. 후보 사이를 보간해 실행 가능한 계획으로 해석하지 않는다.
+- 현재 예산은 기간 누적 Scope1 상한이다. 연간 상한 준수와 다르다.
+- 탄소중립 선언만으로 선형 DISCLOSED PLAN을 허용한다. 상세 기술 공시는 경로 생성의 전제조건이 아니다. 비용 비교에는 그 경로를 충족하는 투자 일정이 필요하며, 현 고정생산·기술 메뉴의 하한을 초과하는 경로에 가상 비용을 부여하지 않는다. 기존 정확한 기술·시설 공시 매핑 비교는 별도로 유지한다.
 
-1. **제약만 내려받기** — NGFS-GCAM 시나리오에서 섹터 탄소예산·가격 경로만 추출 (감축량 안분 금지). 누가 언제 감축할지는 시설 단위 MILP가 결정하며, 설비 재투자 창이 투자 타이밍을 내생적으로 결정.
-2. **불확실성을 원화로** — 전력·수소·CAPEX 상관 몬테카를로 **N=10,000**(`config.yaml: simulation.n_sims`. 설계서 기본값은 5,000이었으나 그 수에서 P50/TCaR 수렴 검사가 2.6% 이탈해 스펙의 상향 조항을 따랐다)로 비용 분포 산출. P50 = 기대비용, **TCaR = P90−P50**. 둘 다 무전환 기준선 대비 **증분**이고 탄소지출 차감 후(자원비용 기준)다. 수소가격은 수소 = f(전력, 전해조 CAPEX) 구조식으로 파생.
-3. **기업 내 효율 경계** — 보고되는 경계는 E2가 ε-constraint로 열거한 계획 위가 **아니라**, E5가 다시 만든 후보 집합 위에서 (기대비용, TCaR)의 좌하 포락선으로 계산된다. E5는 E2 계획을 (시설·기술·연도) 기술일정으로 중복 제거한 뒤 고정 계약 격자(PPA 5수준 × EPC 2)를 재부여하고 `ccfd=0`을 강제한다 — 즉 ε-constraint는 후보를 **열거**하는 대리 단계이고 보고 수치가 아니다(가이드 §2·§6.3, `src/cap/e5_metrics.py:184-201`). 공시 계획과 경계의 거리(**frontier gap**)가 진단 결과. 기업 간 순위표 없음.
+## 검증된 조건부 연구 사례
 
-## 실행
+| 항목 | 현재 결과 |
+|---|---|
+| 정보 기준일 / 결정 기간 | 2026-09-05 / 2027–2050 |
+| 설비 / 일정 / 계약 후보 | 추정 자산 22개 / 45개 / 450개 |
+| 가격경로 | N=10,000, 평균 정규화 양수 GBM형 배율 |
+| 위험 통계 대조 | 450개 × 5개 = 2,250개 |
+| 누적 / 전 기간 연간예산 충족 | 45개 / 0개 일정 |
+| Excel 무수정 왕복 | 입력 17개 CSV 동일, 2,250개 통계량 차이 0 |
+| 원문 선택 관측 | 238개, 원문 단위·범위·위치 유지 |
+| 표본·구조 검증 | 17개 설정, 7,650개 후보 평가, 105개 고정 후보 구간 |
+| 통합 Excel | 기준 사례 29개 시트, 25,179개 표 셀 대조 |
+
+두 독립 난수 표본에서 평균 최소 선택은 유지됐지만 일부 TCaR 최소 계약은 바뀌었다. POSCO NZ15에는 추정 시설 특성 때문에 같은 비용분포를 갖는 동률 일정이 있다. [민감도 감사](docs/research_cycles/2026-09-05/ROBUSTNESS_AUDIT.md)를 따른다.
+
+시나리오 NZ15·B20은 로컬 `EST_v0` 대용치이며 다운로드한 NGFS/GCAM 데이터가 아니다. 자산 배분·구매 에너지 잔존비율·기술비용·수소 및 CAPEX 변동성에 가정이 포함된다. 원문 수치의 확인과 전체 기업·공정·미래 분포의 외부 타당성을 같은 검증으로 부르지 않는다.
+
+## Excel 입력에서 새 결과까지
+
+Python 3.11 이상이 필요하다. 저장소에서 설치한다.
 
 ```bash
-python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
-
-# 0) 수집본 정규화 — data/raw/*.csv -> data/prepared/D*.csv (변환 전량 PREP_LOG.md에 기록)
-.venv/bin/python scripts/prepare_raw.py
-
-# 1) 데이터 감사 — 가짜·미사용·무출처 컬럼을 먼저 잡는다 (합성 누출이면 실패 종료)
-.venv/bin/python scripts/audit_data.py
-
-# 2) 전 파이프라인 (E1 -> render). MILP 때문에 ~10분
-.venv/bin/python -m cap all
-
-# 3) 시나리오 분석 — 가정 묶음별 재평가 (묶음당 ~10초)
-.venv/bin/python scripts/run_scenarios.py
-
-# 4) 재현 패키지 (기업 집계 + SHA256 manifest, 시설 단위는 제외)
-.venv/bin/python scripts/build_data_package.py
-
-# 5) 검증 문서
-.venv/bin/python scripts/validate_backtest.py
-.venv/bin/python scripts/validate_external.py
-.venv/bin/python scripts/cross_model_check.py
-.venv/bin/python scripts/seed_stability.py
-.venv/bin/python scripts/robustness_structural.py
-.venv/bin/python scripts/process_alternative.py
-
-# 6) 보고서·사이트
-.venv/bin/python scripts/build_report.py && .venv/bin/python scripts/build_site.py
-
-# 검증
-.venv/bin/pytest tests/ -q                       # 합성 데이터 end-to-end (~2분)
-.venv/bin/pytest tests/test_consistency.py -q    # 실산출물 내부 일관성 (즉시)
-.venv/bin/python scripts/gate.py                 # 8항목 종합 게이트 (테스트·감사·MCP·out 정합)
+python3 -m venv .venv
+.venv/bin/pip install -e ".[dev]"
 ```
 
-단계별로 보려면 `.venv/bin/python -m cap e1` … `e5`, `render`. 합성 데이터로만 돌리려면
-`--data data/sample`(산출물은 `out_test/`로 격리해야 한다 — `tests/`가 그렇게 한다).
+제공된 워크북을 작업 폴더에 두고 `Settings`와 D1a–D6의 노란 숫자 셀을 수정·저장한다. 다음은 파일명이 `TCaR_research_control.xlsx`인 경우다.
 
-## 파이프라인
+```bash
+.venv/bin/python scripts/research_control.py validate --workbook TCaR_research_control.xlsx
+.venv/bin/python scripts/research_control.py run --workbook TCaR_research_control.xlsx --out-root runs/my_case
+.venv/bin/python scripts/research_control.py refresh --run-root runs/my_case --out TCaR_my_case.xlsx
+```
 
-| 단계 | 모듈 | 입력 | 출력 |
-|---|---|---|---|
-| E1 제약 추출 | `e1_constraints.py` | D2 | `out/e1/constraints.csv`, 중심 가격 경로 |
-| E2 시설 MILP + 경계 추적 | `e2_milp.py` | D1, D3, D7, E1 | `out/e2/plan_index.csv`, 계획별 스케줄 |
-| E3 확률 가격 | `e3_prices.py` | D4 | `out/e3/price_sims.parquet`, 캘리브레이션 리포트 |
-| E4 경로별 재평가 | `e4_revalue.py` | E2, E3, D5 | `out/e4/cost_dist.parquet`, ⑤ 유연성 가치 |
-| E5 지표·경계·gap | `e5_metrics.py` | E4, D7 | `out/e5/metrics_company.csv`, frontier, gap |
-| 렌더링 | `render.py` | E5 | `out/render/` 그림·공개 지표표 |
+`run`은 새 폴더만 허용한다. 입력·설정·코드·결과 해시, 변경 셀과 성공·실패 로그를 보존한다. 실패 실행의 결과 재수입은 거부한다. 숫자·단위·ID·수식·범위·필수 결측을 검사하고, 수정한 원문 기반 재무값은 사용자 가정으로 재분류한다.
 
-부속 도구
+Excel 생성·갱신에는 Codex의 Node/Artifact Tool 런타임이 필요하다. `TCAR_NODE`와 `TCAR_NODE_MODULES`로 경로를 지정할 수 있다. Python 입력 검증·내보내기·계산 및 CSV 결과는 해당 런타임 없이 사용할 수 있다. Excel 자체에서 MILP가 실행되지는 않는다.
 
-| 도구 | 하는 일 | 산출 |
-|---|---|---|
-| `scripts/audit_data.py` | 입력 전 컬럼의 채움률·엔진 참조·출처 해소 판정 | `docs/data_audit.{csv,md}` |
-| `scripts/run_scenarios.py` | 가정 묶음(할인율·탄소·수소·전력·계약·폐쇄상한)별 재평가 | `out/scenarios/summary.csv` |
-| `scripts/sensitivity_screening.py` | 어떤 파라미터가 결론을 좌우하는지 OAT 랭킹 | `out/sensitivity/ranking.csv` |
-| `scripts/build_parameter_inventory.py` | 전 파라미터의 값·등급·출처 인벤토리 | `docs/parameter_inventory.csv` |
-| `src/cap/mcp_server.py` | 결과·증거·감사를 MCP 도구로 노출 (읽기 전용) | [`docs/mcp_server.md`](docs/mcp_server.md) |
-| `scripts/validate_backtest.py` | 주입 표준값이 2020–24 실적을 재현하는가 | `docs/validation_backtest.md` |
-| `scripts/validate_external.py` | 실제 프로젝트·문헌 범위 대비 판정 | `docs/validation_external.md` |
-| `scripts/cross_model_check.py` | FIN ↔ EFF 교차대조 | `docs/cross_model_check.md` |
-| `scripts/seed_stability.py` | 시드 5개로 헤드라인 표본오차 측정 | `docs/seed_stability.md` |
-| `scripts/robustness_structural.py` | 결정 기준(P50 vs P90)을 바꿔 재선택 | `docs/robustness_structural.md` |
-| `scripts/process_alternative.py` | GBM vs 평균회귀·충격 정규화 대안 | `docs/process_alternative.md` |
-| `scripts/build_data_package.py` | 재현 패키지(기업 집계 + SHA256 manifest) | `data/package/` |
-| `scripts/build_board_memo.py` | A4 1페이지 이사회 메모 | `web/memo.html` |
-| `scripts/build_scenario_page.py` | 대화형 시나리오 화면 | `web/scenarios.html` |
-| `scripts/build_tech_guide.py` | 기술 가이드의 `<!-- GEN:x -->` 블록과 §2 그림을 산출물에서 생성 (`--check`로 낡음 판정) | [`docs/TECHNICAL_GUIDE.md`](docs/TECHNICAL_GUIDE.md), `docs/figures/frontier_gap.svg` |
-| `scripts/build_guide_page.py` | 가이드 웹 판 렌더 (생성 블록을 눈에 보이게 표시) | `web/guide.html` |
-| `scripts/gate.py` | "도구로 아직 작동하는가" 8항목 — 테스트·데이터 감사·MCP·`out/` 정합·푸쉬 여부 | 표준출력 `gate: OK` |
+기준 감사 시트는 450개 후보의 다섯 통계량이 기준 결과와 일치할 때만 첨부한다. 변경된 실행에 기존 민감도·구간을 자동 적용하지 않는다. 자세한 명령과 제한은 [사용법](docs/RESEARCH_CONTROL.md)에 있다.
 
-## 데이터
+## 검증과 저장 구조
 
-- 수집 템플릿: `data/CAP_data_collection_template.xlsx` (작성 지침: [`DATA_COLLECTION_GUIDE.md`](DATA_COLLECTION_GUIDE.md))
-- 완성된 시트를 `data/raw/<시트명>.csv`로 저장 → `scripts/prepare_raw.py`가 `data/prepared/D*.csv`로 정규화 (원본 raw는 절대 수정하지 않는다)
-- 파이프라인이 읽는 곳은 `data/prepared` (`config.yaml: data_dir`)
-- `data/sample/` — 합성 검증용 (전부 허구값, 실분석 사용 금지)
+```bash
+.venv/bin/pytest tests/ -q
+.venv/bin/python scripts/verify_methodology_manuscript.py
+.venv/bin/python scripts/verify_research_robustness.py
+```
 
-## 공개 범위
+마지막 두 명령은 감사에 사용한 로컬 결과 파일을 요구한다. 새 실행의 위험값·현금원장 확인은 `scripts/verify_research_case.py --config runs/my_case/expanded/config.yaml --out runs/my_case/audit`로 수행한다. 이 검증기는 본문과 같은 누적예산·고정생산 사례용이다.
 
-시설 단위 산출은 **비공개** (`out/render/facility_confidential/`, gitignore 처리) — 설계서 §8-2. 공개물은 기업 집계 지표 ①–⑤와 frontier/gap 차트로 한정.
+- `src/cap`: E1 제약, E2 일정, E3 가격, E4 현금비용, E5 통계·선택.
+- `scripts/research_control.py`: 워크북 검증·내보내기·실행·재수입.
+- `paper/methodology`: 정본 원고와 독립 그림.
+- `docs/research_cycles/2026-09-05`: 출처·반례·데이터·구현·민감도 감사와 연구 기록.
+- `cap-efficient`: 독립 EFF 도구. FIN 코드와 교차 import하지 않는다.
+
+루트 `config.yaml`은 v2 연구 규약이고, 과거 재현 규약은 `config_legacy.yaml`(`python -m cap <stage> --config config_legacy.yaml`)이다. `out/`은 과거 산출물이다. 새 사례를 재현하려면 제공 워크북의 입력과 설정을 사용한다. [과거 실행 설명](docs/LEGACY_WORKFLOW.md)은 감사 목적으로 보존했다. 시설 단위 입력과 로컬 실행·워크북·비공개 재현 묶음은 공개 배포 대상에서 제외한다.
+
+환경 점검: `.venv/bin/python scripts/research_control.py doctor`는 Python 패키지·CBC 솔버·선택적 Excel 런타임의 준비 여부를 출력한다.
+
+## 웹 연구 도구
+
+[TCaR 웹 도구](https://tcar-transition-finance.vercel.app/) (`platform/`)는
+K-ETS Outlook의 Next.js·React 구성과 PLANiT 화면 스타일을 따른
+별도 Vercel 앱이다. 450개 기업 후보의 저장 결과, 14개 공개 데이터프레임,
+공동 가격·NCC 현금비용·전환 시점의 세 실시간 참조 시뮬레이터를 연결한다.
+기업 후보 전체 MILP 재실행과 공정 참조 모형의 재계산은 구분한다.
+시설 입력과 비공개 워크북은 배포하지 않는다.
+데이터 갱신·로컬 실행·검증 절차는 [웹 도구 안내](platform/README.md)에 있다.

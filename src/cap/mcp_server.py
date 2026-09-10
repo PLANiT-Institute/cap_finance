@@ -129,8 +129,9 @@ def t_get_frontier(a):
 def t_get_gap(a):
     rows = _filter(_rows(OUT / "e5" / "gap.csv"), company_id=a.get("company_id"),
                    scenario=a.get("scenario"), support=a.get("support"))
-    return {"meaning": "공시 계획 좌표와 효율 경계 사이의 거리. gap_cost = 같은 위험에서 "
-                       "더 쓸 수 있었던 비용, gap_risk = 같은 비용에서 더 줄일 수 있었던 꼬리위험.",
+    return {"meaning": "실제 평가 후보 중 공시계획보다 위험이 크지 않은 대안의 비용 절감(gap_cost), "
+                       "비용이 크지 않은 대안의 TCaR 절감(gap_risk). 양수마다 달성 계획 ID를 제공하며 "
+                       "두 절감은 별도 비교다. 0은 개선 없음, 빈 값은 임계값을 만족하는 후보 없음.",
             "rows": _clean(rows), "note": _stale_note()}
 
 

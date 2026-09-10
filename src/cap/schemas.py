@@ -49,6 +49,7 @@ SCHEMAS: dict[str, list[str]] = {
 
 NUMERIC = {
     "capacity", "commissioning_year", "last_reline_year", "reinvest_cycle_yr",
+    "retained_coal_fraction", "retained_gas_fraction", "retained_grid_fraction",
     "next_reinvest_year", "year", "production", "emissions_s1", "emissions_s2",
     "energy_coal", "energy_gas", "energy_elec", "energy_naphtha", "carbon_budget",
     "value", "capex_unit", "opex_fixed", "opex_var", "elec_intensity", "h2_intensity",

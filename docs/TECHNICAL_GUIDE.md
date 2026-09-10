@@ -4,6 +4,8 @@
 answers, what data it runs on, what it assumes, and what it cannot yet claim. It is written for
 someone who intends to interrogate the model, not to be reassured by it.
 
+**Research-cycle status (2026-09-05, cycle 4).** Tables read from `out/` are historical model diagnostics. Both Nippon Steel and Mitsui disclosed-plan gaps have been withdrawn as company assessments because their technology mappings are invalid. The current engine rejects unreviewed mappings and never shifts a disclosed operation date. The canonical research manuscript is [`TCaR_METHOD_KO.md`](../paper/methodology/TCaR_METHOD_KO.md); current source checks are in [`PETCHEM_DATA_AUDIT.md`](research_cycles/2026-09-05/PETCHEM_DATA_AUDIT.md).
+
 Every quantitative claim below is either generated from the live repository or carries a pointer to
 the file that produces it. Generated passages are delimited by `<!-- GEN:name -->` … `<!-- /GEN:name -->`
 in this markdown file — invisible when the markdown is rendered, so the web version
@@ -15,13 +17,15 @@ terms that carry the most weight — *technology schedule*, *contract variant*, 
 *TCaR*, *frontier gap* — are narrower here than they sound, and §9's corrections came from reading
 them loosely.
 
+**Configuration scope.** This guide primarily documents the historical `config.yaml` and saved `out/` diagnostics. Cash capital, explicit allowance quantities, retained purchased energy, hard cumulative budgets and primal feasibility validation are implemented for separate research configurations. Their definitions and limitations are in [CASH_ENGINE_INTEGRATION.md](research_cycles/2026-09-05/CASH_ENGINE_INTEGRATION.md). Historical tables are not the new case results.
+
 **Companion documents.** [`METHODOLOGY.md`](../METHODOLOGY.md) states the model in equations and
 holds the assumption ledger (`A-01` … `A-24`). [`REDESIGN_SPEC.md`](../REDESIGN_SPEC.md) is the
 design narrative. [`docs/data_gap_registry.md`](data_gap_registry.md) records what we tried to
 collect and where we were blocked. `paper/working_paper.md` is the manuscript.
 
 <!-- GEN:stamp -->
-> **Repository state.** Code, inputs, config, results and the derived records this document cites (`src`, `data`, `config.yaml`, `out`, `docs/*.csv` — 919 files, results read from disk because `out/` is not tracked) hash to `38972cca9c54`. Results in this document come from the pipeline run finished `2026-08-30T21:13:20`. Rebuild the generated blocks with `python3 scripts/build_tech_guide.py`; `--check` fails if this document no longer matches that state. The stamp is a content digest, not a commit SHA, because a SHA is not knowable inside the commit that writes it.
+> **Repository state.** Code, inputs, config, results and the derived records this document cites (`src`, `data`, `config.yaml`, `out`, `docs/*.csv` — 921 files, results read from disk because `out/` is not tracked) hash to `adeee8fb36d7`. Results in this document come from the pipeline run finished `2026-09-05T15:25:54`. Rebuild the generated blocks with `python3 scripts/build_tech_guide.py`; `--check` fails if this document no longer matches that state. The stamp is a content digest, not a commit SHA, because a SHA is not knowable inside the commit that writes it.
 <!-- /GEN:stamp -->
 
 ---
@@ -114,17 +118,17 @@ from the outputs rather than asserted here.
 **Efficient frontier** = the Pareto non-dominated set in the (P50, TCaR) plane, computed inside one
 firm × scenario × support bundle over the candidate set E5 constructs — E2's technology schedules
 crossed with a fixed contract grid, not E2's plans as E2 emitted them (§6.3, §10).
-**Frontier gap** = horizontal and vertical distance from the disclosed plan's coordinate to that
-frontier. `gap_cost` is how much more the firm could have spent at the same risk; `gap_risk` is how
-much tail risk it could have removed at the same cost.
+**Frontier gap** = attainable cost saving without increasing risk, and attainable risk
+reduction without increasing cost, relative to the disclosed plan. The two comparisons use actual
+candidate plans and may have different witnesses; they do not interpolate investment choices.
 
 Those three objects — the candidate set, the frontier it collapses to, and the disclosed
 coordinate's distance from it — are the whole method in one picture:
 
 <!-- GEN:gap_figure -->
-![Efficient frontier, disclosed coordinate and frontier gap, per firm and scenario](figures/frontier_gap.svg)
+![Discrete frontier, disclosed coordinate and attainable gaps, per firm and scenario](figures/frontier_gap.svg)
 
-Each panel is one firm under one scenario, on its own axes. The dashed legs are the two gap numbers, and where they end is the point of the figure. `_gap` (`src/cap/e5_metrics.py:61-81`) has **three** outcomes per leg, not two: it interpolates along the frontier while the disclosed point lies within the frontier's span on the axis being measured; beyond the high end it clamps to the endpoint; and below the low end it returns **NaN rather than extrapolating**, because a frontier that cannot reach that risk or cost level has no distance to report and clamping there would fabricate one. Of the 4 distinct gaps in `out/e5/gap.csv`, **cost legs are 4 clamped, 0 interpolated and 0 unmeasurable; risk legs 3, 1 and 0**. Read from the other side the file agrees: 0 blank cost legs and 0 blank risk legs. Every disclosed plan sits above the frontier's whole tail-risk span — by 1.01× to 477× the tail risk of the riskiest plan on its own frontier — so a cost leg is never an interpolated distance, it is the distance to the frontier's riskiest endpoint. Clamped legs are lower bounds by construction: that endpoint reaches the same cost saving with *less* risk than an interpolated point would have. An unmeasurable leg is not a zero gap — it is no number at all, and §6 reports none where it occurs. 8 rows appear in the file because the `support` axis duplicates each one (§3.6, O7).
+Each panel uses its own axes. Blue points are actual nondominated candidates; no connecting line is an additional feasible plan. Dashed red legs show the two savings as axis projections; dotted connectors lead to the actual witness plans. `_gap` (`src/cap/e5_metrics.py:100-107`) minimises cost among candidates with no greater risk, and risk among candidates with no greater cost. These may be different plans. It returns zero when there is no improvement, and NaN when no candidate reaches the threshold. **cost legs are 4 positive, 0 zero and 0 unmeasurable; risk legs 4, 0 and 0**. The file has 0 blank cost legs and 0 blank risk legs. Witness IDs and the discrete method are saved in `out/e5/gap.csv`. Candidate expansion can increase attainable savings; that lower-bound interpretation requires the candidates to satisfy the stated feasibility rule, which here includes a soft carbon-budget allowance. 8 rows include support duplicates (§3.6, O7).
 <!-- /GEN:gap_figure -->
 
 ---
@@ -156,7 +160,7 @@ numeric column stops the run rather than propagating.
 gives stops at its edge: `load_input` refuses it by name, no load-time column or numeric check runs
 on it, the data audit of §7 never reads its columns — including its `source_id` — and the public
 package of §3.10 does not ship it. It is optional in preparation as well: if
-`data/raw/tech_bands.csv` is absent, `prepare_raw.py:423` records that fact in the preparation log
+`data/raw/tech_bands.csv` is absent, `prepare_raw.py:443` records that fact in the preparation log
 and the run continues with no bands at all. Nothing in `src/cap/` reads it; it is consumed only by
 the band diagnostics under `scripts/` and by the band table in §3.4. Read the counts in this
 section — here, in §3.10 and in §7 — as counts over the **nine schema-enforced inputs**, not over
@@ -211,8 +215,8 @@ row here.
 | `next_reinvest_year` **[req]** | Next campaign anchor | year | Early conversion before this anchor writes off residual book value (**A-13**) |
 | `status` **[req]** | Operating state, free Korean text as published (§3.0) | — | No *modelling* stage branches on it. One prep-time test does — see the register filter below |
 | `source_id` **[req]** | Foreign key into `source_register` | — | Mandatory |
-| `incumbent_capex_unit` **[extra]** | Replacement cost of the incumbent asset | thousand KRW/t | Used only for the stranding write-off. Not collected: written at prep from a `unit_type` lookup (`prepare_raw.py:73`) — BF 200, EAF 250, FINEX 300, NCC 150. The BF figure is the one A-13 fails external validation on, at 4.2× |
-| `margin_kthou_t` **[extra]** | Operating margin per tonne of output | thousand KRW/t | Closure forfeits it (**A-04**). Also written at prep, from a `sector` lookup (`prepare_raw.py:80`): steel 70, petchem 290. E2 enables the retirement decision **only if every facility of that firm has a positive value** — one blank switches closure off for the whole firm rather than making closure free. All 23 rows are currently populated, so retirement is live for all four firms |
+| `incumbent_capex_unit` **[extra]** | Replacement cost of the incumbent asset | thousand KRW/t | Used only for the stranding write-off. Not collected: written at prep from a `unit_type` lookup (`prepare_raw.py:81`) — BF 200, EAF 250, FINEX 300, NCC 150. The BF figure is the one A-13 fails external validation on, at 4.2× |
+| `margin_kthou_t` **[extra]** | Operating margin per tonne of output | thousand KRW/t | Closure forfeits it (**A-04**). Also written at prep, from a `sector` lookup (`prepare_raw.py:88`): steel 70, petchem 290. E2 enables the retirement decision **only if every facility of that firm has a positive value** — one blank switches closure off for the whole firm rather than making closure free. All 23 rows are currently populated, so retirement is live for all four firms |
 
 **Unit caution.** `capacity` is not commensurate across rows: a blast furnace is stated in tonnes of
 hot metal, an NCC in tonnes of ethylene, and one unit in tonnes of crude steel. Nothing in the model
@@ -225,7 +229,7 @@ see A-02 in §4.
 
 **How `capacity` is filled.** Where a published capacity exists it is used unchanged. Where it does
 not, it is estimated as inner volume × 913.3 t/m³·yr, where the multiplier is fixed by a
-**single calibration point** (Gwangyang BF1, 6,000 m³ = 5.48 Mt/yr; `prepare_raw.py:43-51`).
+**single calibration point** (Gwangyang BF1, 6,000 m³ = 5.48 Mt/yr; `prepare_raw.py:51-59`).
 
 <!-- GEN:capacity_basis -->
 16 of the 23 rows are estimated and all of them are blast furnaces — but that is 16 of the 17 blast furnaces, not all of them. The 1 blast furnace left out (`POSCO_GWY_BF1`) is the one whose capacity is published, and it is also the single point the multiplier was calibrated on. **No estimated row can be checked against a published figure**, because the only blast furnace that carries one was spent fixing the constant. The remaining 6 published rows are not blast furnaces and are stated on other bases (§3.0), so they cannot check it either.
@@ -235,7 +239,7 @@ Those rows are marked in `capacity_unit` as
 `t용선/yr (내용적 추정)` and carry rank information rather than a defensible absolute (**A-01**).
 Two further fields are repaired the same way: a missing `next_reinvest_year` becomes
 `commissioning_year + 20`, floored at 2030, and a missing `last_reline_year` becomes
-`commissioning_year` (`prepare_raw.py:64-69`). The first of those feeds the stranding write-off
+`commissioning_year` (`prepare_raw.py:72-77`). The first of those feeds the stranding write-off
 directly, so a repaired reinvestment anchor is a repaired A-13 cost.
 
 #### Which units the model never sees
@@ -249,7 +253,7 @@ directly, so a repaired reinvestment anchor is a repaired A-13 cost.
 | `NSC_HIR_EAF2` | 広畑 | EAF | 건설중(2029년도 下期) | `commissioning_year` 2029 > 2026 (not yet operating) |
 | `LOTTE_ULS_AROM` | 울산 | 방향족 공정(가열로군) | 부분 가동중단(PIA 1·3라인) | no `capacity`, and `unit_name` carries no `m³` token to estimate one from |
 
-28 rows collected, 23 reach the model. The three tests are applied in `scripts/prepare_raw.py:54-62`, before the prepared file is written, so an excluded unit is invisible to every later stage and to the schema check. Two of them are worth stating plainly: the closure test is a **substring match on one Korean string**, so the units whose status says `휴지예정` or `가동중단 계획` stay in the model; and a capacity that has to be estimated is estimated from a `m³` figure parsed out of the unit's *name*, so an operating furnace whose name happens not to carry that token is excluded by a text format, not by a decision.
+28 rows collected, 23 reach the model. The three tests are applied in `scripts/prepare_raw.py:62-70`, before the prepared file is written, so an excluded unit is invisible to every later stage and to the schema check. Two of them are worth stating plainly: the closure test is a **substring match on one Korean string**, so the units whose status says `휴지예정` or `가동중단 계획` stay in the model; and a capacity that has to be estimated is estimated from a `m³` figure parsed out of the unit's *name*, so an operating furnace whose name happens not to carry that token is excluded by a text format, not by a decision.
 <!-- /GEN:register_filter -->
 
 None of these exclusions is reversible downstream: the prepared file is the model's universe, and
@@ -278,11 +282,11 @@ All ten columns are schema-required. The table has nine rows because the composi
 **The two energy columns are stated in GJ, not tonnes.** An earlier version of this table said
 t/yr for both, which would make the model's `/ 28.0` and `/ 54.0` conversions wrong by their own
 factor. They are gigajoules; the conversion produces the tonnes of fuel that the `coal_price` and
-`gas_price` paths are charged against (`src/cap/e2_milp.py:36-37,54-55`).
+`gas_price` paths are charged against (`src/cap/e2_milp.py:39-40,57-58`).
 
 #### Derivation
 
-`_prep_company` (`src/cap/e2_milp.py:49-55`) reduces the panel to one row per facility and forms
+`_prep_company` (`src/cap/e2_milp.py:52-58`) reduces the panel to one row per facility and forms
 every incumbent coefficient from it:
 
 ```
@@ -306,7 +310,7 @@ has, with no warning; that case does not currently arise.
 | `FINEX` | 1 | 1.86 | 2.01 | 13.0 | 0.4 | 0.10 |
 | `NCC` | 4 | 3.00 | 0.95 | 0.0 | 8.0 | 0.35 |
 
-Columns 4–7 are the coefficients `_prep_company` builds (`src/cap/e2_milp.py:49-55`) over the 23 facilities carrying 72.5 Mt/yr of incumbent output. A single value in a range column means every facility of that unit type carries the identical number: the three energy columns are **not observations**. They were absent from the collected panel and are written as `production × ROUTE[unit_type]` in `scripts/prepare_raw.py:100-107,190,211`, so `energy_x / production` returns the route constant by construction and no facility-level energy information exists in the model. `ef_inc` is the one incumbent coefficient that varies within a unit type, and only for steel — petrochemical Scope 1 is itself `production × ROUTE[NCC][0]`, which is why the injected 0.95 tCO₂/t *is* the petrochemical level rather than an input to it (**A-03**).
+Columns 4–7 are the coefficients `_prep_company` builds (`src/cap/e2_milp.py:52-58`) over the 23 facilities carrying 72.5 Mt/yr of incumbent output. A single value in a range column means every facility of that unit type carries the identical number: the three energy columns are **not observations**. They were absent from the collected panel and are written as `production × ROUTE[unit_type]` in `scripts/prepare_raw.py:108-115,202,228`, so `energy_x / production` returns the route constant by construction and no facility-level energy information exists in the model. `ef_inc` is the one incumbent coefficient that varies within a unit type, and only for steel — petrochemical Scope 1 is itself `production × ROUTE[NCC][0]`, which is why the injected 0.95 tCO₂/t *is* the petrochemical level rather than an input to it (**A-03**).
 <!-- /GEN:d1b_intensity -->
 
 #### Missing and zero handling
@@ -316,7 +320,7 @@ run. The rules, in the order they bite:
 
 - **NaN in a model coefficient stops the solve.** `production`, `ef_inc`, the three energy
   intensities, `capacity`, `next_reinvest_year` and `reinvest_cycle_yr` are checked per company and
-  a null in any of them raises before the LP is built (`e2_milp.py:111-118`), because CBC's
+  a null in any of them raises before the LP is built (`e2_milp.py:115-122`), because CBC's
   behaviour on a NaN coefficient is undefined rather than merely wrong.
 - **Zero production is not checked.** Every intensity divides by `production`, so a zero would
   produce `inf` rather than NaN and pass the guard above. No row is currently zero, and this is a
@@ -417,7 +421,7 @@ carbon price is a central-bank shadow price, Japanese NZ15 is IEA NZE, B20 is IE
 One row per abatement measure available to a sector.
 
 <!-- GEN:d3_excluded -->
-**The model sees 13 of the 17 rows in `data/raw/tech_options.csv`.** 4 are filtered out in preparation and nothing downstream can adopt them. 2 of them are the CCUS measures (`petchem_ccus`, `steel_ccus`): **CCUS is not in the option set at all** — a user scope decision of 2026-08-06, taken until storage-capacity and cost data exist, applied at `scripts/prepare_raw.py:303`. The other 2 are alternative-source CAPEX estimates kept for sensitivity and read by nothing in this run (`steel_eaf_alt` 700 against the adopted 240; `steel_h2dri_alt` 1,126 against the adopted 863 thousand KRW/t of capacity). This is the one exclusion in §3 that removes a measure firms actually name in their own disclosures — see §6.4 for what it costs the disclosed-plan comparison.
+**The model sees 13 of the 17 rows in `data/raw/tech_options.csv`.** 4 are filtered out in preparation and nothing downstream can adopt them. 2 of them are the CCUS measures (`petchem_ccus`, `steel_ccus`): **CCUS is not in the option set at all** — a user scope decision of 2026-08-06, taken until storage-capacity and cost data exist, applied at `scripts/prepare_raw.py:321`. The other 2 are alternative-source CAPEX estimates kept for sensitivity and read by nothing in this run (`steel_eaf_alt` 700 against the adopted 240; `steel_h2dri_alt` 1,126 against the adopted 863 thousand KRW/t of capacity). This is the one exclusion in §3 that removes a measure firms actually name in their own disclosures — see §6.4 for what it costs the disclosed-plan comparison.
 <!-- /GEN:d3_excluded -->
 
 **Adoption is all-or-nothing per facility.** There is no coverage fraction: E2's decision variable
@@ -431,7 +435,7 @@ incumbent process or **replace** it.
 |---|---|---|
 | `tech_id` **[req]** | e.g. `steel_h2dri`, `petchem_ecracker` | — |
 | `sector` **[req]** | `steel` (7 rows) or `petchem` (6) — the measure is only offered to firms in that sector | — |
-| `applies_to_unit` **[req]** | Which single `unit_type` it can be applied to, matched **as an exact string** against `D1a.unit_type` (`src/cap/e2_milp.py:148`); `NONE` marks a greenfield measure applicable to no existing unit (`steel_eaf`) | — |
+| `applies_to_unit` **[req]** | Which single `unit_type` it can be applied to, matched **as an exact string** against `D1a.unit_type` (`src/cap/e2_milp.py:152`); `NONE` marks a greenfield measure applicable to no existing unit (`steel_eaf`) | — |
 | `capex_unit` **[req]** | Unit capital cost | thousand KRW / t capacity |
 | `opex_fixed` / `opex_var` **[req]** | Fixed / variable operating cost — fixed is charged on `capacity`, variable on `production` | thousand KRW per t capacity·yr / per t |
 | `elec_intensity` **[req]** | Electricity requirement, priced at `re_price` | MWh/t |
@@ -462,17 +466,12 @@ both ends of the table below.
 The two ends of this table are the ones to read. Measures targeting a unit type no facility has, and so never adoptable: 1 of 13 (`steel_eaf`). Facilities offered no measure at all, able only to run on or retire: 1 of 23 (`POSCO_GWY_EAF1`). Both follow from the same exact-string match and neither is an error the schema or the audit can see — every row is present, typed and sourced.
 <!-- /GEN:d3_reach -->
 
-The `steel_eaf` row is the consequential one, because the disclosed-plan file is not silent about
-it: D7 carries **three `high`-resolution EAF commitments** (POSCO Gwangyang, Nippon Steel Yawata
-and Hirohata). None of them can be enforced. Gwangyang's is dropped with a stated reason —
-`e2_milp.py:332` classifies it as a model-boundary exclusion, not a disclosure-quality one — and
-the two Nippon Steel units never enter that block at all, failing the `facility_id in cf.index`
-guard on the loop's own `if` (`e2_milp.py:325`), because those facility IDs are not in the register;
-that path prints nothing and adds nothing to the dropped list. **The only disclosed commitment in D7 that states an investment figure — ¥630.2bn
-plus ¥140bn for 2.5 Mt/yr of EAF conversion at the two Nippon Steel sites — is therefore invisible
-to the frontier-gap comparison in §6.4**, and invisible without leaving a trace. It is
-recorded as gap F4 in [`docs/data_gap_registry.md`](data_gap_registry.md); the fix is a register
-addition, not a model change.
+D7 contains three EAF commitments, but the current facility and technology set cannot
+represent them exactly. The engine first requires a reviewed `validated_exact` mapping;
+subsequent checks explicitly reject missing facilities (`e2_milp.py:403`) and incompatible
+`applies_to_unit` values (`e2_milp.py:415`). Missing facilities and unsupported new construction
+must be modeled with their real operating boundaries before these announcements can constrain
+a company comparison. Adding an identifier alone does not establish that equivalence.
 
 #### Evidence bands
 
@@ -542,7 +541,7 @@ no factor* is a wider set than *read by nothing*.
 | `re_ppa_krw_mwh` | 1 | 2026-01 | 2026-01 | — | KRW/MWh (한국 태양광 PPA 170원대 중반) |
 | `re_ppa_wind_krw_mwh` | 1 | 2026-01 | 2026-01 | — | KRW/MWh (한국 육상풍력 PPA 180원 중반) |
 
-**18 series, 99 observations. 12 of them the calibration never opens.** Of those, `kau_krw` (read at `scripts/uncertainty_propagation.py:49`) is read by other code in this repo, so 11 are read by no code at all; and 3 of the 12 share a `source_id` key with D2a/D2b — `re_ppa_jp_krw_mwh` (REI_JP_PPA_2025), `re_ppa_krw_mwh` (KR_PPA_2026), `re_ppa_wind_krw_mwh` (KR_PPA_2026), the `re_price` anchor of §3.3. The other 9 share no key with either scenario file, so they document nothing in this model. A factor names 5 of the 18 series present, so 13 are named by none — but `electrolyzer_capex` is opened by `calibrate` directly (`src/cap/calibration.py:99-113`), which is why the calibration leaves 12 and not 13 unopened. Of the 7 series the calibration opens by name, 3 clear the 6-observation floor (`smp_monthly`, `indus_tariff`, `jepx_spot`), and `equip_import_idx` is named but absent from D4. So 2 of the 3 factors take a prior instead of an estimate: `h2` (0.25), `capex` (0.06). The factor correlation matrix is the identity for the same reason — with two factors producing no return series there is nothing to correlate, so identity is the absence of an estimate, not a finding of independence. The electrolyzer capex path is anchored on the last of 2 observations (2,916,000 KRW/kW @2023) with its decline rate and volatility taken from priors (5%/yr, 0.10); note the two observations *rise* 32% while the imposed path falls.
+**18 series, 99 observations. 12 of them the calibration never opens.** Of those, `kau_krw` (read at `scripts/uncertainty_propagation.py:50`) is read by other code in this repo, so 11 are read by no code at all; and 3 of the 12 share a `source_id` key with D2a/D2b — `re_ppa_jp_krw_mwh` (REI_JP_PPA_2025), `re_ppa_krw_mwh` (KR_PPA_2026), `re_ppa_wind_krw_mwh` (KR_PPA_2026), the `re_price` anchor of §3.3. The other 9 share no key with either scenario file, so they document nothing in this model. A factor names 5 of the 18 series present, so 13 are named by none — but `electrolyzer_capex` is opened by `calibrate` directly (`src/cap/calibration.py:99-113`), which is why the calibration leaves 12 and not 13 unopened. Of the 7 series the calibration opens by name, 3 clear the 6-observation floor (`smp_monthly`, `indus_tariff`, `jepx_spot`), and `equip_import_idx` is named but absent from D4. So 2 of the 3 factors take a prior instead of an estimate: `h2` (0.25), `capex` (0.06). The factor correlation matrix is the identity for the same reason — with two factors producing no return series there is nothing to correlate, so identity is the absence of an estimate, not a finding of independence. The electrolyzer capex path is anchored on the last of 2 observations (2,916,000 KRW/kW @2023) with its decline rate and volatility taken from priors (5%/yr, 0.10); note the two observations *rise* 32% while the imposed path falls.
 <!-- /GEN:price_series -->
 
 Two things about the series the calibration leaves closed, because the block above counts them and
@@ -552,7 +551,7 @@ the K-ETS carbon-price volatility from it with the *same* estimator the input-pr
 [`docs/uncertainty_propagation.md`](uncertainty_propagation.md) a like-for-like one. And the rest are
 not documentation of D2b either — only the three PPA series carry a key that a scenario file also
 cites. `steel_margin_krw_t` and `ethylene_naphtha_spread` do stand behind a model number, the lost
-margin `margin_kthou_t` in D1a, but as constants typed into `scripts/prepare_raw.py:80`
+margin `margin_kthou_t` in D1a, but as constants typed into `scripts/prepare_raw.py:88`
 (`MARGIN = {"steel": 70.0, "petchem": 290.0}`) — the series is never opened, so moving it would move
 nothing. The scan behind that count excludes `scripts/make_sample_data.py`, which writes a synthetic
 D4 rather than reading this one, and ignores comments.
@@ -682,66 +681,59 @@ The firm's own published commitments, decomposed so they can be forced into the 
 | `resolution` | How enforceable the statement is, as judged when the row was written. Two values occur, `high` (7) and `mid` (5). **Read by no stage, and it decides nothing** — the enforcement test below never consults it, so a `high` row and a `mid` row fail or survive on identical grounds |
 | `quote` | The disclosure text the row was derived from, verbatim |
 | `source_id` | Foreign key into `source_register` |
+| `mapping_status` | `validated_exact` only after route, scale, date and boundary review; preparation defaults to `unreviewed`. `SAMPLE_SYNTH` is reserved for explicitly fictional test data |
 
-What actually becomes a fixed decision is narrower than the table suggests. `_disclosed_fixed`
-applies five tests in this order, and **the order is what decides whether a rejection leaves a
-trace**:
+`_disclosed_fixed` first requires a reviewed exact mapping for every technology or contract
+commitment. `resolution=high` is not that review. It then applies the following checks; every
+rejected commitment leaves a reason and invalidates the whole proposed comparison:
 
-1. `item_type == tech_commit` — `target` and `timing` rows are context, not constraints.
-2. `facility_id` is a unit of that firm in D1a, and `year_stated` is present. **Failing here is
-   silent**: no warning, no row in the skip file. A blank `facility_id` and a `facility_id` D1a has
-   never heard of are rejected identically and invisibly.
-3. `tech_id` exists in D3 — recorded, with a reason.
-4. The technology's `applies_to_unit` equals that unit's `unit_type`, exact string match (§3.4) —
-   recorded, with a reason.
-5. The technology is available before the horizon ends. **Silent again.** The availability year the
-   test uses is `max(D3.avail_year, scenario availability)` (constraint C4), which reads as though a
-   verdict could flip between scenarios — **it cannot, on this data.** The scenario term comes from
-   `out/e1/tech_availability.csv`, and that file is a header and nothing else: D2b carries six
-   variables (`elec_price`, `h2_price`, `co2_price`, `coal_price`, `gas_price`, `re_price`) and no
-   `tech_avail_*` path, so E1 has nothing to derive a scenario availability year from. Every
-   availability test in this document therefore resolves to D3's single static `avail_year`, and
-   the scenario branch in C4 is code we run but never exercise.
+1. `item_type == tech_commit` selects technology commitments; `target` and `timing` remain context.
+2. The facility belongs to the company and an exact operation year is present.
+3. The technology exists in D3 and any stated coverage is 100%; partial conversion needs its own model.
+4. `applies_to_unit` matches the facility's `unit_type`.
+5. The technology is available before the horizon ends, and `year_stated − build_years` lies
+   within the feasible adoption range. The availability test uses
+   `max(D3.avail_year, scenario availability)` (constraint C4). The current
+   `out/e1/tech_availability.csv` is empty: D2b carries `elec_price`, `h2_price`,
+   `co2_price`, `coal_price`, `gas_price`, `re_price` and no `tech_avail_*` path.
+   Availability therefore resolves to D3's static year on these inputs.
 
-Start year is then back-computed as `year_stated − build_years` and clamped into the feasible
-range, so a commitment that predates the technology's availability is enforced at the earliest
-feasible year rather than disappearing. Row by row, on the current data:
+There is **no date shifting**. An impossible stated date is rejected, not replaced by the
+first feasible model date. The following table calls the current engine on the saved inputs;
+it is a fresh mapping assessment, not evidence that the historical `out/e2` run was repeated.
 
 <!-- GEN:d7_enforcement -->
 | Company | Type | Facility | Tech | Year | Res. | What the engine does |
 |---|---|---|---|---|---|---|
 | POSCO | `tech_commit` | `POSCO_GWY_EAF1` | `steel_eaf` | 2026 | `high` | dropped, **reason recorded** |
-| POSCO | `tech_commit` | — | `steel_h2dri` | 2030 | `mid` | dropped **silently** — no `facility_id` in the disclosure |
+| POSCO | `tech_commit` | — | `steel_h2dri` | 2030 | `mid` | dropped, **reason recorded** |
 | POSCO | `target` | — | `steel_h2dri` | 2050 | `mid` | context only (`target`) |
-| Nippon Steel | `tech_commit` | `NSC_YAW_EAF1` | `steel_eaf` | 2029 | `high` | dropped **silently** — `facility_id` not in D1a |
-| Nippon Steel | `tech_commit` | `NSC_HIR_EAF2` | `steel_eaf` | 2029 | `high` | dropped **silently** — `facility_id` not in D1a |
-| Nippon Steel | `tech_commit` | `NSC_KIM_BF2` | `steel_h2dri` | 2026 | `high` | **forced**, adopt 2030 (operational 2034), clamped +8y by availability |
+| Nippon Steel | `tech_commit` | `NSC_YAW_EAF1` | `steel_eaf` | 2029 | `high` | dropped, **reason recorded** |
+| Nippon Steel | `tech_commit` | `NSC_HIR_EAF2` | `steel_eaf` | 2029 | `high` | dropped, **reason recorded** |
+| Nippon Steel | `tech_commit` | `NSC_KIM_BF2` | `steel_h2dri` | 2026 | `high` | dropped, **reason recorded** |
 | Nippon Steel | `target` | — | — | 2030 | `mid` | context only (`target`) |
 | LOTTE Chemical | `target` | — | — | 2030 | `mid` | context only (`target`) |
 | LOTTE Chemical | `tech_commit` | `LOTTE_DAE_NCC` | `petchem_ccus` | 2023 | `mid` | dropped, **reason recorded** |
-| Mitsui Chemicals | `tech_commit` | `MCI_OSK_CR` | `petchem_h2fuel` | 2030 | `high` | **forced**, adopt 2028 (operational 2030) |
+| Mitsui Chemicals | `tech_commit` | `MCI_OSK_CR` | `petchem_h2fuel` | 2030 | `high` | dropped, **reason recorded** |
 | Mitsui Chemicals | `timing` | `MCI_ICH_CR` | — | 2027 | `high` | context only (`timing`) |
 | Mitsui Chemicals | `timing` | `MCI_OSK_CR` | — | 2030 | `high` | context only (`timing`) |
 
-Of the 12 rows, **2 become a forced decision**, 2 are dropped with a reason written to `out/e2/disclosed_skipped.csv`, and **3 are dropped without a trace** — the skip file has no line for them, so a reader counting that file undercounts what the disclosed coordinate is missing. `resolution` appears in none of it: 2 of the 3 silently dropped rows are tagged `high`, and they go for the same reason a `mid` row would. Verdicts are identical across all 2 scenarios, and not by coincidence: `out/e1/tech_availability.csv` has 0 rows, so the scenario term in the availability test never binds (test 5 above). The same call also fixes the three contract levers: because D7 contains no `ppa`, `epc` or `ccfd` rows, every disclosed coordinate is solved with `ppa = 0, epc = 0, ccfd = 0` while the optimum may buy all three. Part of every frontier gap is therefore a hedging difference no firm ever disclosed either way (§6.4).
+Of the 12 rows, **0 become a forced decision**, 7 are dropped with a reason recorded by the current engine, and **0 are dropped without a trace**. This table evaluates mappings without running E2; its reasons are written to `out/e2/disclosed_skipped.csv` when E2 next runs. `resolution` alone grants no mapping approval. Verdicts are identical across all 2 scenarios, and not by coincidence: `out/e1/tech_availability.csv` has 0 rows, so the scenario term in the availability test never binds (test 5 above). D7 has no contract rows, so its conditional contract settings are `ppa = 0, epc = 0, ccfd = 0`. An invalid or empty set of fixed commitments produces no comparator; these settings alone do not authorize a solve.
 <!-- /GEN:d7_enforcement -->
 
-**If no commitment is enforceable, we do not produce a disclosed coordinate** (**A-16**). An empty
-set of fixed decisions would just be a second unconstrained optimisation, and the resulting "gap"
-would be fabricated. Skips and their reasons are written to `out/e2/disclosed_skipped.csv` — which
-is the right file to read for *why* a coordinate is missing, and the wrong one to count for *how
-much* is missing, because tests 2 and 5 above never write to it.
+**A comparison is produced only when every commitment is representable and at least one
+technology or contract decision is fixed.** E2 writes rejection reasons on a new run to
+`out/e2/disclosed_skipped.csv`. The historical result files remain an audit snapshot.
 
-Two things follow that an external reader should have in hand before reading any gap number. **The
-disclosed coordinate is the disclosure as our model can express it, not the disclosure.** Nippon
-Steel's Kimitsu commitment is stated for 2026 and enforced at an adoption year of 2030 —
-operational 2034 — because D3 gives `steel_h2dri` an `avail_year` of 2030 and a four-year build
-(constraint C4 in [`METHODOLOGY.md`](../METHODOLOGY.md)); the clamp is logged, and it is an
-eight-year shift on the one steel commitment that survives. It is a **model** date, not a scenario
-date: per test 5 above, nothing in D2b moves it. And the same call that forces commitments also **forces the contract levers off**: with
-no `ppa`, `epc` or `ccfd` rows anywhere in D7, every disclosed solve runs with all three at zero
-while the optimum is free to buy them, so part of every gap is a hedging difference rather than a
-technology difference.
+A valid solve is labeled `commitment_constrained_model_completion`: the optimizer fills the
+undisclosed decisions, so it is not the firm's complete published plan. A missing contract
+commitment currently fixes that lever at zero; this conditional contracting assumption must be
+reported. A future contract start cannot be represented as a horizon-wide contract.
+
+The old Kimitsu mapping illustrates why rejection is needed. D3 has an `avail_year` of 2030
+for full hydrogen DRI and a four-year build, while the announcement concerned a 2026 hydrogen
+injection demonstration. Both the route and the date differ. That historical comparator and
+Mitsui's ammonia-to-hydrogen mapping are withdrawn as actual-company comparisons.
 
 ### 3.9 Provenance and licensing
 
@@ -827,7 +819,7 @@ only through the repository, not through the package.
 | `result_gap` | `company_id`, `scenario`, `support`, `plan_id` | Key plus the **disclosed** plan's id — this file is about the disclosed coordinate, and a firm with no representable commitment has no row (§6.4) | — |
 | `result_gap` | `p50`, `tcar` | The disclosed plan's own coordinate in the (P50, TCaR) plane | bn KRW |
 | `result_gap` | `gap_cost_bnkrw`, `gap_risk_bnkrw` | Horizontal and vertical distance from that coordinate to the efficient frontier (§2) | bn KRW |
-| `result_emissions_pathway` | `company_id`, `scenario`, `plan`, `year` | Key. `plan` ∈ `baseline`, `cost_min`, `disclosed`; there is **no support column** — pathways are computed for the first configured support level only (`support_scenarios[0]`, `src/cap/e5_metrics.py:289`) and are not re-run for the others | — |
+| `result_emissions_pathway` | `company_id`, `scenario`, `plan`, `year` | Key. `plan` ∈ `baseline`, `cost_min`, `disclosed`; there is **no support column** — pathways are computed for the first configured support level only (`support_scenarios[0]`, `src/cap/e5_metrics.py:357`) and are not re-run for the others | — |
 | `result_emissions_pathway` | `emissions_tco2` | Firm emissions in that year under that plan | tCO₂/yr |
 | `result_emissions_pathway` | `budget_tco2` | The D2a-derived allowance for the same firm-year, repeated on every plan row so the comparison needs no join | tCO₂/yr |
 | `source_register` | `source_id` | Primary key, referenced by every `source_id` above | — |
@@ -872,7 +864,7 @@ grade: either an axis we **re-solved** and can therefore quote a number for, or 
 | ID | Assumption | Note |
 |---|---|---|
 | **A-06** | Firm budget = own base emissions × sector path ratio | Level from the firm, shape from the scenario. No inter-firm allocation of abatement — who abates when is E2's decision |
-| **A-10** | Blast-furnace conversion is hydrogen-DRI only; efficiency and partial-abatement measures are retrofits; wholesale BF→EAF conversion is disallowed; **CCUS is not in the option set at all** — both CCUS rows are dropped in preparation (`scripts/prepare_raw.py:303`), so no firm can be assigned a capture project at any price | User-confirmed scope decision. **This is why two of the four firms have no disclosed coordinate** — POSCO's Gwangyang EAF cannot be represented and LOTTE's disclosed measure is CCUS (§6.4, §3.4). Until F19 this row called CCUS a retrofit measure available to blast furnaces, the opposite of what the pipeline does, while §6.4 of the same document said it was excluded |
+| **A-10** | Blast-furnace conversion is hydrogen-DRI only; efficiency and partial-abatement measures are retrofits; wholesale BF→EAF conversion is disallowed; **CCUS is not in the option set at all** — both CCUS rows are dropped in preparation (`scripts/prepare_raw.py:321`), so no firm can be assigned a capture project at any price | User-confirmed scope decision. **This is why two of the four firms have no disclosed coordinate** — POSCO's Gwangyang EAF cannot be represented and LOTTE's disclosed measure is CCUS (§6.4, §3.4). Until F19 this row called CCUS a retrofit measure available to blast furnaces, the opposite of what the pipeline does, while §6.4 of the same document said it was excluded |
 | **A-09** | At most 20% of firm production may be retired early | Demand / market-position proxy, and **the single most consequential number in this table**. Re-planned on 2026-08-12: doubling the cap to 40% moves ② by **41.2%**, more than any other axis in the sweep, and ③ by 51.9% (§4.3). This row previously read 0.0% and said so was meaningless, because the cap is an E2 constraint and the bundle had only been re-priced. It is now measured, and the answer is that a proxy we chose for market realism, not for evidence, is worth more than the hydrogen price |
 | **A-11** | Budget-violation penalty floored at 300 thousand KRW/tCO₂ | Without a floor the optimiser buys violations instead of transitions. Registered T5 with a `[150, 600]` band whose `source_id` is `MODEL_CHOICE` — i.e. **the band has no external basis**. The floor is far above where it needs to be: early action stops winning only below ≈39 thousand KRW/tCO₂, and at a floor of 0 three of four firms flip while at 50 none do (`out/m5/penalty_axis.csv`) |
 | **A-04** | Margin is operating profit per tonne, lost on closure | One value per sector, not per facility or per product — the closure decision therefore cannot distinguish a marginal cracker from a profitable one |
@@ -884,6 +876,16 @@ grade: either an axis we **re-solved** and can therefore quote a number for, or 
 | **A-18** | CAPEX spread evenly across `build_years` | Charging it at adoption overstated peak funding need by up to `build_years`× |
 | **A-01** | Capacity = published, else inner volume × 913.3 t/m³·yr | Sensitivity rank 10. A 12% discrepancy against the independent implementation is open (workstream G3) |
 | **A-21** | Emission boundary = Scope 1 | Level-neutral given A-06; Scope 2 preserved but not charged |
+
+The September 2026 pricing correction replaces linear CAPEX amplification with a positive
+lognormal transformation. For mean-normalized S=exp(Z−v/2), technology amplitude a gives
+exp(a·log(S)+a(1−a)v/2); for median normalization it gives S^a. Analytic log variance comes
+from the declared GBM or OU model. OU now honors both normalization settings, and uses
+analytic variance instead of variance estimated from the current sample. Price paths and
+`price_model.json` must agree in dates, process, normalization, sample count and file hash.
+Volatility sensitivity and subsampling preserve that metadata. Historical tables below still
+refer to the old run until the full accounting and data revision is rerun; the isolated pricing
+comparison is in `docs/research_cycles/2026-09-05/positive_prices/engine_integration/`.
 
 ### 4.3 What we actually re-solved
 
@@ -943,7 +945,7 @@ no index at all, and **A-19** was pointed at §4.2, where it is not.
 <!-- GEN:ledger_map -->
 **A-02**, **A-03**, **A-05**, **A-07**, **A-13**, **A-17**, **A-19**, **A-24** are treated in §4.1; **A-01**, **A-04**, **A-06**, **A-08**, **A-09**, **A-10**, **A-11**, **A-14**, **A-15**, **A-16**, **A-18**, **A-20**, **A-21** in §4.2; **A-12**, **A-22**, **A-23** are the 3 named in the paragraph above.
 
-That places 24 of the ledger's 24 identifiers. Dataset-level consequences of **A-01**, **A-02**, **A-03**, **A-04**, **A-05**, **A-06**, **A-10**, **A-13**, **A-16**, **A-17**, **A-18**, **A-19**, **A-20**, **A-21**, **A-22**, **A-24** additionally appear in §3 — an assumption is indexed here by where it is *stated*, not by everywhere it bites.
+That places 24 of the ledger's 24 identifiers. Dataset-level consequences of **A-01**, **A-02**, **A-03**, **A-04**, **A-05**, **A-06**, **A-10**, **A-13**, **A-17**, **A-18**, **A-19**, **A-20**, **A-21**, **A-22**, **A-24** additionally appear in §3 — an assumption is indexed here by where it is *stated*, not by everywhere it bites.
 <!-- /GEN:ledger_map -->
 
 ### 4.5 Evidence grading
@@ -965,34 +967,32 @@ the rest of this section.
 |---|---|---|---|---|---|---|
 | `budget` | 0 | 0 | 0 | 0 | 8 | 8 |
 | `cost_evidence` | 0 | 7 | 0 | 0 | 0 | 7 |
-| `facility` | 0 | 70 | 0 | 45 | 68 | 183 |
+| `facility` | 0 | 3 | 0 | 4 | 176 | 183 |
 | `model_choice` | 0 | 0 | 0 | 0 | 8 | 8 |
-| `policy_assumption` | 2 | 0 | 0 | 0 | 4 | 6 |
+| `policy_assumption` | 0 | 0 | 0 | 0 | 6 | 6 |
 | `prep_injection` | 0 | 0 | 0 | 0 | 4 | 4 |
-| `price_path` | 1 | 0 | 1 | 4 | 18 | 24 |
+| `price_path` | 0 | 0 | 0 | 0 | 24 | 24 |
 | `price_process` | 0 | 0 | 0 | 0 | 9 | 9 |
-| `technology` | 0 | 60 | 40 | 30 | 36 | 166 |
-| **415 parameters** | 3 | 137 | 41 | 79 | 155 | 415 |
+| `technology` | 0 | 40 | 30 | 0 | 96 | 166 |
+| **415 parameters** | 0 | 50 | 30 | 4 | 331 | 415 |
 
-T5 accounts for 155 of 415 parameters; 139 of those are still flagged as lacking a range. Models: FIN 295, EFF 120.
+T5 accounts for 331 of 415 parameters; 313 of those are still flagged as lacking a range. Models: FIN 295, EFF 120.
+
+313 of the 331 T5 parameters carry no range with both bounds. Across all tiers, 21 of 415 parameters carry a `[low, high]` pair. These counts follow the field-level evidence classification.
 <!-- /GEN:tier_distribution -->
 
-The distribution is a finding, but not the one this section used to state. Start with the rule in
-the table above: it is a rule we do not meet. **139 of the 155 T5 parameters carry no range**, which
-is the count in the generated line and the `needs_range` column of
-[`docs/parameter_inventory.csv`](parameter_inventory.csv). Across all tiers, **21 of 415 parameters
-carry a `[low, high]` at all.** The 16 T5 bands that exist are entirely model choices (8), policy
-assumptions (4) and preparation-stage injections (4) — the discount rate and MILP settings in
-`config.yaml`, the post-2030 auction shares, the BF and NCC emission factors written in during
-preparation. **Not one T5 `technology`, `facility` or `price_path` parameter carries a range** (36,
-68 and 18 of them, none banded). Ranges exist where we chose a number, not where the physics and
-the capital costs sit.
+The range requirement remains unmet for many model assumptions. The generated counts above
+come from both bound columns of [`docs/parameter_inventory.csv`](parameter_inventory.csv).
+The September 2026 field audit reclassified derived capacities, reinvestment dates, campaign
+lengths, incumbent capital costs and margins as estimates instead of inheriting the facility
+row's company-source tier. A verified furnace volume does not verify its inferred annual
+capacity. The underlying source and transformation must be assessed for each field.
 
 The tier ordering does not run cleanly in the other direction either, and the two rows that used
 to be this section's counter-example are not one.
 
 <!-- GEN:band_coverage -->
-Band coverage by tier is T1 2/3, T2 2/137, T3 1/41, T4 0/79, T5 16/155. The 2 banded T1 rows are `FIN.config.auction_share.2025` (0.1, [0.06, 0.14] = −40%/+40%), `FIN.config.auction_share.2030` (0.15, [0.09, 0.21] = −40%/+40%) — symmetric about the central value and the same −40% rule the 4 banded T5 rows of the same ramp carry (`FIN.config.auction_share.2035` (0.3, [0.18, 0.42] = −40%/+40%), `FIN.config.auction_share.2040` (0.5, [0.3, 0.7] = −40%/+40%), `FIN.config.auction_share.2045` (0.75, [0.45, 1] = −40%/+33%), `FIN.config.auction_share.2050` (1, [0.6, 1] = −40%/+0%); the upper end is clipped where the parameter is a share). `FIN.config.auction_share.2025` also sits outside the reporting period of the source it names — `KETS_P4_CONFIRM_2025` covers 2026-01-01 to 2030-12-31.
+Band coverage by tier is T1 0/0, T2 2/50, T3 1/30, T4 0/4, T5 18/331. No parameter retains T1 classification. The legacy auction-discount ramp is now classified T5 and is inactive in the research cash case. Its bands remain model conventions, not uncertainty intervals established by an allocation rule: `FIN.config.auction_share.2025` (0.1, [0.06, 0.14] = −40%/+40%), `FIN.config.auction_share.2030` (0.15, [0.09, 0.21] = −40%/+40%), `FIN.config.auction_share.2035` (0.3, [0.18, 0.42] = −40%/+40%), `FIN.config.auction_share.2040` (0.5, [0.3, 0.7] = −40%/+40%), `FIN.config.auction_share.2045` (0.75, [0.45, 1] = −40%/+33%), `FIN.config.auction_share.2050` (1, [0.6, 1] = −40%/+0%).
 <!-- /GEN:band_coverage -->
 
 This section previously read those two rows as evidence-stated width — "the 2025 and 2030 K-ETS
@@ -1166,11 +1166,11 @@ but two unfalsifiable points on one axis (§7).
 <!-- GEN:diagnostic_drift -->
 | Diagnostic | Oldest arm written | Arms behind base | Control arm | Firms drifted | Largest ② drift | Largest ③ drift |
 |---|---|---|---|---|---|---|
-| `out/process` price-process arms | 2026-08-30 22:47 | 0 of 3 | `gbm` | 0 | — | — |
-| `out/scenarios` bundle matrix | 2026-08-30 21:16 | 0 of 12 | `bundle=base` | 0 | — | — |
+| `out/process` price-process arms | 2026-08-30 22:47 | 3 of 3 | `gbm` | 0 | +0.00% (LOTTE Chemical, NZ15) | +0.00% (LOTTE Chemical, NZ15) |
+| `out/scenarios` bundle matrix | 2026-08-30 21:16 | 12 of 12 | `bundle=base` | 0 | +0.00% (LOTTE Chemical, B20) | +0.00% (LOTTE Chemical, B20) |
 | `out/m8` ε-constraint sweep | 2026-08-30 22:52 | — | none — unmeasurable | — | — | — |
 
-Every arm of every diagnostic above post-dates the base run (`out/e5`, 2026-08-30 21:13), so the perturbations are measured against the headline as printed.
+**Not all of these are measured against the run in §6.** The base pipeline was last written 2026-09-05 15:25; `out/process`, `out/scenarios`, `out/m8` carry at least one arm that predates it and may have used earlier inputs. Timestamps alone do not establish that the E2 plan set changed: an unchanged deterministic revaluation also updates file dates. Each row is dated by its **oldest** arm, not by its summary file, because a summary is rewritten by a partial re-run and would otherwise date a mostly-stale directory as fresh. Where a diagnostic carries a control arm configured identically to the headline, the table measures how far that arm has drifted; where it carries none, numerical drift is unmeasured. Zero measured drift means the reported control values agree, not that every perturbation has current input provenance. Internal validity of perturbation differences requires matching input and model provenance for each arm. Re-running the diagnostics after a base re-solve is what closes this, and until it is closed `scripts/gate.py` names these files and their lag in its `sidecars` check — a warning rather than a failure, because a stale diagnostic is work not yet re-run, not a defect in the code.
 <!-- /GEN:diagnostic_drift -->
 
 ### 6.3 The frontier is thinner than it looks
@@ -1190,7 +1190,7 @@ moves these numbers and not the surrounding prose.
 <!-- GEN:plan_distinct -->
 Separately, of 48 enumerated plans only **40** are distinct under authoritative evaluation. Every one of the 8 bundles collapses exactly one pair, which differs only in whether a CCfD is signed — under `support=none` the CCfD strike is undefined, so the two plans are numerically identical downstream while the surrogate charges a premium and prices them apart.
 
-The collapse E5 applies is larger still, and in the other direction. The frontier is not built on E2's plans: E5 reduces them to their **13** distinct technology schedules — dropping the contract choice E2 made for each — and regenerates the contract dimension itself, 10 variants per schedule (`src/cap/e5_metrics.py:184-201`). So the 48 enumerated plans carry 13 distinct investment programmes between them, and every "candidate plan" count in §9.1 counts E5's regenerated set, not E2's output (§10).
+The collapse E5 applies is larger still, and in the other direction. The frontier is not built on E2's plans: E5 reduces them to their **13** distinct technology schedules — dropping the contract choice E2 made for each — and regenerates the contract dimension itself, 10 variants per schedule (`src/cap/e5_metrics.py:248-265`). So the 48 enumerated plans carry 13 distinct investment programmes between them, and every "candidate plan" count in §9.1 counts E5's regenerated set, not E2's output (§10).
 <!-- /GEN:plan_distinct -->
 
 ### 6.4 Where the gap cannot be computed, and why
@@ -1207,7 +1207,7 @@ corrected here and in the board memo. Reasons are attached per row in
 `out/e2/disclosed_skipped.csv`.
 
 **A third firm has a coordinate that is incomplete rather than absent.** Nippon Steel's gap is
-computed (NZ15: 1,255 bn KRW on cost, 4,651 bn on risk — `out/e5/gap.csv`) from its Kimitsu
+computed (NZ15: 1,255 bn KRW on cost, 316 bn on risk — `out/e5/gap.csv`) from its Kimitsu
 hydrogen-injection commitment alone. Its two announced EAF conversions are dropped upstream because
 those facility IDs are not in the register (§3.4), and unlike the POSCO and LOTTE exclusions **that
 drop leaves no row in `disclosed_skipped.csv`** — the file above contains four rows, none of them
@@ -1394,9 +1394,9 @@ design with the reason recorded for each, and zero `CONSTANT` or `EMPTY`. The au
 counted nor checked for `source_id`, and its disappearance is not a `MISSING INPUT`. Two of the
 three partial columns are D6 company financials — `revenue` 95.5% filled and `net_debt` 40.9% — and what they feed
 is **metric ⑥, the financing burden, and not metric ③**: `revenue` is the denominator of
-`capex_total_to_revenue_pct` ([`e5_metrics.py:120`](../src/cap/e5_metrics.py#L120)) and `net_debt` is
+`capex_total_to_revenue_pct` ([`e5_metrics.py:157`](../src/cap/e5_metrics.py#L157)) and `net_debt` is
 added to transition CAPEX to reach post-transition leverage
-([`:122`](../src/cap/e5_metrics.py#L122)). The third is `D2b_scenario_prices.value` at 99.1%. Where a
+([`:159`](../src/cap/e5_metrics.py#L159)). The third is `D2b_scenario_prices.value` at 99.1%. Where a
 firm does not disclose, the ratio is `null` rather than imputed: of the 16 rows in
 `out/e5/affordability.csv`, **8 carry no net-debt multiple** (POSCO and LOTTE, by the entity boundary
 of §3.7) and **4 carry no EBITDA ratio at all** (LOTTE, whose reference EBITDA is negative), while
@@ -1406,7 +1406,7 @@ disclose least.
 
 **The one `UNUSED` column is `D6_company_financials.capex_total`** — the firms' own historical
 capital expenditure, collected for 11 of 22 firm-years and read by nothing. Metric ⑥ takes only
-`ebitda`, `revenue` and `net_debt` from D6 ([`e5_metrics.py:104-112`](../src/cap/e5_metrics.py#L104)),
+`ebitda`, `revenue` and `net_debt` from D6 ([`e5_metrics.py:141-149`](../src/cap/e5_metrics.py#L141)),
 so the comparison a CFO would make first — *this transition is N× the capital programme you already
 run* — is the one denominator the model does not compute. It is one line of code and no new data
 away, and it is listed here rather than quietly dropped.
@@ -1414,7 +1414,7 @@ away, and it is listed here rather than quietly dropped.
 That column read `PARTIAL` until this cycle, which is itself worth stating, because it shows what
 this audit can and cannot see. Utilisation is decided by searching the engine source for the column
 name, and E5's *output* carries a field also called `capex_total` (the plan's transition CAPEX,
-[`e5_metrics.py:377`](../src/cap/e5_metrics.py#L377)). The name matched, so a collected-but-unread
+[`e5_metrics.py:452`](../src/cap/e5_metrics.py#L452)). The name matched, so a collected-but-unread
 input column reported as consumed. The collision is now recorded explicitly in
 [`audit_data.py`](../scripts/audit_data.py) (`NAME_COLLISION`), but the general defect stands: **an
 input column that shares a name with any computed field can be scored as used without being read.**
@@ -1427,7 +1427,7 @@ Both passed every hand check before they were automated.
 **This document's own references to source lines are tested.** Every `file.py:N` in this guide is
 read out of the text by [`tests/test_tech_guide.py`](../tests/test_tech_guide.py) and checked twice:
 the file must exist and be long enough, and the cited line must still contain the identifier the
-surrounding sentence names — `INC_CAPEX` at `prepare_raw.py:73`, `ccfd=0` at `e5_metrics.py:201`, and
+surrounding sentence names — `INC_CAPEX` at `prepare_raw.py:81`, `ccfd=0` at `e5_metrics.py:252`, and
 so on for every citation, with no citation exempt. This exists because line numbers rot in silence: a
 sentence that stays true while its link drifts two functions away is worse than a wrong sentence,
 because the reader who follows it stops trusting the ones that are right. Two such drifts were found
@@ -1484,14 +1484,10 @@ summary, package manifest. Facility-level detail is refused by default. See
    (`docs/data_gap_registry.md` F1) — before the profit-definition difference is
    counted. Found 2026-08-11 while checking this document against the data; not yet fixed, because
    the fix is a re-run rather than an edit.
-9. **The reported frontier gaps are lower bounds, not estimates.** Every disclosed plan in the
-   current run sits above the entire tail-risk span of its own frontier, so each cost leg is
-   measured against the frontier's riskiest endpoint rather than a point in its interior (§2 figure,
-   §9.1). The endpoint reaches the same saving with less risk than an interpolated point would, so
-   the error has a known direction: the true distance is at least what we report. The opposite case
-   — a disclosed plan *below* the frontier's span, where interpolation would fabricate a gap —
-   returns NaN by construction and does not arise in the current run. The holes in §6.4 are a
-   different thing: no disclosed coordinate exists to measure from.
+9. **Gaps are conditional on the evaluated candidate set.** Every positive gap has an actual
+   witness plan. Candidate expansion can increase attainable savings. Current eligibility permits
+   carbon-budget slack, so this is not a hard-climate-compliance or global optimality certificate.
+   A missing threshold candidate yields NaN; missing disclosure coordinates are a different issue.
 10. **Our scenarios do not differ in technology timing.** They differ in carbon budgets and in the
     price paths (§3.5); every measure becomes available in the same year under both, because D2b
     carries no `tech_avail_*` path and the scenario availability table E1 writes is empty (§3.8).
@@ -1509,7 +1505,7 @@ Each of the claims above that was stated without a magnitude has one here.
 | 3 — TCaR levels | the unit-root test rejects in **0 of 8** series (7–19 observations), and its power against a mean-reverting alternative with a 10-year half-life is **4.9–5.4%** at a nominal 5% size — the test cannot tell the two processes apart, so "untestable" is measured, not rhetorical | `docs/price_process_test.csv` |
 | 5 — the `support` axis | `gap.csv` holds 8 rows for **4 distinct gaps**, and the largest disagreement between `support=current` and `support=none` on any reported quantity is **0** | `out/e5/gap.csv` |
 | 6 — the plan-selection channel | **7 of 11** bundles were re-planned; every axis that E2 reads has now been solved through it, and none of the remaining bundles reaches E2. Re-planning changed the reading: the largest movers are `carbon_slow` on ③ (99.7%) and `retire_free` on ② (41.2%), both of which read 0.0% while they were only being re-priced (§4.3) | `out/m5/bundle_matrix.csv` × `scripts/run_scenarios.py::REPLAN_REQUIRED` |
-| 9 — the gaps are lower bounds | **4 of 4** cost legs and **3 of 4** risk legs are clamped to a frontier endpoint, the disclosed plan sitting 1.01×–477× above the tail risk of the riskiest plan on its own frontier. At the top of that range the frontier is not a neighbourhood of the disclosed plan at all | `out/e5/frontier_points.csv` × `out/e5/gap.csv` |
+| 9 — candidate-relative attainable gaps | **4 of 4** cost comparisons and **4 of 4** risk comparisons have positive savings and an actual witness. Candidates obey the current soft budget rule; neither global optimality nor hard-budget compliance follows | `out/e5/frontier_points.csv` × `out/e5/gap.csv` |
 
 Claims 4, 7, 8 and 10 carry their size in the sentence itself. The table is the ones that did not.
 <!-- /GEN:limits -->
@@ -1525,14 +1521,14 @@ should ask, asked in their sharpest form, with our answer next to each. Where th
 | # | The objection | Our answer |
 |---|---|---|
 | **O1** | *"Four firms is not a sample."* | Correct, and CAP does not use it as one. Every quantity is within-firm — a plan is compared to the same firm's own opportunity set (§1), so nothing here is an estimate over a population and nothing generalises to a fifth firm. The one sentence that broke that rule was §6.2's "ranking is robust": a ranking of **four** items that never reverses under thirteen perturbations — eleven assumption bundles, the mean-reverting price process, the median shock normalisation — is a weak test, and §6.2 now says so |
-| **O2** | *"Your headline deliverable exists for half the sample, and you present it as a result."* | It exists for 2 of 4 firms and the reason is our model boundary, not their disclosure (§6.4) — but the sharper version of this objection is O3, which we had not stated before this section existed |
-| **O3** | *"Each of those two coordinates is built from one commitment row."* | True, and it is the most important limitation in the document. Of the 12 rows in D7, exactly **2 become a forced decision** — Nippon Steel's Kimitsu H₂ injection and Mitsui's Osaka H₂ fuel switch, one per firm (§3.8). So every disclosed coordinate CAP has ever computed is a single-commitment coordinate, and the gap it produces is the distance from *that one decision* to the frontier, not from the firm's transition plan to the frontier |
+| **O2** | *"Your headline deliverable exists for half the sample, and you present it as a result."* | The historical files contain coordinates for two firms. Both are now withdrawn as company assessments; the strict mapping gate produces no validated company comparator on the present inputs (§3.8) |
+| **O3** | *"Each historical coordinate was built from one commitment row."* | Historical processing forced two rows, one per firm. Both source-to-technology mappings were invalid. The current engine rejects them; retained gap values are numerical audit examples only, not assessments of the companies' plans |
 | **O4** | *"Distance to what? How many plans is your frontier?"* | Single digits, per firm × scenario — the counts are generated in §9.1, and the thinnest case that carries a gap has two non-dominated plans. Worse than the count: every disclosed plan lies above its frontier's whole tail-risk range, so each cost leg is a distance to the frontier's riskiest **endpoint**, not to a point on the frontier's interior (§2 figure). That makes the reported gaps lower bounds |
 | **O5** | *"Two of three risk factors have no market evidence — why quote ③ at all?"* | We quote its **ordering and decomposition, not its level**, and §8 claim 3 says the level depends on an untestable choice. The full force of the objection is worse than we had written: the factor carrying the largest share of cost variance is hydrogen, and hydrogen's volatility is the prior. The number is under the table below |
 | **O6** | *"Metric ⑥ mixes currencies and you still publish it."* | The guide's headline table (§6) deliberately carries ①②③ and **not** ⑥, for exactly this reason. But `out/e5/affordability.csv` and the MCP `get_affordability` tool do carry it, uncorrected, and a reader who takes the artefact rather than the document gets the uncorrected number with no warning attached. The warning lives in §3.7 and §8 claim 8 and not in the file |
 | **O7** | *"The `support` axis is a column with no signal."* | Yes — `current` and `none` return the same object (§3.6), and it is visible in the outputs: `out/e5/gap.csv` has 8 rows that are **4 distinct gaps duplicated across the axis**. The axis is kept because the day a subsidy row lands in D5 a test fails and the prose has to change; it is a wired-up placeholder, not a finding |
 | **O8** | *"Three of your eleven sensitivity axes were never re-run properly."* | **It was true, it has been fixed, and fixing it changed the answer.** All five axes that E2 reads are now re-planned (2026-08-12); the three that had stood at 0.0% were not flat but unmeasured, and two of them turned out to be the largest movers in the whole sweep — `carbon_slow` at ③ **99.7%** and `retire_free` at ② **41.2%**, against `carbon_fast`'s 61.5% (§4.3). The firm ranking survives all thirteen perturbations, so the ordering claim is unharmed; what changed is that the magnitudes we had been quoting as an upper bound on assumption risk were low by a factor of several. The count is eleven and not twelve: `out/scenarios/summary.csv` holds twelve bundles because one of them is `base`, the reference the other eleven are differenced against |
-| **O9** | *"The emissions pathway you ship covers one support scenario."* | `result_emissions_pathway.csv` is computed under the first support scenario only (`src/cap/e5_metrics.py:289`) and carries **no `support` column at all**, so a question about the emissions path under `support=current` has no answer in the package and nothing in the file says a support scenario was chosen. Given O7 the two would be identical today — but that is an accident of D5's contents, not a property of the code |
+| **O9** | *"The emissions pathway you ship covers one support scenario."* | `result_emissions_pathway.csv` is computed under the first support scenario only (`src/cap/e5_metrics.py:357`) and carries **no `support` column at all**, so a question about the emissions path under `support=current` has no answer in the package and nothing in the file says a support scenario was chosen. Given O7 the two would be identical today — but that is an accident of D5's contents, not a property of the code |
 | **O10** | *"Your public package cannot be traced back to sources."* | Two of its files cannot: the firm-level aggregates destroy `source_id` (§3.10). The other twelve keep it |
 | **O11** | *"Your frontier is one investment programme in different contract wrappers, and the optimiser that produced it ranked that programme last."* | **Correct on both counts, and this is the sharpest objection in the document.** In 8 of 8 firm × scenario bundles every non-dominated point shares a single `base_plan_id` — identical facilities, technologies, adoption years and total CAPEX — and the points differ only in PPA share and the fixed-price EPC flag. Two qualifications, both of which make the objection sharper rather than softer. Half the bundles had only one schedule in their candidate set, so the claim is carried by the four that had two or three (§9.1). And no frontier point signs a CCfD **because none can**: E5 discards the contract choice E2 made and rebuilds every candidate with `ccfd=0`, while D5 holds no CCfD strike to price one with — so the third instrument in P2 is absent from every reported number, not rejected by them. So the frontier slopes on the financing axis and is a *point* on the technology axis, and a frontier gap measures contracting, not programme choice. Worse, that schedule is E2's most expensive plan in 5 of 8 bundles and in its bottom half in 7 of 8 (§9.1) — the surrogate that enumerates candidates does not agree with the authoritative revaluation about what is good (§2), so the frontier is the non-dominated set of a menu built by a ranking we have measured to be wrong |
 | **O12** | *"Two of your four gap cases sit hundreds of times outside their own frontier's range — is that a comparison at all?"* | For Mitsui under B20 the disclosed coordinate sits at **477×** the tail risk of the riskiest plan on its frontier (§2 figure), and calling the resulting number a distance *to the frontier* overstates what it is: at that separation the frontier is not a neighbourhood of the disclosed plan, and the leg is better read as "the disclosed commitment is not on the same risk scale as any modelled programme". The other three are 1.01×, 1.42× and 2.08× out, where the comparison is defensible. §8 claim 9 gives the direction; this is the case where direction is not enough |
@@ -1548,7 +1544,7 @@ should ask, asked in their sharpest form, with our answer next to each. Where th
 | Mitsui Chemicals | B20 | 11 | 1 | 2 | 1 | 836 / 1,326 |
 | Mitsui Chemicals | NZ15 | 21 | 2 | 8 | 1 | 713 / 969 |
 | Nippon Steel | B20 | 31 | 3 | 6 | 1 | 5,529 / 7,441 |
-| Nippon Steel | NZ15 | 21 | 2 | 5 | 1 | 1,255 / 4,651 |
+| Nippon Steel | NZ15 | 21 | 2 | 5 | 1 | 1,255 / 316 |
 | POSCO | B20 | 10 | 1 | 4 | 1 | **no coordinate** |
 | POSCO | NZ15 | 20 | 2 | 5 | 1 | **no coordinate** |
 
@@ -1556,19 +1552,15 @@ The efficient frontier is **2 to 8 plans** per firm × scenario, out of 10–31 
 
 The column to read first is *Distinct schedules on frontier*. In **8 of 8** bundles every non-dominated point is a contract variant of a **single** technology schedule — same facilities, same technologies, same years, same total CAPEX — differing only in PPA share and the fixed-price EPC flag. Read that against the column before it: in **4 of 8** bundles the candidate set holds only one schedule to begin with, so there the collapse is arithmetic and not a finding. The claim rests on the other 4 bundles, where the optimiser did offer a choice of two or three schedules — and there the frontier still keeps one, in **4 of 4**. The frontier therefore slopes along the *financing* axis and is a single point on the *technology* axis, so a frontier gap answers "could this firm have contracted its programme better" and not "could it have chosen a better programme". And that schedule is not one the surrogate liked: it is the surrogate's most expensive plan in **5 of 8** bundles and in its bottom half in **7 of 8**, which is the same failure §2 measures, seen from the frontier's side (O11).
 
-The third contract instrument is absent from all of this by construction. **No frontier point signs a CCfD, and none can.** E5 does not revalue the contracts E2 chose: it dedupes E2's plans down to technology schedules and rebuilds each one across a fixed contract grid with `ccfd=0` on every point (`src/cap/e5_metrics.py:201`), and D5 carries **0** CCfD strike rows, so a signed CCfD would price identically anyway (`src/cap/plancost.py:258`). E2 signs a CCfD in **26 of 48** enumerated plans — it is credited there against a proxy carbon-volatility term the authoritative revaluation does not carry (`src/cap/e2_milp.py:263`) — and not one of those signatures reaches a reported number. P2 (§1) is therefore untested for CCfD in this run, and the frontier's financing axis is PPA share and fixed-price EPC only.
+The third contract instrument is absent from all of this by construction. **No frontier point signs a CCfD, and none can.** E5 does not revalue the contracts E2 chose: it dedupes E2's plans down to technology schedules and rebuilds each one across a fixed contract grid with `ccfd=0` on every point (`src/cap/e5_metrics.py:252`), and D5 carries **0** CCfD strike rows, so a signed CCfD would price identically anyway (`src/cap/plancost.py:362`). E2 signs a CCfD in **26 of 48** enumerated plans — it is credited there against a proxy carbon-volatility term the authoritative revaluation does not carry (`src/cap/e2_milp.py:314`) — and not one of those signatures reaches a reported number. P2 (§1) is therefore untested for CCfD in this run, and the frontier's financing axis is PPA share and fixed-price EPC only.
 
 And the axis that gap is measured on is the one with no market evidence: hydrogen carries 64%–77% of cost variance across the four firms, while its volatility is the prior of 0.25, not an estimate (§3.5). Tail-risk *levels*, and therefore `gap_risk` levels, inherit that.
 <!-- /GEN:frontier_shape -->
 
-Two consequences for anyone quoting a gap number. **It is not a nearest-point distance.** It is two
-axis-aligned distances measured against the piecewise-linear interpolant of that handful of points —
-and in the current run it is not even that, because every disclosed plan sits above the entire
-tail-risk span of its own frontier, so all four cost legs are measured against the frontier's
-riskiest *endpoint* (the figure in §2 shows where the legs land, with the counts). The consequence
-is direction, not size: a clamped leg is a lower bound, so the reported gaps understate. And the
-numbers are reported to the nearest billion KRW in §6.4 while resting on a set that small; the
-digits are exact arithmetic on the outputs, not a precision claim about the world.
+**It is not a nearest-point distance.** The two gaps are separate constrained comparisons over
+actual candidates. Each positive gap has a witness, and the two witnesses need not be the same
+plan. The axis projections in §2 do not claim a plan exists at the projected coordinate.
+Digits are arithmetic precision on conditional model outputs, not precision about the world.
 
 ---
 
@@ -1585,11 +1577,11 @@ The two are unrelated and the counts differ; §4.3 and §9.1 are the respective 
 
 **Technology schedule** (`base_plan_id`). The investment programme itself: the set of
 (facility, technology, adoption year) triples. Two plans with the same schedule build the same
-things in the same years for the same total CAPEX (`src/cap/e5_metrics.py:187-188`).
+things in the same years for the same total CAPEX (`src/cap/e5_metrics.py:238-239`).
 
 **Contract variant.** The same technology schedule wrapped in a different financing decision — PPA
 share and the fixed-price EPC flag. E5 enumerates these on a fixed grid rather than taking them from
-E2 (`CONTRACT_GRID`, `src/cap/e5_metrics.py:165`), and sets `ccfd=0` on all of them.
+E2 (`CONTRACT_GRID`, `src/cap/e5_metrics.py:216`), and sets `ccfd=0` on all of them. This archived run uses the ten-point `legacy_grid`; current `evaluation_contracts` also permits `unhedged` or an explicit reviewed grid. E2 candidate-generation settings do not select this E5 menu.
 
 **Candidate plan.** Ambiguous across this document, deliberately flagged rather than silently
 reconciled: in §2's surrogate table it means *a plan E2 emitted* (`out/e2/plan_index.csv`); in §9.1
@@ -1606,7 +1598,7 @@ with contracts applied non-linearly. Every number in §6 comes from here.
 **Incremental.** Every cost in this document is a difference against the no-transition baseline
 (incumbent technology forever, paying the scenario carbon price on full emissions), taken per
 simulation so the reported distribution is the distribution of the increment
-(`src/cap/e5_metrics.py:210-217`).
+(`src/cap/e5_metrics.py:261-268`).
 
 **Resource-cost basis.** Metric ② additionally subtracts the plan's carbon-expenditure NPV, so
 avoided carbon does not read as a benefit of the plan (A-19). The carbon path is deterministic, so
@@ -1622,15 +1614,14 @@ a level, and it is not a value-at-risk in the regulatory sense — there is no c
 about a loss, only a percentile of a simulated cost distribution.
 
 **Efficient frontier.** The lower-left envelope of the candidate set in the (P50, TCaR) plane within
-one cell: sort by TCaR, keep points whose P50 strictly improves (`src/cap/e5_metrics.py:51-58`).
+one cell: sort by TCaR, keep points whose P50 strictly improves (`src/cap/e5_metrics.py:90-97`).
 Ties collapse to one representative point.
 
-**Frontier gap** (`gap_cost`, `gap_risk`). Two axis-aligned distances from the disclosed
-coordinate to that envelope — not a nearest-point distance. `gap_cost` is the cost saving available
-at the disclosed plan's risk level, `gap_risk` the risk reduction available at its cost level. Where
-the disclosed point lies beyond the frontier's span the leg is **clamped to the endpoint**, which
-makes it a lower bound; where it lies below the span the gap is NaN rather than extrapolated
-(`src/cap/e5_metrics.py:61-81`). In the current run almost every leg is clamped (§2 figure).
+**Frontier gap** (`gap_cost`, `gap_risk`). Cost saving among candidates with risk no greater
+than the disclosed plan, and risk reduction among candidates with cost no greater than it.
+These are independent comparisons over actual plans (`src/cap/e5_metrics.py:100-107`).
+Zero means no improvement; NaN means no candidate meets the other-axis threshold. A positive
+saving has a witness ID in `gap.csv`. There is no interpolation between investment plans.
 
 **Disclosed coordinate.** The (P50, TCaR) point of the firm's own announced commitments, built by
 forcing those commitments into the plan and revaluing it identically to every candidate. It exists
@@ -1651,7 +1642,7 @@ T4 trade or secondary citation, **T5 our own model estimate**. T5 values are req
 low/high range; a T5 number without one is treated as a defect (§4.5).
 
 **λ tangency.** The plan that minimises P50 + λ·TCaR for an exogenous risk aversion λ. We report
-the tangent plan per λ rather than choosing a λ (`src/cap/e5_metrics.py:257-268`).
+the tangent plan per λ rather than choosing a λ (`src/cap/e5_metrics.py:324-335`).
 
 **Policy wedge.** The same plans — schedule and contracts fixed — revalued under each scenario's
 prices and baseline. It measures exposure to policy *stringency*, which is a discrete choice, as

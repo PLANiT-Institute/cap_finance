@@ -1,0 +1,132 @@
+"""E1 — extract constraints from GCAM/NGFS scenario data (REDESIGN_SPEC §3 E1).
+
+Downloads nothing and allocates nothing: filters the sector carbon budget and
+central price/availability paths, interpolates 5-yearly budgets to annual, and
+scales the sector budget to each company boundary by the intensity-ratio rule
+(company budget_t = company base emissions x sector budget_t / sector base).
+Facility-level allocation is deliberately NOT done here — that is E2's job.
+
+Outputs: out/e1/constraints.csv, out/e1/price_paths_central.csv, out/e1/e1_check.csv
+"""
+
+from __future__ import annotations
+
+import numpy as np
+import pandas as pd
+
+from . import config as C
+from .schemas import load_input
+
+COMPANY_REGION = {"POSCO": "Korea", "LOTTE": "Korea", "NSC": "Japan", "MCI": "Japan"}
+
+
+def run(cfg: C.Config) -> dict[str, pd.DataFrame]:
+    ddir = C.data_dir(cfg)
+    odir = C.out_dir(cfg, "e1")
+    years = np.arange(cfg.years.start, cfg.years.end + 1)
+
+    d1a = load_input(ddir, "D1a_facility_static")
+    d1b = load_input(ddir, "D1b_facility_panel")
+    d2a = load_input(ddir, "D2a_scenario_budget")
+    d2b = load_input(ddir, "D2b_scenario_prices")
+
+    # company base emissions (mean of last 3 panel years, scope 1) — per-company
+    # year coverage: sum per company-year first, then mean, so a company with a
+    # shorter panel is not divided by another company's year count
+    base_year = int(d1b.year.max())
+    recent = d1b[d1b.year >= base_year - 2]
+    fac2co = d1a.set_index("facility_id").company_id
+    fac2sec = d1a.set_index("facility_id").sector
+    recent = recent.assign(company_id=recent.facility_id.map(fac2co),
+                           sector=recent.facility_id.map(fac2sec))
+    multi = d1a.groupby("company_id").sector.nunique()
+    if (multi > 1).any():
+        raise RuntimeError(f"multi-sector companies not supported: {list(multi[multi > 1].index)}")
+    co_base = (recent.groupby(["company_id", "sector", "year"]).emissions_s1.sum()
+               .groupby(level=[0, 1]).mean())
+
+    # sector budget: interpolate to annual per scenario x region x sector
+    rows = []
+    for (scen, region, sector), g in d2a.groupby(["scenario", "region", "sector"]):
+        g = g.sort_values("year")
+        annual = np.interp(years, g.year, g.carbon_budget)
+        for y, b in zip(years, annual):
+            rows.append([scen, region, sector, int(y), float(b)])
+    sector_budget = pd.DataFrame(rows, columns=["scenario", "region", "sector", "year", "sector_budget_mt"])
+
+    # company budget by intensity ratio (budget_scaling: intensity_ratio)
+    rows = []
+    for (company, sector), base_emis in co_base.items():
+        region = COMPANY_REGION.get(company)
+        if region is None:
+            raise RuntimeError(f"unknown company '{company}' — add to COMPANY_REGION in e1_constraints.py")
+        sb = sector_budget[(sector_budget.region == region) & (sector_budget.sector == sector)]
+        for scen, g in sb.groupby("scenario"):
+            g = g.sort_values("year")
+            anchor_year = int(cfg.get("scenario_base_year", years[0]))
+            original = d2a[(d2a.scenario == scen) & (d2a.region == region) & (d2a.sector == sector)].sort_values("year")
+            if not original.year.min() <= anchor_year <= original.year.max():
+                raise ValueError(f"Scenario base year {anchor_year} outside supplied anchors")
+            anchor = float(np.interp(anchor_year, original.year, original.carbon_budget))
+            if not np.isfinite(anchor) or anchor <= 0:
+                raise ValueError("Scenario budget anchor must be finite and positive")
+            ratio = g.sector_budget_mt / anchor
+            for y, r, s in zip(g.year, ratio, g.sector_budget_mt):
+                rows.append([scen, company, sector, region, int(y), float(base_emis * r), float(s)])
+    constraints = pd.DataFrame(rows, columns=[
+        "scenario", "company_id", "sector", "region", "year",
+        "company_budget_tco2", "sector_budget_mt"])
+
+    # central price paths, annual (already annual in D2b; interpolate defensively)
+    rows = []
+    price_vars = [v for v in d2b.variable.unique() if not str(v).startswith("tech_avail_")]
+    for (scen, region, var), g in d2b[d2b.variable.isin(price_vars)].groupby(["scenario", "region", "variable"]):
+        g = g.sort_values("year")
+        # A blank anchor cell (collector gap) used to flow straight into np.interp and
+        # poison every year up to the next anchor with NaN. E2 then rejected the whole
+        # path and silently fell back to a retired structural model — a design change
+        # undone by one empty cell, announced only as a 'note'. Drop blanks, clamp at
+        # the ends (np.interp does), and say so loudly.
+        n_anchor = len(g)
+        g = g.dropna(subset=["value"])
+        if len(g) < 2:
+            raise RuntimeError(
+                f"{scen} {region} {var}: 유효 앵커 {len(g)}개 — 경로를 만들 수 없다. "
+                f"data/raw/scenario_prices.csv 확인")
+        if len(g) < n_anchor or g.year.min() > years[0] or g.year.max() < years[-1]:
+            print(f"[e1] warning: {scen} {region} {var} — 앵커 {n_anchor}개 중 유효 {len(g)}개"
+                  f"({int(g.year.min())}–{int(g.year.max())}). 바깥 구간은 최근접 앵커로 평탄 "
+                  f"외삽했다. 추정이 아니라 데이터 공백이다 — 수집 대상.", flush=True)
+        vals = np.interp(years, g.year, g.value)
+        if not np.isfinite(vals).all():
+            raise RuntimeError(f"{scen} {region} {var}: 보간 결과에 NaN — 입력 확인")
+        unit = g.unit.iloc[0]
+        rows += [[scen, region, var, int(y), float(v), unit] for y, v in zip(years, vals)]
+    prices = pd.DataFrame(rows, columns=["scenario", "region", "variable", "year", "value", "unit"])
+
+    # tech availability: EVERY tech with a tech_avail_* path gets a row; a tech
+    # never available in a scenario gets sentinel 9999 (absence must not silently
+    # fall back to the D3 default in E2)
+    avail = (d2b[d2b.variable.str.startswith("tech_avail_")]
+             .assign(tech_id=lambda x: x.variable.str.replace("tech_avail_", "", regex=False)))
+    first = avail[avail.value > 0].groupby(["scenario", "region", "tech_id"]).year.min()
+    all_keys = avail.groupby(["scenario", "region", "tech_id"]).size().index
+    avail_first = (first.reindex(all_keys).fillna(9999).astype(int)
+                   .rename("avail_year_scenario").reset_index())
+
+    # residual check: annual interpolation must preserve 5-yearly anchor values
+    chk = sector_budget.merge(d2a, on=["scenario", "region", "sector", "year"])
+    chk["residual"] = (chk.sector_budget_mt - chk.carbon_budget).abs()
+    check = chk.groupby(["scenario", "region", "sector"]).residual.max().reset_index()
+
+    constraints.to_csv(odir / "constraints.csv", index=False)
+    prices.to_csv(odir / "price_paths_central.csv", index=False)
+    avail_first.to_csv(odir / "tech_availability.csv", index=False)
+    check.to_csv(odir / "e1_check.csv", index=False)
+    assert check.residual.max() < 1e-9, "interpolation broke anchor-year budgets"
+    return {"constraints": constraints, "prices": prices, "avail": avail_first}
+
+
+if __name__ == "__main__":
+    run(C.load())
+    print("e1 ok")

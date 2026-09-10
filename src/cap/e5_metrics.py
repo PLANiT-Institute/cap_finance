@@ -6,9 +6,8 @@ the distribution is of the increment. ② divides P50 increment by cumulative
 abatement (천원/tCO2). TCaR = P90 − P50 of the increment.
 
 Variance decomposition (③): freeze one shock factor at central and measure the
-variance drop. 'elec' freezes electricity (which also stabilizes the power part
-of hydrogen — hydrogen is structurally derived); 'h2' freezes the electrolyzer
-residual; 'capex' freezes the capex index.
+variance drop. 'elec' freezes grid and renewable-procured electricity; 'h2'
+freezes the separately procured hydrogen price; 'capex' freezes the capex index.
 
 ④ = same-support P50 difference NZ15 − B20 per company (cost-min plans).
 ⑤ = from E4 flex_value.csv.
@@ -31,6 +30,41 @@ from .e3_prices import load_shocks
 from .e4_revalue import _central_px
 from .plancost import SCALE, auction_share, build_profile, simulate_cost, support_params
 from .schemas import load_input
+from .financial_reference import comparable_funding_ratios
+from .risk_metrics import finite_candidate_gap, loss_summary, sampled_dominance_witnesses, pareto_mask
+
+
+def evaluation_contract_grid(cfg):
+    """Contract menu for final evaluation, separate from E2 candidate generation.
+
+    Preserve the historical menu when unspecified. New research runs can
+    explicitly exclude assumed contracts or declare a reviewed comparison menu.
+    These settings describe idealised price fixation, not executable quotes.
+    """
+    policy=cfg.get('evaluation_contracts','legacy_grid')
+    if policy=='unhedged':
+        return [(0.,0)]
+    if policy=='legacy_grid':
+        return [(ppa,epc) for ppa in (0.,.25,.5,.75,1.) for epc in (0,1)]
+    if policy!='explicit_grid':
+        raise ValueError('evaluation_contracts must be unhedged, legacy_grid or explicit_grid')
+    entries=cfg.get('evaluation_contract_grid')
+    if not isinstance(entries,list) or not entries:
+        raise ValueError('An explicit evaluation contract grid must be a nonempty list')
+    result=[]
+    for row in entries:
+        if not isinstance(row,dict) or set(row)!={'ppa_share','epc'}:
+            raise ValueError('Each contract row must specify exactly ppa_share and epc')
+        ppa,epc=row['ppa_share'],row['epc']
+        if isinstance(ppa,bool) or not isinstance(ppa,(int,float)) or not np.isfinite(ppa) or not 0<=ppa<=1:
+            raise ValueError('PPA share must be finite and between0and1')
+        if isinstance(epc,bool) or not isinstance(epc,int) or epc not in (0,1):
+            raise ValueError('EPC must be integer0or1')
+        item=(float(ppa),epc)
+        if item in result:
+            raise ValueError('Duplicate evaluation contract variant')
+        result.append(item)
+    return result
 
 
 def _carbon_npv(prof, px, disc, auc) -> float:
@@ -38,7 +72,12 @@ def _carbon_npv(prof, px, disc, auc) -> float:
     scenario path, not a simulated factor, so this is a per-plan constant.
     Must mirror simulate_cost's auction-share treatment or the resource-basis
     subtraction leaves a residue."""
-    return float((prof.emissions * px["co2"] * auc / 1000.0 * disc).sum() * SCALE)
+    allocation = prof.free_allowances_tco2 if prof.free_allowances_tco2 is not None else 0.0
+    # Resource-basis subtraction uses the profile's explicit net allocation.
+    obligation = prof.emissions - allocation
+    if prof.carbon_accounting_basis == "purchase_only":
+        obligation = np.maximum(obligation, 0)
+    return float((obligation * px["co2"] * auc / 1000.0 * disc).sum() * SCALE)
 
 
 def _empty_plan(company):
@@ -47,41 +86,53 @@ def _empty_plan(company):
                           "ppa_share": 0.0, "epc": 0, "ccfd": 0}])
 
 
-def _frontier(pts: pd.DataFrame) -> pd.DataFrame:
-    """Lower-left envelope on (tcar, p50): sort by tcar, keep points with decreasing p50."""
-    g = pts.sort_values(["tcar", "p50"]).drop_duplicates()
+def frontier_axes(cfg) -> tuple[str, str]:
+    """(cost axis, risk axis) of the canonical frontier.
+
+    v1 historical: (p50, tcar) — the rule Proposition 6 warns against.
+    v2 (finding A1/B3): (mean, es_abs) — expected incremental cost against the
+    Expected Shortfall of the plan's OWN absolute cost distribution, so that a
+    plan which removes exposure (e.g. to a stochastic carbon price) is credited
+    with lower risk instead of being charged tracking error against a baseline
+    that violates the target.
+    """
+    axes = cfg.get("frontier_axes", ["p50", "tcar"])
+    if not (isinstance(axes, (list, tuple)) and len(axes) == 2):
+        raise ValueError("frontier_axes must be a two-item list [cost, risk]")
+    return str(axes[0]), str(axes[1])
+
+
+def _frontier(pts: pd.DataFrame, cost: str = "p50", risk: str = "tcar") -> pd.DataFrame:
+    """Lower-left envelope on (risk, cost): sort by risk, keep points with decreasing cost."""
+    g = pts.sort_values([risk, cost]).drop_duplicates()
     keep, best = [], np.inf
     for r in g.itertuples():
-        if r.p50 < best - 1e-9:
+        if getattr(r, cost) < best - 1e-9:
             keep.append(r.Index)
-            best = r.p50
+            best = getattr(r, cost)
     return g.loc[keep]
 
 
 def _gap(frontier: pd.DataFrame, point) -> tuple[float, float]:
-    """(cost saving at same risk, risk reduction at same cost) — both >= 0.
+    """Attainable savings from actual candidates, with no increase in the other axis.
 
-    Point beyond the frontier's high end on an axis (dominated by an endpoint,
-    the 설계서 그림 4 case) → measure against that endpoint: a conservative lower
-    bound, since the endpoint achieves the saving with even less risk/cost.
-    Point BELOW the frontier's low end (frontier cannot reach that risk/cost
-    level) → NaN, np.interp clamping would fabricate a gap there."""
-    f = frontier.sort_values("tcar")                            # p50 decreasing along f
-    if point.tcar < f.tcar.min():
-        dcost = float("nan")
-    else:
-        t = min(float(point.tcar), float(f.tcar.max()))
-        dcost = max(0.0, float(point.p50 - np.interp(t, f.tcar, f.p50)))
-    fi = f.sort_values("p50")
-    if point.p50 < fi.p50.min():
-        drisk = float("nan")
-    else:
-        c = min(float(point.p50), float(fi.p50.max()))
-        drisk = max(0.0, float(point.tcar - np.interp(c, fi.p50, fi.tcar)))
-    return dcost, drisk
+    The two comparisons can select different plans. Zero means no improvement;
+    NaN means no candidate reaches the corresponding threshold. Connecting
+    discrete frontier coordinates does not create an attainable investment plan.
+    """
+    return finite_candidate_gap(frontier.p50, frontier.tcar, point.p50, point.tcar)
 
 
-def _affordability(metrics: pd.DataFrame, d6: pd.DataFrame) -> pd.DataFrame:
+def _gap_witnesses(frontier: pd.DataFrame, point) -> tuple[str | None, str | None]:
+    """IDs attaining positive cost/risk savings; no witness is claimed for zero/NaN."""
+    dcost, drisk = _gap(frontier, point)
+    cost = frontier[frontier.tcar <= point.tcar + 1e-9].sort_values(["p50", "tcar", "plan_id"])
+    risk = frontier[frontier.p50 <= point.p50 + 1e-9].sort_values(["tcar", "p50", "plan_id"])
+    return (str(cost.iloc[0].plan_id) if dcost > 0 else None,
+            str(risk.iloc[0].plan_id) if drisk > 0 else None)
+
+
+def _affordability(metrics: pd.DataFrame, d6: pd.DataFrame, cfg=None) -> pd.DataFrame:
     """지표 ⑥ 조달 부담 — 전환 CAPEX를 기업 재무능력에 견준다 (D6 실적 소비).
 
     The frontier says what the transition costs; this says whether the balance
@@ -98,6 +149,8 @@ def _affordability(metrics: pd.DataFrame, d6: pd.DataFrame) -> pd.DataFrame:
     company's, consolidated or separate. Pairing group debt with operating-company
     EBITDA would produce a ratio that means nothing, so the field stays empty.
     """
+    if cfg is None or cfg.get("financial_boundary_mode", "strict") == "strict":
+        return comparable_funding_ratios(metrics, d6)
     d6 = d6.sort_values("year")
     fin = []
     for cid, g in d6.groupby("company_id"):
@@ -147,13 +200,33 @@ def run(cfg: C.Config):
     min_slack = (idx[~idx.is_disclosed].groupby(["company_id", "scenario"])
                  .budget_slack_tco2.min().rename("min_slack"))
     idx = idx.merge(min_slack, on=["company_id", "scenario"], how="left")
-    idx["budget_ok"] = idx.budget_slack_tco2 <= idx.min_slack * 1.25 + 1e6
+    budget_mode = cfg.get("budget_mode", "legacy_relative_slack")
+    if budget_mode == "cumulative_hard":
+        idx["budget_ok"] = idx.cum_emis_tco2 <= idx.cumulative_budget_tco2 + 1e-6 * np.maximum(1.0,idx.cumulative_budget_tco2)
+    elif budget_mode == "annual_hard":
+        idx["budget_ok"] = idx.budget_slack_tco2 <= 1e-3
+    elif budget_mode == "legacy_relative_slack":
+        idx["budget_ok"] = idx.budget_slack_tco2 <= idx.min_slack * 1.25 + 1e6
+    else:
+        raise ValueError(f"Unknown budget mode: {budget_mode}")
+    loss_basis = cfg.get("transition_loss_basis", "incremental_cash")
+    if loss_basis not in ("incremental_cash", "incremental_ex_carbon"):
+        raise ValueError(f"Unknown transition loss basis: {loss_basis}")
     flex = pd.read_csv(C.out_dir(cfg, "e4") / "flex_value.csv")
     shocks = load_shocks(cfg)
     years = np.arange(cfg.years.start, cfg.years.end + 1)
-    disc_v = (1 + cfg.discount_rate) ** -(years - years[0])
+    disc_v = (1.0 + cfg.discount_rate) ** -(years - years[0])
     auc_v = auction_share(years, cfg)
 
+    selection = cfg.get("plan_selection_criterion", "mean")
+    if selection not in ("p50", "mean"):
+        raise ValueError("plan_selection_criterion must be p50 or mean")
+    cost_axis, risk_axis = frontier_axes(cfg)
+    hedge_basis = cfg.get("hedge_basis", "total_purchase")
+    if hedge_basis not in ("total_purchase", "incremental"):
+        raise ValueError("hedge_basis must be total_purchase (v1) or incremental (v2)")
+    # decomposition channels: every simulated factor that actually varies
+    channels = [k for k in shocks if k != "electrolyzer" and float(np.var(shocks[k])) > 0]
     frontier_rows, gap_rows, decomp_rows, metric_rows, path_rows, dist_rows, lam_rows = \
         [], [], [], [], [], [], []
     wedge_store: dict[str, list] = {}  # company -> [(vid, scen_origin, sched_df, ppa, epc)], every scenario's frontier
@@ -162,7 +235,7 @@ def run(cfg: C.Config):
     # this traces the 설계서 P1(지연·스팟) → P6(조기·계약화) journey the MILP's
     # linearized contract terms collapse into corner solutions. CCfD stays 0
     # (no confirmed instrument in D5).
-    CONTRACT_GRID = [(ppa, epc) for ppa in (0.0, 0.25, 0.5, 0.75, 1.0) for epc in (0, 1)]
+    CONTRACT_GRID = evaluation_contract_grid(cfg)
 
     for (company, scen, supp) in [(c, s, u) for c in sorted(idx.company_id.unique())
                                   for s in cfg.scenarios for u in cfg.support_scenarios]:
@@ -171,8 +244,10 @@ def run(cfg: C.Config):
         sp = support_params(d5, supp, years)
         base_prof = build_profile(_empty_plan(company), fac, d3, px, years, cfg)
         base_sims = simulate_cost(base_prof, px, shocks, sp, cfg)
+        base_stats = loss_summary(base_sims)
         base_f_ch = {ch: simulate_cost(base_prof, px, shocks, sp, cfg, freeze=ch)
-                     for ch in ["elec", "h2", "capex"]}
+                     for ch in channels}
+        hedge_ref = (base_prof.grid_mwh + base_prof.re_mwh) if hedge_basis == "incremental" else None
 
         g = idx[(idx.company_id == company) & (idx.scenario == scen)]
         if g.empty:
@@ -198,7 +273,7 @@ def run(cfg: C.Config):
             prof0 = build_profile(sc_["df"], fac, d3, px, years, cfg)
             for k, (ppa_v, epc_v) in enumerate(CONTRACT_GRID):
                 variants.append((f"{sc_['pid']}.c{k:02d}", sc_["pid"],
-                                 replace(prof0, ppa=ppa_v, epc=epc_v, ccfd=0),
+                                 replace(prof0, ppa=ppa_v, epc=epc_v, ccfd=0, hedge_reference_mwh=hedge_ref),
                                  sc_["ok"], sc_["slack"], False))
         if disc_entry is not None:
             pr_d, df_d = disc_entry
@@ -214,12 +289,26 @@ def run(cfg: C.Config):
             # RESOURCE-cost basis: strip the deterministic carbon-expenditure delta
             # (carbon avoidance otherwise dominates; TCaR unaffected — 설계서 §4)
             dcarb = _carbon_npv(prof, px, disc_v, auc_v) - carb_base
-            p50, p90 = p50_tot - dcarb, p90_tot - dcarb
-            inc_store[vid] = inc - dcarb
+            evaluated = inc - dcarb if loss_basis == "incremental_ex_carbon" else inc
+            statistics = loss_summary(evaluated)
+            absolute = loss_summary(sims)          # the plan's own cost distribution (v2 risk axis)
+            p50, p90 = statistics["p50"], statistics["q_alpha"]
+            inc_store[vid] = evaluated
             prof_store[vid] = prof
             abated = float(((base_prof.emissions - prof.emissions) * disc_v).sum())
             rows.append(dict(plan_id=vid, base_plan_id=bid, company_id=company, scenario=scen,
                              support=supp, p50=p50, p90=p90, tcar=p90 - p50,
+                             mean=statistics["mean"], es_alpha=statistics["es_alpha"],
+                             alpha=statistics["alpha"], n_draws=statistics["n_draws"],
+                             p50_abs=absolute["p50"], mean_abs=absolute["mean"],
+                             tcar_abs=absolute["q_alpha"] - absolute["p50"], es_abs=absolute["es_alpha"],
+                             es_abs_vs_baseline=absolute["es_alpha"] - base_stats["es_alpha"],
+                             tcar_abs_vs_baseline=(absolute["q_alpha"] - absolute["p50"])
+                                                  - (base_stats["q_alpha"] - base_stats["p50"]),
+                             hedge_basis=hedge_basis,
+                             loss_basis=loss_basis, budget_mode=budget_mode,
+                             capital_accounting=cfg.get("capital_accounting", "cash_v1"),
+                             carbon_accounting=cfg.get("carbon_accounting_mode", "gross_obligation_proxy"),
                              p50_incl_carbon=p50_tot, carbon_delta=dcarb,
                              ppa_share=float(prof.ppa), epc=int(prof.epc), ccfd=int(prof.ccfd),
                              budget_ok=ok or isd, budget_slack_tco2=slack,
@@ -229,7 +318,20 @@ def run(cfg: C.Config):
                              capex_peak_year=int(years[prof.capex_k.argmax()]) if prof.capex_k.any() else None))
 
         pts = pd.DataFrame(rows)
-        fr = _frontier(pts[~pts.is_disclosed & pts.budget_ok])
+        eligible = pts[~pts.is_disclosed & pts.budget_ok]
+        witnesses = sampled_dominance_witnesses({pid:inc_store[pid] for pid in eligible.plan_id})
+        pts["sampled_dominance_witness"] = pts.plan_id.map(witnesses).fillna("")
+        pts["sampled_statewise_dominated"] = pts.plan_id.isin(witnesses)
+        pts["decision_eligible"] = (~pts.is_disclosed & pts.budget_ok & ~pts.sampled_statewise_dominated)
+        # frontier flags are computed on the DECISION-ELIGIBLE set (B3: a sampled-
+        # dominated candidate can no longer be flagged non-dominated)
+        elig = pts[pts.decision_eligible]
+        for cost,risk,label in [("mean","tcar","on_mean_tcar_frontier"),("mean","es_alpha","on_mean_es_frontier"),
+                                ("mean","es_abs","on_mean_esabs_frontier"),("mean","tcar_abs","on_mean_tcarabs_frontier")]:
+            pts[label] = False
+            if len(elig):
+                pts.loc[elig.index,label] = pareto_mask(elig[cost],elig[risk])
+        fr = _frontier(elig if len(elig) else pts[~pts.is_disclosed & pts.budget_ok], cost_axis, risk_axis)
         frontier_rows.append(pts.assign(on_frontier=pts.plan_id.isin(fr.plan_id)))
 
         # reference plan set for the policy wedge (그림 6): EVERY scenario's frontier.
@@ -249,29 +351,32 @@ def run(cfg: C.Config):
         for vid in pts[pts.plan_id.isin(fr.plan_id) | pts.is_disclosed].plan_id:
             prof, inc = prof_store[vid], inc_store[vid]
             var_full = float(np.var(inc))
-            for channel in ["elec", "h2", "capex"]:
+            for channel in channels:
                 sims_f = simulate_cost(prof, px, shocks, sp, cfg, freeze=channel)
                 contrib = 1 - np.var(sims_f - base_f_ch[channel]) / var_full if var_full > 0 else 0.0
-                decomp_rows.append([vid, company, scen, supp, channel, max(0.0, float(contrib))])
+                decomp_rows.append([vid, company, scen, supp, channel, float(contrib)])  # signed: under correlated factors freezing one channel can RAISE incremental variance (coal vs elec, corr 0.84)
 
-        # λ tangency (설계서 그림 5): optimal plan = argmin(p50 + λ·TCaR) over
-        # eligible plans. λ is exogenous — we report the tangent plan per λ.
+        # λ tangency (설계서 그림 5): optimal plan = argmin(cost + λ·risk) over the
+        # canonical axes. λ is exogenous — we report the tangent plan per λ. v1 used
+        # (p50, tcar); Proposition 6 shows that rule can pick a statewise-dominated
+        # plan, so v2 runs it on (mean, es_abs) over decision-eligible plans only.
         if supp == cfg.support_scenarios[0]:
-            el = pts[~pts.is_disclosed & pts.budget_ok]
+            el = pts[pts.decision_eligible] if len(pts[pts.decision_eligible]) else pts[~pts.is_disclosed & pts.budget_ok]
             if len(el):
                 for lam in [0.0, 0.25, 0.5, 1.0, 2.0, 4.0]:
-                    w = el.p50 + lam * el.tcar
+                    w = el[cost_axis] + lam * el[risk_axis]
                     b = el.loc[w.idxmin()]
                     lam_rows.append([company, scen, lam, b.plan_id, b.base_plan_id,
-                                     round(b.p50, 1), round(b.tcar, 1),
-                                     round(b.ppa_share, 2), int(b.epc)])
+                                     round(float(b[cost_axis]), 1), round(float(b[risk_axis]), 1),
+                                     round(b.ppa_share, 2), int(b.epc), cost_axis, risk_axis])
 
         # cost distribution (그림 2 유형): cost-min & disclosed plans, first support only
         if supp == cfg.support_scenarios[0]:
             picks = {}
             el = pts[~pts.is_disclosed & pts.budget_ok]
             if len(el):
-                picks["cost_min"] = el.loc[el.p50.idxmin()].plan_id
+                candidates = el[el.decision_eligible] if selection == "mean" else el
+                picks["cost_min"] = candidates.sort_values([selection,"es_alpha","plan_id"]).iloc[0].plan_id
             dl = pts[pts.is_disclosed]
             if len(dl):
                 picks["disclosed"] = dl.plan_id.iloc[0]
@@ -293,7 +398,8 @@ def run(cfg: C.Config):
             sel = {"baseline": base_prof}
             gm0 = pts[~pts.is_disclosed & pts.budget_ok]
             if len(gm0):
-                sel["cost_min"] = prof_store[gm0.loc[gm0.p50.idxmin()].plan_id]
+                candidates = gm0[gm0.decision_eligible] if selection == "mean" else gm0
+                sel["cost_min"] = prof_store[candidates.sort_values([selection,"es_alpha","plan_id"]).iloc[0].plan_id]
             dp_ = pts[pts.is_disclosed]
             if len(dp_):
                 sel["disclosed"] = prof_store[dp_.plan_id.iloc[0]]
@@ -304,8 +410,11 @@ def run(cfg: C.Config):
         disc = pts[pts.is_disclosed]
         if len(disc) and len(fr) >= 1:
             dcost, drisk = _gap(fr, disc.iloc[0])
+            wc, wr = _gap_witnesses(fr, disc.iloc[0])
             gap_rows.append([company, scen, supp, disc.plan_id.iloc[0],
-                             disc.p50.iloc[0], disc.tcar.iloc[0], dcost, drisk])
+                             disc.p50.iloc[0], disc.tcar.iloc[0], dcost, drisk,
+                             wc, wr, "attainable_discrete_candidates",
+                             disc_entry[0].get("comparison_basis", "historical_unverified_proxy")])
 
     # policy stringency wedge (설계서 그림 6): the SAME plans (1st-scenario frontier,
     # schedule+contracts fixed) revalued under every scenario's prices and baseline —
@@ -336,7 +445,8 @@ def run(cfg: C.Config):
                                ppa=ppa_v, epc=epc_v, ccfd=0)
                 sims = simulate_cost(prof, px, shocks, sp0, cfg)
                 inc_tot = sims - base_sims
-                inc = inc_tot - (_carbon_npv(prof, px, disc_v, auc_v) - carb_base)
+                inc = (inc_tot - (_carbon_npv(prof, px, disc_v, auc_v) - carb_base)
+                       if loss_basis == "incremental_ex_carbon" else inc_tot)
                 p50w, p90w = float(np.median(inc)), float(np.percentile(inc, 90))
                 over = float(np.maximum(prof.emissions - bud, 0.0).sum())
                 wedge_rows.append([company, vid, scen_origin, scen,
@@ -355,10 +465,11 @@ def run(cfg: C.Config):
                                      "bin_lo", "bin_hi", "count", "p50", "p90"]
                  ).to_csv(odir / "cost_distribution.csv", index=False)
     pd.DataFrame(lam_rows, columns=["company_id", "scenario", "lam", "plan_id", "base_plan_id",
-                                    "p50", "tcar", "ppa_share", "epc"]
+                                    "cost", "risk", "ppa_share", "epc", "cost_axis", "risk_axis"]
                  ).to_csv(odir / "lambda_tangency.csv", index=False)
     gap = pd.DataFrame(gap_rows, columns=["company_id", "scenario", "support", "plan_id",
-                                          "p50", "tcar", "gap_cost_bnkrw", "gap_risk_bnkrw"])
+                                          "p50", "tcar", "gap_cost_bnkrw", "gap_risk_bnkrw",
+                                          "cost_witness_plan_id", "risk_witness_plan_id", "gap_method", "comparison_basis"])
     gap.to_csv(odir / "gap.csv", index=False)
     decomp = pd.DataFrame(decomp_rows, columns=["plan_id", "company_id", "scenario", "support",
                                                 "factor", "variance_share"])
@@ -370,7 +481,9 @@ def run(cfg: C.Config):
         if gm.empty:
             print(f"[e5] warning: only disclosed plan exists for {company} {scen} {supp} — metrics skipped")
             continue
-        best = gm.loc[gm.p50.idxmin()]
+        candidates = gm[gm.decision_eligible] if selection == "mean" else gm
+        best = candidates.sort_values([selection,risk_axis,"plan_id"]).iloc[0]
+        risk_min = candidates.sort_values([risk_axis,selection,"plan_id"]).iloc[0]
         m2 = best.p50 * 1e6 / best.abated_tco2_disc if best.abated_tco2_disc > 0 else np.nan
         f5 = flex[(flex.company_id == company) & (flex.scenario == scen) & (flex.support == supp)]
         metric_rows.append([company, scen, supp,
@@ -378,11 +491,21 @@ def run(cfg: C.Config):
                             best.p50, m2,                                  # ② (자원비용 bn KRW, 천원/tCO2 disc)
                             best.tcar,                                     # ③
                             f5.flex_value_mean.iloc[0] if len(f5) else np.nan,  # ⑤ (mean; p50 degenerates to 0)
-                            best.p50_incl_carbon, best.carbon_delta])
+                            best.p50_incl_carbon, best.carbon_delta,
+                            best["mean"], best.es_alpha, best.plan_id, selection, loss_basis,
+                            budget_mode, best.capital_accounting, best.carbon_accounting,
+                            best.es_abs, best.tcar_abs, best.es_abs_vs_baseline,
+                            risk_axis, risk_min.plan_id, float(risk_min["mean"]), float(risk_min[risk_axis]),
+                            float(risk_min.ppa_share), int(risk_min.epc), best.hedge_basis])
     metrics = pd.DataFrame(metric_rows, columns=[
         "company_id", "scenario", "support", "capex_total_bnkrw", "capex_peak_bnkrw", "capex_peak_year",
         "p50_bnkrw", "cost_per_tco2_thkrw", "tcar_bnkrw", "flex_value_bnkrw",
-        "p50_incl_carbon_bnkrw", "carbon_delta_bnkrw"])
+        "p50_incl_carbon_bnkrw", "carbon_delta_bnkrw", "mean_bnkrw", "es_alpha_bnkrw",
+        "selected_plan_id", "selection_criterion", "loss_basis", "budget_mode",
+        "capital_accounting", "carbon_accounting",
+        "es_abs_bnkrw", "tcar_abs_bnkrw", "es_abs_vs_baseline_bnkrw",
+        "risk_axis", "risk_min_plan_id", "risk_min_mean_bnkrw", "risk_min_risk_bnkrw",
+        "risk_min_ppa_share", "risk_min_epc", "hedge_basis"])
     # ④ policy exposure: scenarios[0] − scenarios[1] within support (config-driven)
     piv = metrics.pivot_table(index=["company_id", "support"], columns="scenario", values="p50_bnkrw")
     s_hi, s_lo = (cfg.scenarios + [None, None])[:2]
@@ -391,13 +514,13 @@ def run(cfg: C.Config):
         metrics = metrics.merge(piv[["policy_exposure_bnkrw"]].reset_index(),
                                 on=["company_id", "support"], how="left")
     metrics.to_csv(odir / "metrics_company.csv", index=False)
-    _affordability(metrics, load_input(ddir, "D6_company_financials")).to_csv(
+    _affordability(metrics, load_input(ddir, "D6_company_financials"), cfg).to_csv(
         odir / "affordability.csv", index=False)
 
     # spec checks: frontier monotone, gaps non-negative (NaN = point outside frontier range, allowed)
     for _, fgrp in frontier[frontier.on_frontier].groupby(["company_id", "scenario", "support"]):
-        f = fgrp.sort_values("tcar")
-        assert (f.p50.diff().dropna() <= 1e-6).all(), "frontier not monotone"
+        f = fgrp.sort_values(risk_axis)
+        assert (f[cost_axis].diff().dropna() <= 1e-6).all(), "frontier not monotone"
     gv = gap[["gap_cost_bnkrw", "gap_risk_bnkrw"]]
     assert ((gv >= 0) | gv.isna()).all().all()
     return metrics, frontier, gap, decomp

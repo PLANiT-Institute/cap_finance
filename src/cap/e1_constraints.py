@@ -63,7 +63,14 @@ def run(cfg: C.Config) -> dict[str, pd.DataFrame]:
         sb = sector_budget[(sector_budget.region == region) & (sector_budget.sector == sector)]
         for scen, g in sb.groupby("scenario"):
             g = g.sort_values("year")
-            ratio = g.sector_budget_mt / g.sector_budget_mt.iloc[0]
+            anchor_year = int(cfg.get("scenario_base_year", years[0]))
+            original = d2a[(d2a.scenario == scen) & (d2a.region == region) & (d2a.sector == sector)].sort_values("year")
+            if not original.year.min() <= anchor_year <= original.year.max():
+                raise ValueError(f"Scenario base year {anchor_year} outside supplied anchors")
+            anchor = float(np.interp(anchor_year, original.year, original.carbon_budget))
+            if not np.isfinite(anchor) or anchor <= 0:
+                raise ValueError("Scenario budget anchor must be finite and positive")
+            ratio = g.sector_budget_mt / anchor
             for y, r, s in zip(g.year, ratio, g.sector_budget_mt):
                 rows.append([scen, company, sector, region, int(y), float(base_emis * r), float(s)])
     constraints = pd.DataFrame(rows, columns=[

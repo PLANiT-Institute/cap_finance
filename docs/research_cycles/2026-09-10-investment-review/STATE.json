@@ -1,0 +1,61 @@
+{
+  "requested_at_kst": "2026-09-10T01:03:05+09:00",
+  "deadline_kst": "2026-09-10T09:03:05+09:00",
+  "requested_cycles": 3,
+  "completed_cycles": 3,
+  "status": "complete",
+  "cycles": [
+    {
+      "cycle": 1,
+      "status": "complete",
+      "started_at_kst": "2026-09-10T03:06:45+09:00",
+      "finished_at_kst": "2026-09-10T03:16:34+09:00",
+      "focus": "Investment identification, finite-horizon accounting and emissions-budget qualification",
+      "critique": "paper/methodology/INVESTMENT_DECISION_REVIEW_KO.md",
+      "verification": "docs/research_cycles/2026-09-10-investment-review/cycle1/verification.json",
+      "editorial_verification": "docs/research_cycles/2026-09-10-investment-review/cycle1/editorial_verification.json",
+      "new_price_paths": false,
+      "corporate_calibration": false,
+      "docx_pdf_regenerated": false
+    },
+    {
+      "cycle": 2,
+      "status": "complete",
+      "started_at_kst": "2026-09-10T05:07:15+09:00",
+      "finished_at_kst": "2026-09-10T05:19:54+09:00",
+      "critique": "paper/methodology/INVESTMENT_TECHNOLOGY_CYCLE2_KO.md",
+      "verification": "docs/research_cycles/2026-09-10-investment-review/cycle2/verification.json",
+      "editorial_verification": "docs/research_cycles/2026-09-10-investment-review/cycle2/editorial_verification.json",
+      "new_price_paths": false,
+      "corporate_calibration": false,
+      "docx_pdf_regenerated": false
+    },
+    {
+      "cycle": 3,
+      "status": "complete",
+      "started_at_kst": "2026-09-10T07:07:15+09:00",
+      "finished_at_kst": "2026-09-10T07:32:17+09:00",
+      "critique": "paper/methodology/INVESTMENT_FINAL_REVIEW_KO.md",
+      "verification": "docs/research_cycles/2026-09-10-investment-review/cycle3/verification.json",
+      "document_qa": "docs/research_cycles/2026-09-10-investment-review/cycle3/document_qa.json",
+      "new_price_paths": false,
+      "corporate_calibration": false,
+      "docx_pdf_regenerated": true,
+      "pages": {
+        "EN": 21,
+        "KO": 22
+      }
+    }
+  ],
+  "automation_id": "8-3",
+  "next_cycle": null,
+  "finished_at_kst": "2026-09-10T07:32:17+09:00",
+  "remaining_research_limits": [
+    "Matched corporate calibration and price-distribution validation",
+    "Full-chain capture emissions and transport/storage feasibility",
+    "Quoted procurement and financing terms",
+    "PLANiT coupling implementation and validation",
+    "Independent public reference-case replication and database release"
+  ],
+  "automation_status": "PAUSED"
+}

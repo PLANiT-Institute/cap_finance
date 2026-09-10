@@ -39,6 +39,7 @@ from cap.calibration import _annual_vol  # noqa: E402
 from cap.e1_constraints import COMPANY_REGION  # noqa: E402
 from cap.e2_milp import _prep_company  # noqa: E402
 from cap.e3_prices import load_shocks  # noqa: E402
+from cap.price_process import rescale_factor  # noqa: E402
 from cap.e4_revalue import _central_px  # noqa: E402
 from cap.plancost import (auction_share, build_profile, simulate_cost,  # noqa: E402
                           support_params)
@@ -93,7 +94,8 @@ def _empty(company: str) -> pd.DataFrame:
 def perturb(cfg, fac, d3, shocks, mult: dict[str, float]):
     """Apply a draw of multipliers. Returns (cfg, fac, d3, px_scale, shocks).
 
-    `vol` multipliers act on the log of the shock array, so a deterministic
+    `vol` multipliers preserve the declared normalization and analytic variance.
+    For an explicit deterministic
     (all-ones) shock array stays all-ones — volatility uncertainty is a
     price-channel parameter by construction and cannot show up in the
     parameter-only pass. That is a property of the decomposition, not a bug.
@@ -110,7 +112,7 @@ def perturb(cfg, fac, d3, shocks, mult: dict[str, float]):
         elif kind == "cfg":
             c2 = C.Config({**c2, tgt: c2[tgt] * m})
         elif kind == "vol":
-            sh2 = {k: (np.exp(np.log(v) * m) if k == tgt else v) for k, v in sh2.items()}
+            sh2 = rescale_factor(sh2, tgt, m)
     return c2, f2, d32, pxs, sh2
 
 
@@ -209,8 +211,8 @@ def evidence_bands(cfg) -> dict[str, tuple[float, float]]:
     return out
 
 
-def pick_params(k: int) -> list[str]:
-    rank = pd.read_csv(ROOT / "out" / "sensitivity" / "ranking.csv")
+def pick_params(k: int, ranking_path=None) -> tuple[list[str], list[str]]:
+    rank = pd.read_csv(ranking_path or ROOT / "out" / "sensitivity" / "ranking.csv")
     keep = [p for p in rank.base_param if p in SPEC]
     return keep[:k], [p for p in rank.base_param[:k] if p not in SPEC]
 
@@ -224,15 +226,19 @@ def main() -> int:
     ap.add_argument("--co2-seeds", type=int, default=3, dest="co2_seeds")
     ap.add_argument("--bands", action="store_true",
                     help="G2: 문헌 밴드가 있는 파라미터는 ±width 대신 밴드에서 추첨")
+    ap.add_argument("--config", type=pathlib.Path, help="Configuration used to generate the saved price paths")
+    ap.add_argument("--run-dir", type=pathlib.Path, help="E1–E5 run directory, also containing sensitivity/ranking.csv")
     a = ap.parse_args()
-
-    cfg = C.load(data_dir="data/prepared")
-    cfg["simulation"] = dict(cfg["simulation"], n_sims=a.sims)
+    if min(a.sims, a.draws, a.params, a.co2_seeds) < 1 or any(not 0 < w < 1 for w in a.widths):
+        ap.error("counts must be positive and widths must lie strictly between 0 and 1")
+    cfg = C.load(a.config)
+    if a.run_dir:
+        cfg["out_dir"] = str(a.run_dir.resolve())
     ddir = C.data_dir(cfg)
     fac, d3, _cal = _prep_company(cfg, ddir)
     d5 = load_input(ddir, "D5_policy_support")
     prices = pd.read_csv(C.out_dir(cfg, "e1") / "price_paths_central.csv")
-    shocks = {k: v[:a.sims] for k, v in load_shocks(cfg).items()}
+    shocks = load_shocks(cfg).subset(a.sims)
     # e3가 저장한 경로 수가 --sims보다 적을 수 있다(config n_sims). 실제 N을 쓴다 —
     # co2 충격을 요청값으로 만들면 조용히 브로드캐스트가 깨진다.
     a.sims = int(shocks["elec"].shape[0])
@@ -253,7 +259,7 @@ def main() -> int:
                 lst.append(pdf)
         plans[co] = lst
 
-    params, skipped = pick_params(a.params)
+    params, skipped = pick_params(a.params, C.out_dir(cfg, "sensitivity") / "ranking.csv")
     print(f"[F3] 추첨 파라미터 {len(params)}: {', '.join(params)}")
     if skipped:
         print(f"[F3] 상위 {a.params} 중 미구현 제외: {', '.join(skipped)}")
@@ -286,7 +292,7 @@ def main() -> int:
             onlys.append(tcar(increment(cfg, fac, d3, d5, prices, co, pdf, ppa, epc,
                                         {**ones, "co2": co2})))
             boths.append(tcar(increment(cfg, fac, d3, d5, prices, co, pdf, ppa, epc,
-                                        {**shocks, "co2": co2})))
+                                        shocks.with_factor("co2", co2))))
         incs = [b - tcar(inc_price) for b in boths]
         pol[co] = {"tcar_co2_only": float(np.mean(onlys)),
                    "tcar_price_co2": float(np.mean(boths)),
@@ -333,21 +339,23 @@ def main() -> int:
                   f"(param {d['param_share_pct']:.0f}%)", flush=True)
 
     df = pd.DataFrame(rows)
-    odir = ROOT / "out" / "uncertainty"
+    odir = C.out_dir(cfg, "uncertainty")
     odir.mkdir(parents=True, exist_ok=True)
     # --bands는 **별도 파일**로 쓴다. 정본(±규약)을 덮으면 페이퍼 대장의 F3 key가
     # 조용히 다른 규약의 값으로 바뀐다 — G2는 정본을 교체하는 작업이 아니다.
     tag = "_bands" if a.bands else ""
     df.to_csv(odir / f"decomposition{tag}.csv", index=False)
     if not a.bands:
-        _write_report(df, params, skipped, a)
+        _write_report(df, params, skipped, a, odir / "report.md")
     print(f"[F3] wrote {odir/f'decomposition{tag}.csv'}"
-          + ("" if a.bands else " + docs/uncertainty_propagation.md"))
+          + ("" if a.bands else f" + {odir/'report.md'}"))
     return 0
 
 
-def _write_report(df: pd.DataFrame, params, skipped, a) -> None:
-    proc = _process_column()
+def _write_report(df: pd.DataFrame, params, skipped, a, report_path=None) -> None:
+    # Legacy process comparisons have a different price-model provenance. An
+    # explicitly selected run must not silently borrow those historical numbers.
+    proc = [] if getattr(a, "run_dir", None) or getattr(a, "config", None) else _process_column()
     L = ["# F3 파라미터 불확실성 전파 — ③ TCaR은 무엇의 위험인가", "",
          "> `scripts/uncertainty_propagation.py` 자동 생성.", "",
          "지금까지 보고한 ③ TCaR은 **가격 충격만**의 산물이다. 파라미터는 F2에서 한 번에 하나씩",
@@ -410,14 +418,14 @@ def _write_report(df: pd.DataFrame, params, skipped, a) -> None:
     L += _l2_section(df)
     L += ["## 5. 한계", "",
           "- **계획 고정.** 추첨마다 MILP를 다시 풀지 않는다. 파라미터가 바뀌면 최적 계획도",
-          "  바뀌므로 여기 파라미터분은 **하한**이다(계획 재선택은 손실을 흡수한다).",
+          "  바뀔 수 있다. 이 결과는 고정 계획의 조건부 민감도이며 재최적화한 TCaR의 상·하한을 보장하지 않는다.",
           "- **균등·독립 추첨.** 상관을 넣지 않았다. 원단위와 배출계수처럼 물리적으로 얽힌",
           "  파라미터를 독립으로 뽑으면 결합 분산이 과대·과소 어느 쪽으로도 갈 수 있다.",
           "- **탄소가격 충격도 독립이다**(§4). 탄소가격과 전력가는 물리적으로 얽혀 있으나",
           "  D4에서 `kau_krw`(연, 2015–2023)와 `smp_monthly`(월, 2025–)의 관측 구간이 겹치지",
-          "  않아 상관을 추정할 수 없다. 양의 상관이 실제라면 §4의 증분은 **과소**다.",
+          "  않아 상관을 추정할 수 없다. 상관이 TCaR에 미치는 방향은 순노출의 부호와 손실분포에 따라 달라진다.",
           "- **폭이 규약.** §2 참조.", ""]
-    (ROOT / "docs" / "uncertainty_propagation.md").write_text("\n".join(L) + "\n")
+    (report_path or ROOT / "docs" / "uncertainty_propagation.md").write_text("\n".join(L) + "\n")
 
 
 def _l2_section(df: pd.DataFrame) -> list[str]:

@@ -1,10 +1,10 @@
 """E4 — revalue every plan across simulated price paths (REDESIGN_SPEC §3 E4).
 
 For each plan x support scenario: NPV cost distribution over sims (fixed-plan mode).
-Flexibility (⑤ input): plan-switching approximation — per sim, the company picks the
-cheapest plan in its generated plan set. Lower bound of true re-optimization value
-(true re-opt would re-solve the MILP per path; the plan set is the feasible menu we
-already traced). ponytail: plan-switching lower bound; full per-sim re-MILP if ⑤ looks material.
+The ex-post minimum over the menu uses full future price information. It is a
+perfect-information diagnostic on a finite menu, not an executable adaptive
+investment policy. Research mode compares it with the minimum-mean fixed plan;
+the historical configuration can retain its old median-selected comparator.
 
 Outputs: out/e4/cost_dist.parquet, out/e4/summary.csv, out/e4/flex_value.csv
 """
@@ -61,7 +61,7 @@ def run(cfg: C.Config):
     years = np.arange(cfg.years.start, cfg.years.end + 1)
     ones = {k: np.ones((1, len(years))) for k in shocks}
 
-    dist_rows, summary_rows = [], []
+    dist_rows, summary_rows, capital_rows = [], [], []
     profiles = {}
     for _, pr in idx.iterrows():
         plan_df = pd.read_csv(e2dir / "plans" / f"plan_{pr.plan_id}.csv")
@@ -69,6 +69,15 @@ def run(cfg: C.Config):
         px = _central_px(prices, region, pr.scenario, years, cfg, cal)
         prof = build_profile(plan_df, fac, d3, px, years, cfg)
         profiles[pr.plan_id] = (prof, px)
+        construction = sum(prof.capex_by_tech.values(), np.zeros(len(years)))
+        for i,year in enumerate(years):
+            capital_rows.append(dict(plan_id=pr.plan_id,company_id=pr.company_id,scenario=pr.scenario,
+                year=int(year),construction_k=float(construction[i]),
+                maintenance_capex_k=float(prof.maintenance_capex_k[i]) if prof.maintenance_capex_k is not None else np.nan,
+                gross_capex_k=float(prof.capex_k[i]),
+                noncash_writeoff_k=float(prof.noncash_writeoff_k[i]) if prof.noncash_writeoff_k is not None else np.nan,
+                terminal_value_k=float(prof.terminal_value_k[i]) if prof.terminal_value_k is not None else np.nan,
+                capital_accounting=cfg.get("capital_accounting","cash_v1")))
         for supp in cfg.support_scenarios:
             sp = support_params(d5, supp, years)
             sims = simulate_cost(prof, px, shocks, sp, cfg)
@@ -90,6 +99,7 @@ def run(cfg: C.Config):
         columns={"npv_cost_bnkrw": "e2_surrogate_cost"}), on="plan_id", how="left")
     summary["surrogate_wedge"] = summary.central_cost - summary.e2_surrogate_cost
     summary.to_csv(odir / "summary.csv", index=False)
+    pd.DataFrame(capital_rows).to_csv(odir / "annual_capital_ledger.csv", index=False)
 
     # convergence check (spec §6-3): P50/TCaR on the first HALF of sims must be
     # within 1% of the full run — half-vs-full measures stability at the current
@@ -113,7 +123,7 @@ def run(cfg: C.Config):
 
     # flexibility value (⑤): per company x scenario x support, on a sim subsample
     nf = min(cfg.simulation.n_sims_flex, shocks["elec"].shape[0])
-    sub_shocks = {k: v[:nf] for k, v in shocks.items()}
+    sub_shocks = shocks.subset(nf)
     flex_rows = []
     for (company, scen, supp), g in summary.groupby(["company_id", "scenario", "support"]):
         plan_costs = []
@@ -122,12 +132,15 @@ def run(cfg: C.Config):
             sp = support_params(d5, supp, years)
             plan_costs.append(simulate_cost(prof, px, sub_shocks, sp, cfg))
         M = np.vstack(plan_costs)                       # (n_plans, nf)
-        best_fixed = M[np.argmin(np.median(M, axis=1))]  # commit to ex-ante best plan
+        criterion = cfg.get("plan_selection_criterion", "mean")
+        scores = M.mean(axis=1) if criterion == "mean" else np.median(M,axis=1)
+        best_fixed = M[np.argmin(scores)]
         switch = M.min(axis=0)                           # re-optimize (switch) per path
         flex_rows.append([company, scen, supp, float(np.median(best_fixed - switch)),
-                          float((best_fixed - switch).mean())])
+                          float((best_fixed - switch).mean()),
+                          "perfect_information_over_generated_menu",criterion,len(plan_costs)])
     flex = pd.DataFrame(flex_rows, columns=["company_id", "scenario", "support",
-                                            "flex_value_p50", "flex_value_mean"])
+                                            "flex_value_p50", "flex_value_mean", "information_assumption", "fixed_plan_criterion", "menu_size"])
     flex.to_csv(odir / "flex_value.csv", index=False)
     return summary, flex
 

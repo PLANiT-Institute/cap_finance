@@ -1,0 +1,677 @@
+[
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "CPS",
+    "region": "IEA_import_average",
+    "commodity": "crude_oil",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      79.0,
+      89.0,
+      106.0
+    ],
+    "quantity_unit": "barrel",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "IEA_weighted_import_price",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": null
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "STEPS",
+    "region": "IEA_import_average",
+    "commodity": "crude_oil",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      79.0,
+      80.0,
+      76.0
+    ],
+    "quantity_unit": "barrel",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "IEA_weighted_import_price",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": null
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "NZE",
+    "region": "IEA_import_average",
+    "commodity": "crude_oil",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      79.0,
+      33.0,
+      25.0
+    ],
+    "quantity_unit": "barrel",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "IEA_weighted_import_price",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": null
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "CPS",
+    "region": "United States",
+    "commodity": "natural_gas",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      2.2,
+      4.5,
+      5.0
+    ],
+    "quantity_unit": "MMBtu_unspecified",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "domestic_wholesale",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": "HHV"
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "STEPS",
+    "region": "United States",
+    "commodity": "natural_gas",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      2.2,
+      3.9,
+      4.6
+    ],
+    "quantity_unit": "MMBtu_unspecified",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "domestic_wholesale",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": "HHV"
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "NZE",
+    "region": "United States",
+    "commodity": "natural_gas",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      2.2,
+      2.1,
+      2.2
+    ],
+    "quantity_unit": "MMBtu_unspecified",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "domestic_wholesale",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": "HHV"
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "CPS",
+    "region": "European Union",
+    "commodity": "natural_gas",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      10.3,
+      9.1,
+      10.6
+    ],
+    "quantity_unit": "MMBtu_unspecified",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "pipeline_LNG_import_mix",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": "HHV"
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "STEPS",
+    "region": "European Union",
+    "commodity": "natural_gas",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      10.3,
+      6.5,
+      8.4
+    ],
+    "quantity_unit": "MMBtu_unspecified",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "pipeline_LNG_import_mix",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": "HHV"
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "NZE",
+    "region": "European Union",
+    "commodity": "natural_gas",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      10.3,
+      4.2,
+      4.0
+    ],
+    "quantity_unit": "MMBtu_unspecified",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "pipeline_LNG_import_mix",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": "HHV"
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "CPS",
+    "region": "China",
+    "commodity": "natural_gas",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      10.3,
+      9.9,
+      11.2
+    ],
+    "quantity_unit": "MMBtu_unspecified",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "pipeline_LNG_import_mix",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": "HHV"
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "STEPS",
+    "region": "China",
+    "commodity": "natural_gas",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      10.3,
+      7.5,
+      9.1
+    ],
+    "quantity_unit": "MMBtu_unspecified",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "pipeline_LNG_import_mix",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": "HHV"
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "NZE",
+    "region": "China",
+    "commodity": "natural_gas",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      10.3,
+      4.9,
+      4.8
+    ],
+    "quantity_unit": "MMBtu_unspecified",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "pipeline_LNG_import_mix",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": "HHV"
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "CPS",
+    "region": "Japan",
+    "commodity": "natural_gas",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      13.5,
+      11.2,
+      12.9
+    ],
+    "quantity_unit": "MMBtu_unspecified",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "LNG_customs_before_regasification",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": "HHV"
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "STEPS",
+    "region": "Japan",
+    "commodity": "natural_gas",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      13.5,
+      8.4,
+      9.7
+    ],
+    "quantity_unit": "MMBtu_unspecified",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "LNG_customs_before_regasification",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": "HHV"
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "NZE",
+    "region": "Japan",
+    "commodity": "natural_gas",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      13.5,
+      4.9,
+      4.9
+    ],
+    "quantity_unit": "MMBtu_unspecified",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "LNG_customs_before_regasification",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": "HHV"
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "CPS",
+    "region": "United States",
+    "commodity": "steam_coal",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      56.0,
+      56.0,
+      53.0
+    ],
+    "quantity_unit": "t_steam_coal_6000kcal_kg",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "mine_mouth_plus_transport_handling",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": null
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "STEPS",
+    "region": "United States",
+    "commodity": "steam_coal",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      56.0,
+      41.0,
+      41.0
+    ],
+    "quantity_unit": "t_steam_coal_6000kcal_kg",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "mine_mouth_plus_transport_handling",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": null
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "NZE",
+    "region": "United States",
+    "commodity": "steam_coal",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      56.0,
+      25.0,
+      23.0
+    ],
+    "quantity_unit": "t_steam_coal_6000kcal_kg",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "mine_mouth_plus_transport_handling",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": null
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "CPS",
+    "region": "European Union",
+    "commodity": "steam_coal",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      112.0,
+      92.0,
+      82.0
+    ],
+    "quantity_unit": "t_steam_coal_6000kcal_kg",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "import_price",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": null
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "STEPS",
+    "region": "European Union",
+    "commodity": "steam_coal",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      112.0,
+      78.0,
+      66.0
+    ],
+    "quantity_unit": "t_steam_coal_6000kcal_kg",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "import_price",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": null
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "NZE",
+    "region": "European Union",
+    "commodity": "steam_coal",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      112.0,
+      47.0,
+      39.0
+    ],
+    "quantity_unit": "t_steam_coal_6000kcal_kg",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "import_price",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": null
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "CPS",
+    "region": "Japan",
+    "commodity": "steam_coal",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      151.0,
+      112.0,
+      105.0
+    ],
+    "quantity_unit": "t_steam_coal_6000kcal_kg",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "import_price",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": null
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "STEPS",
+    "region": "Japan",
+    "commodity": "steam_coal",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      151.0,
+      100.0,
+      84.0
+    ],
+    "quantity_unit": "t_steam_coal_6000kcal_kg",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "import_price",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": null
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "NZE",
+    "region": "Japan",
+    "commodity": "steam_coal",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      151.0,
+      57.0,
+      49.0
+    ],
+    "quantity_unit": "t_steam_coal_6000kcal_kg",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "import_price",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": null
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "CPS",
+    "region": "Coastal China",
+    "commodity": "steam_coal",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      131.0,
+      115.0,
+      105.0
+    ],
+    "quantity_unit": "t_steam_coal_6000kcal_kg",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "domestic_import_mix",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": null
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "STEPS",
+    "region": "Coastal China",
+    "commodity": "steam_coal",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      131.0,
+      99.0,
+      84.0
+    ],
+    "quantity_unit": "t_steam_coal_6000kcal_kg",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "domestic_import_mix",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": null
+  },
+  {
+    "model": "IEA_GEC_2025",
+    "scenario": "NZE",
+    "region": "Coastal China",
+    "commodity": "steam_coal",
+    "years": [
+      2024,
+      2035,
+      2050
+    ],
+    "values": [
+      131.0,
+      59.0,
+      49.0
+    ],
+    "quantity_unit": "t_steam_coal_6000kcal_kg",
+    "currency": "USD",
+    "price_year": 2024,
+    "boundary": "domestic_import_mix",
+    "components": [
+      "benchmark_commodity"
+    ],
+    "source": "https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf#page=21",
+    "heat_basis": null
+  }
+]

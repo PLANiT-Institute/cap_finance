@@ -38,7 +38,9 @@ def test_decomposition_keeps_the_interaction_residual():
 def _frames():
     fac = pd.DataFrame({"capacity": [1.0, 2.0], "ef_inc": [1.5, 1.6]})
     d3 = pd.DataFrame({"capex_unit": [100.0], "h2_intensity": [30.0]})
-    shocks = {"elec": np.full((3, 4), 1.2), "h2": np.full((3, 4), 0.8)}
+    from cap.price_process import PriceShocks
+    shocks = PriceShocks({"elec": np.full((3, 4), 1.2), "h2": np.full((3, 4), 0.8)},
+                         {"elec": np.full(4, .02), "h2": np.full(4, .04)})
     return C.Config({"discount_rate": 0.05}), fac, d3, shocks
 
 
@@ -70,7 +72,8 @@ def test_perturbation_scales_the_right_column_only():
     assert np.allclose(f2.capacity, fac.capacity * 1.3)
     assert np.allclose(f2.ef_inc, fac.ef_inc)          # 다른 열은 그대로
     assert np.allclose(d32.capex_unit, d3.capex_unit * 0.7)
-    assert np.allclose(sh2["elec"], shocks["elec"] ** 2.0)
+    assert np.allclose(sh2["elec"], shocks["elec"] ** 2.0 * np.exp(-.02))
+    np.testing.assert_allclose(sh2.log_variance["elec"], .08)
     assert np.allclose(sh2["h2"], shocks["h2"])
 
 

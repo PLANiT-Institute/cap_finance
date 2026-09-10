@@ -1,0 +1,371 @@
+# Comparing Industrial Transition Plans under Energy Price Uncertainty
+
+## A pilot methodology for abatement technology investment and commissioning decisions
+
+Jinsu Park | PLANiT Institute | September 2026
+
+### Abstract
+
+Which abatement technology should a firm adopt, when, and under what energy conditions? This pilot compares physical investment plans under matched production, cash and emissions boundaries, then tests supporting contracts. Transition Cost at Risk (TCaR) reports adverse cost spread alongside expected cost and Expected Shortfall (ES). Cracker timing and steel capture references show that emissions requirements, price mappings and downstream boundaries can determine the admissible choice; risk assessment does not always change it. Contract-driven changes appear under explicitly hypothetical carbon-charge and risk conditions. The contribution is an auditable decision protocol and conditional mechanisms, not calibrated investment advice. Planned coupling to PLANiT’s energy model and public abatement technology database will test whether coherent system and plant information improves these decisions.
+
+{{fig:tcar}}
+
+Figure 1. Electrification timing: P50–P95 segments show TCaR95; diamonds show ES95. Blue solid and green dashed segments denote independent pools of 5,000 paths. Right: cumulative abatement under the grid 0.2→0, residual-zero condition. The 2045 date fails the original 25% reduction requirement. Costs use million EUR with assumed 2019 operating prices. Sources: [D3, D6].
+
+**Investment use.** Compare the cost distribution with the required reduction before choosing a date. Less cost and a narrower TCaR can accompany less abatement. This comparison identifies conditional timing choices; it does not establish an optimal delay or a technology-family ranking.
+
+\pagebreak
+
+### 1 The investment decision
+
+The primary user is an investment team choosing a process configuration, commissioning date and capacity to meet a production service and emissions requirement. Technology changes physical inputs, investment expenditure and residual emissions. Contracts manage the resulting exposure. The research question is which physical choices remain admissible and preferable under consistent energy-system and plant conditions, and when better information changes that assessment.
+
+Write a plan as x = (d, h), with physical investment d and procurement terms h. First compare d under a common feasible procurement rule h₀. Then assess jointly feasible (d, h) combinations, including premiums, capacity and contract eligibility. A common rule does not imply the same purchased quantities. If a technology cannot access h₀, disclose the restricted comparison. Report technology, date and capacity changes separately from changes in contracts alone.
+
+Keep production, emissions requirements, accounting and preferences fixed when attributing a decision change to risk or procurement. Report ties and empty feasible sets. An ES ceiling or a mean-plus-ES weight is a declared decision condition; it is not inferred from the result. The effects can interact, so they need not add up to independent contributions.
+
+The current evidence comprises a one-technology cracker timing comparison, two steel capture configurations, a procurement-mapping diagnostic and a frozen company exercise retained in Appendix A. Capacity is fixed in these experiments. They do not establish a ranking across hydrogen, electrification and capture families. The proposed contribution is the traceable connection from physical and contractual assumptions to these bounded decisions and their remaining evidence requirements.
+
+\pagebreak
+
+### 2 Economic interpretation and related research
+
+Mean–risk analysis has a long history in portfolio choice, and Expected Shortfall provides an established way to evaluate large losses, including discrete distributions [1–3]. Industry studies already compare abatement technologies across input prices and provide open data and tools [4]. Process studies supply detailed reference configurations for hydrogen steelmaking and electrified ethylene production [5–6]. This paper builds on these approaches by checking how process boundaries, procurement exposures and discrete investment schedules jointly determine comparable cost distributions.
+
+The relevant economic mechanisms differ. Changing a process can reduce or substitute physical exposure. A fixed price contract reallocates price risk and generally charges for that service. Holding liquidity changes the ability to absorb a loss. A subsidy reallocates expenditure between the firm and the public sector. These mechanisms should not all be called a reduction in aggregate economic risk.
+
+A deterministic cost model can price a contract premium. Under fixed quantities and correctly mean-normalised linear prices, it can also calculate expected cost exactly. What expected cost alone does not determine is the value a decision maker assigns to reducing expensive tail outcomes. We therefore compare expected cost and ES without inferring an unobserved risk preference from a single chosen plan.
+
+### The pilot hypothesis
+
+Adding consistent process, emissions and procurement information can change feasible alternatives or their cost–risk ordering relative to a central price calculation. The existing experiments demonstrate this possibility under stated assumptions. They do not establish how often this occurs in actual investment decisions or whether the benefit exceeds the cost of collecting better data.
+
+### Why steel and petrochemicals
+
+Hydrogen steelmaking can replace coal exposure with electricity, hydrogen and different iron feedstocks. Onsite hydrogen production and purchased hydrogen are different system boundaries. Naphtha cracker electrification can retain feedstock demand while changing electricity purchases and internal fuel use. This contrast makes the two sectors useful for testing when feedstock costs cancel in incremental comparisons and when they remain material.
+
+Korean and Japanese company names identify the origin of selected disclosures in the frozen exercise. The allocated assets and several common price assumptions are model constructions. National energy systems, procurement practices and corporate scope require separate calibration before country effects can be estimated.
+
+\pagebreak
+
+### 3 Comparable plans and cash accounting
+
+Let x denote a fixed investment and contract plan, s a long term scenario, θ a set of process and procurement assumptions, and ω a conditional price path. Let x₀ be a reference plan delivering the same specified product and quantity. Costs increase in the adverse direction.
+
+{{eq:loss}}
+
+The reference may fail the transition target; it remains a valid cost counterfactual if this is explicit. It can enter the set of selectable transition plans only when it meets the same eligibility requirements.
+
+{{eq:cash}}
+
+K includes initial and replacement cash investment; O denotes other operating expenditure; q is external purchased quantity; Z is the stated carbon payment; H is net contract payment; S is support received; V is recoverable terminal cash. d discounts cash to the valuation date; T is the final year. Sales and internal transfers must be reconciled before forming external net purchases. Existing sunk investment is excluded from future cash expenditure; future replacement is included when required. A noncash impairment is reported separately and is not charged construction price risk or subsidised as new investment.
+
+Both plans must provide equivalent product quality, delivery timing and output. Curtailment requires explicit lost revenue or replacement supply, including displaced emissions. The current company exercise fixes output; it does not solve restructuring or closure decisions.
+
+Annual and cumulative emissions conditions are distinct. Satisfying the sum of annual budgets does not prove compliance in every year. Eligibility also depends on construction lead times, mutually exclusive technologies, infrastructure availability and the chosen emissions scope. Purchased electricity can move emissions outside Scope 1 without delivering an equivalent system reduction.
+
+### Procurement and settlement
+
+An unchanged feedstock quantity cancels only if the two plans have the same pathwise discounted cash payment for that item. Invoice dates, currency, payment dates, quality premiums or contracts can prevent cancellation. With foreign currency procurement, E[PX] = E[P]E[X] + Cov(P,X); separately normalising commodity and exchange rate multipliers does not fix the expectation of their product. Nominal exchange rates and real commodity prices require explicit inflation conversion [D1, D5].
+
+These are private cost comparisons. Removing carbon payments does not convert them into social welfare calculations. Revenues, taxes, financing, risk premia and externalities require a consistent extension.
+
+\pagebreak
+
+### 4 Risk measures and attainable choices
+
+For each eligible plan we report the mean, median, upper quantile, TCaR and ES. The frozen company exercise uses α = 0.90; process references use α = 0.95. Results at different confidence levels are not pooled.
+
+{{eq:risk}}
+
+{{eq:es}}
+
+The ES expression applies to integrable losses and correctly allocates probability mass at a discrete quantile [2]. Stored quantiles and medians use linear interpolation; empirical ES integrates the inverse empirical distribution, including fractional boundary mass. These conventions must be retained in replication.
+
+TCaR is a spread, not a cash funding requirement. Adding a certain cost shifts the mean, quantiles and ES by the same amount while leaving TCaR unchanged. It can also rank a uniformly worse loss as less risky: let X equal 0 with probability 0.8 and 100 with probability 0.2, and let Y always equal 100. At α = 0.90, TCaR(X) = 100 and TCaR(Y) = 0, although Y is never cheaper. A mean plus twice TCaR criterion chooses Y. This is why a low TCaR cannot be the sole recommendation rule [D1].
+
+The primary frontier is the subset of evaluated eligible plans for which no alternative has both weakly lower expected cost and weakly lower ES, with at least one strict improvement. A mean–TCaR display remains a diagnostic. We also check pathwise cost dominance on the simulated sample. Such a check is a sample statement unless an algebraic argument establishes it for all admissible states.
+
+An efficient set can contain one point, several separated points, or be empty when no plan qualifies. Connecting discrete points does not create an executable investment schedule. The search uses mixed integer scheduling and a finite contract menu; the resulting frontier is conditional on that menu, not a certificate of global optimality.
+
+### Decision rule
+
+A reviewer can compare plans at a predeclared ES ceiling or examine mean + λES for λ ≥ 0. The latter preserves loss monotonicity, but may miss some nondominated discrete points. An ES constrained comparison is therefore retained. Risk appetite and the cost boundary must be stated by the decision maker. For an implementable disclosed comparator, cost savings at its ES and ES savings at its mean are separate attainable comparisons, each requiring its own witness plan.
+
+### Practical interpretation
+
+TCaR95 adds to P50 to obtain P95. It does not add automatically to an approved budget B: compare P95 directly with B instead. Annual financing needs require dated revenues, debt service and liquidity balances. For investment review, report cost levels, TCaR, ES and emissions qualification together; a narrower spread alone is not a better investment.
+
+\pagebreak
+
+### 5 Scenarios price paths and identification
+
+Long term scenarios define conditional environments; they are not assigned occurrence probabilities in this pilot. This treatment is consistent with the NGFS scenario framework [7]. Historical price changes describe a separate assumption about fluctuations around those environments, not observed forecast errors of an energy system model.
+
+The frozen company experiment uses local NZ15 and B20 proxy scenarios and positive geometric Brownian motion (GBM) type multipliers. It is not an NGFS or GCAM extraction. Its electricity volatility pools short, heterogeneous tariff and market series; hydrogen and construction volatilities are prior assumptions. These limitations make its tail magnitudes exploratory [D1].
+
+Later process experiments use IEA 2025 price ratios and World Bank monthly benchmarks [8–9]. Demeaned monthly log changes are sampled in common, overlapping, noncircular 12 month blocks. The same block is applied to all six factors to preserve historical within block dependence. Price levels are obtained by exponentiation and normalised using exact finite block exponential moments, without rescaling by the simulated sample mean. Equal monthly purchases imply an arithmetic annual average.
+
+{{fig:scenario}}
+
+Figure 2. Reference scenario inputs, shown as ratios to 2024. The figure reproduces registered IEA nodes with linear interpolation. Applying these benchmark ratios to a plant’s purchase price remains an assumption. Source: [8], [D2].
+
+All plans and their reference use common price paths. Independent evaluation pools test selection stability; resampling whole path indices jointly across plans measures conditional sampling variation. Neither exercise validates the assumed long horizon distribution. Repeated historical crisis blocks and the absence of mean reversion can materially enlarge the tail. Generating more paths cannot repair a misspecified price process.
+
+\pagebreak
+
+### 6 Assumptions that control the comparison
+
+Table 1 compares the assumptions used for cracker timing and steel capture. The company exercise is retained in Appendix A. Model settings are not estimates merely because they have precise numerical values.
+
+{{table:assumptions}}
+
+Table 1. Main assumptions for the two investment references. Source records distinguish observations, reference specifications and researcher settings. Sources: [D3, D6, D7].
+
+{{fig:discount_grid}}
+
+Figure 3. Illustrative discount factors at 3%, 5% and 7%, alongside the two assumed electricity emissions paths in the timing experiment. Only the 5% case is used in the displayed reference cost results; the other discount curves show weighting, not rerun risk estimates. The electricity paths are sensitivity conditions, not national forecasts.
+
+Specifications from different papers are kept as internally consistent packages. For example, total electricity including onsite electrolysis cannot be combined with a separate purchased hydrogen bill. Residual emissions, coproduct sales, useful steam recovery and replacement lives affect both the feasible set and cost. Technical ranges are not automatically probability distributions.
+
+\pagebreak
+
+### 7 Electrification timing requires an emissions test
+
+The naphtha cracker (NCC) reference supplies 920,000 tonnes of ethylene annually. It compares commissioning in 2030, 2035, 2040 and 2045 against continued conventional production. Construction lasts three years. Purchased electricity rises from 0.083 to 1.942 MWh per tonne of naphtha; direct process emissions are 0.397 and assumed zero tonnes CO₂ per tonne of naphtha. Other residual emissions are tested separately [6, D3].
+
+{{fig:ncc_eligibility}}
+
+Figure 4. Cumulative emissions relative to continued operation under the same electricity path, with zero residual emissions. The dashed line is the assumed 75% cap. At an initial grid factor of 0.2, three schedules qualify; at 0.4, only 2040 qualifies. All also require zero terminal emissions. Source: [D3].
+
+{{table:ncc}}
+
+Table 2. Incremental cost conditional on the reference assumptions, in million EUR with an assumed 2019 real operating price basis. Means are analytical; TCaR95 and ES95 use two independent 5,000 path pools. Source: [D3].
+
+At the lower initial grid factor, 2040 has the lowest mean and ES in both pools, so the evaluated frontier contains one point. This does not establish an optimal investment year outside this menu. The choice reflects the assumed replacement cycle, discounting and emissions rule. All 16 combinations of date, grid path and residual condition fail the separate annual linear cap; residual emissions of 0.05 tonnes CO₂ per tonne of naphtha also make the terminal zero condition infeasible for every date.
+
+The 2040 TCaR95 estimates are 419.8 and 476.4. Conditional bootstrap intervals are 383.0–451.0 and 433.3–510.6. Stable choice and precise risk magnitude are different outcomes. Holding prices fixed while varying grid emissions isolates eligibility; it does not establish joint power price and emissions consistency.
+
+\pagebreak
+
+### 8 What explains the apparent advantage of waiting
+
+The 2030-versus-2040 expected-cost gap is 2,199.10 million EUR. A plant renewal in 2050, charged only to the 2030 plan, contributes 323.78 million EUR or 14.72%. Construction timing, incumbent renewal, maintenance and different energy-exposure periods account for the rest. Removing that required renewal is a diagnostic, not a feasible operating plan. Equal ethylene delivery does not imply equal cumulative abatement.
+
+{{table:budget}}
+
+Table 3. Required cumulative reduction and the selected date in both independent pools. Grid 0.2→0, residual emissions zero, terminal emissions zero; annual linear caps are not imposed here. With those annual caps, all four dates fail. Source: [D6].
+
+A symmetric straight-line terminal-asset proxy preserves the cost and ES ordering but is not a verified receipt or continuation value. A stronger, explicit test keeps identical electric technology, output, real replacement cost and twenty-year life after 2050. Common future operating cash cancels between dates pathwise; periodic renewals are summed exactly. This reduces the 2030-versus-2040 mean gap to 2,075.94 million EUR [D7].
+
+Under the frozen electricity-price identity Pₑ = 50 + 1.25 Pgas, positive pathwise cost-difference bounds preserve the ordering. Thus Monte Carlo measures conditional spreads here; it does not discover a new physical ordering. Common future random cash can change each plan’s ES and TCaR, whose full-horizon levels have not been computed. The ordering proof does not establish those levels. Learning, closure, downtime and different replacement specifications require a new continuation analysis. The result also differs from a general abatement-timing problem with accumulation and adjustment constraints [15].
+
+\pagebreak
+
+### 9 Comparing physical capture designs
+
+The IEAGHG reference compares two post-combustion capture configurations delivering the same four million tonnes of hot-rolled coil annually. L2 adds capture sources to L1. These are greenfield configurations within one technology family, not retrofit quotations or a comparison with hydrogen steelmaking. Source monetary bases are not a verified common current price year. Reported annual emissions use the reconciled C7 boundary [16, D7].
+
+{{table:capture}}
+
+Table 4. Physical performance and unhedged incremental cost. Cost statistics are in million source USD and use STEPS, twelve-month blocks and the independent 10,000-path evaluation pool. Mean is analytical; TCaR95 and ES95 are conditional sample statistics. Site abatement excludes unverified downstream effects. Sources: [16, D7].
+
+At zero carbon charge, L2 has higher construction cost, fixed operating cost and gas demand. L1 is therefore cheaper on every positive gas-price path at a common contract share. The same nonnegative fee per captured tonne reinforces this ordering. At a 50% site target L1 is chosen; at 60% only L2 qualifies; at 60.4% neither qualifies. Risk weights or access to the same priced gas-contract menu do not change those physical choices in the evaluated zero-charge cases. Additional abatement beyond the constraint is not valued by a cost-only objective.
+
+Eligibility margins are narrow. L1 exceeds the 50% target by 5,356 tCO₂/year, and L2 exceeds 60% by 24,927.6 t/year. Net extra downstream emissions equal to 0.1077% and 0.4066% of their respective captured volumes exhaust these margins. These are accounting limits, not leakage estimates. A fee does not demonstrate transport capacity, permanent retention or full-chain mitigation. Complete CCS investment qualification remains unverified.
+
+\pagebreak
+
+### 10 Conditions that change the physical choice
+
+Let Aᵢ be annual emissions avoided against the reference, Qᵢ annual tonnes captured and W the discounted operating-year sum. Add W(kQᵢ − cAᵢ) to incremental cost: k is a fee per captured tonne and c a uniform carbon charge on the reported boundary. The reference subtraction produces −cAᵢ. These are hypothetical constant schedules in a consistent source-dollar unit, not observed liabilities, storage offers or social values.
+
+{{eq:switch}}
+
+Here Δ compares L2 with L1, μ is expressed in dollars and ΔA is positive. Replacing Δμ with ΔES gives the ES criterion’s switching charge. A deterministic charge shifts cost levels but not TCaR. At zero downstream fee, the STEPS unhedged mean threshold is 86.74 source USD/tCO₂. The ES95 threshold is 741.89 in the 2,500-path selection pool and 566.87 in the independent 10,000-path evaluation pool. This large difference limits precision. Each extra dollar per captured tonne raises either threshold by 1.3517 dollars per avoided tonne [D7].
+
+{{table:policy}}
+
+Table 5. A declared illustration: carbon charge 100 source USD/tCO₂, downstream fee zero and a 50% site target. Both pools give the displayed physical choices. The risk weight 0.1 is a sensitivity assumption, not an estimated preference. Source: [D7].
+
+The menu fixes 0, 25, 50, 75 or 100% of incremental gas at each year’s central-price schedule plus 3%. Default, basis and volume risk are excluded. Full fixing eliminates this model’s incremental gas uncertainty, not total project risk. The conditional interaction between charges, risk and contracts is informative about the model but is not proof that comparable contracts are available or that financing necessarily accelerates real investment.
+
+\pagebreak
+
+### 11 Procurement assumptions can dominate a reference tail
+
+A separate steel experiment keeps the Vogl reference quantities at 3.48 MWh electricity and 1.504 tonnes pellets per tonne of liquid steel. The assumed plant produces 0.75 million tonnes annually from 2030 to 2050, following three construction years, at a 5% discount rate. Onsite electrolysis is included; purchased hydrogen is not added [5, D4].
+
+Pellet price is represented by 100[(1 − β) + βMᵒʳᵉ], with β = 0, 0.5 or 1 and E[Mᵒʳᵉ] = 1. Electricity uses a separate 40 EUR/MWh reference with half fixed and half linked to the IEA Japan LNG ratio and shock. β is an unestimated mapping assumption, not a contract that the firm can freely choose. Real pellet prices include grade and delivery components, which also affect process performance [10].
+
+{{fig:steel}}
+
+Figure 5. Absolute reference cost ES95 across pellet indexation assumptions. Two independent pools each contain 5,000 paths. The common theoretical mean is 3,971.2 million source EUR. Mixed source monetary bases have not been harmonised into a verified current price year. Source: [D4].
+
+From β = 0 to β = 1, ES rises from 5,532.6 to 9,732.4 in pool 1 and from 5,527.8 to 9,923.6 in pool 2, increases of 75.9% and 79.5%. The theoretical mean is unchanged. These points form a sensitivity comparison, not an efficient frontier: the assumptions are not priced feasible contracts, and the experiment lacks a matched incumbent subtraction and emissions qualification.
+
+Tail contributions must be measured on the same high total cost paths. Summing each component’s separate tail mean overstates or otherwise misrepresents the total ES. In this experiment, a changing composition of total cost tail states lowers electricity’s ES minus mean contribution as pellet indexation rises. That is a conditional allocation result, not evidence that electricity itself became safer.
+
+The economic lesson is specific: mapping a public benchmark to an actual purchase can materially affect a tail estimate. The experiment does not establish that procurement uncertainty always exceeds technology or price process uncertainty.
+
+\pagebreak
+
+### 12 What validation does and does not establish
+
+The stored experiments reconcile quantities, cash ledgers and risk summaries against separately written arithmetic checks. The company exercise checks 2,250 candidate statistics. The timing experiment checks 40,000 FIN cost values, and the procurement experiment checks 60,000. These are numerical checks within the specified model; counts do not measure predictive accuracy or independent empirical replication [D1, D3–D4].
+
+{{table:validation}}
+
+Table 6. Distinct validation questions and current evidence. Each row requires a separate judgement; passing one does not establish the next.
+
+A constant cost reduction can be economically valuable without reducing TCaR. In the paired new plant NCC reference, changing the assumed electrified plant life from 20 to 30 years with zero terminal cash reduces mean cost from 3,963.988 to 3,636.696 million assumed EUR2019. ES95 falls by the same amount, while TCaR95 remains 857.615 [D1].
+
+The current literature specification audits also expose unresolved plant boundaries, heat bases and source price years. Retrospective price diagnostics reject a uniform claim that a more elaborate volatility model captures every gas tail. Long horizon tail differences persist across generators after increasing the simulation size. Publication should retain these negative results because they define what the proposed integration needs to improve.
+
+For formal plan selection, independent simulation alone is insufficient. The next analysis must report menu expansion, sensitivity to jointly coherent specifications and forecast diagnostics of procurement prices. A narrow conditional sampling interval should never be displayed as uncertainty about the full corporate transition outcome.
+
+\pagebreak
+
+### 13 Coupling to PLANiT energy modelling
+
+The next phase will couple this decision framework to PLANiT’s energy modelling system. The purpose is to replace loosely connected energy price, supply and emissions assumptions with an internally consistent system context, while preserving plant specific investment and procurement accounting. Existing system capability provides a platform for this work; the coupling and its validation remain research tasks.
+
+{{fig:integration}}
+
+Figure 6. Proposed exchange between PLANiT’s energy modelling system, the public technology database and the plant decision module. Solid arrows denote the proposed first stage exchange; the dashed feedback is a later extension requiring system re-solving. The diagram is a research design, not a claim of completed integration.
+
+For each identified scenario and model version, the exchange should provide carrier prices, supply limits, electricity emissions factors, technology availability and relevant sectoral constraints at consistent region, time and unit boundaries. The plant module returns energy demand by carrier, commissioning schedules and emissions profiles. Wholesale prices still need tariffs, network charges, basis differences and contract terms before they become purchase invoices.
+
+The first stage is one way coupling: system conditions are held fixed while the plant compares a modest candidate menu. The second stage tests whether aggregated plant decisions materially alter electricity, hydrogen or other supply conditions. If they do, demands must be passed back and the energy system solved again. Neither convergence nor equilibrium consistency should be assumed after simply adding stochastic shocks to a central trajectory. GCAM illustrates this distinction between system market conditions and detailed plant decisions [11]; using GCAM is not a claim about PLANiT’s current software architecture.
+
+A separate record must identify which uncertainties the system model already propagates. Only residual uncertainty should be added downstream to avoid double counting. Adaptive operations require decisions to depend only on information available at the decision time. The current fixed schedule comparisons do not estimate the value of such flexibility.
+
+\pagebreak
+
+### 14 Public technology data as a testable research asset
+
+PLANiT plans to make an abatement technology database public as part of the research programme. Its value is that reviewers can trace each technology to a complete process specification and reproduce the consequences of changing it. The pilot does not claim that a complete public release, redistribution permissions or a permanent repository identifier are already in place.
+
+{{table:db}}
+
+Table 7. Minimum proposed public record. Missing values remain explicit; a source citation is not itself evidence that a parameter is applicable to a particular plant.
+
+The release should distinguish original observations, transformed values, reference specifications and researcher assumptions. A versioned case should retain the package actually used, including excluded technologies and reasons for exclusion. Correcting one input must produce a new version with a visible change in emissions qualification or cost results, rather than silently replacing historical results.
+
+Only material that can be redistributed should be included. Public metadata and transformation code can point to restricted source material without redistributing it. Facility level confidential inputs require a separate access boundary. An open, nonconfidential reference case should be sufficiently complete for another team to reproduce the headline tables without author local temporary files. The current full corporate reproducibility bundle does not yet meet that public release standard.
+
+Open data alone is not a sufficient novelty claim because related industrial abatement tools already publish data and code [4]. The stronger claim to test is that boundary aware, executable technology records allow independent reviewers to identify and correct decision relevant errors. An initial release can be small if it includes a matched incumbent, a transition alternative, reconciled energy and material flows, and an end to end reproducible comparison.
+
+\pagebreak
+
+### 15 Is this a meaningful pilot
+
+The pilot is worth pursuing as a study of decision validity and the value of better process and procurement information. Its existing evidence establishes that feasibility rules, accounting boundaries and the chosen risk criterion can change conclusions. A credible next claim is that PLANiT integration and a traceable database improve a specified decision comparison. A claim to have measured the true 2050 tail risk of four corporations is not supported.
+
+{{table:next}}
+
+Table 8. Proposed next experiment and acceptance evidence. Thresholds and risk appetite should be agreed before viewing new results; no numerical acceptance threshold is presented as an established standard.
+
+A staged experiment should keep the production service and candidate menu fixed while replacing inputs: first the matched physical ledger, then coherent PLANiT energy conditions, then procurement and settlement evidence. An additional combined run is necessary because these changes interact. Each stage reports eligibility, mean, quantiles, TCaR and ES, selection changes, and conditional regret when a plan chosen under one assumption is evaluated under another. Assumption cases without justified probabilities remain separate rather than being averaged into a single expected regret.
+
+Decision relevance does not require a different preferred plan. If the preference remains stable across plausible inputs and independent calculations, the pilot can show where a simpler method is adequate. If rankings remain unidentified or feasible alternatives disappear under unresolved assumptions, that finding should guide further data collection. It should not be concealed by an attractive frontier plot.
+
+### Interpretation
+
+A useful transition assessment links physical service, emissions qualification and procurement cash flows before interpreting a cost distribution. The current pilot demonstrates why this sequence matters and provides an executable basis for review. Coupling to PLANiT’s energy modelling system and publishing a traceable abatement technology database are the next means of testing whether these methodological improvements survive more realistic inputs. The intended output is a defensible comparison with explicit limits, capable of supporting a subsequent corporate validation study.
+
+\pagebreak
+
+### 16 Academic contribution and the next decisive test
+
+The present contribution is an applied methods and validation pilot: a reproducible account of how physical boundaries, price mappings and decision constraints generate or remove apparent investment advantages. It does not yet demonstrate that the framework improves real decisions. NCC timing is ordered by the assumed price mapping; zero-charge capture choices follow dominance and eligibility; the contract interaction uses hypothetical idealised terms. Those negative findings define the scope of the evidence.
+
+The nearest literature rules out broad novelty claims. Bachorz and colleagues [4] already compare abatement options under bottleneck costs and residual-emissions conditions with open research tools. Gaebelein-Khanra and colleagues [13] combine market-model electricity inputs with investment evaluation under probability ambiguity and ES. Richstein and Neuhoff [12] study industrial contracts and financing. The abstract of the Ahmed and colleagues preprint [14] also reports endogenous contracts in multistage investment planning; its full implementation has not been reviewed. Neither risk metrics, system-model linkage nor contract inclusion alone is the contribution.
+
+A decisive follow-up would predefine a matched plant, common candidate menu and evaluation rule, then compare central-price assessment, conditional stochastic assessment, coherent PLANiT system inputs, and verified technology/procurement records. Evaluate each selected plan in a common reference assessment and repeat under defensible alternative specifications. Within each specification, report objective regret against its best evaluated eligible plan and report infeasibility separately. Changing both the decision model and its scoring model cannot by itself establish improvement. Do not average across scenarios without justified weights.
+
+The comparison should identify which inputs change a physical choice, preserve ties or reveal no added decision value. Quantify the acquisition cost of better information before making value-of-information claims. A public reference case must run without private files and expose coherent process and cash boundaries. The current paper supports collaborator review and a focused validation study; a stronger journal claim requires independently replicated decision evidence and a demonstrated advance over the closest methods.
+
+\pagebreak
+
+### References
+
+[1] Markowitz, H. (1952). Portfolio Selection. Journal of Finance, 7, 77–91. [Article](https://doi.org/10.1111/j.1540-6261.1952.tb01525.x).
+
+[2] Rockafellar, R. T. and Uryasev, S. (2002). Conditional value-at-risk for general loss distributions. Journal of Banking & Finance, 26, 1443–1471. [Author manuscript](https://sites.math.washington.edu/~rtr/papers/rtr187-CVaR2.pdf).
+
+[3] Rockafellar, R. T., Uryasev, S. and Zabarankin, M. (2006). Generalized deviations in risk analysis. Finance and Stochastics, 10, 51–74. [Author manuscript](https://sites.math.washington.edu/~rtr/papers/rtr192-GeneralizedDeviations.pdf).
+
+[4] Bachorz, C., Verpoort, P. C., Luderer, G. and Ueckerdt, F. (2025). Exploring techno-economic landscapes of abatement options for hard-to-electrify sectors. Nature Communications, 16, 3984. [Article](https://doi.org/10.1038/s41467-025-59277-1).
+
+[5] Vogl, V., Åhman, M. and Nilsson, L. J. (2018). Assessment of hydrogen direct reduction for fossil-free steelmaking. Journal of Cleaner Production, 203, 736–745. [Article](https://doi.org/10.1016/j.jclepro.2018.08.279).
+
+[6] Tiggeloven, J. L., Faaij, A. P. C., Kramer, G. J. and Gazzani, M. (2023). Optimization of Electric Ethylene Production: Exploring the Role of Cracker Flexibility, Batteries, and Renewable Energy Integration. Industrial & Engineering Chemistry Research, 62, 16360–16382. [Publication](https://doi.org/10.1021/acs.iecr.3c02226).
+
+[7] NGFS. Long term scenarios frequently asked questions. [Scenario interpretation](https://www.ngfs.net/ngfs-scenarios-portal/faq/).
+
+[8] IEA (2025). Global Energy and Climate Model Documentation, Table 2.3. [Documentation](https://iea.blob.core.windows.net/assets/9155992e-962c-45f4-97c1-78fd43a94178/GlobalEnergyandClimateModelDocumentation2025.pdf).
+
+[9] World Bank. Commodity Markets and historical monthly prices. Frozen experiment window: January 2010–December 2025. [Data source](https://www.worldbank.org/en/research/commodity-markets).
+
+[10] Linklater, J. (2021). Adapting to Raw Materials Challenges, Part 1. Midrex. [Technical article](https://www.midrex.com/direct-from-midrex/technical-articles/adapting-to-raw-materials-challenges-part-1-operating-midrex-plants-with-lower-grade-pellets-lump-ores/).
+
+[11] JGCRI. GCAM model overview. [Official documentation](https://jgcri.github.io/gcam-doc/overview.html).
+
+\pagebreak
+
+### References continued
+
+[12] Richstein, J. C. and Neuhoff, K. (2022). Carbon contracts-for-difference: How to de-risk innovative investments for a low-carbon industry? iScience, 25, 104700. [Article](https://doi.org/10.1016/j.isci.2022.104700).
+
+[13] Gaebelein-Khanra, M., Klobasa, M. and Patil, P. (2026). A framework for decision making under deep uncertainty in hard-to-abate industries: An application case for investment in a German steel plant. Energy Strategy Reviews, 64, 102185. [Article](https://doi.org/10.1016/j.esr.2026.102185).
+
+[14] Ahmed, M., Zavala, V. M. and Cordiner, J. (2026). Endogenous Energy Contracts for Accelerating Industrial Decarbonisation Investment Planning under Uncertainty: an SDDP Approach. SSRN preprint, posted 5 June 2026. Abstract reviewed. [Preprint](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6882934).
+
+[15] Vogt-Schilb, A., Meunier, G. and Hallegatte, S. (2018). When starting with the most expensive option makes sense: Optimal timing, cost and sectoral allocation of abatement investment. Journal of Environmental Economics and Management, 88, 210–233. [Published paper](https://documents1.worldbank.org/curated/en/696551518603478681/pdf/123223-JRN-PUBLIC.pdf).
+
+[16] IEAGHG (2013). Iron and Steel CCS Study (Techno-Economics Integrated Steel Mill), report 2013/04. Volume II, Tables C-6, C-7 and D-15; supporting plant accounts. Selected pages audited; C7 column reconciliation remains an inference. [Report](https://ieaghg.org/publications/2013-04%20Iron%20and%20Steel%20CCS%20Study%20%28Techno-Economics%20Integrated%20Steel%20Mill%29.pdf).
+
+\pagebreak
+
+### Appendix A Frozen company evidence
+
+The original conditional case covers 22 allocated model assets associated with POSCO, Nippon Steel, LOTTE Chemical and Mitsui Chemicals, 45 schedules and 450 schedule–contract combinations over 2027–2050. Each schedule is evaluated at five electricity contract shares and two construction contract states. All 45 schedules satisfy the period cumulative Scope 1 cap; none satisfies every annual cap [D1].
+
+{{table:choices}}
+
+Table 9. Contracts selected from the same menu. Entries show electricity fixed price share and engineering, procurement and construction (EPC) contract state, where 1 indicates application. Expected cost selects no contract in all eight cases; the other criteria select electricity coverage of 75–100%. These stylised contracts carry assumed premia and are not quoted commercial power purchase agreements (PPAs). Source: [D1], criterion comparison.
+
+The main contribution of this table is the kind of decision that changes. In three petrochemical company–scenario cases, risk criteria also change the selected physical schedule. In the four steel cases and LOTTE B20, the physical schedule is unchanged across the three criteria. This distinction is more informative for the pilot than ranking corporate monetary risk levels.
+
+The mean based selection is stable across two additional independent 10,000 path pools. TCaR selections change in three and two of eight cases; ES selections change in one and zero. Enlarging the schedule menu from 22 to 45 reduces Mitsui B20’s minimum TCaR90 from 849.91 to 220.11 in the run’s declared billion KRW unit, without changing the minimum mean choice. Stable expected cost selection therefore does not establish adequate risk frontier exploration.
+
+Absolute corporate amounts are deliberately secondary because asset allocation, monetary bases and procurement parameters remain incompletely matched. The company run’s negative mean increments for NZ15 steel rely on avoided deterministic carbon charges. They cannot be read as verified profits or current country specific net carbon payments. This boundary limits the external claim, while preserving the decision comparison as a computational pilot.
+
+\pagebreak
+
+### Appendix B Evidence and replication map
+
+[D1] PLANiT CAP research archive. TCaR methodology v2.32, 9 September 2026; sections 4.6, 5.2, 6.4–6.8 and 6.13. Frozen company comparisons, accounting assumptions and robustness results. Original inputs and source locations are retained in the project archive; this paper does not report a newly calibrated corporate run.
+
+[D2] IEA scenario register: data/research_v2/iea_2025_scenarios/curves.json. Source price nodes, units and scenario identities used in Figure 2. Price history and transformations: data/research_v2/price_history/ and block_price_paths/.
+
+[D3] Timing experiment: data/research_v2/ncc_timing_frontier/. qualification.csv supplies eligibility; risk_metrics.csv supplies Table 2; bootstrap_precision.csv supplies the conditional TCaR intervals. The manifest records assumptions and seeds 20260917 and 20260918. Seeds are arbitrary identifiers, not dates of observation or execution.
+
+[D4] Steel procurement experiment: data/research_v2/steel_procurement_tail/. conditional_risk.csv supplies Figure 5; annual_ledger.csv and source_register.json document quantities and price mappings. Seeds 20260923 and 20260924 each generate 5,000 paths. theoretical_mean is distinguished from finite sample mean.
+
+[D5] Settlement extension: src/cap/fx_settlement.py and invoice_fin.py; data/research_v2/invoice_fin_bridge/. These modules demonstrate invoice and payment date accounting. Their presence does not mean the frozen company exercise has been recalibrated with corporate foreign exchange exposures.
+
+[D6] Investment review cycle 1: docs/research_cycles/2026-09-10-investment-review/cycle1/. Cost decomposition, terminal sensitivity and emissions-budget sweep; scripts/audit_investment_timing_review.py independently reconstructs 30,000 saved incremental costs and evaluates 10,000 additional 2045 costs using the same saved price pools. No new corporate calibration or price-path generation.
+
+[D7] Investment review cycle 2: docs/research_cycles/2026-09-10-investment-review/cycle2/. Physical and contract choices, hypothetical carbon-charge thresholds, downstream-emissions margins and NCC matched continuation. Script: scripts/review_technology_investment_cycle2.py. Frozen IEAGHG price statistics and later physical-source audit are linked by hashes; no new price paths or corporate calibration.
+
+### Minimum replication sequence
+
+Read the experiment manifest and source boundaries; reconstruct the physical and cash ledger; test production and emissions eligibility; restore the specified price generator and shared paths; calculate means, quantiles and empirical ES using the stated conventions; compare eligible candidates; repeat selection in an independent pool. Preserve the candidate menu, seeds, units and exclusions in every output.
+
+Figures 1–5 reproduce registered inputs or saved results; Figure 6 proposes an integration. No figure is a new corporate simulation. CSVs retain the precision behind rounded tables.
+
+### Questions for the reviewing team
+
+Are the production service and counterfactual comparable? Which process parameters must change jointly? Can the PLANiT exchange preserve price, quantity and emissions consistency? Which actual procurement data could reverse the choice? What public case would justify corporate validation?

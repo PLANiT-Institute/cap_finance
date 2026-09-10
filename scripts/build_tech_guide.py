@@ -224,7 +224,7 @@ def gen_register_filter():
             why = "dropped — reason not reproducible from the raw row"
         rows.append([f"`{t.facility_id}`", t.site, t.unit_type, status or "—", why])
     note = (f"\n\n{len(r)} rows collected, {len(keep)} reach the model. The three tests are "
-            "applied in `scripts/prepare_raw.py:54-62`, before the prepared file is written, "
+            "applied in `scripts/prepare_raw.py:62-70`, before the prepared file is written, "
             "so an excluded unit is invisible to every later stage and to the schema check. "
             "Two of them are worth stating plainly: the closure test is a **substring match on "
             "one Korean string**, so the units whose status says `휴지예정` or `가동중단 계획` "
@@ -258,12 +258,12 @@ def gen_d1b_intensity():
         rows.append([f"`{ut}`", len(g), f"{g.production.sum() / 1e6:.2f}",
                      rng("ef_inc"), rng("coal_gj_t", 1), rng("gas_gj_t", 1), rng("elec_mwh_t")])
     note = (f"\n\nColumns 4–7 are the coefficients `_prep_company` builds "
-            f"(`src/cap/e2_milp.py:49-55`) over the {len(f)} facilities carrying "
+            f"(`src/cap/e2_milp.py:52-58`) over the {len(f)} facilities carrying "
             f"{f.production.sum() / 1e6:.1f} Mt/yr of incumbent output. A single value in a range "
             "column means every facility of that unit type carries the identical number: the "
             "three energy columns are **not observations**. They were absent from the collected "
             "panel and are written as `production × ROUTE[unit_type]` in "
-            "`scripts/prepare_raw.py:100-107,190,211`, so `energy_x / production` returns the "
+            "`scripts/prepare_raw.py:108-115,202,228`, so `energy_x / production` returns the "
             "route constant by construction and no facility-level energy information exists in "
             "the model. `ef_inc` is the one incumbent coefficient that varies within a unit "
             "type, and only for steel — petrochemical Scope 1 is itself `production × "
@@ -329,7 +329,7 @@ def gen_d2_provenance():
 def gen_d3_reach():
     """Which technologies any facility can actually take.
 
-    E2 matches on `applies_to_unit == unit_type` exactly (`e2_milp.py:148`), so a
+    E2 matches on `applies_to_unit == unit_type` exactly (`e2_milp.py:152`), so a
     measure whose target unit type is absent from the register — or is the literal
     `NONE` — is priced in D3 and never offered. Generated because both sides of
     the match are data.
@@ -383,7 +383,7 @@ def gen_d3_excluded():
         f"nothing downstream can adopt them. "
         f"{len(ccus)} of them are the CCUS measures ({', '.join('`' + c + '`' for c in ccus)}): "
         "**CCUS is not in the option set at all** — a user scope decision of 2026-08-06, taken "
-        "until storage-capacity and cost data exist, applied at `scripts/prepare_raw.py:303`. "
+        "until storage-capacity and cost data exist, applied at `scripts/prepare_raw.py:321`. "
         f"The other {len(alt)} are alternative-source CAPEX estimates kept for sensitivity and "
         f"read by nothing in this run ({'; '.join(pairs)} thousand KRW/t of capacity). "
         + (f"Also dropped: {', '.join('`' + o + '`' for o in other)}. " if other else "")
@@ -582,7 +582,7 @@ def gen_d6_coverage():
     if not d.exists():
         return "_D6 not available._"
     df = pd.read_csv(d)
-    # consumers verified against src/cap/e5_metrics.py:104-112 — everything else in
+    # consumers verified against src/cap/e5_metrics.py:141-149 — everything else in
     # the table is collected context that no stage opens
     READ = {"revenue": "⑥ `capex_total_to_revenue_pct` (latest year)",
             "ebitda": "⑥ reference earnings (mean of last 3 reported)",
@@ -680,9 +680,7 @@ def gen_d7_enforcement():
                 elif (r.facility_id, r.tech_id) in forced:
                     ta = forced[(r.facility_id, r.tech_id)]
                     build = int(d3.set_index("tech_id").build_years.get(r.tech_id, 0))
-                    clamp = ta - (int(r.year_stated) - build)
-                    v = (f"**forced**, adopt {ta} (operational {ta + build})"
-                         + (f", clamped +{clamp}y by availability" if clamp else ""))
+                    v = f"**forced**, adopt {ta} (operational {ta + build}); exact stated date"
                 elif any(str(x).startswith(f"{r.facility_id}/{r.tech_id}:") for x in f["dropped"]):
                     v = "dropped, **reason recorded**"
                 elif pd.isna(r.facility_id):
@@ -721,19 +719,14 @@ def gen_d7_enforcement():
         scen = (f" Verdicts are identical across all {len(cfg.scenarios)} scenarios even though "
                 f"the scenario availability table carries {len(avail)} rows.")
     note = (f"\n\nOf the {len(d7)} rows, **{n_forced} become a forced decision**, "
-            f"{n_rec} are dropped with a reason written to `out/e2/disclosed_skipped.csv`, and "
-            f"**{n_silent} are dropped without a trace** — the skip file has no line for them, so a "
-            "reader counting that file undercounts what the disclosed coordinate is missing. "
-            f"`resolution` appears in none of it: {n_high_silent} of the {n_silent} silently "
-            "dropped rows are tagged `high`, and they go for the same reason a `mid` row would."
-            + scen
-            if len({v for vs in verdicts.values() for v in vs}) else "")
+            f"{n_rec} are dropped with a reason recorded by the current engine, and "
+            f"**{n_silent} are dropped without a trace**. This table evaluates mappings "
+            "without running E2; its reasons are written to `out/e2/disclosed_skipped.csv` "
+            "when E2 next runs. `resolution` alone grants no mapping approval." + scen)
     if levers and all(l == (0.0, 0, 0) for l in levers.values()):
-        note += (" The same call also fixes the three contract levers: because D7 contains no "
-                 "`ppa`, `epc` or `ccfd` rows, every disclosed coordinate is solved with "
-                 "`ppa = 0, epc = 0, ccfd = 0` while the optimum may buy all three. Part of every "
-                 "frontier gap is therefore a hedging difference no firm ever disclosed either "
-                 "way (§6.4).")
+        note += (" D7 has no contract rows, so its conditional contract settings are "
+                 "`ppa = 0, epc = 0, ccfd = 0`. An invalid or empty set of fixed "
+                 "commitments produces no comparator; these settings alone do not authorize a solve.")
     return _md(rows, ["Company", "Type", "Facility", "Tech", "Year", "Res.", "What the engine does"]) + note
 
 
@@ -754,6 +747,11 @@ def gen_tier_distribution():
             + (f"; {norange} of those are still flagged as lacking a range." if norange
                else "; all carry a range.")
             + f" Models: " + ", ".join(f"{k} {v}" for k, v in pi.model.value_counts().items()) + ".")
+    band = pd.to_numeric(pi.value_low, errors="coerce").notna() & pd.to_numeric(pi.value_high, errors="coerce").notna()
+    t5 = pi.evidence_tier == "T5"
+    note += (f"\n\n{int((t5 & ~band).sum())} of the {int(t5.sum())} T5 parameters carry no range "
+             f"with both bounds. Across all tiers, {int(band.sum())} of {len(pi)} parameters "
+             "carry a `[low, high]` pair. These counts follow the field-level evidence classification.")
     return _md(rows + [total], ["Group"] + tiers + ["Total"]) + note
 
 
@@ -881,20 +879,22 @@ def _drift(control, current):
     against a base run that no longer exists — F20 found the price-process arms a full E2
     re-solve behind, which is why this is measured rather than asserted.
     """
-    hits = []
+    comparisons = []
     for k, v in control.items():
         c = current.get(k)
         if c is None:
             continue
         d2 = 100 * (v[0] / c[0] - 1) if c[0] else 0.0
         dt = 100 * (v[1] / c[1] - 1) if c[1] else 0.0
-        if abs(d2) > 0.05 or abs(dt) > 0.05:
-            hits.append((k, d2, dt))
-    if not hits:
+        comparisons.append((k, d2, dt))
+    if not comparisons:
         return 0, "—", "—"
+    hits = [h for h in comparisons if abs(h[1]) > 0.05 or abs(h[2]) > 0.05]
     firms = len({k[0] for k, _, _ in hits})
-    w2 = max(hits, key=lambda h: abs(h[1]))
-    wt = max(hits, key=lambda h: abs(h[2]))
+    # Report measured zero drift as zero, not missing data. Age and value drift
+    # are distinct: a deterministic rerun can refresh timestamps without changes.
+    w2 = max(comparisons, key=lambda h: abs(h[1]))
+    wt = max(comparisons, key=lambda h: abs(h[2]))
     return (firms,
             f"{w2[1]:+.2f}% ({COMPANY_NAME.get(w2[0][0], w2[0][0])}, {w2[0][1]})",
             f"{wt[2]:+.2f}% ({COMPANY_NAME.get(wt[0][0], wt[0][0])}, {wt[0][1]})")
@@ -1018,8 +1018,11 @@ def gen_band_coverage():
 
     t1 = list(pi.index[banded & (pi.evidence_tier == "T1")])
     if not t1:
-        return (f"Band coverage by tier is {cover}. No T1 parameter carries a band, so the "
-                "claim this block was written to check no longer has a subject.")
+        legacy = list(pi.index[banded & (pi.entity == 'carbon_auction_share')])
+        return (f"Band coverage by tier is {cover}. No parameter retains T1 classification. "
+                "The legacy auction-discount ramp is now classified T5 and is inactive in "
+                "the research cash case. Its bands remain model conventions, not uncertainty "
+                "intervals established by an allocation rule: " + ', '.join(show(i) for i in legacy) + '.')
     ents = set(pi.entity[t1])
     sibs = [i for i in pi.index[banded] if i not in t1 and pi.entity[i] in ents]
     rule = {round(side(i)[0], 6) for i in t1 + sibs}
@@ -1182,7 +1185,7 @@ def gen_diagnostic_drift():
             stale.append(f"`{label.split('`')[1]}`")
         # 대조 팔은 새것인데 섭동 팔이 낡은 경우 — 표의 drift 열이 0을 보고하면서
         # 그 0이 아무것도 보증하지 않는 상태다. F26에서 실제로 그렇게 됐다.
-        if behind and n == 0:
+        if behind and n == 0 and ctl_file.stat().st_mtime >= t_base:
             partial.append((label.split('`')[1], len(behind), len(arms)))
 
     proc = ROOT / "out" / "process" / "gbm" / "e5" / "metrics_company.csv"
@@ -1195,8 +1198,10 @@ def gen_diagnostic_drift():
         ctl = {(r.company_id, r.scenario, r.support):
                (r.cost_per_tco2_thkrw, r.tcar_bnkrw)
                for r in s[s.bundle == "base"].itertuples()}
+        ctl_path = ROOT / "out" / "scenarios" / "base" / "e5" / "metrics_company.csv"
         _add("`out/scenarios` bundle matrix", ROOT / "out" / "scenarios",
-             "e5/metrics_company.csv", sc, "`bundle=base`", ctl, cur_all)
+             "e5/metrics_company.csv", ctl_path if ctl_path.exists() else sc,
+             "`bundle=base`", ctl, cur_all)
     m8 = ROOT / "out" / "m8" / "summary.csv"
     if m8.exists():
         _add("`out/m8` ε-constraint sweep", None, "", m8, "none — unmeasurable", None, None)
@@ -1220,14 +1225,16 @@ def gen_diagnostic_drift():
         f"\n\n**Not all of these are measured against the run in §6.** The base pipeline was last "
         f"written {_mtime(base)}; {', '.join(stale)} "
         f"{'carries' if len(stale) == 1 else 'carry'} at least one arm that predates it and "
-        f"was computed against an earlier E2 plan set. Each row is dated by its **oldest** arm, "
+        f"may have used earlier inputs. Timestamps alone do not establish that the E2 plan "
+        f"set changed: an unchanged deterministic revaluation also updates file dates. "
+        f"Each row is dated by its **oldest** arm, "
         f"not by its summary file, because a summary is rewritten by a partial re-run and would "
         f"otherwise date a mostly-stale directory as fresh. Where a diagnostic carries a control "
         f"arm configured identically to the headline, the table measures how far that arm has "
-        f"drifted; where it carries none, the drift exists but is unquantified. The drift is a "
-        f"property of the **baseline**, not of the perturbation — an arm and its own control move "
-        f"together — so the *differences* quoted from these files stay internally consistent while "
-        f"the *levels* in them do not match §6. Re-running the diagnostics after a base re-solve "
+        f"drifted; where it carries none, numerical drift is unmeasured. Zero measured drift "
+        f"means the reported control values agree, not that every perturbation has current "
+        f"input provenance. Internal validity of perturbation differences requires matching "
+        f"input and model provenance for each arm. Re-running the diagnostics after a base re-solve "
         f"is what closes this, and until it is closed `scripts/gate.py` names these files and "
         f"their lag in its `sidecars` check — a warning rather than a failure, because a stale "
         f"diagnostic is work not yet re-run, not a defect in the code.") + warn
@@ -1459,7 +1466,7 @@ def gen_plan_distinct():
                 f"technology schedules — dropping the contract choice E2 made for each — and "
                 f"regenerates the contract dimension itself"
                 + (f", {grid} variants per schedule" if grid else "")
-                + f" (`src/cap/e5_metrics.py:184-201`). So the {len(d)} enumerated plans carry "
+                + f" (`src/cap/e5_metrics.py:248-265`). So the {len(d)} enumerated plans carry "
                 f"{sched} distinct investment programmes between them, and every \"candidate plan\" "
                 f"count in §9.1 counts E5's regenerated set, not E2's output (§10).")
     return out
@@ -1486,11 +1493,11 @@ def _ccfd_note(f, pi):
         f"frontier point signs a CCfD, and none can.** E5 does not revalue the contracts E2 chose: "
         f"it dedupes E2's plans "
         f"down to technology schedules and rebuilds each one across a fixed contract grid with "
-        f"`ccfd=0` on every point (`src/cap/e5_metrics.py:201`), and D5 carries **{strikes}** CCfD "
+        f"`ccfd=0` on every point (`src/cap/e5_metrics.py:252`), and D5 carries **{strikes}** CCfD "
         f"strike rows, so a signed CCfD would price identically anyway "
-        f"(`src/cap/plancost.py:258`). E2 signs a CCfD in **{signed} of {total}** enumerated plans "
+        f"(`src/cap/plancost.py:362`). E2 signs a CCfD in **{signed} of {total}** enumerated plans "
         f"— it is credited there against a proxy carbon-volatility term the authoritative "
-        f"revaluation does not carry (`src/cap/e2_milp.py:263`) — and not one of those signatures "
+        f"revaluation does not carry (`src/cap/e2_milp.py:314`) — and not one of those signatures "
         f"reaches a reported number. P2 (§1) is therefore untested for CCfD in this run, and the "
         f"frontier's financing axis is PPA share and fixed-price EPC only.")
 
@@ -1584,7 +1591,7 @@ PW, PH, COLS = 250, 272, 4
 PAD_L, PAD_R, PAD_T, PAD_B = 52, 16, 40, 44
 
 SVG_STYLE = """
-  .bg{fill:none}
+  .bg{fill:#fff}
   .ttl{font:600 12px system-ui,sans-serif;fill:#191C24}
   .sub{font:11px system-ui,sans-serif;fill:#8B909C}
   .tick{font:9.5px system-ui,sans-serif;fill:#8B909C}
@@ -1597,7 +1604,7 @@ SVG_STYLE = """
   .gapend{fill:none;stroke:#e34948;stroke-width:1.2}
   .glab{font:9.5px system-ui,sans-serif;fill:#e34948}
   @media (prefers-color-scheme:dark){
-    .ttl{fill:#EDEEF0} .ax{stroke:#3A3F49}
+    .bg{fill:#141820} .ttl{fill:#EDEEF0} .ax{stroke:#3A3F49}
     .fr{stroke:#3987e5} .frp{fill:#3987e5}
     .disc{fill:#e66767} .gap,.gapend{stroke:#e66767} .glab{fill:#e66767}}
 """
@@ -1636,8 +1643,6 @@ def _panel(x0, y0, d, gaprow, title):
     for r in d[~d.on_frontier & ~d.is_disclosed].itertuples():
         s.append(f'<circle class="cand" cx="{X(r.p50):.1f}" cy="{Y(r.tcar):.1f}" r="2.8"/>')
     fr = d[d.on_frontier].sort_values("tcar")
-    s.append('<polyline class="fr" points="'
-             + " ".join(f"{X(a):.1f},{Y(b):.1f}" for a, b in zip(fr.p50, fr.tcar)) + '"/>')
     for a, b in zip(fr.p50, fr.tcar):
         s.append(f'<circle class="frp" cx="{X(a):.1f}" cy="{Y(b):.1f}" r="3.2"/>')
 
@@ -1649,36 +1654,28 @@ def _panel(x0, y0, d, gaprow, title):
     p = disc.iloc[0]
     dx, dy = X(p.p50), Y(p.tcar)
     if gaprow is not None:
-        tx, ty = X(p.p50 - gaprow.gap_cost_bnkrw), Y(p.tcar - gaprow.gap_risk_bnkrw)
-        s += [f'<line class="gap" x1="{dx:.1f}" y1="{dy:.1f}" x2="{tx:.1f}" y2="{dy:.1f}"/>',
-              f'<circle class="gapend" cx="{tx:.1f}" cy="{dy:.1f}" r="3"/>',
-              f'<line class="gap" x1="{dx:.1f}" y1="{dy:.1f}" x2="{dx:.1f}" y2="{ty:.1f}"/>',
-              f'<circle class="gapend" cx="{dx:.1f}" cy="{ty:.1f}" r="3"/>',
-              f'<text class="glab" x="{(dx + tx) / 2:.1f}" y="{dy - 6:.1f}" '
-              f'text-anchor="middle">{gaprow.gap_cost_bnkrw:,.0f}</text>',
-              f'<text class="glab" x="{dx + 5:.1f}" y="{(dy + ty) / 2:.1f}">'
-              f'{gaprow.gap_risk_bnkrw:,.0f}</text>']
+        for axis, value, witness in (
+                ("cost", gaprow.gap_cost_bnkrw, gaprow.cost_witness_plan_id),
+                ("risk", gaprow.gap_risk_bnkrw, gaprow.risk_witness_plan_id)):
+            if pd.isna(value) or value <= 0 or pd.isna(witness):
+                continue
+            target = d[d.plan_id == witness].iloc[0]
+            tx, ty = (X(target.p50), dy) if axis == "cost" else (dx, Y(target.tcar))
+            wx, wy = X(target.p50), Y(target.tcar)
+            lx = (dx + tx) / 2 if axis == "cost" else dx + 7
+            ly = dy - 9 if axis == "cost" else max(dy + 13, (dy + ty) / 2 + 4)
+            s += [f'<line class="gap" x1="{dx:.1f}" y1="{dy:.1f}" x2="{tx:.1f}" y2="{ty:.1f}"/>',
+                  f'<line class="gap" style="stroke-dasharray:1 3" x1="{tx:.1f}" y1="{ty:.1f}" '
+                  f'x2="{wx:.1f}" y2="{wy:.1f}"/>',
+                  f'<circle class="gapend" cx="{wx:.1f}" cy="{wy:.1f}" r="4.5"><title>{witness}</title></circle>',
+                  f'<text class="glab" x="{lx:.1f}" y="{ly:.1f}">{value:,.0f}</text>']
     s.append(f'<rect class="disc" x="{dx - 3.6:.1f}" y="{dy - 3.6:.1f}" width="7.2" '
              f'height="7.2" transform="rotate(45 {dx:.1f} {dy:.1f})"/>')
     return "\n".join(s)
 
 
 def gen_gap_figure():
-    """The figure Arc asked for: frontier, disclosed coordinate, gap, in one screen.
-
-    Drawing it is also a check on the prose. `_gap` in `src/cap/e5_metrics.py` measures
-    two axis-aligned distances and clamps to the frontier's endpoint when the disclosed
-    point sits outside the frontier's span on the axis being measured — so the leg does
-    not end on the frontier at all in that case, which no amount of prose had made
-    visible. The caption counts the clamped legs rather than asserting anything.
-
-    `_gap` has THREE outcomes per leg, not two: interpolate inside the span, clamp
-    beyond the high end, and NaN below the low end (clamping there would fabricate a
-    gap the frontier cannot reach — `e5_metrics.py:61-81` says so in its own docstring).
-    Counting only the clamped legs left the other two indistinguishable, so a leg that
-    is blank in `out/e5/gap.csv` would have been reported as a measured distance. All
-    three are counted here and cross-checked against the nulls in the file itself.
-    """
+    """Draw discrete candidates and independently attainable gap projections."""
     fp = ROOT / "out" / "e5" / "frontier_points.csv"
     if not fp.exists():
         return "_No pipeline run in `out/`. Run `python -m cap all`._"
@@ -1687,13 +1684,12 @@ def gen_gap_figure():
     g_all = pd.read_csv(ROOT / "out" / "e5" / "gap.csv")
     g = g_all[g_all.support == "none"]
 
-    def _state(v, lo, hi):
-        """Which of `_gap`'s three branches this leg lands in."""
-        return "clamped" if v > hi else ("unmeasurable" if v < lo else "interpolated")
+    def _state(v):
+        return "unmeasurable" if pd.isna(v) else ("positive" if v > 0 else "zero")
 
-    panels, overshoot = [], []
-    cost = {"clamped": 0, "interpolated": 0, "unmeasurable": 0}
-    risk = {"clamped": 0, "interpolated": 0, "unmeasurable": 0}
+    panels = []
+    cost = {"positive": 0, "zero": 0, "unmeasurable": 0}
+    risk = dict(cost)
     for row, scen in enumerate(["NZ15", "B20"]):
         for col, co in enumerate(["POSCO", "NSC", "LOTTE", "MCI"]):
             d = f[(f.company_id == co) & (f.scenario == scen)]
@@ -1705,13 +1701,8 @@ def gen_gap_figure():
                                  f"{COMPANY_NAME.get(co, co)} · {scen}"))
             if gaprow is None:
                 continue
-            fr = d[d.on_frontier]
-            p = d[d.is_disclosed].iloc[0]
-            # the cost leg is measured along TCaR, the risk leg along P50 (`_gap`)
-            cost[_state(p.tcar, fr.tcar.min(), fr.tcar.max())] += 1
-            risk[_state(p.p50, fr.p50.min(), fr.p50.max())] += 1
-            if p.tcar > fr.tcar.max():
-                overshoot.append(p.tcar / fr.tcar.max() if fr.tcar.max() else float("inf"))
+            cost[_state(gaprow.gap_cost_bnkrw)] += 1
+            risk[_state(gaprow.gap_risk_bnkrw)] += 1
     # read the same fact from the other side: a NaN leg is a blank cell in the file
     null_cost = int(g.gap_cost_bnkrw.isna().sum())
     null_risk = int(g.gap_risk_bnkrw.isna().sum())
@@ -1730,38 +1721,29 @@ def gen_gap_figure():
     svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" '
            f'height="{h}" role="img" aria-label="Efficient frontier, disclosed plan '
            f'coordinate and frontier gap, by firm and scenario">'
-           f'<style>{SVG_STYLE}</style>'
+           f'<style>{SVG_STYLE}</style><rect class="bg" width="{w}" height="{h}"/>'
            f'<text class="sub" transform="translate(14,{h / 2}) rotate(-90)" '
            f'text-anchor="middle">TCaR (bn KRW) →</text>'
            + "\n".join(panels) + legend + "</svg>")
     FIGURE.parent.mkdir(parents=True, exist_ok=True)
     FIGURE.write_text(svg, encoding="utf-8")
 
-    span = (f"Every disclosed plan sits above the frontier's whole tail-risk span — by "
-            f"{_x(min(overshoot))} to {_x(max(overshoot))} the tail risk of the riskiest plan "
-            f"on its own frontier — so a cost leg is never an interpolated distance, it is the "
-            f"distance to the frontier's riskiest endpoint. "
-            if overshoot and cost["clamped"] == len(g) else "")
-
-    return (f"![Efficient frontier, disclosed coordinate and frontier gap, "
+    return (f"![Discrete frontier, disclosed coordinate and attainable gaps, "
             f"per firm and scenario](figures/frontier_gap.svg)\n\n"
-            f"Each panel is one firm under one scenario, on its own axes. The dashed legs are the "
-            f"two gap numbers, and where they end is the point of the figure. `_gap` "
-            f"(`src/cap/e5_metrics.py:61-81`) has **three** outcomes per leg, not two: it "
-            f"interpolates along the frontier while the disclosed point lies within the frontier's "
-            f"span on the axis being measured; beyond the high end it clamps to the endpoint; and "
-            f"below the low end it returns **NaN rather than extrapolating**, because a frontier "
-            f"that cannot reach that risk or cost level has no distance to report and clamping "
-            f"there would fabricate one. Of the {len(g)} distinct gaps in `out/e5/gap.csv`, "
-            f"**cost legs are {cost['clamped']} clamped, {cost['interpolated']} interpolated and "
-            f"{cost['unmeasurable']} unmeasurable; risk legs {risk['clamped']}, "
-            f"{risk['interpolated']} and {risk['unmeasurable']}**. Read from the other side the "
-            f"file agrees: {null_cost} blank cost legs and {null_risk} blank risk legs. "
-            f"{span}Clamped legs are lower bounds by "
-            f"construction: that endpoint reaches the same cost saving with *less* risk than an "
-            f"interpolated point would have. An unmeasurable leg is not a zero gap — it is no "
-            f"number at all, and §6 reports none where it occurs. {len(g_all)} rows appear in the "
-            f"file because the `support` axis duplicates each one (§3.6, O7).")
+            f"Each panel uses its own axes. Blue points are actual nondominated candidates; "
+            f"no connecting line is an additional feasible plan. Dashed red legs show the two "
+            f"savings as axis projections; dotted connectors lead to the actual witness plans. "
+            f"`_gap` (`src/cap/e5_metrics.py:100-107`) minimises cost among candidates with no "
+            f"greater risk, and risk among candidates with no greater cost. These may be different "
+            f"plans. It returns zero when there is no improvement, and NaN when no candidate "
+            f"reaches the threshold. **cost legs are {cost['positive']} positive, {cost['zero']} zero "
+            f"and {cost['unmeasurable']} unmeasurable; risk legs {risk['positive']}, "
+            f"{risk['zero']} and {risk['unmeasurable']}**. The file has "
+            f"{null_cost} blank cost legs and {null_risk} blank risk legs. "
+            f"Witness IDs and the discrete method are saved in `out/e5/gap.csv`. "
+            f"Candidate expansion can increase attainable savings; that lower-bound interpretation "
+            f"requires the candidates to satisfy the stated feasibility rule, which here includes "
+            f"a soft carbon-budget allowance. {len(g_all)} rows include support duplicates (§3.6, O7).")
 
 
 def gen_limits():
@@ -1870,22 +1852,13 @@ def gen_limits():
     if fpp.exists() and gp.exists():
         f = pd.read_csv(fpp).query("support == 'none'")
         g1 = pd.read_csv(gp).query("support == 'none'")
-        cc = cr = 0
-        over = []
-        for r in g1.itertuples():
-            d = f[(f.company_id == r.company_id) & (f.scenario == r.scenario)]
-            fr, p = d[d.on_frontier], d[d.is_disclosed].iloc[0]
-            if p.tcar > fr.tcar.max():
-                cc += 1
-                over.append(p.tcar / fr.tcar.max())
-            cr += int(p.p50 > fr.p50.max())
+        cc = int((g1.gap_cost_bnkrw > 0).sum())
+        cr = int((g1.gap_risk_bnkrw > 0).sum())
         rows.append([
-            "9 — the gaps are lower bounds",
-            f"**{cc} of {len(g1)}** cost legs and **{cr} of {len(g1)}** risk legs are "
-            f"clamped to a frontier endpoint, the disclosed plan sitting "
-            f"{_x(min(over))}–{_x(max(over))} above the tail risk of the riskiest plan on "
-            f"its own frontier. At the top of that range the frontier is not a "
-            f"neighbourhood of the disclosed plan at all",
+            "9 — candidate-relative attainable gaps",
+            f"**{cc} of {len(g1)}** cost comparisons and **{cr} of {len(g1)}** risk comparisons "
+            f"have positive savings and an actual witness. Candidates obey the current soft "
+            f"budget rule; neither global optimality nor hard-budget compliance follows",
             "`out/e5/frontier_points.csv` × `out/e5/gap.csv`"])
 
     # which claims the table does *not* cover is read off §8 itself — hand-typing the

@@ -1,0 +1,8 @@
+product,yield_t_per_t_naphtha,price_source_EUR_per_t,cited_price_reference,source_url,pdf_page,source_table,meaning
+C2_excluding_ethylene,0.0496,918.7,IEA2019,https://ndownloader.figshare.com/files/42479975,8,S6,allocation_input_not_observed_site_export_netback
+C3_propylene,0.1481,815.1,Statista2019,https://ndownloader.figshare.com/files/42479975,8,S6,allocation_input_not_observed_site_export_netback
+methane,0.169,382.9,Eurostat2019,https://ndownloader.figshare.com/files/42479975,8,S6,allocation_input_not_observed_site_export_netback
+BTX,0.0766,600.0,Spallina2017_estimate,https://ndownloader.figshare.com/files/42479975,8,S6,allocation_input_not_observed_site_export_netback
+C4,0.0525,785.0,BoulamantiMoya2017_estimate,https://ndownloader.figshare.com/files/42479975,8,S6,allocation_input_not_observed_site_export_netback
+pyrolysis_gas,0.0438,745.0,BoulamantiMoya2017_estimate,https://ndownloader.figshare.com/files/42479975,8,S6,allocation_input_not_observed_site_export_netback
+fuel_oil,0.1286,430.0,BoulamantiMoya2017_estimate,https://ndownloader.figshare.com/files/42479975,8,S6,allocation_input_not_observed_site_export_netback

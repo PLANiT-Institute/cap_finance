@@ -1,0 +1,24 @@
+{
+  "source_url": "https://ndownloader.figshare.com/files/42479975",
+  "source_doi": "10.1021/acs.iecr.3c02226.s001",
+  "source_sha256": "d86e41c1535b7d1241ebc94e5ed9be37e83ed5878296aa0614aeac739192197f",
+  "public_metadata_url": "https://api.figshare.com/v2/articles/24205025",
+  "license": "CC BY-NC4.0",
+  "pages": 9,
+  "visually_reviewed_pages": [
+    2,
+    8
+  ],
+  "numeric_coproduct_cells": 14,
+  "source_formula": "new_price = new_mean + (base_price-base_mean)*new_sd/base_sd",
+  "stochastic_sampling": false,
+  "profile_count": 160,
+  "profile_count_is_independent_sample_size": false,
+  "price_unit_conflict": "SI p2 states mean0to150EUR/kWh; FigS1 scale inconsistent. Do not silently adopt corrected units.",
+  "maintenance_resolved": false,
+  "plant_lifetime_annuity_resolved": false,
+  "hourly_numeric_results_received": false,
+  "cashflow_rule": "CCAF is allocation share multiplying total costs including feedstock; do not also subtract coproduct revenue",
+  "price_year": "Mixed cited2017/2019; not an asserted uniform2019realprice basket",
+  "cost_scope": "Main optimization omits feedstock; SIeq2adds it for allocated reporting metric"
+}

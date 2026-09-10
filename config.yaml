@@ -1,4 +1,9 @@
-# CAP v2 pipeline configuration — REDESIGN_SPEC.md §6 확정값
+# CAP pipeline configuration — methodology v2 (2026-09-10 external audit).
+# The historical (legacy) reproduction convention that used to live here is
+# preserved verbatim in config_legacy.yaml; `python -m cap <stage> --config
+# config_legacy.yaml` reproduces the archived accounting diagnostic. This file
+# is the RESEARCH convention: cash_v1 capital, gross carbon obligation, hard
+# cumulative budget, mean selection, verified-series price factors.
 data_dir: data/prepared     # prepare_raw.py output (D*.csv); tests use data/sample
 out_dir: out
 seed: 20260806
@@ -85,3 +90,26 @@ hydrogen:
 # NOT facility-level allocation (that is the MILP's job); this only scales the
 # sector pathway to the company boundary. Documented in REDESIGN_SPEC §3 E1.
 budget_scaling: intensity_ratio
+
+# ---- Research convention (v2). The v1 historical values are in config_legacy.yaml.
+capital_accounting: cash_v1
+energy_balance_mode: explicit_retention
+carbon_accounting_mode: gross_obligation_proxy   # p·E; free allocation A enters when D5 carries verified firm allocations
+transition_loss_basis: incremental_cash
+plan_selection_criterion: mean
+budget_mode: cumulative_hard
+financial_boundary_mode: strict
+evaluation_contracts: legacy_grid
+
+# ---- v2 audit fixes (docs/research_cycles/2026-09-10-investment-review/EXTERNAL_AUDIT_2026-09-10.md)
+# A3: stochastic factors = verified annual series only (elec: KPX SMP + JEPX; co2: KAU;
+#     coal, gas: World Bank CMO). Hydrogen is derived from electricity structurally,
+#     construction capex is deterministic (no verified series -> no prior in the base).
+price_factor_set: v2
+# A2: PPA share fixes only the electricity the transition ADDS over the baseline's
+#     purchases (total_purchase = v1 behaviour, a swap on volume the transition never created)
+hedge_basis: incremental
+# A1/B3: canonical frontier axes = expected incremental cost vs ES of the plan's OWN
+#     cost distribution (v1: [p50, tcar], the rule Proposition 6 warns against)
+frontier_axes: [mean, es_abs]
+methodology_version: v2.0-2026-09-10

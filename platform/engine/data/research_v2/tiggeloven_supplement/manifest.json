@@ -1,0 +1,14 @@
+{
+  "numeric_cells": 14,
+  "source_visual_QA_complete": true,
+  "source_formula_reviewed": true,
+  "source_maintenance_hold_remains": true,
+  "model_inputs_changed": false,
+  "sha256": {
+    "tmp/pdfs/tcar_research_v2/ie3c02226_si_001.pdf": "d86e41c1535b7d1241ebc94e5ed9be37e83ed5878296aa0614aeac739192197f",
+    "scripts/build_tiggeloven_supplement.py": "c8f75273fe555ea628824bba3edd84d59c812eedb6fefed4713caabd32e3b1c1",
+    "data/research_v2/tiggeloven_supplement/coproduct_observations.csv": "3942c18f4682db0fa07ddb191dbc7e692acbc14fbc7d5a9679f6ce7cd938ecb3",
+    "data/research_v2/tiggeloven_supplement/source_review.json": "3f96e07513f6cd9efd381d12e77e0a0830353d3705767084e0d7dfbf50eb55a2",
+    "data/research_v2/tiggeloven_supplement/workbook_reference.json": "d8f3ee447d3440e0d85fffa0ceb25168809869315260809dd1ea4061261e3fc7"
+  }
+}

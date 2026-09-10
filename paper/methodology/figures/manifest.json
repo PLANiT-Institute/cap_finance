@@ -1,0 +1,7 @@
+{
+  "scope": "Finite evaluated menu; no interpolated attainable plans; structural scenarios are assumptions",
+  "source_sha256": {
+    "tmp/research_case_expanded/run/e5/frontier_points.csv": "cb996439b6f6463a20c2d0a8d0287569ed7fac0ed927d0ba8e59b3e026709f57",
+    "docs/research_cycles/2026-09-05/robustness_verified/selection_changes.csv": "e922eaad761c675d0eea969405d6a3d1d2784304a379dfc89ec8209813277682"
+  }
+}

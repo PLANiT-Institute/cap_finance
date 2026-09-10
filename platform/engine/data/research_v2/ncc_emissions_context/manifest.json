@@ -1,0 +1,45 @@
+{
+  "source_observations": 2,
+  "source_pages_visually_reviewed": [
+    4,
+    5,
+    6
+  ],
+  "threshold_tCO2_MWh": 0.21355567509413664,
+  "common_residual_example_tCO2_t_ethylene": 0.16501650165016504,
+  "intensity_rows": 84,
+  "annual_rows": 288,
+  "feasibility_cases": 12,
+  "all_years_feasible_cases": 0,
+  "terminal_feasible_cases": 1,
+  "source_direct_factor_used_without_fuel_heat_conversion": true,
+  "useful_steam_recovery": 1.0,
+  "other_recovery_values_supported": false,
+  "co2_not_full_GHG": true,
+  "no_scope3_or_export_credit": true,
+  "grid_and_residual_are_unweighted_assumptions": true,
+  "residual_values_are_not_empirical_bounds": true,
+  "linear_2027_2050_budget_is_illustrative_not_corporate_disclosure": true,
+  "corporate_calibration": false,
+  "new_MC": false,
+  "new_cost_evaluation": false,
+  "FIN_carbon_profiles_modified": false,
+  "new_frontier_selection": false,
+  "input_sha256": {
+    "tmp/pdfs/tcar_research_v2/tiggeloven_2023.pdf": "000e24d881ef43eba7fd9ec986434dbb5e6444e536822edeafba1303367c9b5c",
+    "data/research_v2/tiggeloven_reference/source_observations.csv": "b6986562d5da2e79fbea6994f34ce5cec2c5dbc3ec15326ba0a1aa4d6fd67f97",
+    "scripts/audit_ncc_emissions_context.py": "52f6f2479f235b2080e6678e21f5fec31e57207befb2d13f34aef9a159ea9cb1",
+    "src/cap/reference_ncc.py": "95adcb9e9db62f7f2a26328971f6291325a3044b5ab8aad744ebb8e983b92267",
+    "src/cap/reference_incumbent.py": "97a72aef1ae116874717445910bd33c3b9180e247322999c7f7fdc67f814bd1a"
+  },
+  "artifact_sha256": {
+    "data/research_v2/ncc_emissions_context/residual_plot_values.csv": "680d5b5bd1234840843d139b9710166aeddda4657e2db9c20a4b2842507f78b7",
+    "data/research_v2/ncc_emissions_context/grid_and_residual_boundary.pdf": "ebbb03ebd3559233a8476b28f7b15b4d99663a59b1a642938446fa26e6abfbe8",
+    "data/research_v2/ncc_emissions_context/grid_and_residual_boundary.png": "51d7cb4a1329a352a195cf78261584322aaa764fca5150e1dba58739515f177f",
+    "data/research_v2/ncc_emissions_context/intensity_sensitivity.csv": "e65c9a3bd5b0ba28b0e22b17cbdeea7336f8d62902742a347273bccbde3d95da",
+    "data/research_v2/ncc_emissions_context/annual_boundary_diagnostic.csv": "b64cd3822a8f6bb09a956ae3ec8336073660e777c44391a1505cfabf62f3853a",
+    "data/research_v2/ncc_emissions_context/feasibility_diagnostic.csv": "b59c59a1c2d1fce992dad91d949173cff55a10f1c0f77bb855265816f413ce86",
+    "data/research_v2/ncc_emissions_context/illustrative_table.csv": "137a5c2834d59950bc5885f28bd5d0dc50d1daba79f167b1ae689b10948f4b33",
+    "data/research_v2/ncc_emissions_context/direct_emissions_observations.csv": "155addfe1cc6d621d61cf997df37f9f416dad992e260ea62a8e30860c082f951"
+  }
+}

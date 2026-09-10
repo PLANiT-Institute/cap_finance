@@ -1,0 +1,35 @@
+{
+  "frozen_statistic_checks": 40,
+  "choice_comparisons": 288,
+  "physical_choice_changed_by_risk_or_contract_at_zero_carbon_charge": false,
+  "analytic_same_contract_dominance": {
+    "delta_initial_capex_USD": 283000000.0,
+    "delta_residual_fixed_opex_USD_y": 14587470.0,
+    "delta_ng_GJ_y": 5207881.269191403,
+    "deterministic_PV_gap_million_USD": 439.3777903081668,
+    "scope": "Positive gas prices; same h; nonnegative fee; no carbon charge"
+  },
+  "switching_threshold_rows": 192,
+  "threshold_identity_checks": 576,
+  "policy_sensitivity_choices": 576,
+  "declared_mechanism_example_checks": 8,
+  "downstream_stress_rows": 8,
+  "continuation_rows": 8,
+  "source_status": "Frozen text-based package retained; later selected-page physical audit bound by hashes; pages275 and305 visually rechecked this cycle. C7 column identity remains an inferred reconciliation, not an official erratum.",
+  "input_sha256": {
+    "data/research_v2/ieaghg_paired/manifest.json": "f25f251865a8e933168a36f9021a0750d94118898096e3cd8bedf85fcef4dc49",
+    "data/research_v2/ieaghg_physical_reference/manifest.json": "093f6f73b6cb528d5b9916fcb8767028a58509e90283c7723b6b9c12d5b1da28",
+    "data/research_v2/ieaghg_paired/conditional_cost_metrics.csv": "34d8e76b52127191be780a7f91bd1b6126bcefa316dc2787fdb7a125c7f3f55f",
+    "data/research_v2/ieaghg_physical_reference/same_product_ledger.csv": "74b457a85a801a1186312276840c48f6bffe58087d26099eaa81e2fbc0b249ea",
+    "docs/research_cycles/2026-09-10-investment-review/cycle1/terminal_sensitivity.csv": "bd0868831fc4ec1c731732924d7d724ed449c2f6eb620fafb0aab1798bed5970"
+  },
+  "script_sha256": "bd2b9c5e72a3835bc63704e077693ed47f8a9702d67c98b4c91144c31ce9d421",
+  "new_price_paths": false,
+  "new_corporate_calibration": false,
+  "transport_storage_tariff_calibrated": false,
+  "full_chain_emissions_verified": false,
+  "finite_horizon_resolved_generally": false,
+  "ncc_continuation_pathwise_bounds": 3,
+  "full_horizon_ES_or_TCaR_levels_computed": false,
+  "risk_note": "Capital-only ES/TCaR columns are diagnostics. Common future random operating cash preserves the proven pathwise ordering but can change ES/TCaR levels; those levels were not evaluated."
+}

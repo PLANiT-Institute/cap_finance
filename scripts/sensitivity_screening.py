@@ -30,6 +30,7 @@ from cap import config as C  # noqa: E402
 from cap.e1_constraints import COMPANY_REGION  # noqa: E402
 from cap.e2_milp import _prep_company  # noqa: E402
 from cap.e3_prices import load_shocks  # noqa: E402
+from cap.price_process import rescale_factor  # noqa: E402
 from cap.e4_revalue import _central_px  # noqa: E402
 from cap.plancost import (auction_share, build_profile, simulate_cost,  # noqa: E402
                           support_params)
@@ -85,9 +86,14 @@ def _empty(company):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--sims", type=int, default=4000)
+    ap.add_argument("--config", type=pathlib.Path, help="Configuration used to generate the saved price paths")
+    ap.add_argument("--run-dir", type=pathlib.Path, help="E1–E5 run directory; sensitivity outputs are written beneath it")
     a = ap.parse_args()
-    cfg = C.load(data_dir="data/prepared")
-    cfg["simulation"] = dict(cfg["simulation"], n_sims=a.sims)
+    if a.sims < 1:
+        ap.error("--sims must be positive")
+    cfg = C.load(a.config)
+    if a.run_dir:
+        cfg["out_dir"] = str(a.run_dir.resolve())
     ddir = C.data_dir(cfg)
     fac, d3, cal = _prep_company(cfg, ddir)
     d5 = load_input(ddir, "D5_policy_support")
@@ -105,7 +111,7 @@ def main():
                 seen.add(key)
                 lst.append(pdf)
         plans[co] = lst
-    shocks = {k: v[:a.sims] for k, v in load_shocks(cfg).items()}
+    shocks = load_shocks(cfg).subset(a.sims)
 
     base = headline(cfg, fac, d3, d5, prices, plans, shocks)
     print("=== 기준선 (NZ15, 계획 고정)")
@@ -175,16 +181,15 @@ def main():
             c2 = C.Config({**cfg, grp: {**cfg[grp], k: cfg[grp][k] * f}})
         if "auction" in spec:
             f = spec["auction"]
-            # 2026–2030 is a confirmed allocation plan (D5, T1) and auction_share()
-            # overrides it from data regardless of config — perturbing it would be
-            # perturbing settled policy. Only the post-2030 ESTIMATE ramp is varied.
+            # Only the post-2030 proxy ramp is varied here. The legacy 2026–2030
+            # multiplier is separately disputed by the jurisdiction/sector audit;
+            # freezing it in this screen does not validate its policy interpretation.
             c2 = C.Config({**cfg, "carbon_auction_share":
                            {y: (v if int(y) <= 2030 else min(1.0, v * f))
                             for y, v in cfg["carbon_auction_share"].items()}})
         if "vol" in spec:
             fkey, f = spec["vol"]
-            sh2 = {k: (np.exp(np.log(v) * f) if k == fkey or (fkey == "h2" and k == "h2") else v)
-                   for k, v in shocks.items()}
+            sh2 = rescale_factor(shocks, fkey, f)
         try:
             h = headline(c2, f2, d32, d5, prices, plans, sh2, px_scale=pxs)
         except Exception as e:                      # noqa: BLE001 — record, don't crash the sweep

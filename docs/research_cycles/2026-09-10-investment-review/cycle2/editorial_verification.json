@@ -1,0 +1,20 @@
+{
+  "PAPER_EN.md": {
+    "tokens_preserved": true,
+    "references_unique": true,
+    "audit_numbers_present": true,
+    "sha256": "ac92cf78d87028f9a870e0922a8c9c75121a20ed1ca686ff93977b7d14b9a5a7"
+  },
+  "REVIEW_KO.md": {
+    "tokens_preserved": true,
+    "references_unique": true,
+    "audit_numbers_present": true,
+    "sha256": "abac7addc998bd6593b3e528f778f53aafda58fd0467444d06d042676342ebb1"
+  },
+  "final_docx_pdf_rebuilt": false,
+  "source_pdf_pages_visually_rechecked": [
+    275,
+    305
+  ],
+  "full_horizon_risk_levels_claim_withdrawn": true
+}

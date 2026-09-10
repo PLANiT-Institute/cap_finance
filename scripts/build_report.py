@@ -320,9 +320,10 @@ P90−P50 = TCaR. 빨간 외곽선 = 공시 계획의 분포 — 오른쪽·넓�
 <div class="grid2" id="fpanels"></div>
 <div class="tblwrap" style="margin-top:16px"><table id="gtable"></table></div>
 <p class="secnote" style="margin-top:10px" id="gapnote"></p>
-<h2 style="margin-top:34px;font-size:16.5px">위험회피도(λ)별 최적 계획 — 그림 5</h2>
-<p class="secnote">λ = 기대비용 1조원과 TCaR 1조원의 교환비율(투자자 외생 선호). λ가 커질수록(위험회피적일수록)
-접점이 계약형으로 이동 — 모형은 이 선택을 대신하지 않고 좌표만 제공.</p>
+<h2 style="margin-top:34px;font-size:16.5px">TCaR 간격의 가중치(λ)별 선택 — 그림 5</h2>
+<p class="secnote">평가 후보에서 P50 + λ·TCaR를 최소화한 결과다. P50는 중앙값이며 λ는 상방 간격에 대한 가중치다.
+이 규칙은 모든 상태에서 더 비싼 계획도 선택할 수 있으므로 일반적인 위험회피도나 자동 투자 추천으로 해석하지 않는다.
+선택 판단에는 평균·ES와 손실 지배관계의 비교가 필요하다.</p>
 <div class="tblwrap"><table id="ltable"></table></div>
 <h2 style="margin-top:34px;font-size:16.5px">정책강도 민감도 — 두 경계의 간격 (그림 6)</h2>
 <p class="secnote"><b>같은 계획</b>(NZ15 경계의 스케줄·계약 고정)을 1.5°C와 2.0°C 가격·예산 아래에서 각각 재평가.
@@ -387,7 +388,7 @@ document.getElementById("convbadge").textContent=`N=20,000 · 수렴 ${D.converg
 document.getElementById("kpis").innerHTML=`
 <div class="kpi"><div class="l">4사 정합 CAPEX 소요 ① (NZ15)</div><div class="v">${D.kpi.tot_capex_jo}조원</div><div class="d">비용최소 계획 합, 2025–2050</div></div>
 <div class="kpi"><div class="l">2050 배출 감축률 (NZ15 평균)</div><div class="v">${D.kpi.cut_2050_pct}%</div><div class="d">비용최소 계획, 2025 대비</div></div>
-<div class="kpi"><div class="l">준비 부재의 가격 (NZ15)</div><div class="v">+${D.kpi.tot_gap_risk_jo}조원</div><div class="d">공시 계획이 같은 지출로 지고 있는 불필요한 P90 부담 (측정 기업 합)</div></div>
+<div class="kpi"><div class="l">준비 부재의 가격 (NZ15)</div><div class="v">+${D.kpi.tot_gap_risk_jo}조원</div><div class="d">평가 후보별 TCaR 절감액의 단순 합; 포트폴리오 위험 아님</div></div>
 <div class="kpi"><div class="l">TCaR 지배 요인</div><div class="v" id="kpi4v">—</div><div class="d" id="kpi4d"></div></div>`;
 
 // KPI4 from dec_pairs market kind NZ15
@@ -633,20 +634,20 @@ function renderGantt(co){
 }
 // gap table
 const maxgr=Math.max(...D.gap.map(g=>g.gap_risk_bnkrw||0),1);
-let gr=`<tr><th>기업</th><th>시나리오</th><th>공시 P50 (조원)</th><th>공시 TCaR (조원)</th><th>불필요 P90 부담 (조원)</th><th></th><th>동일 위험 절감액 (조원)</th></tr>`;
+let gr=`<tr><th>기업</th><th>시나리오</th><th>공시 P50 (조원)</th><th>공시 TCaR (조원)</th><th>달성 가능한 TCaR 절감 (조원)</th><th></th><th>동일 위험 절감액 (조원)</th></tr>`;
 for(const g of D.gap){
   gr+=`<tr><td class="co">${CONAME[g.company_id]}</td>
   <td style="text-align:left"><span class="scen" style="background:var(--s-${g.scenario==="NZ15"?"nz":"b20"})"></span>${g.scenario}</td>
   <td>${jo(g.p50)}</td><td>${jo(g.tcar)}</td><td><b>+${jo(g.gap_risk_bnkrw)}</b></td>
   <td style="width:130px;text-align:left"><span style="height:12px;border-radius:3px;background:var(--s-disc);display:inline-block;vertical-align:middle;width:${Math.max(2,110*(g.gap_risk_bnkrw||0)/maxgr)}px"></span></td>
-  <td>${jo(g.gap_cost_bnkrw)}</td></tr>`;
+  <td>${jo(g.gap_cost_bnkrw)}<br><small>비용: ${g.cost_witness_plan_id||"—"}<br>위험: ${g.risk_witness_plan_id||"—"}</small></td></tr>`;
 }
 document.getElementById("gtable").innerHTML=gr;
-document.getElementById("gapnote").innerHTML=`<b>불필요 P90 부담</b> = 동일 지출의 경계 계획으로 갈아탔을 때
-사라지는 TCaR — 에너지 가격이 불리한 상위 10% 상황에서 공시 계획이 추가로 무는 금액. 지출을 아낀 게 아니라
-그 금액만큼의 에너지 리스크 포지션을 보유 중이라는 뜻이며, PPA·EPC 체결로 닫을 수 있는 종류의 공백.
-표에 없는 기업 = 공시 좌표 미식별(시설 특정 커밋 부재, 설계서 §8-4 해상도 문제) — "공시가 검증 가능한
-형태가 아니다"라는 진단 그 자체.`;
+document.getElementById("gapnote").innerHTML=`<b>달성 가능한 TCaR 절감</b>은 공시계획보다 중앙값 비용이 크지 않은
+실제 후보 중 TCaR가 가장 낮은 계획과 비교한 값이다. 비용 절감은 반대로 위험 상한을 고정한 별도 비교다.
+두 값이 같은 계획에서 달성된다는 보장은 없으며 TCaR는 P90−P50로 정의한 간격이지 자금요구량이 아니다.
+표에 없는 기업은 현재 모형에서 공시계획을 표현하지 못한 사례이며 공시 부실이라는 판정이 아니다.`;
+
 
 // 5. decomp — market vs contracted, width = TCaR
 const db=document.getElementById("dbars");

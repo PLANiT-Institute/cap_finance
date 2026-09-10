@@ -100,7 +100,7 @@ def run(cfg):
     cvol, cn, csrc = co2_vol(cfg)
     n_sims = shocks["elec"].shape[0]
     co2 = co2_shocks(cfg, len(years), n_sims, cvol)
-    shock_sets = {"headline": shocks, "l2": {**shocks, "co2": co2}}
+    shock_sets = {"headline": shocks, "l2": shocks.with_factor("co2", co2)}
     print(f"[m8] 탄소 변동성 {cvol:.3f} (obs {cn}, {csrc}), sims {n_sims}", flush=True)
 
     rows, summ = [], []

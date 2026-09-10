@@ -1,0 +1,12 @@
+company_id,item_type,year_stated,resolution,mapping_status,record_count
+LOTTE,target,2030,mid,unreviewed,1
+LOTTE,tech_commit,2023,mid,unreviewed,1
+MCI,tech_commit,2030,high,unreviewed,1
+MCI,timing,2027,high,unreviewed,1
+MCI,timing,2030,high,unreviewed,1
+NSC,target,2030,mid,unreviewed,1
+NSC,tech_commit,2026,high,unreviewed,1
+NSC,tech_commit,2029,high,unreviewed,2
+POSCO,target,2050,mid,unreviewed,1
+POSCO,tech_commit,2026,high,unreviewed,1
+POSCO,tech_commit,2030,mid,unreviewed,1

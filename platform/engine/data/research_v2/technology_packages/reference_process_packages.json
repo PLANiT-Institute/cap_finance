@@ -1,0 +1,224 @@
+{
+  "schema_version": "0.1",
+  "packages": [
+    {
+      "package_id": "VOGL2018_ONSITE_H2_BASE",
+      "functional_unit": "1 t liquid steel",
+      "boundary": "Onsite electrolyser, heat recovery, shaft, EAF; purchased pellets; no casting/rolling",
+      "flows": [
+        {
+          "flow_id": "electricity_total",
+          "quantity": 3.48,
+          "unit": "MWh/t_liquid_steel",
+          "role": "purchased",
+          "source_observation": "V2OBS011"
+        },
+        {
+          "flow_id": "pellets",
+          "quantity": 1.504,
+          "unit": "t/t_liquid_steel",
+          "role": "purchased",
+          "source_observation": "V2OBS007",
+          "conversion": "kg/1000"
+        },
+        {
+          "flow_id": "hydrogen_internal",
+          "quantity": 51.0,
+          "unit": "kgH2/t_liquid_steel",
+          "role": "internal_transfer",
+          "source_observation": "V2OBS006",
+          "electricity_included_in": "electricity_total"
+        },
+        {
+          "flow_id": "EAF_electricity",
+          "quantity": 0.753,
+          "unit": "MWh/t_liquid_steel",
+          "role": "component",
+          "source_observation": "V2OBS012",
+          "included_in": "electricity_total"
+        }
+      ],
+      "use_status": "reference_energy_and_material_ledger",
+      "full_company_cost_import_allowed": false,
+      "performance_distribution_calibrated": false,
+      "limitations": [
+        "Rounded published model outputs, not plant measurements",
+        "Hot-base interpretation; private author clarification not independently accessed",
+        "Cannot switch to purchased H2 by charging51kg plus3.48MWh",
+        "Pellet upstream energy is embodied in purchased pellet price",
+        "Lime, carbon additions, oxygen coproduct, capital and operating costs require separate completion"
+      ]
+    },
+    {
+      "package_id": "LAYRITZ2021_NCC_BASE",
+      "functional_unit": "1 t ethylene with coproducts",
+      "boundary": "Naphtha cracker; excludes added LCA system-expansion power",
+      "flows": [
+        {
+          "flow_id": "naphtha",
+          "quantity": 3.58,
+          "unit": "t/t_ethylene",
+          "role": "purchased",
+          "source_observation": "LAY001"
+        },
+        {
+          "flow_id": "electricity",
+          "quantity": 0.21,
+          "unit": "MWh/t_ethylene",
+          "role": "purchased",
+          "source_observation": "LAY013"
+        },
+        {
+          "flow_id": "hydrogen_export",
+          "quantity": 0.032,
+          "unit": "tH2/t_ethylene",
+          "role": "potential_export",
+          "source_observation": "LAY005"
+        },
+        {
+          "flow_id": "methane_export",
+          "quantity": 0.057,
+          "unit": "tCH4/t_ethylene",
+          "role": "potential_export",
+          "source_observation": "LAY016"
+        },
+        {
+          "flow_id": "methane_fuel",
+          "quantity": 0.488,
+          "unit": "tCH4/t_ethylene",
+          "role": "internal_transfer",
+          "source_observation": "LAY015"
+        },
+        {
+          "flow_id": "heat",
+          "quantity": 6.78,
+          "unit": "MWh/t_ethylene",
+          "role": "internal_transfer",
+          "source_observation": "LAY014"
+        }
+      ],
+      "use_status": "reference_energy_and_material_ledger",
+      "full_company_cost_import_allowed": false,
+      "performance_distribution_calibrated": false,
+      "limitations": [
+        "Institutional preprint, final-version match pending",
+        "Published furnace-efficiency equivalence is a process assumption",
+        "Export methane saleability and netback must be supplied, not assumed",
+        "Rounded0.55 export differs from0.545 system-expansion value",
+        "Held carbon cells cannot be imported; steam integration, capital, compression and coproduct values incomplete"
+      ]
+    },
+    {
+      "package_id": "LAYRITZ2021_NCC_ELECTRIC",
+      "functional_unit": "1 t ethylene with coproducts",
+      "boundary": "Naphtha cracker; excludes added LCA system-expansion power",
+      "flows": [
+        {
+          "flow_id": "naphtha",
+          "quantity": 3.58,
+          "unit": "t/t_ethylene",
+          "role": "purchased",
+          "source_observation": "LAY007"
+        },
+        {
+          "flow_id": "electricity",
+          "quantity": 6.99,
+          "unit": "MWh/t_ethylene",
+          "role": "purchased",
+          "source_observation": "LAY021"
+        },
+        {
+          "flow_id": "hydrogen_export",
+          "quantity": 0.032,
+          "unit": "tH2/t_ethylene",
+          "role": "potential_export",
+          "source_observation": "LAY011"
+        },
+        {
+          "flow_id": "methane_export",
+          "quantity": 0.55,
+          "unit": "tCH4/t_ethylene",
+          "role": "potential_export",
+          "source_observation": "LAY023"
+        },
+        {
+          "flow_id": "furnace_electricity",
+          "quantity": 6.78,
+          "unit": "MWh/t_ethylene",
+          "role": "component",
+          "source_observation": "LAY022",
+          "included_in": "electricity"
+        }
+      ],
+      "use_status": "reference_energy_and_material_ledger",
+      "full_company_cost_import_allowed": false,
+      "performance_distribution_calibrated": false,
+      "limitations": [
+        "Institutional preprint, final-version match pending",
+        "Published furnace-efficiency equivalence is a process assumption",
+        "Export methane saleability and netback must be supplied, not assumed",
+        "Rounded0.55 export differs from0.545 system-expansion value",
+        "Held carbon cells cannot be imported; steam integration, capital, compression and coproduct values incomplete"
+      ]
+    },
+    {
+      "package_id": "PUBLIC_GCAM2026_H2DRI_2025",
+      "functional_unit": "1 t GCAM steel",
+      "boundary": "Native public default input; Zang2023 source boundary includes upstream pelletizing; not solved Korean/KAIST output",
+      "flows": [
+        {
+          "flow_id": "H2 industrial",
+          "quantity": 7.3,
+          "unit": "GJ/t_GCAM_steel",
+          "role": "source_energy_input",
+          "source_observation": "2e175adc2eb0e9db9ae56f9ab5f106a4685941a25d62659aff163ebee9c3f845:global:EAF with DRI:Hydrogen-based DRI:H2 industrial:2025"
+        },
+        {
+          "flow_id": "elect_td_ind",
+          "quantity": 4.2,
+          "unit": "GJ/t_GCAM_steel",
+          "role": "source_energy_input",
+          "source_observation": "2e175adc2eb0e9db9ae56f9ab5f106a4685941a25d62659aff163ebee9c3f845:global:EAF with DRI:Hydrogen-based DRI:elect_td_ind:2025"
+        },
+        {
+          "flow_id": "refined liquids industrial",
+          "quantity": 1.1,
+          "unit": "GJ/t_GCAM_steel",
+          "role": "source_energy_input",
+          "source_observation": "2e175adc2eb0e9db9ae56f9ab5f106a4685941a25d62659aff163ebee9c3f845:global:EAF with DRI:Hydrogen-based DRI:refined liquids industrial:2025"
+        },
+        {
+          "flow_id": "wholesale gas",
+          "quantity": 3.6,
+          "unit": "GJ/t_GCAM_steel",
+          "role": "source_energy_input",
+          "source_observation": "2e175adc2eb0e9db9ae56f9ab5f106a4685941a25d62659aff163ebee9c3f845:global:EAF with DRI:Hydrogen-based DRI:wholesale gas:2025"
+        }
+      ],
+      "use_status": "reference_energy_and_material_ledger",
+      "full_company_cost_import_allowed": false,
+      "performance_distribution_calibrated": false,
+      "limitations": [
+        "75%DRI iron feed; reductant energy83%H2/17%NG",
+        "Boundary mapping required before treating energy as plant purchases",
+        "Do not add upstream pellet energy to purchased pellets again",
+        "Non-energy cost is not standalone CAPEX",
+        "Commodity prices and regional overrides must match GCAM version"
+      ]
+    }
+  ],
+  "source_registers": [
+    {
+      "path": "data/research_v2/evidence/primary_process_observations.csv",
+      "sha256": "ea8d153b2c299407f3961b6600dd4b935035075169a9b96b0a33472e09f849cd"
+    },
+    {
+      "path": "data/research_v2/evidence/layritz_preprint_inventory_cells.csv",
+      "sha256": "da9c32a0bbec9dcaf7b2e247fdceaf2b61db48c5e9d511a3316511bd7553584d"
+    },
+    {
+      "path": "data/research_v2/gcam_reference/steel_default_energy_coefficients.csv",
+      "sha256": "50c2813c360036a6040cea0c0a9fdc76a23a7361d632e7dfd9514970f6ad42c7"
+    }
+  ]
+}

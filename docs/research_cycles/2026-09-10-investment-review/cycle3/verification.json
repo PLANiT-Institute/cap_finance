@@ -1,0 +1,32 @@
+{
+  "EN": {
+    "tables": 9,
+    "figures": 6,
+    "math_objects": 5,
+    "checks": {
+      "company_cells": 24,
+      "ncc_cells": 15,
+      "capture_cells": 16,
+      "budget_rows": 6,
+      "policy_cells_with_two_pool_support": 4
+    },
+    "sha256": "4c4b60a9223eb38fe2bc4c948b8e714f31543f14a64680c949b0aa920906e8bc"
+  },
+  "KO": {
+    "tables": 9,
+    "figures": 6,
+    "math_objects": 5,
+    "checks": {
+      "company_cells": 24,
+      "ncc_cells": 15,
+      "capture_cells": 16,
+      "budget_rows": 6,
+      "policy_cells_with_two_pool_support": 4
+    },
+    "sha256": "def49b5d931113666808b8fcf1f5e82fb68eddf6841de0521d0f5f0cae886df2"
+  },
+  "opening_figure_quantile_identities": 8,
+  "saved_cycle_input_hash_checks": 11,
+  "new_price_paths": false,
+  "corporate_calibration": false
+}

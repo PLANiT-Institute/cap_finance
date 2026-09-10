@@ -1,0 +1,4 @@
+earlier,later,minimum_pathwise_difference_million_EUR,minimum_gas_coefficient,scope
+2030,2035,1422.040733693311,0.0,Frozen affine energy-price mapping; identical common post2050 operating cash; stationary deterministic renewal; not general price coupling
+2035,2040,439.57738474041827,0.0,Frozen affine energy-price mapping; identical common post2050 operating cash; stationary deterministic renewal; not general price coupling
+2040,2045,873.0096534891487,0.0,Frozen affine energy-price mapping; identical common post2050 operating cash; stationary deterministic renewal; not general price coupling

@@ -37,9 +37,10 @@ def main(argv=None):
     ap.add_argument("--data", help="input CSV directory (default: config data_dir)")
     ap.add_argument("--sims", type=int, help="override simulation.n_sims")
     ap.add_argument("--frontier-points", type=int, help="override milp.frontier_points")
+    ap.add_argument("--config", help="config YAML (default: repository config.yaml)")
     a = ap.parse_args(argv)
 
-    cfg = C.load()
+    cfg = C.load(a.config)
     if a.data:
         cfg["data_dir"] = a.data
     if a.sims:

@@ -67,6 +67,31 @@ def tier_of(source_id) -> str:
     return "T5"
 
 
+def field_provenance(row, model, group, field):
+    """A primary-source row does not make every derived cell primary evidence."""
+    source = getattr(row, "source_id", "")
+    if model == "FIN" and group == "price_path":
+        return "T5", f"EST_FORWARD_PRICE_PATH; anchor={source}"
+    if model == "FIN" and group == "policy_assumption":
+        return "T5", f"EST_LEGACY_AUCTION_PRICE_DISCOUNT; anchor={source}"
+    if model == "FIN" and group == "technology" and str(getattr(row, "tech_id", "")).startswith("petchem_"):
+        # Primary announcements identify concepts and demo-scale quantities;
+        # D3 normalized commercial retrofit costs/intensities are assumptions.
+        return "T5", f"EST_PETCHEM_TECH_{field}; anchor={source}"
+    if model == "FIN" and group == "facility":
+        estimate = {
+            "next_reinvest_year": "EST_D1A_REINVEST",
+            "reinvest_cycle_yr": "EST_D1A_REINVEST",
+            "incumbent_capex_unit": "EST_INCUMBENT_CAPEX",
+            "margin_kthou_t": "EST_MARGIN",
+        }.get(field)
+        if field == "capacity" and "추정" in str(getattr(row, "capacity_unit", "")):
+            estimate = "EST_VOLUME_CAPACITY"
+        if estimate:
+            return "T5", f"{estimate}; anchor={source}"
+    return tier_of(source), source
+
+
 def rows_from_frame(df, model, group, value_cols, id_col, unit_map, uses):
     out = []
     for r in df.itertuples():
@@ -74,11 +99,14 @@ def rows_from_frame(df, model, group, value_cols, id_col, unit_map, uses):
             v = getattr(r, c, None)
             if v is None or (isinstance(v, float) and pd.isna(v)):
                 continue
-            src = getattr(r, "source_id", "")
+            tier, src = field_provenance(r, model, group, c)
+            unit = unit_map.get(c, "")
+            if model == "FIN" and group == "facility" and c == "capacity":
+                unit = getattr(r, "capacity_unit", unit)
             out.append(dict(
                 param_id=f"{model}.{group}.{getattr(r, id_col)}.{c}",
                 model=model, group=group, entity=str(getattr(r, id_col)), field=c,
-                value=v, unit=unit_map.get(c, ""), evidence_tier=tier_of(src),
+                value=v, unit=unit, evidence_tier=tier,
                 value_low="", value_high="", source_id=src, vintage="",
                 used_in=uses.get(c, ""),
             ))
@@ -132,7 +160,7 @@ def main():
             param_id=f"FIN.price.{scen}_{region}_{var}", model="FIN", group="price_path",
             entity=f"{scen}/{region}", field=var,
             value=f"{g.value.iloc[0]:.0f}→{g.value.iloc[-1]:.0f}", unit=g.unit.iloc[0],
-            evidence_tier=tier_of(src), value_low="", value_high="", source_id=src,
+            evidence_tier="T5", value_low="", value_high="", source_id=f"EST_FORWARD_PRICE_PATH; anchor={src}",
             vintage="", used_in="E1 central path, E2/E4 cost"))
 
     # ---- FIN D2a budgets
@@ -171,9 +199,9 @@ def main():
         rows.append(dict(param_id=f"FIN.config.auction_share.{y}", model="FIN",
                          group="policy_assumption", entity="carbon_auction_share",
                          field=str(y), value=v, unit="share",
-                         evidence_tier="T1" if int(y) <= 2030 else "T5",
+                         evidence_tier="T5",
                          value_low=round(v * 0.6, 2), value_high=min(1.0, round(v * 1.4, 2)),
-                         source_id="KETS_P4_CONFIRM_2025" if int(y) <= 2030 else "MODEL_ESTIMATE",
+                         source_id="EST_LEGACY_AUCTION_PRICE_DISCOUNT",
                          vintage="2025", used_in="carbon cost (E2/plancost/E5)"))
 
     # ---- FIN prepared-layer injections (from PREP_LOG): route intensities, capacity coeff
@@ -237,7 +265,8 @@ def main():
 
     inv = pd.DataFrame(rows)
     # audit flags
-    inv["needs_range"] = (inv.evidence_tier == "T5") & (inv.value_low.astype(str) == "")
+    inv["needs_range"] = (inv.evidence_tier == "T5") & (
+        (inv.value_low.astype(str) == "") | (inv.value_high.astype(str) == ""))
     inv["tier_rank"] = inv.evidence_tier.map({"T1": 1, "T2": 2, "T3": 3, "T4": 4, "T5": 5})
     inv = inv.sort_values(["tier_rank", "model", "group", "param_id"]).drop(columns="tier_rank")
 

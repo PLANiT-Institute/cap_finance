@@ -165,7 +165,8 @@ def test_section9_hand_written_counts_still_hold():
         f"§9 O7이 '8행 = 4개 gap의 복제'라고 적었는데 지금은 {len(rows)}행 / {len(distinct)}개다")
     # 회사당 강제된 공시 확약이 하나뿐이라는 O3의 주장
     assert len({c for c, _ in distinct}) == 2, "§9 O3은 좌표를 가진 회사가 둘이라고 적었다"
-    assert "**2 become a forced decision**" in text, "§9 O3의 강제 확약 수가 사라졌다"
+    assert "Both source-to-technology mappings were invalid" in text
+    assert "numerical audit examples only" in text
 
 
 def test_seed_sweep_staleness_is_described_as_it_is():
@@ -206,35 +207,33 @@ def test_seed_sweep_staleness_is_described_as_it_is():
             "고정 시드 행이 어긋나는데 §6.1이 그 사실을 밝히지 않는다")
 
 
-def test_gap_legs_are_clamped_as_the_figure_and_prose_say():
-    """§2 그림·§9.1·O4는 "모든 비용 다리가 경계 끝점까지의 거리"라고 적는다.
-
-    이것은 `_gap`의 클램프 분기가 실제로 타지는가에 달린 사실이고, 공시 좌표나 경계가
-    움직이면 조용히 거짓이 된다(보간 분기로 넘어가면 gap은 더 이상 하한이 아니다).
-    캡션의 수는 생성되지만 §9.1과 O4의 산문은 손으로 쓴 것이므로 여기서 다시 센다.
-    """
-    import csv
-
-    fp = ROOT / "out" / "e5" / "frontier_points.csv"
-    if not fp.exists():
-        pytest.skip("no pipeline run in out/")
-    rows = [r for r in csv.DictReader(fp.open()) if r["support"] == "none"]
-    cost_clamped = risk_clamped = n = 0
-    for co, sc in {(r["company_id"], r["scenario"]) for r in rows}:
-        d = [r for r in rows if r["company_id"] == co and r["scenario"] == sc]
-        disc = [r for r in d if r["is_disclosed"] == "True"]
-        fr = [r for r in d if r["on_frontier"] == "True"]
-        if not disc or not fr:
-            continue
-        n += 1
-        p = disc[0]
-        cost_clamped += float(p["tcar"]) > max(float(r["tcar"]) for r in fr)
-        risk_clamped += float(p["p50"]) > max(float(r["p50"]) for r in fr)
-    assert (n, cost_clamped, risk_clamped) == (4, 4, 3), (
-        f"가이드는 gap 4개 중 비용 다리 4개·위험 다리 3개가 끝점 클램프라고 적었는데 "
-        f"지금은 {n}개 중 {cost_clamped}·{risk_clamped}다 — §9.1과 O4의 산문을 고쳐라")
-    text = GUIDE.read_text(encoding="utf-8")
-    assert "It is not a nearest-point distance" in text, "§9.1의 정정 문장이 사라졌다"
+def test_gap_witnesses_are_real_candidates_and_reproduce_savings():
+    """Every claimed saving must have a feasible, non-disclosed witness in that group."""
+    import pandas as pd
+    import numpy as np
+    fp, gp = ROOT / "out/e5/frontier_points.csv", ROOT / "out/e5/gap.csv"
+    if not (fp.exists() and gp.exists()):
+        pytest.skip("no E5 output")
+    f, g = pd.read_csv(fp), pd.read_csv(gp)
+    assert (g.gap_method == "attainable_discrete_candidates").all()
+    for row in g.itertuples():
+        group = f[(f.company_id == row.company_id) & (f.scenario == row.scenario)
+                  & (f.support == row.support) & ~f.is_disclosed & f.budget_ok]
+        for axis, other in (("cost", "risk"), ("risk", "cost")):
+            col = {"cost": "p50", "risk": "tcar"}[axis]
+            ocol = {"cost": "p50", "risk": "tcar"}[other]
+            eligible = group[group[ocol] <= getattr(row, ocol) + 1e-9]
+            gap = getattr(row, f"gap_{axis}_bnkrw")
+            if eligible.empty:
+                assert pd.isna(gap)
+            else:
+                assert gap == pytest.approx(max(0, getattr(row, col) - eligible[col].min()))
+            if gap > 0:
+                wid = getattr(row, f"{axis}_witness_plan_id")
+                w = eligible[eligible.plan_id == wid]
+                assert len(w) == 1
+                assert np.isclose(getattr(row, col) - w.iloc[0][col], gap)
+    assert "It is not a nearest-point distance" in GUIDE.read_text()
 
 
 def test_figure_is_built_and_referenced():
@@ -310,8 +309,8 @@ def test_ccfd_cannot_reach_the_frontier():
 
     F13 이전에는 세 문서 모두 "현행 실행의 경계 점 중 CCfD를 서명한 것은 없다"고 적어
     관측처럼 읽혔다. 실제로는 두 겹의 구성이다 — E5의 계약 격자가 모든 비공시 후보에
-    ccfd=0을 강제하고(e5_metrics.py:200), D5에 ccfd 행이 없어 행사가가 정의되지 않는다
-    (plancost.py:258). 둘 중 하나라도 바뀌면 P2·O11·§9.1 생성문을 다시 써야 한다.
+    ccfd=0을 강제하고(e5_metrics.py:197), D5에 ccfd 행이 없어 행사가가 정의되지 않는다
+    (plancost.py:266). 둘 중 하나라도 바뀌면 P2·O11·§9.1 생성문을 다시 써야 한다.
     """
     import csv
     import re
@@ -319,10 +318,14 @@ def test_ccfd_cannot_reach_the_frontier():
     src = (ROOT / "src" / "cap" / "e5_metrics.py").read_text(encoding="utf-8")
     assert re.search(r"replace\(prof0,\s*ppa=ppa_v,\s*epc=epc_v,\s*ccfd=0\)", src), (
         "E5의 계약 격자가 더 이상 ccfd=0을 강제하지 않는다 — P2·O11·§9.1을 다시 써라")
-    grid = re.search(r"CONTRACT_GRID = \[\(ppa, epc\) for ppa in \(([^)]*)\) "
-                     r"for epc in \(([^)]*)\)\]", src)
-    assert grid and len(grid.group(1).split(",")) * len(grid.group(2).split(",")) == 10, (
-        "계약 격자의 크기가 바뀌었다 — §10 용어집과 §6.3 생성문의 격자 서술을 고쳐라")
+    from cap.config import load
+    from cap.e5_metrics import evaluation_contract_grid
+    # Verify the menu used by the guide's configured legacy run, not the old
+    # spelling of a literal list. Other explicit evaluation menus are supported.
+    grid = evaluation_contract_grid(load())
+    assert grid == [(ppa, epc) for ppa in (0., .25, .5, .75, 1.) for epc in (0, 1)], (
+        "현재 가이드 실행의 계약 메뉴가 바뀌었다 — §10·§6.3의 열거 범위를 갱신하라")
+    assert "CONTRACT_GRID = evaluation_contract_grid(cfg)" in src
 
     d5 = list(csv.DictReader((ROOT / "data" / "prepared" / "D5_policy_support.csv").open()))
     assert not [r for r in d5 if r["instrument"] == "ccfd"], (
@@ -491,7 +494,7 @@ def test_section_4_5_band_coverage_is_the_inventory_not_a_story():
 
     "가장 좋은 출처를 가진 파라미터가 밴드 없는 것들"은 T1(3행 중 2행이 밴드 보유)에서
     성립하지 않고, 실제 사실은 그것보다 단순하다 — **415행 중 21행만 밴드를 가진다.**
-    그리고 T5 규약("범위 필수")은 155행 중 139행에서 지켜지지 않는다. 이 테스트는 §4.5의
+    그리고 T5 규약("범위 필수")의 미충족 수는 셀별 증거 감사에 따라 변한다. 이 테스트는 §4.5의
     수가 `docs/parameter_inventory.csv`에서 다시 계산되지 않으면 실패한다.
     """
     import pandas as pd
@@ -587,7 +590,7 @@ def test_section_6_1_seed_sweep_matches_the_stability_record():
 def test_ccus_is_described_as_excluded_wherever_a10_is_stated():
     """A-10이 파이프라인이 하는 일의 반대를 적고 있었다 (F19).
 
-    `prepare_raw.py:303`은 raw 17행에서 CCUS 2행을 떨어뜨린다 — 어떤 설비도 어떤 가격에도
+    `prepare_raw.py:321`은 raw 17행에서 CCUS 2행을 떨어뜨린다 — 어떤 설비도 어떤 가격에도
     포집을 채택할 수 없다. 그런데 가이드 §4.2와 METHODOLOGY §A-10은 둘 다 "CCUS·효율은
     리트로핏"이라고 적고 있었고, 같은 두 문서의 §6.4는 "LOTTE의 공시 수단이 CCUS인데
     우리가 제외했다"고 적고 있었다. 한 문서 안에서 서로를 부정하고 있었던 것이다.
@@ -608,8 +611,8 @@ def test_ccus_is_described_as_excluded_wherever_a10_is_stated():
         assert a10, f"{doc.name}에서 A-10 줄을 못 찾았다"
         assert any("ccus" in ln.lower() for ln in a10), f"{doc.name}의 A-10이 CCUS를 언급하지 않는다"
         assert "CCUS and efficiency are retrofits" not in text and "CCUS·효율은 리트로핏" not in text, (
-            f"{doc.name}이 다시 CCUS를 리트로핏 수단으로 적는다 — prepare_raw.py:303이 떨어뜨린다")
-        assert "prepare_raw.py:303" in text, (
+            f"{doc.name}이 다시 CCUS를 리트로핏 수단으로 적는다 — prepare_raw.py:321이 떨어뜨린다")
+        assert "prepare_raw.py:321" in text, (
             f"{doc.name}이 CCUS 제외 지점을 파일:행으로 적지 않는다")
 
 
@@ -1104,7 +1107,7 @@ def test_gate_sidecar_check_enumerates_out_rather_than_a_hand_written_list():
         assert "e1_local" not in msg, "게이트가 out/e1의 사본을 낡음으로 보고한다"
 
 
-def test_freshness_measures_out_by_its_oldest_file_not_its_newest():
+def test_freshness_measures_out_by_its_oldest_file_not_its_newest(tmp_path, monkeypatch):
     """F27은 곁가지 검사만 고쳤고, 같은 맹점이 `check_freshness`에 F28까지 남아 있었다.
 
     e5의 아홉 파일 중 하나만 다시 써도 out/ 전체가 입력보다 새것으로 보였다.
@@ -1114,22 +1117,26 @@ def test_freshness_measures_out_by_its_oldest_file_not_its_newest():
     sys.path.insert(0, str(ROOT / "scripts"))
     import gate
 
-    src = gate._newest("data/raw/*.csv", "src/cap/*.py", "config.yaml")
-    e5 = sorted(ROOT.glob("out/e5/*.csv"))
-    if src is None or len(e5) < 2:
-        pytest.skip("out/e5 또는 입력 없음")
-    assert gate.check_freshness()[0], "전제가 깨졌다 — out/이 이미 입력보다 낡다"
-
-    victim = e5[-1]  # 가장 새 파일 하나로 판정하면 이 파일이 낡아도 그린이다
-    st = victim.stat()
-    try:
-        os.utime(victim, (st.st_atime, src[0] - 3600))
-        ok, msg = gate.check_freshness()
-        assert not ok, "e5 파일 하나가 입력보다 낡은데 freshness가 그린이다"
-        assert victim.name in msg, f"게이트가 뒤처진 파일 `{victim.name}`을 이름으로 부르지 않는다"
-    finally:
-        os.utime(victim, (st.st_atime, st.st_mtime))
-    assert gate.check_freshness()[0], "복원 실패 — mtime을 되돌리지 못했다"
+    # Test the gate in an isolated fixture; real historical outputs may correctly
+    # be stale after a model correction and must never be retimestamped to pass.
+    monkeypatch.setattr(gate, "ROOT", tmp_path)
+    source = tmp_path / "src/cap/model.py"
+    source.parent.mkdir(parents=True)
+    source.write_text("model")
+    os.utime(source, (2000, 2000))
+    files = [tmp_path / "out/e5/a.csv", tmp_path / "out/e5/b.csv"]
+    files[0].parent.mkdir(parents=True)
+    for file in files:
+        file.write_text("value\n1\n")
+        os.utime(file, (3000, 3000))
+    assert gate.check_freshness()[0]
+    victim = files[-1]
+    os.utime(victim, (1000, 1000))
+    ok, msg = gate.check_freshness()
+    assert not ok, "one stale output must invalidate the output set"
+    assert victim.name in msg
+    os.utime(victim, (3000, 3000))
+    assert gate.check_freshness()[0]
 
 
 def test_axis_impact_deltas_state_the_cells_they_are_maximised_over():
@@ -1230,7 +1237,9 @@ def test_diagnostic_drift_dates_each_sidecar_by_its_oldest_arm():
             f"`{label}`가 표에 '{stamp} | {behind} of {len(arms)}'로 실려 있지 않다 — "
             f"가장 낡은 팔이 아니라 요약 파일로 날짜 지은 것이다")
         # 대조 팔은 새것인데 섭동 팔이 낡은 경우, 0을 증거로 읽지 말라는 경고가 붙는가
-        if behind and f"`{label}` bundle matrix | {stamp} | {behind} of" in guide:
+        control = root / ("gbm" if label == "out/process" else "base") / "e5" / "metrics_company.csv"
+        if (behind and control.exists() and control.stat().st_mtime >= t_base
+                and f"`{label}` bundle matrix | {stamp} | {behind} of" in guide):
             assert f"**`{label}` is part re-run" in guide, (
                 f"{label}의 팔 {behind}개가 낡았는데 드리프트 0에 경고가 없다")
 
@@ -1361,8 +1370,8 @@ def test_availability_is_described_as_scenario_dependent_only_if_it_is():
     h2 = d3.loc["steel_h2dri"]
     assert f"an `avail_year` of {int(h2.avail_year)}" in guide, (
         f"§3.8이 steel_h2dri의 avail_year를 D3의 {int(h2.avail_year)}와 다르게 적는다")
-    assert f"adopt {int(h2.avail_year)} (operational {int(h2.avail_year + h2.build_years)})" in guide, (
-        "§3.8의 D7 표가 D3의 avail_year + build_years와 어긋난다")
+    assert "no date shifting" in guide
+    assert "ammonia-to-hydrogen mapping are withdrawn" in guide
 
 
 def test_partial_d6_columns_are_attributed_to_the_metric_that_reads_them():
@@ -1370,7 +1379,7 @@ def test_partial_d6_columns_are_attributed_to_the_metric_that_reads_them():
 
     "metric ③ is built on both: it divides by `revenue` … adds `net_debt` … so metric ③ is
     thinner than metric ① for exactly the firms that disclose least." 인용된 두 줄
-    (`e5_metrics.py:120`·`:122`)은 `capex_total_to_revenue_pct`와 `netdebt_to_ebitda_post`,
+    (`e5_metrics.py:117`·`:122`)은 `capex_total_to_revenue_pct`와 `netdebt_to_ebitda_post`,
     곧 **지표 ⑥**(재무 부담)이다. 지표 ③(TCaR = P90 − P50)은 D6를 한 줄도 읽지 않는다 —
     `out/e5/metrics_company.csv`의 `tcar_bnkrw`는 16행 전부 채워져 있고, 비는 것은
     `out/e5/affordability.csv` 쪽이다. `docs/data_audit.md`는 처음부터 "지표 ⑥"이라 적고
@@ -1405,78 +1414,33 @@ def test_partial_d6_columns_are_attributed_to_the_metric_that_reads_them():
         "§7이 다시 D6의 부분 채움을 지표 ③의 결함으로 적는다 — 읽는 것은 지표 ⑥이다")
 
     src = (ROOT / "src" / "cap" / "e5_metrics.py").read_text(encoding="utf-8").splitlines()
-    for lineno, needle in ((120, "revenue_latest_bnkrw"), (122, "net_debt_bnkrw")):
+    for lineno, needle in ((157, "revenue_latest_bnkrw"), (159, "net_debt_bnkrw")):
         assert f"e5_metrics.py#L{lineno}" in text or f"[`:{lineno}`]" in text, (
             f"§7이 더 이상 e5_metrics.py:{lineno}을 인용하지 않는다")
         assert needle in src[lineno - 1], (
             f"e5_metrics.py:{lineno}이 더 이상 {needle}을 만지지 않는다 — §7의 줄 인용이 낡았다")
 
 
-def test_gap_legs_are_counted_in_all_three_of_gap_s_branches():
-    """§2의 그림 설명이 `_gap`을 두 갈래로 적고 있었다 (F31).
-
-    "interpolates … only while the disclosed point lies within the frontier's span …,
-    and otherwise clamps to the endpoint." `_gap`(`e5_metrics.py:61-81`)은 세 갈래다 —
-    구간 안이면 보간, 위쪽 밖이면 끝점으로 clamp, **아래쪽 밖이면 NaN**이다. 세 번째는
-    코드가 자기 docstring에 "np.interp clamping would fabricate a gap there"라고
-    적어 둔 의도적 선택이고, §9 용어집은 처음부터 맞게 적고 있었다 — 어긋난 것은 §2뿐.
-
-    수를 세는 쪽도 같은 결함이었다: clamp만 세면 보간 다리와 NaN 다리가 구분되지 않아,
-    `out/e5/gap.csv`에 빈칸으로 남은 다리가 "측정된 거리"로 읽힌다.
-
-    양방향이다. 세 갈래를 데이터에서 다시 세어 §2의 수와 대조하고(수가 바뀌면 붉어진다),
-    NaN 갈래가 문장에 이름으로 남아 있는지 보며, 세어 낸 NaN 수가 파일의 빈칸 수와
-    같은지 반대편에서 확인한다.
-    """
+def test_gap_outcomes_in_guide_match_measured_positive_zero_and_missing():
+    """Guide counts actual attainable-gap outcomes rather than interpolation branches."""
     import pandas as pd
-
-    fp = ROOT / "out" / "e5" / "frontier_points.csv"
-    gp = ROOT / "out" / "e5" / "gap.csv"
-    if not (fp.exists() and gp.exists()):
-        pytest.skip("E5 산출 부재")
-
-    f = pd.read_csv(fp)
-    f = f[f.support == "none"]
-    g = pd.read_csv(gp)
-    g = g[g.support == "none"]
-    text = " ".join(GUIDE.read_text(encoding="utf-8").split())
-
-    def state(v, lo, hi):
-        return "clamped" if v > hi else ("unmeasurable" if v < lo else "interpolated")
-
-    cost = {"clamped": 0, "interpolated": 0, "unmeasurable": 0}
-    risk = dict(cost)
-    for _, r in g.iterrows():
-        d = f[(f.company_id == r.company_id) & (f.scenario == r.scenario)]
-        fr, p = d[d.on_frontier], d[d.is_disclosed].iloc[0]
-        cost[state(p.tcar, fr.tcar.min(), fr.tcar.max())] += 1
-        risk[state(p.p50, fr.p50.min(), fr.p50.max())] += 1
-
-    assert (f"**cost legs are {cost['clamped']} clamped, {cost['interpolated']} interpolated "
-            f"and {cost['unmeasurable']} unmeasurable; risk legs {risk['clamped']}, "
-            f"{risk['interpolated']} and {risk['unmeasurable']}**") in text, (
-        f"§2의 다리 집계가 실측과 다르다 — 실측 cost {cost}, risk {risk}")
-    assert "NaN rather than extrapolating" in text, (
-        "§2가 `_gap`의 세 번째 갈래(구간 아래 → NaN)를 다시 지웠다 — 두 갈래로 적으면 "
-        "빈칸 다리가 측정된 거리로 읽힌다")
-
-    nulls = (int(g.gap_cost_bnkrw.isna().sum()), int(g.gap_risk_bnkrw.isna().sum()))
-    assert nulls == (cost["unmeasurable"], risk["unmeasurable"]), (
-        f"gap.csv의 빈칸 {nulls}이 프론티어 구간에서 센 NaN 갈래 "
-        f"({cost['unmeasurable']}, {risk['unmeasurable']})와 다르다 — `_gap`의 분기와 "
-        "산출물이 어긋났다")
-    assert f"{nulls[0]} blank cost legs and {nulls[1]} blank risk legs" in text, (
-        "§2의 빈칸 대조 수가 gap.csv와 다르다")
-
-    src = (ROOT / "src" / "cap" / "e5_metrics.py").read_text(encoding="utf-8").splitlines()
-    assert "def _gap(" in src[60], (
-        "§2·§9가 인용하는 e5_metrics.py:61이 더 이상 `_gap` 정의가 아니다")
+    gp = ROOT / "out/e5/gap.csv"
+    if not gp.exists():
+        pytest.skip("no E5 output")
+    g = pd.read_csv(gp).query("support == 'none'")
+    c, r = g.gap_cost_bnkrw, g.gap_risk_bnkrw
+    text = " ".join(GUIDE.read_text().split())
+    assert (f"**cost legs are {(c > 0).sum()} positive, {(c == 0).sum()} zero "
+            f"and {c.isna().sum()} unmeasurable; risk legs {(r > 0).sum()}, "
+            f"{(r == 0).sum()} and {r.isna().sum()}**") in text
+    assert f"{c.isna().sum()} blank cost legs and {r.isna().sum()} blank risk legs" in text
+    assert "Witness IDs" in text and "no connecting line" in text
 
 
 def test_every_source_line_citation_in_the_guide_points_at_what_it_claims():
     """가이드의 `file.py:N` 인용 34건은 코드가 움직이면 조용히 낡는다 (F30 인계).
 
-    F30이 두 건(`e5_metrics.py:120`·`:122`)에만 검사기를 붙였다. 나머지는 아무도 보지
+    F30이 두 건(`e5_metrics.py:117`·`:122`)에만 검사기를 붙였다. 나머지는 아무도 보지
     않았고, F31의 훑기에서 두 건이 이미 밀려 있었다 — `ccfd=0`은 `:200`이 아니라 `:201`,
     스케줄 키는 `:186-189`가 아니라 `:187-188`. 줄 번호가 밀린 인용은 틀린 문장보다
     나쁘다: Arc가 링크를 따라가 다른 코드를 읽고 문서를 믿지 않게 된다.
@@ -1515,41 +1479,41 @@ def test_every_source_line_citation_in_the_guide_points_at_what_it_claims():
 
     # 문장이 이름으로 말하는 것이 그 줄에 있어야 한다. 인용된 시작 줄 전부가 여기 있어야 한다.
     anchors = {
-        ("prepare_raw.py", 43): "6,000m3 = 5.48Mt/yr",   # 능력 추정의 단일 캘리브레이션 점
-        ("prepare_raw.py", 54): "폐쇄예정",               # 제외 3검사의 첫째
-        ("prepare_raw.py", 64): "reinvest",              # 재투자·개수 연도 보수
-        ("prepare_raw.py", 73): "INC_CAPEX",
-        ("prepare_raw.py", 80): "MARGIN",
-        ("prepare_raw.py", 100): "ROUTE",
-        ("prepare_raw.py", 190): "prod * ef[2]",         # 철강: 에너지 = 생산 x 루트 상수
-        ("prepare_raw.py", 211): "prod * ef[0]",         # 석화: 상향식 같은 주입
-        ("prepare_raw.py", 303): "ccus",
-        ("prepare_raw.py", 423): "tech_bands.csv 없음",   # D3b는 있으면 쓰고 없으면 넘어간다
-        ("e2_milp.py", 36): "GJ_PER_T_COAL = 28.0",      # GJ->t 환산 상수
-        ("e2_milp.py", 49): 'groupby("facility_id").mean',
-        ("e2_milp.py", 54): "GJ_PER_T_COAL",             # 그 상수가 실제로 나누는 자리
-        ("e2_milp.py", 111): "need = [",                 # NaN 계수 조기 중단
-        ("e2_milp.py", 148): "applies_to_unit",
-        ("e2_milp.py", 263): "ccfd",
-        ("e2_milp.py", 325): "facility_id in cf.index",
-        ("e2_milp.py", 332): "applies_to_unit",
+        ("prepare_raw.py", 51): "6,000m3 = 5.48Mt/yr",   # 능력 추정의 단일 캘리브레이션 점
+        ("prepare_raw.py", 62): "폐쇄예정",               # 제외 3검사의 첫째
+        ("prepare_raw.py", 72): "reinvest",              # 재투자·개수 연도 보수
+        ("prepare_raw.py", 81): "INC_CAPEX",
+        ("prepare_raw.py", 88): "MARGIN",
+        ("prepare_raw.py", 108): "ROUTE",
+        ("prepare_raw.py", 202): "prod * ef[2]",         # 철강: 에너지 = 생산 x 루트 상수
+        ("prepare_raw.py", 228): "prod * ef[0]",         # 석화: 상향식 같은 주입
+        ("prepare_raw.py", 321): "ccus",
+        ("prepare_raw.py", 443): "tech_bands.csv 없음",   # D3b는 있으면 쓰고 없으면 넘어간다
+        ("e2_milp.py", 39): "GJ_PER_T_COAL = 28.0",      # GJ->t 환산 상수
+        ("e2_milp.py", 52): 'groupby("facility_id").mean',
+        ("e2_milp.py", 57): "GJ_PER_T_COAL",             # 그 상수가 실제로 나누는 자리
+        ("e2_milp.py", 115): "need = [",                 # NaN 계수 조기 중단
+        ("e2_milp.py", 152): "applies_to_unit",
+        ("e2_milp.py", 314): "ccfd",
+        ("e2_milp.py", 403): "facility_id not in cf.index",
+        ("e2_milp.py", 415): "applies_to_unit",
         ("calibration.py", 24): "FACTOR_SERIES",
         ("calibration.py", 99): "electrolyzer_capex",   # factor 밖에서 직접 열리는 계열
-        ("uncertainty_propagation.py", 49): "kau_krw",  # 캘리브레이션 밖의 유일한 D4 소비자
-        ("plancost.py", 258): "p.ccfd",
-        ("e5_metrics.py", 51): "Lower-left envelope",    # 프론티어 정의
-        ("e5_metrics.py", 61): "def _gap(",
-        ("e5_metrics.py", 104): "ebitda",                # 지표 ⑥이 D6에서 읽는 세 컬럼
-        ("e5_metrics.py", 120): "capex_total_to_revenue_pct",
-        ("e5_metrics.py", 122): "netdebt_to_ebitda_post",
-        ("e5_metrics.py", 165): "CONTRACT_GRID",
-        ("e5_metrics.py", 184): "scheds",                # E2 계획 -> 고유 기술 일정
-        ("e5_metrics.py", 187): "adopt_year",
-        ("e5_metrics.py", 201): "ccfd=0",
-        ("e5_metrics.py", 210): "in variants",           # 증분은 시뮬레이션마다 계산된다
-        ("e5_metrics.py", 257): "argmin(p50 + λ·TCaR)",
-        ("e5_metrics.py", 289): "support_scenarios[0]",
-        ("e5_metrics.py", 377): "capex_total",           # 출력 쪽 동명 컬럼 (감사기 이름 충돌)
+        ("uncertainty_propagation.py", 50): "kau_krw",  # 캘리브레이션 밖의 유일한 D4 소비자
+        ("plancost.py", 362): "p.ccfd",
+        ("e5_metrics.py", 90): "Lower-left envelope",    # 프론티어 정의
+        ("e5_metrics.py", 100): "def _gap(",
+        ("e5_metrics.py", 141): "ebitda",                # 지표 ⑥이 D6에서 읽는 세 컬럼
+        ("e5_metrics.py", 157): "capex_total_to_revenue_pct",
+        ("e5_metrics.py", 159): "netdebt_to_ebitda_post",
+        ("e5_metrics.py", 216): "CONTRACT_GRID",
+        ("e5_metrics.py", 248): "scheds",                # E2 계획 -> 고유 기술 일정
+        ("e5_metrics.py", 238): "adopt_year",
+        ("e5_metrics.py", 252): "ccfd=0",
+        ("e5_metrics.py", 261): "in variants",           # 증분은 시뮬레이션마다 계산된다
+        ("e5_metrics.py", 324): "argmin(p50 + λ·TCaR)",
+        ("e5_metrics.py", 357): "support_scenarios[0]",
+        ("e5_metrics.py", 452): "capex_total",           # 출력 쪽 동명 컬럼 (감사기 이름 충돌)
     }
     starts = {(n, lo) for n, lo, _ in cited}
     uncovered = sorted(starts - set(anchors))
@@ -1829,7 +1793,14 @@ def test_section_4_5_does_not_call_a_convention_band_an_evidence_band():
         return f"−{1 - lo[i] / val[i]:.0%}/+{hi[i] / val[i] - 1:.0%}"
 
     t1 = list(pi.index[banded & (pi.evidence_tier == "T1")])
-    assert t1, "T1에 밴드가 없다 — 이 검사가 지키는 문장의 대상이 사라졌으니 §4.5를 다시 써라"
+    if not t1:
+        assert 'No parameter retains T1 classification' in block
+        assert 'model conventions, not uncertainty intervals' in block
+        legacy = list(pi.index[banded & (pi.entity == 'carbon_auction_share')])
+        assert legacy and pi.loc[legacy, 'evidence_tier'].eq('T5').all()
+        for i in legacy:
+            assert pi.param_id[i] in block and width(i) in block
+        return
     for i in t1:
         assert pi.param_id[i] in block, (
             f"§4.5가 밴드를 가진 T1 행 `{pi.param_id[i]}`를 이름으로 밝히지 않는다")

@@ -1,0 +1,9 @@
+case,target,net_additional_downstream_fraction_of_capture,net_reduction,eligible,maximum_fraction,annual_net_emissions_margin,interpretation
+EOP_L1,0.5,0.0,0.5006394037452633,True,0.0010771187676281164,5356.0,"Accounting stress only: net extra downstream emissions relative to baseline, not estimated leakage"
+EOP_L1,0.5,0.0010771187676281164,0.5,True,0.0010771187676281164,5356.0,"Accounting stress only: net extra downstream emissions relative to baseline, not estimated leakage"
+EOP_L1,0.5,0.005,0.4976712828449503,False,0.0010771187676281164,5356.0,"Accounting stress only: net extra downstream emissions relative to baseline, not estimated leakage"
+EOP_L1,0.5,0.01,0.49470316194463737,False,0.0010771187676281164,5356.0,"Accounting stress only: net extra downstream emissions relative to baseline, not estimated leakage"
+EOP_L2,0.6,0.0,0.6029758776699822,True,0.004065652335806051,24927.60000000056,"Accounting stress only: net extra downstream emissions relative to baseline, not estimated leakage"
+EOP_L2,0.6,0.004065652335806051,0.6,True,0.004065652335806051,24927.60000000056,"Accounting stress only: net extra downstream emissions relative to baseline, not estimated leakage"
+EOP_L2,0.6,0.005,0.59931609883969,False,0.004065652335806051,24927.60000000056,"Accounting stress only: net extra downstream emissions relative to baseline, not estimated leakage"
+EOP_L2,0.6,0.01,0.5956563200093977,False,0.004065652335806051,24927.60000000056,"Accounting stress only: net extra downstream emissions relative to baseline, not estimated leakage"

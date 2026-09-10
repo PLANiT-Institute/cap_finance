@@ -1,0 +1,3 @@
+case,value,unit,pdf_page,printed_page,status,boundary,source_url
+conventional,0.397,kgCO2/kg_naphtha,5,16364,reported_model_result,furnace_and_boiler; excludes_decoking_and_scope3,https://publications.tno.nl/publication/34641733/2nm91Z/tiggeloven-2023-optimization.pdf
+electric,0.0,kgCO2/kg_naphtha,6,16365,source_model_assumption_not_measurement,direct_emissions; excludes_decoking_and_scope3,https://publications.tno.nl/publication/34641733/2nm91Z/tiggeloven-2023-optimization.pdf
