@@ -81,7 +81,7 @@ export default function Introduction({onNavigate}:{onNavigate:(tab:string)=>void
    <div><span className="intro-section-index">분석 구성</span><h2 id="questions-title">전환계획 평가</h2><p>기업 내 투자·계약 대안을 비교하는 연구·교육용 알파 도구입니다.<br/>투자자문이나 여신·인수 심사 자료가 아닙니다.</p></div>
    <div className="intro-question-list">
     <button onClick={()=>onNavigate('research')}><span>01</span><div><h3>기업별 투자 일정·계약 비교</h3><p>한국·일본 철강·석유화학 네 기업의 {research.metadata.candidate_count}개 저장 후보에서 평균 증분비용과 계획 자체 ES90·TCaR를 비교합니다 (v1·v2 병기).</p></div><span aria-hidden="true">↗</span></button>
-    <button onClick={()=>onNavigate('simulator')}><span>02</span><div><h3>공정 참조 모형 (기업 결과와 별개)</h3><p>공동 가격·부분 운영비, NCC 현금비용, 전환 시점의 세 참조 모형을 새 가정으로 계산합니다. 위 기업 후보의 민감도가 아닙니다.</p></div><span aria-hidden="true">↗</span></button>
+    <button onClick={()=>onNavigate('simulator')}><span>02</span><div><h3>공정 참조 모형 (부속 · 기업 경계 결과와 무관)</h3><p>공동 가격·부분 운영비, NCC 현금비용, 전환 시점의 세 참조 모형을 새 가정으로 계산합니다. 위 기업 후보의 민감도가 아닙니다.</p></div><span aria-hidden="true">↗</span></button>
     <button onClick={()=>onNavigate('data')}><span>03</span><div><h3>입력 데이터와 출처</h3><p>기업·기술·감축예산·가격 데이터의 단위, 출처와 공정 경계를 확인합니다.</p></div><span aria-hidden="true">↗</span></button>
    </div>
   </section>

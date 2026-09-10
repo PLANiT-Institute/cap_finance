@@ -1,5 +1,7 @@
 # TCaR — 기후 전환비용의 불확실성과 기업 내 효율경계
 
+프로젝트의 중심은 하나다. **효율경계(frontier)를 만들어 불확실성을 줄이는 자본투자의 효율성을 재는 것.** 핵심은 `src/cap`의 E1–E5 파이프라인과 `paper/methodology/TCaR_METHOD_V2_KO.md`이고, NCC·철강 참조 원장, Excel 컨트롤, 웹의 "참조 실험" 탭, MCP 서버, 세미나 라인은 부속 또는 중심 밖이다. 분류표는 [L4 범위 규율](docs/research_cycles/2026-09-10-audit-loop/L4_scope.md)에 있다.
+
 설비 전환 일정과 전력·건설 계약을 같은 가격경로에서 비교하는 연구 도구다. POSCO·Nippon Steel(철강), LOTTE Chemical·Mitsui Chemicals(석유화학)의 회사 정보와 추정 자산 포트폴리오를 사용한다.
 
 [방법론 논문 v1](paper/methodology/TCaR_METHOD_KO.md), [v2 수정 노트 (2026-09-10, 정본 경계·검증 계열 요인)](paper/methodology/TCaR_METHOD_V2_KO.md), [기업 사례 Excel 사용법](docs/RESEARCH_CONTROL.md), [실제 시간 단위 연구 기록](docs/research_cycles/2026-09-07-hourly/RESEARCH_LOG.md)에서 정의·출처·계산·결론을 연결한다. [이전 검토 기록](docs/research_cycles/2026-09-05/RESEARCH_LOG.md)과 [영문 기술 가이드](docs/TECHNICAL_GUIDE.md)는 과거 실행의 감사 자료로 구분한다.
@@ -79,8 +81,8 @@ Excel 생성·갱신에는 Codex의 Node/Artifact Tool 런타임이 필요하다
 
 [TCaR 웹 도구](https://tcar-transition-finance.vercel.app/) (`platform/`)는
 K-ETS Outlook의 Next.js·React 구성과 PLANiT 화면 스타일을 따른
-별도 Vercel 앱이다. 450개 기업 후보의 저장 결과, 14개 공개 데이터프레임,
-공동 가격·NCC 현금비용·전환 시점의 세 실시간 참조 시뮬레이터를 연결한다.
+별도 Vercel 앱이다. 450개 기업 후보의 저장 결과(v2.2 정본, v2.1·v2.0·v1 보존), 14개 공개 데이터프레임을 보여 주고,
+공동 가격·NCC 현금비용·전환 시점의 세 참조 시뮬레이터는 **부속**으로 따로 둔다(기업 경계 결과와 무관).
 기업 후보 전체 MILP 재실행과 공정 참조 모형의 재계산은 구분한다.
 시설 입력과 비공개 워크북은 배포하지 않는다.
 데이터 갱신·로컬 실행·검증 절차는 [웹 도구 안내](platform/README.md)에 있다.
