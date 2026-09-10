@@ -138,3 +138,22 @@ def test_frontier_flags_exclude_sampled_dominated():
     mask = pd.Series(False, index=pts.index)
     mask.loc[elig.index] = pareto_mask(elig["mean"], elig["es"])
     assert mask.tolist() == [True, True, False]
+
+
+def test_es_subadditive_tcar_not(tmp_path=None):
+    """L5: ES is coherent (Artzner et al. 1999), so ES(X+Y) <= ES(X)+ES(Y) — firm-level
+    ES_abs can be summed as a portfolio UPPER BOUND. The quantile gap TCaR can violate
+    it (Proposition 3), so summed TCaR bounds nothing. Checked on sample estimators."""
+    rng = np.random.default_rng(7)
+    n = 20000
+    # two firms sharing a common factor plus own tails
+    common = rng.standard_normal(n)
+    x = np.exp(0.4 * common + 0.3 * rng.standard_normal(n))
+    y = np.exp(0.4 * common + 0.3 * rng.standard_normal(n)) + 5 * (rng.uniform(size=n) < 0.06)
+    es = lambda v: loss_summary(v)["es_alpha"]
+    tcar = lambda v: loss_summary(v)["q_alpha"] - loss_summary(v)["p50"]
+    assert es(x + y) <= es(x) + es(y) + 1e-9
+    # a disjoint-tail construction where the quantile gap adds up wrongly
+    a = np.where(rng.uniform(size=n) < 0.06, 100.0, 0.0)
+    b = np.where(rng.uniform(size=n) < 0.06, 100.0, 0.0)
+    assert tcar(a + b) > tcar(a) + tcar(b) - 1e-9   # 0 + 0 < 100 (Proposition 3)
