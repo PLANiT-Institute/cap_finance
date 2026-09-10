@@ -130,3 +130,6 @@ date,series_id,value,unit,source_id
 2023,wb_coal_au_usd_t,172.775,"USD/t (연평균, WB CMO 월별 평균)",WB_CMO_2026_9fdcfa8a2aed
 2024,wb_coal_au_usd_t,136.15,"USD/t (연평균, WB CMO 월별 평균)",WB_CMO_2026_9fdcfa8a2aed
 2025,wb_coal_au_usd_t,108.3917,"USD/t (연평균, WB CMO 월별 평균)",WB_CMO_2026_9fdcfa8a2aed
+2024,kau_krw,9245.0,"원/tCO2 (연평균, 장내 거래량가중)",KRX_ETS_DAILY_VWAP_2026-09-10
+2025,kau_krw,9170.0,"원/tCO2 (연평균, 장내 거래량가중)",KRX_ETS_DAILY_VWAP_2026-09-10
+2026-08,kau_spot_krw,30100.0,원/tCO2 (KAU25 종가 2026-08-20),KRX_ETS_DAILY_2026-09-10

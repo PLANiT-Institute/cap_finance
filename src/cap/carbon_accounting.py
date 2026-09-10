@@ -15,11 +15,34 @@ def carbon_mode(cfg):
     return mode
 
 
-def free_allowance_path(cfg, company, years):
-    """Read an explicit annual company allocation; never extrapolate missing law."""
+def free_allowance_path(cfg, company, years, scenario=None):
+    """Read an explicit annual company allocation; never extrapolate missing law.
+
+    v2.1 (L2, 2026-09-11): ``free_allowance_rule: company_budget_path`` sets the
+    allocation equal to the E1 company carbon budget of the evaluated scenario.
+    Basis: K-ETS 4th period keeps steel and petrochemicals (carbon-leakage
+    sectors) at 100% free benchmark allocation while the cap tightens; Japan's
+    GX-ETS (GX推進法 §34, amended 2025) allocates free allowances on submitted
+    targets from FY2026. Under both, a firm at its budget carries no allowance
+    cash cost; the budget path is the verified rule-based proxy for A_t. It is
+    NOT a firm-level published allocation (POSCO's 2022-24 allocations of
+    77.1/77.1/76.4 Mt are press-reported government data, not yet an ETRS table).
+    """
     mode = carbon_mode(cfg)
     if mode in ('legacy_auction_discount', 'gross_obligation_proxy'):
         return np.zeros(len(years))
+    rule = cfg.get('free_allowance_rule')
+    if rule == 'company_budget_path':
+        if scenario is None:
+            raise ValueError('company_budget_path allocation needs the evaluated scenario')
+        import pandas as pd
+        from . import config as C
+        con = pd.read_csv(C.out_dir(cfg, 'e1') / 'constraints.csv')
+        g = con[(con.company_id == company) & (con.scenario == scenario)].set_index('year').company_budget_tco2
+        s = g.reindex([int(y) for y in years])
+        if s.isna().any() or (s < 0).any():
+            raise ValueError(f'E1 budget path incomplete for {company} {scenario}')
+        return s.to_numpy(dtype=float)
     table = cfg.get('free_allowances_tco2', {}).get(company, {})
     values = []
     for year in years:

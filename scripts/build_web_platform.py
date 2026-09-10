@@ -70,18 +70,23 @@ def build():
     _, v1=snapshot(v1_run, base_cols, '2026-09-05', 'v1 · 2026-09-05 동결 (보존)', dict(
         methodology_version='v1', price_factors='elec(추정)·h2(사전값 0.25)·capex(사전값 0.06), 상관 = 단위행렬',
         hedge_basis='total_purchase', frontier_axes=['p50','tcar'], carbon_included=True))
-    v2_run=ROOT/'tmp/research_case_v2_2026-09-10/run'
     v2_cols=base_cols+['p50_abs','mean_abs','tcar_abs','es_abs','es_abs_vs_baseline','on_mean_esabs_frontier','on_mean_tcarabs_frontier','carbon_delta','hedge_basis']
-    pm=json.loads((v2_run/'e3/price_model.json').read_text())
-    candidates, v2=snapshot(v2_run, v2_cols, '2026-09-10', 'v2 · 2026-09-10 (정본)', dict(
-        methodology_version=pm.get('factor_set','v2'), price_factors='검증 계열만: elec(KPX SMP·JEPX 연간), co2(KAU 연간), coal·gas(World Bank CMO 연간); h2는 전력에서 구조적 파생, capex 결정론',
-        innovation_sigma={k:round(v,4) for k,v in pm['innovation_sigma'].items()},
-        correlation=dict(factors=pm['correlation_factors'],matrix=[[round(x,3) for x in r] for r in pm['correlation']],
-                         overlap=pm.get('calibration_meta',{}).get('pairwise_overlap')),
-        hedge_basis='incremental', frontier_axes=['mean','es_abs'], carbon_included=True,
-        annual_budget_feasible_schedules=0, e1_e2_source='2026-09-05 동결 실행의 45개 일정 재사용'))
+    def v2_meta(run, carbon, extra):
+        pm=json.loads((run/'e3/price_model.json').read_text())
+        return dict(methodology_version=extra.pop('mv'), price_factors='검증 계열만: elec(KPX SMP·JEPX 연간), co2(KAU 연간 2015–2025, NABO+KRX), coal·gas(World Bank CMO 연간); h2는 전력에서 구조적 파생, capex 결정론',
+            innovation_sigma={k:round(v,4) for k,v in pm['innovation_sigma'].items()},
+            correlation=dict(factors=pm['correlation_factors'],matrix=[[round(x,3) for x in r] for r in pm['correlation']],
+                             overlap=pm.get('calibration_meta',{}).get('pairwise_overlap')),
+            hedge_basis='incremental', frontier_axes=['mean','es_abs'], carbon_included=True, carbon_accounting=carbon,
+            annual_budget_feasible_schedules=0, e1_e2_source='2026-09-05 동결 실행의 45개 일정 재사용', **extra)
+    v2_run=ROOT/'tmp/research_case_v2_2026-09-10/run'
+    _, v2=snapshot(v2_run, v2_cols, '2026-09-11', 'v2.0 · 총의무 p·E (보존)', v2_meta(v2_run,'gross_obligation_proxy: 무상할당 0, 총의무 p·E',dict(mv='v2.0-gross')))
+    v21_run=ROOT/'tmp/research_case_v2_1_net/run'
+    candidates, v21=snapshot(v21_run, v2_cols, '2026-09-11', 'v2.1 · 순거래 p·(E−A) (정본)', v2_meta(v21_run,
+        'net_trade: A = 시나리오별 E1 기업 예산경로 — K-ETS 4기 철강·석유화학 100% 무상할당(탄소누출업종, 2차 인용)·GX-ETS §34 목표기반 무상할당(법조문 확인)에 근거한 규칙 대용치; 업체별 공표 할당량 아님',
+        dict(mv='v2.1-net-allocation')))
     candidates.to_csv(PUBLIC/'company-candidates.csv',index=False)
-    write_json(DEST/'src/lib/research.json',dict(version='v2',**v2,v1=v1))
+    write_json(DEST/'src/lib/research.json',dict(version='v2.1',**v21,v2=v2,v1=v1))
 
     # D1 is aggregated before it enters the publication directory. No facility IDs.
     dd=ROOT/'tmp/research_case_v3/data'

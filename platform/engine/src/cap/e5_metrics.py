@@ -80,9 +80,9 @@ def _carbon_npv(prof, px, disc, auc) -> float:
     return float((obligation * px["co2"] * auc / 1000.0 * disc).sum() * SCALE)
 
 
-def _empty_plan(company):
+def _empty_plan(company, scenario="-"):
     return pd.DataFrame([{"facility_id": None, "tech_id": None, "adopt_year": None,
-                          "op_year": None, "company_id": company, "scenario": "-",
+                          "op_year": None, "company_id": company, "scenario": scenario,
                           "ppa_share": 0.0, "epc": 0, "ccfd": 0}])
 
 
@@ -242,7 +242,7 @@ def run(cfg: C.Config):
         region = COMPANY_REGION[company]
         px = _central_px(prices, region, scen, years, cfg, cal)
         sp = support_params(d5, supp, years)
-        base_prof = build_profile(_empty_plan(company), fac, d3, px, years, cfg)
+        base_prof = build_profile(_empty_plan(company, scen), fac, d3, px, years, cfg)
         base_sims = simulate_cost(base_prof, px, shocks, sp, cfg)
         base_stats = loss_summary(base_sims)
         base_f_ch = {ch: simulate_cost(base_prof, px, shocks, sp, cfg, freeze=ch)
@@ -435,7 +435,7 @@ def run(cfg: C.Config):
         region = COMPANY_REGION[company]
         for scen in cfg.scenarios:
             px = _central_px(prices, region, scen, years, cfg, cal)
-            base_prof = build_profile(_empty_plan(company), fac, d3, px, years, cfg)
+            base_prof = build_profile(_empty_plan(company, scen), fac, d3, px, years, cfg)
             base_sims = simulate_cost(base_prof, px, shocks, sp0, cfg)
             carb_base = _carbon_npv(base_prof, px, disc_v, auc_v)
             bud = (budgets.query("company_id == @company and scenario == @scen")
