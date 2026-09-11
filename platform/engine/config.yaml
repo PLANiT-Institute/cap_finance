@@ -12,7 +12,7 @@ years: {start: 2025, end: 2050}
 scenarios: [NZ15, B20]
 support_scenarios: [none, current]   # none = gross
 
-discount_rate: 0.05          # real, KRW 2025 base
+discount_rate: 0.024         # real RISK-FREE (KTB 10y 4.40% nominal 2026-09-11 − ~2% expected inflation); risk is priced separately by ES (L5). 0.05 = legacy real WACC-like rate, kept in config_legacy.yaml
 discount_rate_sensitivity: [0.035, 0.065]
 
 simulation:
@@ -61,7 +61,7 @@ milp:
   # early-closure cap: at most this share of company production may be retired —
   # demand/market-position proxy. Without it, NZ15 carbon prices (~520천원/t of
   # product) dwarf the ~70천원/t margin and full closure becomes the "optimum".
-  retire_max_share: 0.2
+  retire_max_share: 0.2   # research cases use 0 (early closure NOT allowed): with closure allowed the surrogate objective makes 100% closure optimal because only a scenario-independent margin is forfeited (audit B2); 0.2 is the legacy demand-proxy cap
 
 # 탄소비용에 실제 부과되는 배출 비율(유상할당). 전량 부과하면 탄소비용이 제품 마진의
 # 10배가 되어 "전 설비 폐쇄"가 최적해가 된다 — 무상할당이 존재하는 현실과 어긋남.

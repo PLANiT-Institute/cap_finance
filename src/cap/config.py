@@ -21,7 +21,12 @@ class Config(dict):
 
 
 def load(path: str | pathlib.Path | None = None, **overrides) -> Config:
-    cfg = Config(yaml.safe_load((pathlib.Path(path) if path else ROOT / "config.yaml").read_text()))
+    # CAP_CONFIG (env) lets a test session or a CI job pin a convention file without
+    # editing the repository default (config.yaml = v2 research convention;
+    # config_legacy.yaml = historical reproduction; tests on data/sample use legacy).
+    import os
+    default = os.environ.get("CAP_CONFIG") or "config.yaml"
+    cfg = Config(yaml.safe_load((pathlib.Path(path) if path else ROOT / default).read_text()))
     cfg.update(overrides)
     cfg["root"] = str(ROOT)
     return cfg

@@ -78,7 +78,7 @@ def build():
             correlation=dict(factors=pm['correlation_factors'],matrix=[[round(x,3) for x in r] for r in pm['correlation']],
                              overlap=pm.get('calibration_meta',{}).get('pairwise_overlap')),
             hedge_basis='incremental', frontier_axes=['mean','es_abs'], carbon_included=True, carbon_accounting=carbon,
-            annual_budget_feasible_schedules=0, e1_e2_source='2026-09-05 동결 실행의 45개 일정 재사용', **extra)
+            annual_budget_feasible_schedules=0, **dict(dict(e1_e2_source='2026-09-05 동결 실행의 45개 일정 재사용'), **extra))
     v2_run=ROOT/'tmp/research_case_v2_2026-09-10/run'
     _, v2=snapshot(v2_run, v2_cols, '2026-09-11', 'v2.0 · 총의무 p·E (보존)', v2_meta(v2_run,'gross_obligation_proxy: 무상할당 0, 총의무 p·E',dict(mv='v2.0-gross')))
     v21_run=ROOT/'tmp/research_case_v2_1_net/run'
@@ -92,7 +92,16 @@ def build():
         dict(mv='v2.2-verified-inputs', h2_price_source='structural: 전력 중심가격×52 kWh/kg + 전해조 상각(IEA GHR 2024 앵커 2,916,000 KRW/kW, 하락률 0 — 검증 관측만 사용); D2b의 정책목표 3,500원/kg(MOTIE 2021)·JP 전략가는 v2.1에 보존',
              co2_near_term_anchor='2026 KAU 장내 거래량가중 연평균 21,073원(KRX, 1/2–9/10)을 한국 두 시나리오의 2026 앵커로 추가',
              scenario_labels={'NZ15':'NZE-anchored (IEA NZE 선진국 탄소가격·연료가격)','B20':'STEPS-anchored (IEA 공표정책 — 2°C 정합 아님; IEA WEO 2025에는 APS가 없어 2°C 앵커 부재)'})))
-    write_json(DEST/'src/lib/research.json',dict(version='v2.2',**v22,v21=v21,v2=v2,v1=v1))
+    v23_run=ROOT/'tmp/research_case_v2_3/run'
+    v23_cols=v2_cols
+    candidates, v23=snapshot(v23_run, v23_cols, '2026-09-11', 'v2.3 · E2 재생성·실질 무위험 2.4% (정본)', v2_meta(v23_run,
+        'net_trade: A = 시나리오별 E1 기업 예산경로 (v2.1과 동일 규칙)',
+        dict(mv='v2.3-regenerated-menu', discount_rate='2.4% 실질 (국고채 10년 4.40% − 기대물가 ~2%, 2026-09-11)',
+             h2_price_source='structural (v2.2와 동일)', co2_near_term_anchor='KAU 2026 21,073원 (v2.2와 동일)',
+             e2='v2.2 가격·순거래·2.4%로 E1→E2 재생성 + 배출 방향 확장(expand_candidates_inplace.py); MIP gap 실제값 plan_index에 기록',
+             scenario_labels={'NZ15':'NZE-anchored (IEA NZE 선진국 탄소가격·연료가격)','B20':'STEPS-anchored (IEA 공표정책 — 2°C 정합 아님)'})))
+    candidates.to_csv(PUBLIC/'company-candidates.csv',index=False)
+    write_json(DEST/'src/lib/research.json',dict(version='v2.3',**v23,v22=v22,v21=v21,v2=v2,v1=v1))
 
     # D1 is aggregated before it enters the publication directory. No facility IDs.
     dd=ROOT/'tmp/research_case_v3/data'

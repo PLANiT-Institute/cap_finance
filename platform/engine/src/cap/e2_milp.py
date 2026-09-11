@@ -19,6 +19,7 @@ Outputs: out/e2/plan_index.csv, out/e2/plans/plan_<id>.csv
 from __future__ import annotations
 
 import itertools
+import pathlib
 import shutil
 import time
 
@@ -209,7 +210,7 @@ def _solve_company(cfg, company, scen, fac, d3, cal, prices, constraints, avail,
         raise ValueError(f"Unknown budget mode: {budget_mode}")
     auc = auction_share(years, cfg)
     carbon_basis = carbon_mode(cfg)
-    free_allocation = free_allowance_path(cfg, company, years)
+    free_allocation = free_allowance_path(cfg, company, years, scenario=scen)
     cost_terms, risk_terms, salvage_terms, retire_terms, emis_exprs = [], [], [], [], []
     for (fid, ta), rv in rt.items():
         fr = cf.loc[fid]
@@ -294,11 +295,19 @@ def _solve_company(cfg, company, scen, fac, d3, cal, prices, constraints, avail,
         # risk proxy: market exposure x annualized vol. Multiplying exposure by (1-ppa)
         # would be bilinear with x, so hedges enter as separate linear credits below
         # (plan-independent central magnitudes; conservative). Contract premiums likewise.
+        # v2 (L6): hydrogen vol is structural (≤ electricity vol; E3 sets w·σ_e, here the
+        # upper bound σ_e is used), capex vol is 0 when no verified series exists, and the
+        # carbon term uses the ESTIMATED KAU vol on the NET obligation (E−A) so the
+        # generator's notion of risk matches the evaluator's (both credit abatement).
+        _h2_vol = cal.vol.get("h2", 0.25)
+        if _h2_vol is None or not np.isfinite(_h2_vol):
+            _h2_vol = cal.vol["elec"]
+        _co2_vol = cal.vol.get("co2", CARBON_POLICY_VOL)
         risk_terms.append(disc[i] * SCALE * (
             cal.vol["elec"] * pulp.lpSum(elec_cost_t)
-            + cal.vol.get("h2", 0.25) * pulp.lpSum(h2_cost_t)   # v2.1: 수소 독립 요인
+            + _h2_vol * pulp.lpSum(h2_cost_t)
             + cal.vol["capex"] * pulp.lpSum(capex_t)
-            + CARBON_POLICY_VOL * carbon * emis_expr))
+            + _co2_vol * carbon * (obligation if "co2" in cal.vol else emis_expr)))
 
     # hedge credits (linear): ppa removes elec+h2 exposure share, epc removes capex vol,
     # ccfd removes policy-carbon exposure — credited against the whole-horizon proxy using
@@ -311,7 +320,7 @@ def _solve_company(cfg, company, scen, fac, d3, cal, prices, constraints, avail,
     risk = (pulp.lpSum(risk_terms)
             - cal.vol["elec"] * tot_mkt_ub * ppa
             - cal.vol["capex"] * tot_capex_ub * 0.8 * epc
-            - CARBON_POLICY_VOL * tot_carbon_ub * ccfd)
+            - cal.vol.get("co2", CARBON_POLICY_VOL) * tot_carbon_ub * ccfd)
     risk_lb = pulp.LpVariable("risk_nonneg", 0)
     m += risk_lb >= risk
 
@@ -336,9 +345,28 @@ def _solve_company(cfg, company, scen, fac, d3, cal, prices, constraints, avail,
     # and the authoritative cost of every plan is re-derived by simulation in E4.
     # Proving the last fraction of a percent of surrogate optimality buys nothing
     # and was costing tens of minutes per run.
+    # L6 (2026-09-11): keep the CBC log so the ACTUAL relative gap and best bound of
+    # every solve are recorded in plan_index (the audit found "Optimal" printed for
+    # solves that stopped on the 2% gap, with no record of how large the gap was).
+    import tempfile, re as _re
+    _log = tempfile.NamedTemporaryFile(prefix="cbc_", suffix=".log", delete=False).name
     m.solve(pulp.PULP_CBC_CMD(msg=0, timeLimit=cfg.milp.solver_time_limit_s,
                               gapRel=float(cfg.milp.get("mip_gap_rel", 0.005)),
-                              threads=int(cfg.milp.get("solver_threads", 0)) or None))
+                              threads=int(cfg.milp.get("solver_threads", 0)) or None,
+                              logPath=_log))
+    mip_gap_actual, mip_lower_bound = float("nan"), float("nan")
+    try:
+        txt = pathlib.Path(_log).read_text(errors="ignore")
+        mo = _re.search(r"Objective value:\s*([-\d.eE+]+)", txt)
+        ml = _re.search(r"Lower bound:\s*([-\d.eE+]+)", txt)
+        mg = _re.search(r"Gap:\s*([-\d.eE+]+)", txt)
+        if ml: mip_lower_bound = float(ml.group(1))
+        if mg: mip_gap_actual = float(mg.group(1))
+        elif mo and ml and abs(float(mo.group(1))) > 0:
+            mip_gap_actual = (float(mo.group(1)) - float(ml.group(1))) / abs(float(mo.group(1)))
+        pathlib.Path(_log).unlink(missing_ok=True)
+    except Exception:
+        pass
     # CBC's text solution rounds continuous auxiliary values. Reconstruct their
     # exact minimal values from the returned primary decisions before checking
     # every original constraint. This cannot rescue an infeasible primary plan.
@@ -377,7 +405,7 @@ def _solve_company(cfg, company, scen, fac, d3, cal, prices, constraints, avail,
     # sandwiched max(risk,0) <= risk_lb <= eps and can sit anywhere in between
     # when the objective is cost)
     return {"plan": plan, "npv_cost": pulp.value(cost), "risk": max(0.0, pulp.value(risk)),
-            "solve_status": status, "cum_emis_tco2": pulp.value(cum_emis),
+            "solve_status": status, "mip_gap_actual": mip_gap_actual, "mip_lower_bound": mip_lower_bound, "cum_emis_tco2": pulp.value(cum_emis),
             "ppa": ppa.value(), "epc": round(epc.value() or 0), "ccfd": round(ccfd.value() or 0),
             "budget_slack": sum(max(0.0, float(pulp.value(e)) - float(budget[i])) for i,e in enumerate(emis_exprs)),
             "cumulative_budget_tco2": float(budget.sum()),
@@ -521,7 +549,8 @@ def run(cfg: C.Config):
                                s.get("comparison_basis", "optimized_candidate"),
                                s["cum_emis_tco2"], s["cumulative_budget_tco2"], s["budget_mode"],
                                s["primal_feasibility"]["valid"], s["primal_feasibility"]["solution_status"],
-                               s["primal_feasibility"]["max_scaled_constraint_violation"]])
+                               s["primal_feasibility"]["max_scaled_constraint_violation"],
+                               s.get("mip_gap_actual", float("nan")), s.get("mip_lower_bound", float("nan"))])
         print(f"[e2] {n}/{len(combos)} {company} {scen} — 고유 계획 {len(sols)}개, "
               f"{time.time() - t_co:.0f}s", flush=True)
 
@@ -529,7 +558,7 @@ def run(cfg: C.Config):
         odir / "disclosed_skipped.csv", index=False)
     idx = pd.DataFrame(index_rows, columns=["plan_id", "company_id", "scenario", "npv_cost_bnkrw",
                                             "risk_proxy", "ppa_share", "epc", "ccfd",
-                               "budget_slack_tco2", "is_disclosed", "solve_status", "comparison_basis", "cum_emis_tco2", "cumulative_budget_tco2", "budget_mode", "primal_feasible", "solution_status", "max_scaled_constraint_violation"])
+                               "budget_slack_tco2", "is_disclosed", "solve_status", "comparison_basis", "cum_emis_tco2", "cumulative_budget_tco2", "budget_mode", "primal_feasible", "solution_status", "max_scaled_constraint_violation", "mip_gap_actual", "mip_lower_bound"])
     idx.to_csv(odir / "plan_index.csv", index=False)
     return idx
 
