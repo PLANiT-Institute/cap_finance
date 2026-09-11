@@ -1,6 +1,6 @@
 # Capital allocation pathways under transition uncertainty: how much, when, and in what form should heavy industry invest to meet a net-zero pathway?
 
-**Working paper · round R4 · 2026-09-12 (KST) · target: Energy Policy**
+**Working paper · round R5 (post-referee) · 2026-09-12 (KST) · target: Energy Policy**
 Jinsu Park (PLANiT Institute)
 
 > Status line (maintained every round): R0 = skeleton, allocation results from the canonical run `runs/v2_3` (r = 2.4 % real, net-trade carbon, structural hydrogen, verified price factors). Sections marked [R1]…[R7] are to be written or rewritten in that round. Every number cites its source file. Nothing here is final.
@@ -40,7 +40,7 @@ Five strands bear on the question; the paper combines pieces that each strand tr
 
 *Transition risk in asset pricing.* Bolton and Kacperczyk (2021) show a carbon premium in equity returns; Battiston et al. (2017) and Engle et al. (2020) treat transition risk at the portfolio and news-index level. These works price exposure across firms from market data. This paper works one level down — inside the firm, from physical volumes and cost — and produces the cash-flow object those studies would need to explain the premium: the distribution of the transition's cost under a given allocation.
 
-*Industrial decarbonisation pathways.* Technology-level studies of hydrogen direct reduction (Vogl, Åhman and Nilsson, 2018) and the timing of blast-furnace phase-out against reinvestment cycles (Vogl, Olsson and Nykvist, 2021, *Joule*), of steam-cracker electrification (Layritz et al., 2021), and sector reviews (Rissman et al., 2020; Bataille et al., 2018 [확인 필요]) give the technology set, cost ranges and the reinvestment-window logic used in the schedule generator. They are deterministic or scenario-based; they do not price the cost distribution of a firm's schedule, and they do not include contracts.
+*Industrial decarbonisation pathways.* Technology-level studies of hydrogen direct reduction (Vogl, Åhman and Nilsson, 2018) and the timing of blast-furnace phase-out against reinvestment cycles (Vogl, Olsson and Nykvist, 2021, *Joule*), of steam-cracker electrification (Layritz et al., 2021), and sector reviews (Rissman et al., 2020; Bataille, 2020) give the technology set, cost ranges and the reinvestment-window logic used in the schedule generator. They are deterministic or scenario-based; they do not price the cost distribution of a firm's schedule, and they do not include contracts.
 
 *Emissions trading and free allocation.* Free allocation to trade-exposed industry shifts the carbon cost from a gross to a net-trade basis (Martin et al., 2014, on the EU ETS). Korea's K-ETS phase 4 and Japan's GX-ETS both allocate to steel and petrochemicals; the paper therefore prices carbon as p·(E − A) with A set by a stated rule, and reports the gross basis as a sensitivity.
 
@@ -74,11 +74,13 @@ where Q_{j,t} are purchased volumes of input j, ε_{j,t} are multiplicative pric
 
 Let L(x) = C(x) − C(x₀) be the cost incremental to the no-transition counterfactual x₀ (which does not meet the budget; it is a reference, not an option). The paper reports
 
-- μ(x) = E[L(x)] — expected transition cost (indicator ②);
-- TCaR(x) = q₀.₉(L) − q₀.₅(L) — the upper dispersion of the incremental cost (indicator ③);
-- ES₉₀(x) = E[C(x) | C(x) ≥ q₀.₉(C(x))] — expected shortfall of the allocation's *own* absolute cost.
+- μ(x) = E[L(x)] — expected transition cost (indicator ②), i.e. the *level* of the transition's cost relative to standing still;
+- ES₉₀(x) = E[C(x) | C(x) ≥ q₀.₉(C(x))] — expected shortfall of the allocation's *own* absolute cost, the tail level a treasury has to be able to fund;
+- TCaR(x) = q₀.₉(C(x)) − q₀.₅(C(x)) — the upper dispersion of the same absolute cost (indicator ③), reported alongside ES because it is invariant to constant shifts (deterministic accounting choices: terminal value, book write-offs, contract premia) while ES is not.
 
-The reference points differ deliberately. TCaR is invariant to adding any constant (v2.32, Proposition 1), so it is the same whether computed on L or on C; it isolates dispersion from level and is unchanged by deterministic accounting choices (terminal value, book write-offs, contract premia). ES is not shift-invariant, and computing it on L would subtract a *random* baseline: since x₀ is exposed to coal and carbon, an allocation that removes that exposure moves *away* from x₀ in every state, and ES(L) would read the removal of exposure as risk — the defect that motivated the current convention (audit finding A1, 2026-09-10). ES on C(x) has the two properties the allocation problem needs: it is monotone (C(x) ≤ C(y) statewise ⇒ ES(x) ≤ ES(y)) and it is coherent (Artzner et al., 1999), so "the allocation lowers tail cash cost" is a well-defined statement, ES₉₀(x) < ES₉₀(x₀), and the sum of firm-level ES bounds the tail of a portfolio that shares the same price paths (subadditivity; methodology v2.x, Proposition 8). Because ES(x) − ES(x₀) mixes a level shift with a dispersion change, the deviation form ES₉₀(x) − E[C(x)] is reported alongside when the question is dispersion rather than level.
+Two bases are therefore in use and must not be confused. The *level* statistic ② is incremental because "how much does the transition cost" is a question about a difference. The *risk* statistics ES and TCaR are computed on C(x), not on L, for a reason that is not cosmetic: x₀ is itself random (it is exposed to coal, gas and carbon), so any statistic of L inherits the dispersion of x₀. Constant-shift invariance (manuscript v2.32, Proposition 1) says nothing about subtracting a random variable, and the paper does not claim it does — TCaR(L) and TCaR(C) differ (for POSCO · NZ15, 166,558 vs 234,216 bn KRW). An ES on L would read the removal of x₀'s coal-and-carbon exposure as *risk added*, which is the defect that motivated the current convention (audit finding A1, 2026-09-10). ES on C(x) has the two properties the allocation problem needs: it is monotone (C(x) ≤ C(y) statewise ⇒ ES(x) ≤ ES(y)) and coherent (Artzner et al., 1999), so "the allocation lowers tail cash cost" is a well-defined comparison of levels, ES₉₀(x) < ES₉₀(x₀), and the sum of firm-level ES bounds the tail of a portfolio on the same price paths (subadditivity; methodology v2.x, Proposition 8 — near equality here, since the four firms load on the same electricity and LNG paths, so the bound is tight rather than informative).
+
+Because ES(x) − ES(x₀) mixes a level shift with a dispersion change, the paper also reports the deviation form D(x) = ES₉₀(C(x)) − E[C(x)] wherever the question is dispersion rather than level (Tables 3, 6). D is a deviation measure in the sense of Rockafellar, Uryasev and Zabarankin (2006): shift-invariant and positively homogeneous, but neither monotone nor coherent, so it is a descriptive companion, not a selection criterion. The variance decomposition (indicator ③) is likewise reported on both bases, because they answer different questions (§5.4).
 
 ### 2.3 Efficient allocation and the price of tail removal
 
@@ -98,7 +100,7 @@ is the price of removing one won of tail cost by moving from a to b. It is the o
 
 Two levers move an allocation along the frontier.
 
-*Contracts.* Fixing the price of a share h of added electricity Q^+_t raises the mean by the premium, Δμ = Σ_t d_t h Q^+_t p^E_t π_E, and lowers ES by removing the hedged share's contribution to the upper tail. Because the hedged share replaces a fraction h of one common shock by a constant, both the premium and the tail reduction are *linear* in h on the evaluated grid (§5.2, Fig. 3), so the price of tail removal π is constant in h and the efficient contract is bang-bang: fully contracted if π < λ, uncontracted otherwise. With the research premium used here (π_E = 8 %), π is below 1 jeon per won for every firm (§5.2), so the λ = 1 allocation is fully contracted; the result is conditional on π_E, and §7 reports the premium at which the contract leaves the frontier.
+*Contracts.* Fixing the price of a share h of added electricity Q⁺_t raises the mean by the premium, Δμ = Σ_t d_t h Q⁺_t p^E_t π_E, which is exactly linear in h, and lowers ES by removing the hedged share's contribution to the upper tail. For a coherent measure ES(C_h) is convex in h (positive homogeneity and subadditivity), with equality — exact linearity — only when the set of tail paths does not change with h. On the evaluated grid the ES steps shrink by less than 5 % from h = 0 to h = 1 (§5.5), so the curve is convex but nearly linear, the price of tail removal π(h) rises only slightly along the contract axis, and the λ-selection is effectively a threshold rule: contract fully if λ exceeds π, not at all otherwise, with interior shares selected only for λ inside a band a few percent wide. All grid points are non-dominated (μ rises and ES falls monotonically in h); the interior ones are simply unsupported by most linear scalarisations. Two consequences must be stated plainly. The premium π_E is a research assumption (8 %), so π is proportional to it by construction and the reported values are not evidence about hedging markets; the decision-relevant object is the *break-even premium* at which the contract leaves the frontier for a stated λ (§7). And the EPC contract, at a +10 % premium on a construction cost the model treats as deterministic, adds the same amount in every state and is dominated by construction; the 135 EPC variants in the menu are inert and are not discussed further.
 
 *Timing.* Advancing adoption of technology k by Δτ years changes the mean by the discounted capex brought forward, less the central-price operating difference over the advanced years, and changes the tail by exchanging the incumbent's exposure for the new technology's exposure over those years. Writing σ² for the variance of a year's energy-plus-carbon bill under the two configurations,
 
@@ -113,8 +115,8 @@ This is an empirical condition, not a theorem. In Korea the system marginal pric
 | ① | Aligned capex need | K(x) = Σ_t K_t(z); peak max_t K_t and its year; construction vs. renewal split | `e5/metrics_company.csv`, `e4/annual_capital_ledger.csv` |
 | ② | Expected transition cost | μ(x) = E[L(x)] = L(x, 1) | equals central-price incremental cost |
 | ③ | TCaR and decomposition | q₀.₉(L) − q₀.₅(L); variance shares from freezing one factor at its central path (hydrogen folded into electricity) | `e5/variance_decomp.csv` |
-| ④ | Policy exposure | W(x; s→s′) = μ_{s′}(x) − min_{y∈A_{s′}} μ_{s′}(y), the regret of holding x when s′ materialises, evaluated with s′'s prices, allowances and hedge reference; plus the budget gap G(x; s′) = Σ_t max(E_t(z) − B^{s′}_{c,t}, 0) | asymmetric by construction; both directions reported |
-| ⑤ | Flexibility value | Φ = μ(x*) − E[ min_{y∈Z_s} L(y, ε) ], the gain from re-optimising within the generated menu after prices are known | perfect-information over a finite menu: a lower bound on option value, not a real-options value (v2.32 §5.4) |
+| ④ | Policy exposure | W(x; s→s′) = μ_{s′}(x) − μ_{s′}(x*_{s′}), the cost of holding x when s′ materialises relative to s′'s own mean-minimising allocation x*_{s′}, evaluated with s′'s prices, allowances and hedge reference (a scenario-regret construction in the sense of Loulou and Kanudia, 1999); W can be negative when x ∉ A_{s′}, which is why it is always paired with the emission gap G(x; s′) = Σ_t max(E_t(z) − B^{s′}_{c,t}, 0) | two numbers by construction; both directions reported |
+| ⑤ | Flexibility value | Φ = μ(x*) − E[ min_{y∈Z_s} L(y, ε) ], the expected value of perfect information over the generated menu | an EVPI: an *upper* bound on the value of any sequential-learning strategy over the same menu, and a *lower* bound only with respect to enriching the menu; not a real-options value (v2.32 §5.4) |
 
 ### 2.6 Discounting and the separation of level and risk
 
@@ -165,18 +167,18 @@ Capex total = construction (new transition equipment) + maintenance/renewal cape
 
 Table 2. Mean-minimising allocation (λ = 0) versus the λ = 1 allocation on the (μ, ES₉₀) frontier. bn KRW2025. Source: same file; `e5/lambda_tangency.csv`, `e5/policy_wedge.csv`, `e4/flex_value.csv`.
 
-| Firm · scen. | ② μ (λ=0) | ES₉₀ (λ=0) | λ=1 allocation | μ (λ=1) | ES₉₀ (λ=1) | Δμ % | ΔES % | Δμ/ΔES | ④ same plan under other scen. (μ incl. carbon) | ⑤ flex (mean) |
-|---|---|---|---|---|---|---|---|---|---|---|
-| POSCO · NZ15 | 29,409 | 705,214 | same schedule, PPA 1.0 | 30,428 | 593,922 | +3.5 | −15.8 | 0.009 | 88,276 | 0 |
-| POSCO · B20 | 68,090 | 507,217 | PPA 1.0 | 68,690 | 439,290 | +0.9 | −13.4 | 0.009 | 18,616 | 0 |
-| NSC · NZ15 | 73,530 | 806,947 | PPA 1.0 | 74,946 | 642,132 | +1.9 | −20.4 | 0.009 | 122,303 | 3,194 |
-| NSC · B20 | 89,839 | 585,431 | PPA 1.0 | 90,506 | 484,557 | +0.7 | −17.2 | 0.007 | 42,704 | 291 |
-| LOTTE · NZ15 | 2,793 | 49,490 | PPA 1.0 | 2,964 | 20,799 | +6.2 | −58.0 | 0.006 | 1,523 | 565 |
-| LOTTE · B20 | 4,744 | 50,644 | PPA 1.0 | 4,918 | 22,147 | +3.7 | −56.3 | 0.006 | 979 | 570 |
-| MCI · NZ15 | 2,412 | 29,304 | PPA 1.0 | 2,551 | 10,705 | +5.7 | −63.5 | 0.007 | 1,217 | 46 |
-| MCI · B20 | 2,170 | 22,742 | PPA 1.0 | 2,245 | 9,976 | +3.5 | −56.1 | 0.007 | 502 | 306 |
+| Firm · scen. | ② μ (λ=0) | ES₉₀ (λ=0) | λ=1 allocation | μ (λ=1) | ES₉₀ (λ=1) | Δμ % of μ(L) | Δμ % of E[C] | ΔES % | Δμ/ΔES | ④ same plan under other scen. (μ incl. carbon) | ⑤ flex (mean) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| POSCO · NZ15 | 29,409 | 705,214 | same schedule, PPA 1.0 | 30,428 | 593,922 | +3.5 | +0.45 | −15.8 | 0.009 | 88,276 | 0 |
+| POSCO · B20 | 68,090 | 507,217 | PPA 1.0 | 68,690 | 439,290 | +0.9 | +0.37 | −13.4 | 0.009 | 18,616 | 0 |
+| NSC · NZ15 | 73,530 | 806,947 | PPA 1.0 | 74,946 | 642,132 | +1.9 | +0.53 | −20.4 | 0.009 | 122,303 | 3,194 |
+| NSC · B20 | 89,839 | 585,431 | PPA 1.0 | 90,506 | 484,557 | +0.7 | +0.36 | −17.2 | 0.007 | 42,704 | 291 |
+| LOTTE · NZ15 | 2,793 | 49,490 | PPA 1.0 | 2,964 | 20,799 | +6.2 | +1.4 | −58.0 | 0.006 | 1,523 | 565 |
+| LOTTE · B20 | 4,744 | 50,644 | PPA 1.0 | 4,918 | 22,147 | +3.7 | +1.3 | −56.3 | 0.006 | 979 | 570 |
+| MCI · NZ15 | 2,412 | 29,304 | PPA 1.0 | 2,551 | 10,705 | +5.7 | +2.0 | −63.5 | 0.007 | 1,217 | 46 |
+| MCI · B20 | 2,170 | 22,742 | PPA 1.0 | 2,245 | 9,976 | +3.5 | +1.3 | −56.1 | 0.007 | 502 | 306 |
 
-Reading. (i) Along the frontier the risk-efficient allocation keeps the *same equipment schedule* and adds a fixed-price contract on the electricity the transition adds; the price of removing one won of ES₉₀ is 0.6–0.9 jeon. This is cheap because the contract premium is a research assumption — PPA at +8 % over the central electricity price, EPC at +10 % over central capex (`config.yaml: contracts`) — and because the hedge applies only to the electricity the transition adds; the ratio is a property of that assumption, not an observed market price of hedging [R4 must say so and vary the premium in R6]. (ii) The tail cut is 13–20 % in steel and 56–64 % in petrochemicals — the petrochemical tail is almost entirely purchased electricity, the steel tail retains coal, hydrogen and residual carbon exposure. (iii) Policy exposure ④: the NZ15 allocation evaluated under B20 prices and allowances, and vice versa; the B20 steel allocations violate the NZ15 budget by 194–242 MtCO₂ cumulative (`budget_gap_tco2`), which is the cost that cannot be bought back. (iv) Flexibility ⑤ is small except NSC · NZ15 (3,194) — the menu contains genuinely different schedules only there and in petrochemicals.
+Reading. (i) Along the frontier the risk-efficient allocation keeps the *same equipment schedule* and adds a fixed-price contract on the electricity the transition adds; the price of removing one won of ES₉₀ is 0.6–0.9 jeon. The premium is 0.4–2.0 % of the allocation's absolute expected cost E[C] (the same base as ES); the larger "% of μ(L)" figures divide by the incremental cost and are shown only because ② is reported on that base. The EPC variants are dominated (deterministic construction cost) and do not appear on any frontier. This is cheap because the contract premium is a research assumption — PPA at +8 % over the central electricity price, EPC at +10 % over central capex (`config.yaml: contracts`) — and because the hedge applies only to the electricity the transition adds; the ratio is a property of that assumption, not an observed market price of hedging [R4 must say so and vary the premium in R6]. (ii) The tail cut is 13–20 % in steel and 56–64 % in petrochemicals — the petrochemical tail is almost entirely purchased electricity, the steel tail retains coal, hydrogen and residual carbon exposure. (iii) Policy exposure ④: the NZ15 allocation evaluated under B20 prices and allowances, and vice versa; the B20 steel allocations violate the NZ15 budget by 194–242 MtCO₂ cumulative (`budget_gap_tco2`), which is the cost that cannot be bought back. (iv) Flexibility ⑤ is small except NSC · NZ15 (3,194) — the menu contains genuinely different schedules only there and in petrochemicals.
 
 ### 5.3 Does uncertainty pull capital forward? — the timing ladder
 
@@ -201,26 +203,28 @@ Three facts, all eight cells. (i) Earlier adoption raises expected cost *and* ra
 
 Within this model, then, uncertainty does not pull equipment forward. What it does is make the *contract* on the added electricity the efficient complement of any schedule (Fig. 3). The result depends on two things the paper cannot change and must state: the verified volatility ordering (σ_E is the largest in the factor set because Korean SMP is tied to LNG), and the 2027–2050 horizon, under which earlier electrification means more exposure-years inside the window and later electrification means fewer (§7 treats a terminal-value correction).
 
-### 5.4 Where the tail comes from (indicator ③ decomposition)
+### 5.4 Where the tail comes from (indicator ③ decomposition, two bases)
 
-Table 4. Signed variance shares of the mean-minimising allocation (spot power). Freezing one factor at its central path; hydrogen is folded into electricity because it is derived from it. Negative shares are factors that move against the plan's other costs (hedges by construction). Source: `paper/cap_pathway/data/variance_decomp_selected.csv` from `runs/v2_3/run/e5/variance_decomp.csv`.
+The decomposition freezes one factor at its central path and reports 1 − Var(frozen)/Var(full). Hydrogen is folded into electricity because it is derived from it; shares do not sum to one under correlated factors and can be negative when a factor moves against the plan's other costs. Table 4 reports it on the *absolute* cost C(x) — what drives the tail the treasury funds — and on the *incremental* cost L(x) — what drives the dispersion of the transition's cost relative to standing still. Sources: `paper/cap_pathway/data/abs_basis_stats_v2_3.csv` (absolute, computed from the canonical shocks and profiles) and `runs/v2_3/run/e5/variance_decomp.csv` (incremental).
 
-| Firm · scen. | electricity (+H₂) | carbon | coal | gas |
-|---|---|---|---|---|
-| POSCO · NZ15 | 0.28 | 0.58 | −0.06 | 0.00 |
-| POSCO · B20 | 0.64 | 0.15 | −0.25 | −0.01 |
-| NSC · NZ15 | 0.36 | 0.48 | −0.09 | 0.00 |
-| NSC · B20 | 0.68 | 0.11 | −0.27 | −0.01 |
-| LOTTE · NZ15 | 0.83 | 0.10 | 0.00 | −0.10 |
-| LOTTE · B20 | 0.97 | −0.01 | 0.00 | −0.21 |
-| MCI · NZ15 | 0.88 | 0.05 | 0.00 | −0.08 |
-| MCI · B20 | 0.97 | 0.00 | 0.00 | −0.18 |
+Table 4. Signed variance shares of the mean-minimising allocation (spot power).
 
-Petrochemical tails are electricity; that is why the contract removes 56–64 % of ES there (Table 2). Steel tails are electricity under B20 and *carbon* under NZ15 — the residual blast-furnace emissions priced at NZE carbon prices net of a shrinking allocation — which no power contract touches; that is why the contract removes only 13–20 % of steel ES, and why the steel tail under the stringent scenario is a policy exposure as much as a market one.
+| Firm · scen. | absolute C(x): electricity (+H₂) | coal | carbon | incremental L(x): electricity (+H₂) | coal | carbon |
+|---|---|---|---|---|---|---|
+| POSCO · NZ15 | 0.97 | 0.16 | 0.02 | 0.28 | −0.06 | 0.58 |
+| POSCO · B20 | 0.85 | 0.48 | 0.00 | 0.64 | −0.25 | 0.15 |
+| NSC · NZ15 | 0.98 | 0.11 | 0.01 | 0.36 | −0.09 | 0.48 |
+| NSC · B20 | 0.91 | 0.38 | 0.00 | 0.68 | −0.27 | 0.11 |
+| LOTTE · NZ15 | 0.99 | 0.00 | 0.00 | 0.83 | 0.00 | 0.10 |
+| LOTTE · B20 | 1.00 | 0.00 | 0.00 | 0.97 | 0.00 | −0.01 |
+| MCI · NZ15 | 1.00 | 0.00 | −0.01 | 0.88 | 0.00 | 0.05 |
+| MCI · B20 | 0.99 | 0.00 | 0.00 | 0.97 | 0.00 | 0.00 |
+
+The two bases say different, complementary things. On the absolute basis the tail of every allocation's own cost is electricity (and the hydrogen made from it): 85–100 % in all eight cells, with coal a secondary factor in steel (11–48 %) and carbon essentially absent, because a budget-compliant allocation on the net-trade basis has E ≈ A and pays almost no net carbon. This is the tail a contract on added electricity addresses, and it is why the contract removes 56–64 % of ES in petrochemicals but only 13–20 % in steel — the residual steel tail is coal, not carbon, and the hedge menu contains no coal contract. On the incremental basis the picture inverts for steel under NZ15: 48–58 % of the dispersion of the *transition's* cost is carbon. That is not a carbon bill the plan pays; it is the risk that the carbon price falls and the avoided-carbon value of the abatement evaporates — the bad tail of L is a low carbon price, a stranding-of-abatement risk. Both readings survive; the paper's earlier draft conflated them.
 
 ### 5.5 Contract grid
 
-ES₉₀ falls linearly in the hedged share h for every schedule (Fig. 3, `figures/fig3_contract_grid.png`): for LOTTE · B20, 50,644 → 43,396 → 36,184 → 29,049 → 22,147 at h = 0, 0.25, 0.5, 0.75, 1. The premium is linear in h by construction, so the price of tail removal π is constant along the contract axis and the efficient contract is all-or-nothing (§2.4). The frontier's contract points are therefore the two ends, h = 0 (λ below π) and h = 1 (λ above π); intermediate shares appear only as ties.
+ES₉₀ falls almost linearly in the hedged share h for every schedule (Fig. 3, `figures/fig3_contract_grid.png`): for LOTTE · B20, 50,644 → 43,396 → 36,184 → 29,049 → 22,147 at h = 0, 0.25, 0.5, 0.75, 1, steps of 7,248 / 7,212 / 7,135 / 6,902 — mildly convex, as coherence requires. The premium is exactly linear in h, so π rises from 0.0060 to 0.0063 along the axis; all five points are non-dominated, and a linear scalarisation selects an interior share only for λ within that band. In practice the selection is a threshold rule (§2.4): h = 0 for λ below π, h = 1 above.
 
 ## 6. Discussion — what the allocation pathway is for
 
@@ -230,7 +234,7 @@ ES₉₀ falls linearly in the hedged share h for every schedule (Fig. 3, `figur
 
 *② Expected cost per tonne.* The mean-minimising allocation abates at 85–196 thousand KRW per discounted tCO₂ (`cost_per_tco2_thkrw`): 85–90 for the steel and petrochemical NZ15 cases where the carbon price does most of the work, 120–196 under B20 where it does not. These are conditional on the scenario's central prices and on the net-trade carbon basis.
 
-*③ What the tail is made of — which instrument.* Table 4 tells the treasurer which exposure to hedge. Petrochemical tails are electricity, so a fixed-price procurement contract on the added load removes 56–64 % of ES₉₀ (Table 2). Steel tails under NZ15 are carbon (48–58 %), which a power contract does not touch; the remaining steel tail is a policy exposure and belongs in ④, not in a hedging programme.
+*③ What the tail is made of — which instrument.* Table 4 tells the treasurer which exposure to hedge, on the base that matters for funding: the allocation's own cost. Petrochemical tails are electricity, so a fixed-price procurement contract on the added load removes 56–64 % of ES₉₀ (Table 2). Steel tails are electricity and coal; the contract removes the first (13–20 % of ES) and the menu offers nothing for the second — coking-coal term contracts and index swaps, which steelmakers actually use, are absent from this study and would be the next instrument to add. The incremental-basis column of Table 4 adds a different warning for steel under a stringent pathway: the dispersion of the transition's value is dominated by the carbon price, on the downside — if the carbon price collapses, the abatement that justified 25–35 tn KRW of capital loses its value. That is not hedgeable with a power contract; it is the exposure indicator ④ is for.
 
 *The price of tail removal.* On the evaluated grid π = 0.6–0.9 jeon per won of ES₉₀ (Table 2). Two things follow. First, at the research premium of 8 % the contract is efficient for any risk weight λ above about 0.01, i.e. for any decision-maker who weighs the 90 % tail at all. Second, the number is a property of the premium, not a finding about markets: π scales with the premium, so the reader should replace 8 % with the PPA premium actually offered (in Korea, direct PPAs carry network charges and levies on top of the contract price; in Japan, corporate PPAs are traded in a liberalised retail market) and re-read Table 2. §7 gives π at 15 % and 25 %.
 
@@ -255,22 +259,24 @@ First, *within the price model, earlier equipment does not reduce the tail* (§5
 
 Second, *the transition plus fixed-price procurement is the lower-tail position under the stringent scenario, for every firm* (Table 6). Comparing the contracted allocation with the no-transition counterfactual on the same paths, ES₉₀ falls to 79–87 % of the counterfactual under NZ15. Under B20 it does not (104–151 %): with cheap carbon and no shrinking allocation, the incumbent's tail is small and the transition adds electricity exposure to it.
 
-Table 6. ES₉₀ of the allocation relative to the no-transition counterfactual x₀ on the same paths. Source: `paper/cap_pathway/data/preparedness_v2_3.csv` (`es_abs_bnkrw`, `risk_min_risk_bnkrw`, `es_abs_vs_baseline_bnkrw`).
+Table 6. Tail of the allocation relative to the no-transition counterfactual x₀ on the same paths: level form ES₉₀(x)/ES₉₀(x₀) and dispersion form D(x)/D(x₀), D = ES₉₀ − E[C]. Source: `paper/cap_pathway/data/abs_basis_stats_v2_3.csv`.
 
-| Firm · scen. | ES₉₀(x₀) | spot allocation / x₀ | contracted allocation / x₀ |
-|---|---|---|---|
-| POSCO · NZ15 | 750,469 | 0.94 | **0.79** |
-| NSC · NZ15 | 734,443 | 1.10 | **0.87** |
-| LOTTE · NZ15 | 26,247 | 1.89 | **0.79** |
-| MCI · NZ15 | 13,141 | 2.23 | **0.81** |
-| POSCO · B20 | 317,582 | 1.60 | 1.38 |
-| NSC · B20 | 319,849 | 1.83 | 1.51 |
-| LOTTE · B20 | 21,305 | 2.38 | 1.04 |
-| MCI · B20 | 9,055 | 2.51 | 1.10 |
+| Firm · scen. | ES₉₀(x₀) | D(x₀) | spot: ES ratio | spot: D ratio | contracted: ES ratio | contracted: D ratio |
+|---|---|---|---|---|---|---|
+| POSCO · NZ15 | 750,469 | 554,161 | 0.94 | 0.87 | **0.79** | **0.66** |
+| NSC · NZ15 | 734,443 | 543,363 | 1.10 | 1.00 | **0.87** | **0.69** |
+| LOTTE · NZ15 | 26,247 | 16,583 | 1.89 | 2.23 | **0.79** | **0.49** |
+| MCI · NZ15 | 13,141 | 8,529 | 2.23 | 2.61 | **0.81** | **0.42** |
+| POSCO · B20 | 317,582 | 221,752 | 1.60 | 1.55 | 1.38 | 1.24 |
+| NSC · B20 | 319,849 | 225,038 | 1.83 | 1.78 | 1.51 | 1.33 |
+| LOTTE · B20 | 21,305 | 12,973 | 2.38 | 2.90 | 1.04 | **0.69** |
+| MCI · B20 | 9,055 | 5,458 | 2.51 | 3.11 | 1.10 | **0.76** |
+
+Second, *the transition plus fixed-price procurement is the lower-tail position under the stringent scenario, for every firm, in both level and dispersion*: ES₉₀ falls to 79–87 % and D to 42–69 % of the counterfactual. Under B20 the level ratio stays above one for all four firms (the incumbent's tail is small when carbon is cheap and allocation does not shrink), but the dispersion ratio falls below one for the two petrochemical firms once the added load is contracted (0.69, 0.76): the transition raises the *level* of their tail cost and lowers its *dispersion*. For steel under B20 both ratios exceed one — coal exposure is replaced by a larger, uncontracted-coal-plus-electricity exposure.
 
 Third, therefore, *the case for transition is a case about the policy world, and the case for procurement is a case about the price world.* If the stringent pathway is the world the firm plans for — and the cumulative budget makes it the world the firm must comply with — then the allocation that meets it *and* contracts its added electricity has a lower tail cash cost than standing still, in every firm studied. If the lax world is the planning basis, the transition is a compliance cost with a higher tail, and the only thing that limits the damage is again the contract. In neither world is early equipment by itself a hedge. "Prepared", in this model, means: on the budget-binding schedule, with the added electricity contracted, and with the steel carbon residual recognised as an unhedgeable policy exposure.
 
-Two caveats bound this reading. The no-transition counterfactual violates the budget, so Table 6 compares a compliant allocation with a non-compliant one; it is a statement about cash-cost tails, not a menu of choices. And the NZE anchor lowers fossil prices as it raises carbon prices, so part of the NZ15 result is the fuel price path, not the carbon price; §7 separates them by setting the carbon price to its B20 path within NZ15.
+Three caveats bound this reading. The no-transition counterfactual violates the budget, so Table 6 compares a compliant allocation with a non-compliant one; it is a statement about cash-cost tails, not a menu of choices. The counterfactual's NZ15 tail is large partly because the allocation rule gives x₀ a shrinking allowance path against unchanged emissions, so its net carbon bill widens mechanically; §7 reports the gross basis and a benchmark-style allocation as co-equal cases. And the NZE anchor lowers fossil prices as it raises carbon prices, so part of the NZ15 result is the fuel price path, not the carbon price; §7 separates them by setting the carbon price to its B20 path within NZ15.
 
 ### 6.3 What a disclosed plan would be measured against
 
@@ -282,7 +288,7 @@ The methodology manuscript (v2.32, §3.5, §4.4) defines a model benchmark for a
 
 *For investors and lenders.* Underwrite the timing (①) and the residual policy exposure (④), not the volatility: the volatility is cheap to remove and the analysis shows by how much. For steel under a stringent pathway, the residual tail is carbon, which argues for instruments that address policy stringency (carbon contracts for difference, allocation certainty) rather than power hedges.
 
-*For policy.* Two levers appear directly in the tables. The electricity price regime: while the system marginal price is LNG-indexed, electrification carries LNG risk into industry and the burden of removing it falls on bilateral contracts; a market design that decouples industrial power prices from the marginal gas plant lowers ES₉₀ for every electrifying firm without a single won of subsidy. And allocation certainty: under NZ15 the steel tail is dominated by the carbon bill on residual emissions net of a shrinking allocation; announcing the allocation path removes a policy exposure the firm cannot hedge in any market.
+*For policy.* Two levers appear directly in the tables. The electricity price regime: while the system marginal price is LNG-indexed, electrification carries LNG risk into industry and the burden of removing it falls on bilateral contracts; a market design that decouples industrial power prices from the marginal gas plant lowers ES₉₀ for every electrifying firm without a single won of subsidy. And carbon-price credibility: under NZ15 the dispersion of the steel transition's value is dominated by the carbon price on the downside (Table 4, incremental basis) — the risk is not that the carbon bill rises but that it collapses after 25–35 tn KRW has been committed against it. A credible price floor, or a carbon contract for difference on the abated tonnes, addresses an exposure that no market instrument in the firm's reach can.
 
 ## 7. Robustness and limitations [R6]
 
@@ -293,21 +299,23 @@ Discount rate (2.4 / 3.5 / 5 %), GBM vs log-OU (ES level −32 to −38 %, POSCO
 ## References (verified by web search in R1 unless marked)
 
 - Artzner, P., Delbaen, F., Eber, J.-M., Heath, D., 1999. Coherent measures of risk. *Mathematical Finance* 9(3), 203–228.
-- Bataille, C., et al., 2018. A review of technology and policy deep decarbonization pathway options for making energy-intensive industry production consistent with the Paris Agreement. *Journal of Cleaner Production* 187, 960–973. [확인 필요]
+- Bataille, C., 2020. Physical and policy pathways to net-zero emissions industry. *WIREs Climate Change* 11(2), e633.
 - Battiston, S., Mandel, A., Monasterolo, I., Schütze, F., Visentin, G., 2017. A climate stress-test of the financial system. *Nature Climate Change* 7, 283–288.
-- Blyth, W., Bradley, R., Bunn, D., Clarke, C., Wilson, T., Yang, M., 2007. Investment risks under uncertain climate change policy. *Energy Policy* 35(11), 5766–5773. [확인 필요 — title/authors located, volume unverified]
+- Blyth, W., Bradley, R., Bunn, D., Clarke, C., Wilson, T., Yang, M., 2007. Investment risks under uncertain climate change policy. *Energy Policy* 35(11), 5766–5773. [title/authors verified; volume 확인 필요]
 - Bolton, P., Kacperczyk, M., 2021. Do investors care about carbon risk? *Journal of Financial Economics* 142(2), 517–549.
 - Dixit, A.K., Pindyck, R.S., 1994. *Investment under Uncertainty*. Princeton University Press.
 - Engle, R.F., Giglio, S., Kelly, B., Lee, H., Stroebel, J., 2020. Hedging climate change news. *Review of Financial Studies* 33(3), 1184–1216.
-- Froot, K.A., Scharfstein, D.S., Stein, J.C., 1993. Risk management: coordinating corporate investment and financing policies. *Journal of Finance* 48(5), 1629–1658. [확인 필요 — cited in manuscript v2.32]
+- Froot, K.A., Scharfstein, D.S., Stein, J.C., 1993. Risk management: coordinating corporate investment and financing policies. *Journal of Finance* 48(5), 1629–1658.
 - Fuss, S., Szolgayova, J., Obersteiner, M., Gusti, M., 2008. Investment under market and climate policy uncertainty. *Applied Energy* 85(8), 708–721.
 - Layritz, L.S., Dolganova, I., Finkbeiner, M., Luderer, G., Penteado, A.T., Ueckerdt, F., Repke, J.-U., 2021. The potential of direct steam cracker electrification and carbon capture & utilization via oxidative coupling of methane as decarbonization strategies for ethylene production. *Applied Energy* 296, 117049.
+- Loulou, R., Kanudia, A., 1999. Minimax regret strategies for greenhouse gas abatement: methodology and application. *Operations Research Letters* 25(5), 219–230.
 - Markowitz, H., 1952. Portfolio selection. *Journal of Finance* 7(1), 77–91.
 - Martin, R., Muûls, M., de Preux, L.B., Wagner, U.J., 2014. Industry compensation under relocation risk: a firm-level analysis of the EU Emissions Trading Scheme. *American Economic Review* 104(8), 2482–2508.
 - Rissman, J., et al., 2020. Technologies and policies to decarbonize global industry: review and assessment of mitigation drivers through 2070. *Applied Energy* 266, 114848.
+- Rockafellar, R.T., Uryasev, S., Zabarankin, M., 2006. Generalized deviations in risk analysis. *Finance and Stochastics* 10(1), 51–74. [확인 필요 — cited in manuscript v2.32]
 - Rockafellar, R.T., Uryasev, S., 2002. Conditional value-at-risk for general loss distributions. *Journal of Banking & Finance* 26(7), 1443–1471.
 - Roques, F.A., Newbery, D.M., Nuttall, W.J., 2008. Fuel mix diversification incentives in liberalized electricity markets: a mean–variance portfolio theory approach. *Energy Economics* 30(4), 1831–1849.
-- Vogl, V., Åhman, M., Nilsson, L.J., 2018. Assessment of hydrogen direct reduction for fossil-free steelmaking. *Journal of Cleaner Production* 203, 736–745. [확인 필요 — cited in manuscript v2.32]
+- Vogl, V., Åhman, M., Nilsson, L.J., 2018. Assessment of hydrogen direct reduction for fossil-free steelmaking. *Journal of Cleaner Production* 203, 736–745.
 - Vogl, V., Olsson, O., Nykvist, B., 2021. Phasing out the blast furnace to meet global climate targets. *Joule* 5(10), 2646–2662.
 - Kampmann et al., 2026; Ostrovnaya et al., 2026 — cited in manuscript v2.32; not verified this round. [확인 필요]
 
