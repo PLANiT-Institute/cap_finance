@@ -60,3 +60,22 @@ Open for R3.
 1. Build the timing-ladder variants and test the §2.4 condition directly (compare per-year bill variance pre/post conversion).
 2. §2.4's contract statement "concave in h" is asserted; R3 should verify on the contract grid (ES vs h at 0, 0.25, 0.5, 0.75, 1).
 3. Fill §4 data with sources and the allocation rule for A.
+
+## R3 · 04:12 KST · data and results (timing ladder)
+
+Critique of R2.
+- WRONG: §2.4 asserted that the tail reduction is concave in the hedged share h. The contract grid shows it is *linear* (LOTTE B20: 50,644 → 43,396 → 36,184 → 29,049 → 22,147 — equal steps). Reason: the hedge replaces a fraction of one common shock by a constant, and ES of a linear combination with a fixed mixing weight is linear in that weight when the ranking of paths is unchanged. Consequence: π is constant in h and the efficient contract is bang-bang. §2.4 rewritten; §5.5 added with the evidence.
+- R2's §2.4 timing condition was stated but the paper had no way to test it. R3 built the ladder (32 variants, run `runs/v2_3_ladder`, E5 only, canonical E1–E3 untouched).
+- R2 §2.5 gave ⑤ as "perfect information over a finite menu" — correct, but the paper must also say the menu is 1 schedule for POSCO, hence Φ = 0 there (carried; now in §5.2 reading).
+- Missing in R0–R2: the Data section had no sources. Written.
+
+What R3 found (this is the round's substantive result).
+- Earlier adoption (−3, −6 y) raises μ AND raises ES₉₀ AND raises the dispersion part ES − μ in all 8 cells, spot and contracted. Later adoption (+3, +6) lowers all three but violates the cumulative budget in all 8 cells. The canonical schedule is the earliest feasible budget-binding point; no earlier variant is non-dominated.
+- Therefore, within this model, uncertainty does NOT pull equipment forward; the efficient response to uncertainty is the contract on added electricity, not earlier capex. This contradicts the working hypothesis "빠른 전환 = 에너지비용 대비" in its naive form and supports the refined form "전환 + 고정가 조달". The paper says so plainly.
+- Decomposition: petrochemical tails are ~85–97 % electricity; steel NZ15 tails are 48–58 % carbon (residual BF emissions at NZE prices net of shrinking allocation) — a policy exposure a power contract cannot touch.
+
+Open for R4–R6.
+1. Horizon truncation confounds the ladder (earlier = more exposure-years in-window). R6 should add a terminal-value or per-year-normalised comparison (e.g. ES of the annual bill in a common post-conversion year).
+2. Table 1 construction column for B20 rows [R6].
+3. The ladder shifted *all* adoption years together; a per-facility ladder (only the H₂-DRI unit moved) would be the sharper test. Note as limitation unless time permits in R6.
+4. Contract linearity means the λ-selection is a threshold rule; R4 must present π vs plausible λ ranges and market hedge costs, not "the frontier chooses PPA 1.0".
