@@ -129,3 +129,26 @@ Three reports were obtained from independent reviewer agents: R1 Energy Policy e
 Citations re-verified this round: Loulou & Kanudia (1999, ORL 25) ✔; Froot–Scharfstein–Stein (1993, JF) ✔; Vogl–Åhman–Nilsson (2018, JCP 203) ✔; Bataille 2018 replaced by Bataille (2020, WIREs Climate Change) ✔; Blyth et al. 2007 title/authors ✔ (volume unverified); Rockafellar–Uryasev–Zabarankin 2006 added [확인 필요]; Kampmann/Ostrovnaya 2026 still unverified and not cited in this paper.
 
 Net effect of R5 on the paper's claims. The headline "steel tail is carbon" is withdrawn and replaced by two correct statements (absolute tail = electricity + coal; incremental dispersion = carbon-price-collapse risk). The contract result survives with the caveat that π is proportional to an assumed premium. The timing-ladder result survives as a within-window statement. The preparedness table now shows level and dispersion; the NZ15 conclusion strengthens (dispersion ratios 0.42–0.69), the B20 conclusion becomes two-sided.
+
+## R6 · 07:12 KST · robustness, limitations, reproducibility
+
+Critique of R5.
+- R5 left a stale sentence in §5.2 ("[R4 must say so and vary the premium in R6]", "steel tail retains … residual carbon exposure") that contradicted the corrected Table 4. Removed.
+- R5 promised a carbon/fuel split "in §7"; it had not been run. Run now (Table 8) — and it overturns the R4 framing: the entire NZ15 level advantage of the contracted allocation over x₀ (ES ratio 0.79–0.87) is the NZE carbon price on the counterfactual; with B20 carbon prices in the same fuel world the ratios are 1.14–1.96, with zero carbon 1.29–3.89. §6.2 caveat rewritten to say so; §7.3 written.
+- R5's Table 7 placeholder had no content; R3's Table 1 had four [R6] cells. Filled.
+- The ROUNDS R0 "findings worth carrying" bullet 3 still says "steel … residual carbon remain" — superseded by R5/R6; left in the log as history, not repeated in the paper.
+
+What R6 added.
+- §7.1 sensitivity table (discount, OU, gross/net carbon, hydrogen convention, premium scaling, carbon split, ladder), §7.2 reading of OU, §7.3 carbon-price split with Table 8, §7.4 limitations organised by inputs / prices / carbon / contracts / method / scenarios — the practitioner points from R5 are all in it.
+- Reproducibility section with manifest hashes (first 8 hex) for the four stage outputs and the five derived tables.
+- Table 1 construction column complete (POSCO B20 13,232; NSC B20 22,367; LOTTE B20 1,417; MCI B20 613).
+
+Consistency scan (text ↔ files), done by reading each table's source file this round: Table 1 ✔ (allocation_table, ledger), Table 2 ✔ (frontier_points/lambda_tangency; Δμ % of E[C] from abs_basis_stats), Table 3 ✔ (timing_ladder_results), Table 4 ✔ (abs_basis_stats + variance_decomp), Table 5 ✔ (policy_wedge .c00 rows), Table 6 ✔ (abs_basis_stats), Table 7 rows a–d ✔ (metrics_company of v2_2_r035 / v2_2_rf24 / v2_2_ou / v2_2026-09-10 / v2_1_net / v2_2b_h2struct), Table 8 ✔ (carbon_fuel_split). Highlights and Abstract are still the R1 text and are now WRONG on two points (they say "cheapest item" and imply preparedness) — R7 rewrites them last, as planned.
+
+What the paper now says, in one line: the budget fixes the schedule; the carbon price makes the transition cheaper than standing still under a stringent pathway; the contract on added electricity is the only lever that reduces the dispersion of the allocation's cost, and for steel it does not bring the tail below the unconverted furnace's unless carbon is expensive.
+
+Open for R7.
+1. Rewrite Highlights, Abstract, §1.2 contributions, §8 conclusion to match R5–R6 (contribution = joint frontier + relocation result + carbon-split finding; not "preparedness").
+2. Add a per-table sentence forbidding cross-firm reading (R1 referee point 16).
+3. Renumber tables/figures; check every "§x.y" cross-reference.
+4. Korean full text.

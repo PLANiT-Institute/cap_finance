@@ -1,6 +1,6 @@
 # Capital allocation pathways under transition uncertainty: how much, when, and in what form should heavy industry invest to meet a net-zero pathway?
 
-**Working paper · round R5 (post-referee) · 2026-09-12 (KST) · target: Energy Policy**
+**Working paper · round R6 · 2026-09-12 (KST) · target: Energy Policy**
 Jinsu Park (PLANiT Institute)
 
 > Status line (maintained every round): R0 = skeleton, allocation results from the canonical run `runs/v2_3` (r = 2.4 % real, net-trade carbon, structural hydrogen, verified price factors). Sections marked [R1]…[R7] are to be written or rewritten in that round. Every number cites its source file. Nothing here is final.
@@ -151,13 +151,13 @@ Table 1. Mean-cost-minimising allocation, canonical run. Source: `paper/cap_path
 | Firm · scenario | Technologies | First adoption | Capex total (bn KRW2025) | of which construction | Capex peak (bn) | Peak year |
 |---|---|---|---|---|---|---|
 | POSCO · NZ15 | eff + H₂-DRI + HyREX | 2027 | 27,843 | 18,626 | 4,777 | 2032 |
-| POSCO · B20 | eff + H₂-DRI + HyREX | 2027 | 24,771 | [R6] | 3,852 | 2043 |
+| POSCO · B20 | eff + H₂-DRI + HyREX | 2027 | 24,771 | 13,232 | 3,852 | 2043 |
 | NSC · NZ15 | eff + H₂-DRI | 2027 | 34,577 | 28,182 | 6,958 | 2034 |
-| NSC · B20 | eff + H₂-DRI | 2027 | 31,267 | [R6] | 4,950 | 2037 |
+| NSC · B20 | eff + H₂-DRI | 2027 | 31,267 | 22,367 | 4,950 | 2037 |
 | LOTTE · NZ15 | e-cracker | 2039 | 2,465 | 1,417 | 708 | 2039 |
-| LOTTE · B20 | e-cracker | 2038 | 2,465 | [R6] | 519 | 2038 |
+| LOTTE · B20 | e-cracker | 2038 | 2,465 | 1,417 | 519 | 2038 |
 | MCI · NZ15 | e-cracker | 2034 | 915 | 613 | 221 | 2034 |
-| MCI · B20 | e-cracker | 2040 | 1,135 | [R6] | 375 | 2040 |
+| MCI · B20 | e-cracker | 2040 | 1,135 | 613 | 375 | 2040 |
 
 Reading. The stringency of the pathway does not change the steel technology set; it changes *when* the capital is spent. POSCO's capex peak moves from 2043 (B20) to 2032 (NZ15), NSC's from 2037 to 2034, with 11–12 % more total capital. In petrochemicals the budget is met by a single e-cracker conversion whose timing is set by the budget year (2034–2040); early adoption is never mean-cost-minimising under either scenario. Figure 1 (`figures/fig1_capex_pathway.png`) shows the annual construction outlays.
 
@@ -178,7 +178,7 @@ Table 2. Mean-minimising allocation (λ = 0) versus the λ = 1 allocation on the
 | MCI · NZ15 | 2,412 | 29,304 | PPA 1.0 | 2,551 | 10,705 | +5.7 | +2.0 | −63.5 | 0.007 | 1,217 | 46 |
 | MCI · B20 | 2,170 | 22,742 | PPA 1.0 | 2,245 | 9,976 | +3.5 | +1.3 | −56.1 | 0.007 | 502 | 306 |
 
-Reading. (i) Along the frontier the risk-efficient allocation keeps the *same equipment schedule* and adds a fixed-price contract on the electricity the transition adds; the price of removing one won of ES₉₀ is 0.6–0.9 jeon. The premium is 0.4–2.0 % of the allocation's absolute expected cost E[C] (the same base as ES); the larger "% of μ(L)" figures divide by the incremental cost and are shown only because ② is reported on that base. The EPC variants are dominated (deterministic construction cost) and do not appear on any frontier. This is cheap because the contract premium is a research assumption — PPA at +8 % over the central electricity price, EPC at +10 % over central capex (`config.yaml: contracts`) — and because the hedge applies only to the electricity the transition adds; the ratio is a property of that assumption, not an observed market price of hedging [R4 must say so and vary the premium in R6]. (ii) The tail cut is 13–20 % in steel and 56–64 % in petrochemicals — the petrochemical tail is almost entirely purchased electricity, the steel tail retains coal, hydrogen and residual carbon exposure. (iii) Policy exposure ④: the NZ15 allocation evaluated under B20 prices and allowances, and vice versa; the B20 steel allocations violate the NZ15 budget by 194–242 MtCO₂ cumulative (`budget_gap_tco2`), which is the cost that cannot be bought back. (iv) Flexibility ⑤ is small except NSC · NZ15 (3,194) — the menu contains genuinely different schedules only there and in petrochemicals.
+Reading. (i) Along the frontier the risk-efficient allocation keeps the *same equipment schedule* and adds a fixed-price contract on the electricity the transition adds; the price of removing one won of ES₉₀ is 0.6–0.9 jeon. The premium is 0.4–2.0 % of the allocation's absolute expected cost E[C] (the same base as ES); the larger "% of μ(L)" figures divide by the incremental cost and are shown only because ② is reported on that base. The EPC variants are dominated (deterministic construction cost) and do not appear on any frontier. This is cheap because the contract premium is a research assumption — PPA at +8 % over the central electricity price, EPC at +10 % over central capex (`config.yaml: contracts`) — and because the hedge applies only to the electricity the transition adds; the ratio is a property of that assumption, not an observed market price of hedging (§7.1 row e scales it). (ii) The tail cut is 13–20 % in steel and 56–64 % in petrochemicals — the petrochemical tail is almost entirely purchased electricity, the steel tail retains coal (Table 4). (iii) Policy exposure ④ is reported in both directions in Table 5 (§6.1); the B20 steel allocations overshoot the NZ15 annual path by 194–242 MtCO₂ in total (`budget_gap_tco2`, annual overshoot sum), against 105–106 Mt for the NZ15 plans themselves. (iv) Flexibility ⑤ is small except NSC · NZ15 (3,194) — the menu contains genuinely different schedules only there and in petrochemicals.
 
 ### 5.3 Does uncertainty pull capital forward? — the timing ladder
 
@@ -276,7 +276,7 @@ Second, *the transition plus fixed-price procurement is the lower-tail position 
 
 Third, therefore, *the case for transition is a case about the policy world, and the case for procurement is a case about the price world.* If the stringent pathway is the world the firm plans for — and the cumulative budget makes it the world the firm must comply with — then the allocation that meets it *and* contracts its added electricity has a lower tail cash cost than standing still, in every firm studied. If the lax world is the planning basis, the transition is a compliance cost with a higher tail, and the only thing that limits the damage is again the contract. In neither world is early equipment by itself a hedge. "Prepared", in this model, means: on the budget-binding schedule, with the added electricity contracted, and with the steel carbon residual recognised as an unhedgeable policy exposure.
 
-Three caveats bound this reading. The no-transition counterfactual violates the budget, so Table 6 compares a compliant allocation with a non-compliant one; it is a statement about cash-cost tails, not a menu of choices. The counterfactual's NZ15 tail is large partly because the allocation rule gives x₀ a shrinking allowance path against unchanged emissions, so its net carbon bill widens mechanically; §7 reports the gross basis and a benchmark-style allocation as co-equal cases. And the NZE anchor lowers fossil prices as it raises carbon prices, so part of the NZ15 result is the fuel price path, not the carbon price; §7 separates them by setting the carbon price to its B20 path within NZ15.
+Three caveats bound this reading. The no-transition counterfactual violates the budget, so Table 6 compares a compliant allocation with a non-compliant one; it is a statement about cash-cost tails, not a menu of choices. The counterfactual's NZ15 tail is large partly because the allocation rule gives x₀ a shrinking allowance path against unchanged emissions, so its net carbon bill widens mechanically; §7 reports the gross basis and a benchmark-style allocation as co-equal cases. And the NZE anchor lowers fossil prices as it raises carbon prices; §7.3 separates the two by holding NZ15 fuel and electricity paths and replacing the carbon path, and finds that the entire NZ15 level result is the carbon price: with B20 carbon prices in an NZ15 fuel world the counterfactual's tail collapses and every contracted allocation sits above it again. The case for transition in this model is therefore the carbon price and the compliance budget — not energy-cost insurance.
 
 ### 6.3 What a disclosed plan would be measured against
 
@@ -290,9 +290,57 @@ The methodology manuscript (v2.32, §3.5, §4.4) defines a model benchmark for a
 
 *For policy.* Two levers appear directly in the tables. The electricity price regime: while the system marginal price is LNG-indexed, electrification carries LNG risk into industry and the burden of removing it falls on bilateral contracts; a market design that decouples industrial power prices from the marginal gas plant lowers ES₉₀ for every electrifying firm without a single won of subsidy. And carbon-price credibility: under NZ15 the dispersion of the steel transition's value is dominated by the carbon price on the downside (Table 4, incremental basis) — the risk is not that the carbon bill rises but that it collapses after 25–35 tn KRW has been committed against it. A credible price floor, or a carbon contract for difference on the abated tonnes, addresses an exposure that no market instrument in the firm's reach can.
 
-## 7. Robustness and limitations [R6]
+## 7. Robustness and limitations
 
-Discount rate (2.4 / 3.5 / 5 %), GBM vs log-OU (ES level −32 to −38 %, POSCO NZ15 ΔES sign), factor correlation, hydrogen price, carbon accounting (gross vs net-trade), terminal value. Limitations: estimated facility portfolio; correlation from 10–15 annual observations; allocation rule for free allowances; no timing ladder in the generated menu; no CCUS.
+### 7.1 What was varied and what moved
+
+Table 7. Sensitivities. Rows a–d are from the v2.2 sensitivity runs (same menu and inputs as v2.2, r = 5 % base; `tmp/research_case_v2_2_sensitivity`); rows e–g are recomputed on the canonical v2.3 profiles and shocks (`paper/cap_pathway/data/carbon_fuel_split_nz15.csv`, `abs_basis_stats_v2_3.csv`). "Selection" = does the mean-minimising schedule or the λ = 1 contract choice change in any of the eight cells.
+
+| | Variation | Level effect | Selection | Sign changes |
+|---|---|---|---|---|
+| a | Discount rate 5 % → 3.5 % → 2.4 % (v2.2 base) | μ and ES rise as r falls (POSCO NZ15 μ 22,610 → 26,399 → 29,725) | none | none |
+| b | Price process: annual GBM → log-OU, 10-year half-life (v2.2 base) | ES₉₀ falls 32–38 % (POSCO NZ15 485,124 → 324,079) | none | ES(x) − ES(x₀) for POSCO NZ15 flips from −15,328 to +8,351 |
+| c | Carbon accounting: gross p·E → net p·(E − A) (v2.0 → v2.1, same menu) | ES₉₀ falls 40–50 % for steel; μ unchanged (allocation is a level shift on the incremental basis only through x₀) | none | none |
+| d | Hydrogen price: policy target → structural (v2.1 → v2.2b) | POSCO NZ15 μ −30,284 → +22,610; NSC NZ15 −38 → +54,071 | petrochemical schedules change (H₂-fuel drops out) | steel NZ15 μ changes sign |
+| e | Contract premium 8 % → 15 % → 25 % (linear scaling of Δμ) | π 0.006–0.009 → 0.011–0.017 → 0.019–0.028 | none for any λ ≥ 0.03 | none |
+| f | Carbon price inside NZ15: NZE path → B20 path → zero (fuel and electricity paths held) | see Table 8 | none | **Table 6 NZ15 ratios flip above 1 for every firm** |
+| g | Timing ladder ±3/±6 y (§5.3) | earlier: μ and ES up; later: down but infeasible | none | none |
+
+### 7.2 Discount rate, price process, accounting
+
+Rows a–d confirm that the canonical selections do not depend on the discount rate, the accounting basis or the hydrogen convention, but that the *levels* — and one sign — do. The OU result (row b) matters for how the tail is read: annual GBM shocks compounded over 24 years put the 2050 median electricity multiplier near 0.24 of the central path and carry the mean in a lognormal right tail, so absolute ES levels are roughly a third lower under mean reversion. The paper reports GBM levels because the verified annual series do not reject a unit root at n = 10–15; a reader who believes SMP is mean-reverting should scale ES down by about a third and treat the POSCO NZ15 level comparison with x₀ as undetermined in sign. The dispersion ratios in Table 6 are less sensitive than the levels because both numerator and denominator scale.
+
+### 7.3 Separating the carbon price from the fuel price
+
+Table 8. NZ15 allocation vs. no-transition counterfactual when the NZ15 carbon path is replaced while fuel and electricity paths are kept. Contracted allocation (PPA 1.0). Source: `carbon_fuel_split_nz15.csv`.
+
+| Firm | carbon path | μ(L) | ES₉₀(x) | ES₉₀(x₀) | ES ratio | D ratio |
+|---|---|---|---|---|---|---|
+| POSCO | NZE (canonical) | 30,428 | 593,922 | 750,469 | 0.79 | 0.66 |
+| POSCO | B20 path | 136,473 | 587,857 | 300,285 | 1.96 | 1.72 |
+| POSCO | zero | 181,110 | 587,191 | 151,057 | 3.89 | 3.45 |
+| NSC | NZE | 74,946 | 642,132 | 734,443 | 0.87 | 0.69 |
+| NSC | B20 path | 173,019 | 642,901 | 329,762 | 1.95 | 1.60 |
+| LOTTE | NZE | 2,964 | 20,799 | 26,247 | 0.79 | 0.49 |
+| LOTTE | B20 path | 5,463 | 20,676 | 18,099 | 1.14 | 0.74 |
+| MCI | NZE | 2,551 | 10,705 | 13,141 | 0.81 | 0.42 |
+| MCI | B20 path | 3,973 | 10,774 | 8,075 | 1.33 | 0.74 |
+
+The allocation's own tail barely moves when the carbon path changes (a compliant plan on the net-trade basis pays almost no carbon); the counterfactual's tail collapses. Every Table 6 level ratio below one under NZ15 is therefore the NZE carbon price applied to the counterfactual's residual emissions net of a shrinking allocation, and the expected transition cost rises four- to six-fold for steel when that price is removed. Two conclusions follow and the paper states both. The case for the transition is a case about the carbon price and the budget it enforces; it is not a case about energy-cost insurance, and the paper's earlier framing of "preparedness against energy cost" is not supported on the level basis. And the contract's effect on *dispersion* survives for petrochemicals whatever the carbon path (D ratio 0.74 with B20 carbon) but not for steel (1.6–1.7), because the contracted steel allocation still carries more coal-plus-electricity dispersion than an unconverted blast furnace.
+
+### 7.4 Limitations
+
+*Inputs.* Facility portfolios are estimated from public disclosures, not measured; they are partial portfolios, confidential, and not reproducible outside the research team. Production is held fixed to 2050 while both petrochemical firms are in announced restructuring (MOTIE's December 2025 NCC restructuring; the Mitsui–Idemitsu Chiba integration) — for them the first capital decision in 2026 is consolidation, which this menu does not contain. The technology set excludes CCUS by design, which removes Nippon Steel's disclosed route; POSCO is assigned both H₂-DRI and HyREX on a timetable earlier than its demonstration schedule; reinvestment windows are used in the schedule generator but cannot be shown because the campaign dates are confidential.
+
+*Prices.* Electricity volatility is calibrated on wholesale series (KPX SMP, JEPX). Korean industrial customers buy under KEPCO's regulated tariff and Japanese ones under retail contracts with lagged fuel-cost adjustment, both smoother than the wholesale price; the electricity tail reported here is an upper bound for a tariff customer, and the "relocation of exposure" result is correspondingly an upper bound. Volatilities and correlations rest on 10–15 annual observations that span the 2022 gas shock and, for KAU, a market launch, collapse and recovery; no confidence intervals are reported. Hydrogen is priced structurally (52 kWh/kg, a fixed electrolyser cost with no decline and an implicit capacity factor), whereas both governments plan on imported hydrogen; the constant's provenance is not documented in the register. Construction cost is deterministic, so the first-of-a-kind overrun risk practitioners weigh most is absent, and the EPC contract is inert.
+
+*Carbon.* The free-allocation rule A = firm budget path is a proxy; K-ETS phase 4 allocates by product benchmark with a rising auction share and GX-ETS by target with a price corridor. The rule makes a compliant firm a net seller in years it beats its path, gives the counterfactual a widening net obligation, and drives Table 6 (§7.3). K-ETS also covers indirect emissions from purchased electricity [확인 필요 — phase-4 treatment], which the Scope-1 budget used here does not; grid-based electrolysis would add an obligation the model does not book, and a renewable PPA would then change feasibility, not only cost, weakening the factorisation A = Z × H for Korean cases.
+
+*Contracts.* A fixed-price contract on 100 % of added load for 24 years does not exist in either market; Korean direct and third-party PPAs are pay-as-produced renewable contracts with network charges and levies, of roughly 20-year tenor, and firming a baseload DRI or e-cracker load requires several times the nameplate plus residual spot purchases. The premium is an assumption; π scales with it (row e). The hedge menu contains no coal or LNG instruments, so "contract the electricity" is efficient partly because it is the only contract offered.
+
+*Method.* The generated menu contains one distinct steel schedule per firm; the timing ladder (§5.3) perturbs it by moving all adoption years together, which ignores campaign life, and compares within a 2027–2050 window without a terminal treatment of post-2050 exposure, so "earlier raises the tail" is a within-window statement. The λ-selection over a discrete set is a threshold rule; λ is not grounded in a cost of external finance. ⑤ is an EVPI over a finite menu. The frontier is the frontier of evaluated allocations; the ε-grid on the surrogate risk term in E2 did not induce timing variation, and the paper does not claim the true frontier of Z_s.
+
+*Scenarios.* NZ15 and B20 are local interpolations anchored on IEA GEC 2025; the sector pathway is a placeholder for the KAIST GCAM pathway. The NZE anchor lowers fossil prices as it raises carbon prices, so the policy-exposure indicator ④ mixes the two; Table 8 isolates the carbon price for the NZ15 level results but ④ itself is not decomposed.
 
 ## 8. Conclusion [R7]
 
@@ -319,6 +367,6 @@ Discount rate (2.4 / 3.5 / 5 %), GBM vs log-OU (ES level −32 to −38 %, POSCO
 - Vogl, V., Olsson, O., Nykvist, B., 2021. Phasing out the blast furnace to meet global climate targets. *Joule* 5(10), 2646–2662.
 - Kampmann et al., 2026; Ostrovnaya et al., 2026 — cited in manuscript v2.32; not verified this round. [확인 필요]
 
-## Reproducibility [R6]
+## Reproducibility
 
-Repository `PLANiT-Institute/cap_finance`; canonical run `tmp/research_case_v2_3` (manifest hashes); `config.yaml`; this paper's tables are regenerated by `paper/cap_pathway/data/*.csv`.
+Repository `PLANiT-Institute/cap_finance` (public; facility-level inputs excluded). Canonical run: `tmp/research_case_v2_3/run`, configuration `config.yaml` (price_factor_set v2, hedge_basis incremental, frontier_axes [mean, es_abs], carbon net_trade, h2_price_source structural, discount 0.024), seed 20260806, N = 10,000. Manifest `run_manifest.json` records SHA-256 of every stage output; the ones this paper's tables rest on: `e2/plan_index.csv` 97157a4f…, `e3/price_sims.parquet` 2267e521…, `e5/frontier_points.csv` 16f660de…, `e5/metrics_company.csv` 43b1c1a8… (E2 finished 2026-09-11 00:22 UTC; E5 re-run 03:01 UTC after the policy-wedge and decomposition fixes). Derived tables in `paper/cap_pathway/data/`: `allocation_table_v2_3.csv` ccedd55f…, `timing_ladder_results.csv` 60721e50…, `abs_basis_stats_v2_3.csv` 74fd77b5…, `carbon_fuel_split_nz15.csv` 500f0581…, `preparedness_v2_3.csv` 4aab2d16…. The timing ladder is an E5-only re-evaluation of 32 constructed plan files in a copy of the canonical run (`runs/v2_3_ladder`); the absolute-basis decomposition and the carbon split are direct `simulate_cost` evaluations on the canonical shocks. Sensitivity rows a–d of Table 7 come from `tmp/research_case_v2_2_sensitivity/{v2_2_ou, v2_2_r035, v2_2_rf24}` and the v2.0/v2.1/v2.2 runs listed in the methodology changelog.
