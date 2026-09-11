@@ -108,3 +108,44 @@ def test_historical_corporate_snapshot_preserves_risk_definitions():
     assert len({x['base_plan_id'] for x in r['candidates']})==45
     assert all(x['tcar']==pytest.approx(x['p90']-x['p50']) for x in r['candidates'])
     assert all(not x['decision_eligible'] for x in r['candidates'] if x['sampled_statewise_dominated'])
+
+
+# ---- L7 (2026-09-11): publication consistency contracts -------------------------
+def _research():
+    return json.loads((PLATFORM/'src/lib/research.json').read_text())
+
+def _versions(r):
+    out={'canonical':r}
+    for k in ('v22','v21','v2','v1'):
+        if k in r: out[k]=r[k]
+    return out
+
+def test_no_sampled_dominated_candidate_is_flagged_on_any_frontier():
+    """B3: a candidate excluded by sampled statewise dominance can never carry a frontier flag
+    (this was violated by LOTTE NZ15 P0001.c06 in the 2026-09-05 snapshot)."""
+    for name,v in _versions(_research()).items():
+        flags=[k for k in v['candidates'][0] if k.startswith('on_') and k.endswith('_frontier')]
+        bad=[(c['plan_id'],f) for c in v['candidates'] if c.get('sampled_statewise_dominated') for f in flags if c.get(f)]
+        assert not bad, f'{name}: dominated-but-frontier {bad[:5]}'
+
+def test_public_csv_matches_canonical_snapshot():
+    r=_research()
+    import csv
+    rows=list(csv.DictReader((PLATFORM/'public/data/company-candidates.csv').open()))
+    assert len(rows)==len(r['candidates'])==r['metadata']['candidate_count']
+    assert {x['plan_id'] for x in rows}=={c['plan_id'] for c in r['candidates']}
+
+def test_catalog_hint_never_exceeds_api_cap():
+    cat=json.loads((PLATFORM/'public/data/catalog.json').read_text())
+    for model,spec in cat['models'].items():
+        for field in spec['fields']:
+            if field[0]=='paths':
+                import re
+                nums=[int(n.replace(',','')) for n in re.findall(r'\d[\d,]*',field[-1])]
+                assert nums and max(n for n in nums if n>=2 and n<=100000)<=10000, f'{model}: paths hint {field[-1]} exceeds API cap 10,000'
+
+def test_each_version_declares_its_convention():
+    for name,v in _versions(_research()).items():
+        m=v['metadata']
+        for key in ('hedge_basis','frontier_axes','carbon_included','scenario_status','result_sha256'):
+            assert key in m, f'{name} metadata lacks {key}'

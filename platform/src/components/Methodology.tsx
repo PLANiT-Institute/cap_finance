@@ -1,6 +1,6 @@
 'use client';
 export default function Methodology({onNavigate}:{onNavigate:(id:string)=>void}){return <>
- <div className="section-heading"><div><span className="eyebrow">04 / MODEL & INTERPRETATION</span><h1>전환비용 모형</h1><p>분석 단위, 생산·배출 제약, 현금흐름 산식과 위험지표를 정의합니다.</p></div><span className="status">방법론과 적용 범위</span></div>
+ <div className="section-heading"><div><span className="eyebrow">03 / MODEL & INTERPRETATION</span><h1>전환비용 모형</h1><p>분석 단위, 생산·배출 제약, 현금흐름 산식과 위험지표를 정의합니다.</p></div><span className="status">방법론과 적용 범위</span></div>
  <section className="method-intro"><div><span className="eyebrow">ANALYTICAL SCOPE</span><h2>분석 단위와 비교 조건</h2><p>기업 내 설비 전환 일정과 조달·건설 계약을 비교합니다. 생산·배출·회계 조건을 고정하고, 모든 후보와 기준선에 동일한 가격경로를 적용합니다.</p></div><div className="formula-card"><span>경로 ω에서의 증분 현금비용</span><strong>L(ω) = PV[C전환(ω) − C기준(ω)]</strong><p>전환과 기준선에 같은 가격경로를 적용하고, 연도별 현금비용 차이를 할인해 합합니다. 음수는 해당 범위에서 기준선보다 비용이 작다는 뜻입니다.</p><small>기업 후보: 2027–2050 · 무전환 기준선 · 할인 증분 현금비용</small></div></section>
  <section className="panel"><div className="panel-head"><div><h2>기업 후보 평가 절차</h2><p>D1–D7 입력을 사용한 제약 설정, 후보 생성, 가격경로 생성, 현금비용 평가와 후보 선택 절차입니다.</p></div><button className="text-button" onClick={()=>onNavigate('data')}>데이터 구조 열기 →</button></div><div className="pipeline">{[
  ['E1','조건 설정','생산·기술·배출 제약','설비 정보와 생산·배출 기초값에 감축예산, 기술 가용 시점과 전환 가능 조건을 연결합니다.'],
