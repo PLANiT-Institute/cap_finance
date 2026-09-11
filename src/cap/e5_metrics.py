@@ -227,6 +227,10 @@ def run(cfg: C.Config):
         raise ValueError("hedge_basis must be total_purchase (v1) or incremental (v2)")
     # decomposition channels: every simulated factor that actually varies
     channels = [k for k in shocks if k != "electrolyzer" and float(np.var(shocks[k])) > 0]
+    if str(cfg.get("price_factor_set", "v1")).lower() == "v2" and "h2" in channels:
+        # v2: h2 shock is a deterministic function of the elec shock (E3); it is
+        # not a separate source of variance, so it is folded into 'elec'.
+        channels.remove("h2")
     frontier_rows, gap_rows, decomp_rows, metric_rows, path_rows, dist_rows, lam_rows = \
         [], [], [], [], [], [], []
     wedge_store: dict[str, list] = {}  # company -> [(vid, scen_origin, sched_df, ppa, epc)], every scenario's frontier
@@ -440,9 +444,14 @@ def run(cfg: C.Config):
             carb_base = _carbon_npv(base_prof, px, disc_v, auc_v)
             bud = (budgets.query("company_id == @company and scenario == @scen")
                    .set_index("year").company_budget_tco2.reindex(years).to_numpy())
+            hedge_ref_w = (base_prof.grid_mwh + base_prof.re_mwh) if hedge_basis == "incremental" else None
             for vid, scen_origin, sched_df, ppa_v, epc_v in ref:
-                prof = replace(build_profile(sched_df, fac, d3, px, years, cfg),
-                               ppa=ppa_v, epc=epc_v, ccfd=0)
+                # The plan is revalued under the EVALUATING scenario: prices, baseline
+                # AND free allocation (company_budget_path follows `scenario`), and the
+                # same incremental hedge reference as the main loop. Using the origin
+                # scenario's allocation understated cross-scenario regret (re-audit N1/N2).
+                prof = replace(build_profile(sched_df.assign(scenario=scen), fac, d3, px, years, cfg),
+                               ppa=ppa_v, epc=epc_v, ccfd=0, hedge_reference_mwh=hedge_ref_w)
                 sims = simulate_cost(prof, px, shocks, sp0, cfg)
                 inc_tot = sims - base_sims
                 inc = (inc_tot - (_carbon_npv(prof, px, disc_v, auc_v) - carb_base)

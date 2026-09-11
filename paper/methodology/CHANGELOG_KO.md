@@ -1,5 +1,9 @@
 # TCaR 방법론 원고 변경 이력
 
+## v2.1–v2.3 · 2026-09-11 · 8회 재검토 루프 (별도 문서 [TCaR_METHOD_V2_KO.md](TCaR_METHOD_V2_KO.md) §4b–4e)
+
+L1 문헌·L2 범위·L3 시나리오 데이터·L4 데이터 검증·L5 이론·L6 코드·L7 Vercel·L8 재감사(`docs/research_cycles/2026-09-10-audit-loop/`). v2.1 순거래 탄소 회계 p·(E−A), v2.2 구조적 수소가·KAU 2026 앵커, v2.3 실질 무위험 2.4%로 E2 재생성(27개 일정·270개 후보, 정본). 명제 8(ES 합산 상한) 추가, ΔES 해석 주의(평균 이동+산포), OU 강건성 32–38%. L8: 정책 격차 재평가 규약(평가 시나리오 할당·헤지 기준)과 v2 분산분해(수소→전력 합산) 수정, 경계·선택 불변. 배출 방향 확장은 미적용. 남은 과제는 FINAL_REPORT.md.
+
 ## v2.0 · 2026-09-10 · 외부감사 치명 항목 수정 (별도 문서 [TCaR_METHOD_V2_KO.md](TCaR_METHOD_V2_KO.md))
 
 외부감사(`docs/research_cycles/2026-09-10-investment-review/EXTERNAL_AUDIT_2026-09-10.md`) A1–A3·B3를 코드로 수정하고 같은 45개 일정을 재평가했다. 정본 경계 좌표를 (평균 증분비용, 계획 자체 ES₉₀)으로, PPA 적용 물량을 전환 증분 전력으로, 확률 요인을 검증 계열(KPX SMP·JEPX, KAU, WB CMO 석탄·LNG)로 바꿨다. v1 원고(v2.33)와 결과·설정(`config_legacy.yaml`)은 보존한다.

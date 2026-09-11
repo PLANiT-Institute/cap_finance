@@ -104,8 +104,11 @@ def test_served_default_results_are_from_current_engine():
 
 def test_historical_corporate_snapshot_preserves_risk_definitions():
     r=json.loads((PLATFORM/'src/lib/research.json').read_text())
-    assert r['metadata']['candidate_count']==len(r['candidates'])==450
-    assert len({x['base_plan_id'] for x in r['candidates']})==45
+    # counts are version-specific (v1: 450/45; v2.3: 270/27) — assert self-consistency, not a literal
+    assert r['metadata']['candidate_count']==len(r['candidates'])
+    assert r['metadata']['schedule_count']==len({x['base_plan_id'] for x in r['candidates']})
+    assert r['v1']['metadata']['candidate_count']==len(r['v1']['candidates'])==450
+    assert len({x['base_plan_id'] for x in r['v1']['candidates']})==45
     assert all(x['tcar']==pytest.approx(x['p90']-x['p50']) for x in r['candidates'])
     assert all(not x['decision_eligible'] for x in r['candidates'] if x['sampled_statewise_dominated'])
 
@@ -116,7 +119,7 @@ def _research():
 
 def _versions(r):
     out={'canonical':r}
-    for k in ('v22','v21','v2','v1'):
+    for k in ('v22','v21','v2','v1'):  # canonical = v2.3 (top level)
         if k in r: out[k]=r[k]
     return out
 
@@ -145,8 +148,11 @@ def test_catalog_hint_never_exceeds_api_cap():
         for field in spec['fields']:
             if field[0]=='paths':
                 import re
-                nums=[int(n.replace(',','')) for n in re.findall(r'\d[\d,]*',field[-1])]
-                assert nums and max(n for n in nums if n>=2 and n<=100000)<=10000, f'{model}: paths hint {field[-1]} exceeds API cap 10,000'
+                # the hint may cite the LOCAL cap (50,000) in a parenthetical; the web cap is the
+                # first range in the text ("2–10,000"), so only that range is checked
+                first=re.search(r'(\d[\d,]*)\s*[–-]\s*(\d[\d,]*)',field[-1])
+                assert first, f'{model}: paths hint has no range: {field[-1]}'
+                assert int(first.group(2).replace(',',''))<=10000, f'{model}: paths hint {field[-1]} exceeds API cap 10,000'
 
 def test_each_version_declares_its_convention():
     for name,v in _versions(_research()).items():

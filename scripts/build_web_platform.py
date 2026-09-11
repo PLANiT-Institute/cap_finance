@@ -82,12 +82,12 @@ def build():
     v2_run=ROOT/'tmp/research_case_v2_2026-09-10/run'
     _, v2=snapshot(v2_run, v2_cols, '2026-09-11', 'v2.0 · 총의무 p·E (보존)', v2_meta(v2_run,'gross_obligation_proxy: 무상할당 0, 총의무 p·E',dict(mv='v2.0-gross')))
     v21_run=ROOT/'tmp/research_case_v2_1_net/run'
-    candidates, v21=snapshot(v21_run, v2_cols, '2026-09-11', 'v2.1 · 순거래 p·(E−A) (정본)', v2_meta(v21_run,
+    candidates, v21=snapshot(v21_run, v2_cols, '2026-09-11', 'v2.1 · 순거래 p·(E−A) (보존)', v2_meta(v21_run,
         'net_trade: A = 시나리오별 E1 기업 예산경로 — K-ETS 4기 철강·석유화학 100% 무상할당(탄소누출업종, 2차 인용)·GX-ETS §34 목표기반 무상할당(법조문 확인)에 근거한 규칙 대용치; 업체별 공표 할당량 아님',
         dict(mv='v2.1-net-allocation')))
     candidates.to_csv(PUBLIC/'company-candidates.csv',index=False)
     v22_run=ROOT/'tmp/research_case_v2_2_struct/run'
-    candidates, v22=snapshot(v22_run, v2_cols, '2026-09-11', 'v2.2 · 검증 입력 정합 (정본)', v2_meta(v22_run,
+    candidates, v22=snapshot(v22_run, v2_cols, '2026-09-11', 'v2.2 · 검증 입력 정합 (보존)', v2_meta(v22_run,
         'net_trade: A = 시나리오별 E1 기업 예산경로 (v2.1과 동일 규칙)',
         dict(mv='v2.2-verified-inputs', h2_price_source='structural: 전력 중심가격×52 kWh/kg + 전해조 상각(IEA GHR 2024 앵커 2,916,000 KRW/kW, 하락률 0 — 검증 관측만 사용); D2b의 정책목표 3,500원/kg(MOTIE 2021)·JP 전략가는 v2.1에 보존',
              co2_near_term_anchor='2026 KAU 장내 거래량가중 연평균 21,073원(KRX, 1/2–9/10)을 한국 두 시나리오의 2026 앵커로 추가',
@@ -98,7 +98,8 @@ def build():
         'net_trade: A = 시나리오별 E1 기업 예산경로 (v2.1과 동일 규칙)',
         dict(mv='v2.3-regenerated-menu', discount_rate='2.4% 실질 (국고채 10년 4.40% − 기대물가 ~2%, 2026-09-11)',
              h2_price_source='structural (v2.2와 동일)', co2_near_term_anchor='KAU 2026 21,073원 (v2.2와 동일)',
-             e2='v2.2 가격·순거래·2.4%로 E1→E2 재생성 + 배출 방향 확장(expand_candidates_inplace.py); MIP gap 실제값 plan_index에 기록',
+             e1_e2_source='v2.2 가격·순거래·2.4% 할인율로 E1→E2 재생성 (27개 일정 / 270개 평가 후보; 배출 방향 확장은 미적용 — 실행 실패)',
+             e2='MIP gap 실제값을 plan_index에 기록(NaN = CBC 증명 최적; 하한값은 PuLP 상수항 제외 — 단위 불일치, 참고용)',
              scenario_labels={'NZ15':'NZE-anchored (IEA NZE 선진국 탄소가격·연료가격)','B20':'STEPS-anchored (IEA 공표정책 — 2°C 정합 아님)'})))
     candidates.to_csv(PUBLIC/'company-candidates.csv',index=False)
     write_json(DEST/'src/lib/research.json',dict(version='v2.3',**v23,v22=v22,v21=v21,v2=v2,v1=v1))

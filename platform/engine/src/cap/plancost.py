@@ -313,7 +313,12 @@ def simulate_cost(p: PlanProfile, px: dict[str, np.ndarray], shocks: dict[str, n
     N = shocks["elec"].shape[0]
 
     e_shock = np.ones_like(shocks["elec"]) if freeze == "elec" else shocks["elec"]
-    h_shock = np.ones_like(shocks["h2"]) if freeze == "h2" else shocks["h2"]
+    # v2 (price_factor_set: v2): the hydrogen shock is derived structurally from the
+    # electricity shock (E3), so freezing 'elec' must also freeze h2 — otherwise the
+    # decomposition counts the same innovation twice (re-audit 2026-09-11, code N3).
+    h2_follows_elec = str(cfg.get("price_factor_set", "v1")).lower() == "v2"
+    h_shock = (np.ones_like(shocks["h2"]) if freeze == "h2" or (freeze == "elec" and h2_follows_elec)
+               else shocks["h2"])
 
     grid_sim = px["elec"][None, :] * e_shock                            # (N,T) KRW/MWh
     re_sim = px["re"][None, :] * e_shock                                # uncontracted 재생 조달은 시장 연동

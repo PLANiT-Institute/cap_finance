@@ -74,7 +74,7 @@ export default function Introduction({onNavigate}:{onNavigate:(tab:string)=>void
     </figure>
     <aside className="intro-reading"><p className="intro-section-index">후보 구성</p><h2>투자 일정·계약별<br/>비용과 ES90</h2><div className="intro-chapters">{chapters.map((c,i)=><button className={shown===i?'active':''} key={c.title} aria-pressed={shown===i} onClick={()=>{setPlaying(false);setChapter(i);}}><span>0{i+1}</span><div><strong>{c.title}</strong><small>{c.text}</small></div></button>)}</div>{!reducedMotion&&<button className="intro-replay" onClick={()=>{if(playing)setPlaying(false);else{setChapter(0);setReplay(n=>n+1);setPlaying(true);}}}>{playing?'일시정지 Ⅱ':'다시 보기 ↺'}</button>}</aside>
    </div>
-   <div className="intro-caption"><p>{research.metadata.information_date.replaceAll('-','.')} 기업 연구 결과 (v2) · 누적 Scope 1 예산 · {points.length}개 후보 · 눈금 k = 1천<br/>증분 비용에는 시나리오 탄소지출(총의무 p·E, 무상할당 미반영)이 포함됩니다. POSCO·NZ15의 음의 평균은 이 탄소 회피 항목 때문이며, 탄소가격을 0으로 두면 양수입니다. 시나리오 NZ15·B20은 로컬 EST_v0 대용치입니다. 같은 좌표에 여러 후보가 겹칠 수 있으며, 점 사이의 계획은 보간하지 않습니다.</p><span>조건부 모형 결과</span></div>
+   <div className="intro-caption"><p>{research.metadata.information_date.replaceAll('-','.')} 기업 연구 결과 ({research.version}) · 누적 Scope 1 예산 · {points.length}개 후보 · 눈금 k = 1천<br/>증분 비용에는 순거래 탄소지출 p·(E−A)(A = 시나리오별 기업 예산경로), 구조적 수소가격(전력×52 kWh/kg + 전해조 상각), 실질 무위험 할인율 2.4%가 반영됩니다. 위험 축은 계획 자체 비용분포의 ES₉₀(절대)이며, 헤지는 전환으로 추가된 전력에만 적용됩니다. 시나리오 NZ15(NZE 앵커)·B20(STEPS 앵커)은 로컬 EST_v0 대용치입니다. 같은 좌표에 여러 후보가 겹칠 수 있으며, 점 사이의 계획은 보간하지 않습니다.</p><span>조건부 모형 결과</span></div>
   </section>
 
   <section className="intro-questions" aria-labelledby="questions-title">
