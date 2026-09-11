@@ -152,3 +152,34 @@ Open for R7.
 2. Add a per-table sentence forbidding cross-firm reading (R1 referee point 16).
 3. Renumber tables/figures; check every "§x.y" cross-reference.
 4. Korean full text.
+
+## R7 · 08:12 KST · final pass and delivery
+
+Critique of R6.
+- Highlights/Abstract were the R1 text and contradicted R5–R6 on two points ("cheapest item in the allocation", "preparedness"). Rewritten.
+- §6.2 carried a duplicated "Second, …" paragraph from the R5 edit; §6.4 "residual tail is carbon" and §6.1 ⑤ "lower bound on option value" contradicted the corrected §5.4/§2.5. Fixed.
+- §1 intro and §2.5 ③ still defined TCaR on the incremental cost while §2.2 had moved it to C(x). Fixed.
+- §1.2 contributions still claimed the indicator set; re-pointed to the joint frontier, the exposure-relocation result and the carbon-split finding (referee R1 point 15).
+- Per-table cross-firm caveat added at the head of §5 (referee point 16); Kampmann/Ostrovnaya removed from references (never cited); Fig. 2 now referenced; §3 heading shortened.
+
+Delivered.
+- `CAP_PATHWAY_PAPER_EN.md` v0.7 (~9,500 words), `CAP_PATHWAY_PAPER_KO.md` (full Korean text, same tables and numbers), `data/*.csv` (7 files), `figures/fig1–3`, this log.
+
+## Eight-round summary (R0–R7, 01:10–08:40 KST, 2026-09-12)
+
+What the loop produced: one paper, in two languages, whose every table cites a file in the canonical run or a derived table with a hash; a round log recording each round's critique of the previous one; three referee reports and an 18-item disposition table.
+
+What changed in the paper's claims over the loop, honestly:
+- R0–R2 framed the result as "the risk-efficient allocation adds contracts, not earlier equipment". R3 tested it (timing ladder) and it held as a within-window statement.
+- R3–R4 read the decomposition as "steel NZ15 tail is carbon". R5 (referee) showed the decomposition was on the incremental basis; recomputed on the absolute basis the tail is electricity + coal everywhere, and the incremental-basis carbon share is carbon-price-collapse risk on the abatement's value. The paper now reports both.
+- R2 asserted ES concave in the hedge share; R3 found linear; R5 found mildly convex (as coherence requires) — final text says convex, nearly linear, threshold rule.
+- R4 framed "prepared firm = contracted transition under NZ15 has lower tail than standing still". R6 ran the carbon/fuel split and found this is entirely the carbon price on the counterfactual. Final text: the case for transition is the carbon price and the compliance budget; energy-cost insurance is procurement; for steel even that is not enough unless carbon is expensive.
+- The user's original hypothesis — "faster transition prepares the firm against energy cost" — is not supported by this model in its naive form and only partly in its refined form. The paper says so.
+
+What the paper still cannot do (all in §7.4): tariff-basis electricity volatility; benchmark allocation rule and Korean indirect emissions; observed PPA premia and tenor; per-facility timing menu; terminal value; disclosed-plan gaps; GCAM pathway; CIs on σ and ρ; OU as base case.
+
+Handover to the user:
+1. Repository: 16 commits ahead of origin on the device (this loop: 7a41cc4 … R7). `git push origin main` when ready.
+2. Read `CAP_PATHWAY_PAPER_KO.md` first; the EN file is the submission draft.
+3. Decide on the four "next version" items in §8 in that order; the first (tariff-basis σ_E) and third (observed PPA terms) need data you can obtain, the second (benchmark A + indirect emissions) needs a rule change in E1, the fourth (per-facility timing) needs an E2 change.
+4. Before sending to Julian or anyone: the referee reports in this log are the questions they will ask.
