@@ -79,3 +79,24 @@ Open for R4–R6.
 2. Table 1 construction column for B20 rows [R6].
 3. The ladder shifted *all* adoption years together; a per-facility ladder (only the H₂-DRI unit moved) would be the sharper test. Note as limitation unless time permits in R6.
 4. Contract linearity means the λ-selection is a threshold rule; R4 must present π vs plausible λ ranges and market hedge costs, not "the frontier chooses PPA 1.0".
+
+## R4 · 05:12 KST · investor meaning and the case for transition
+
+Critique of R3.
+- R3 wrote "the contract removes most of what earlier adoption adds" from the ppa=1 rows; correct in direction but the text implied a general law. Kept, with "roughly one third the size" as the measured statement.
+- R3's ladder shifted all adoption years; that includes the efficiency retrofits, which are cheap and early anyway. The steel result is therefore driven by moving the H₂-DRI unit. Fine for the claim, but the limitation is now stated in §7 [R6 to write].
+- R3 Table 3 reported budget "violated" for +3/+6 but did not say by how much; the data file has cum_emis vs budget — R6 should add the overshoot %.
+- The wedge table in R0–R3 used one number per direction. The `budget_gap_tco2` column is the *annual* overshoot sum, so it is positive even for the own-scenario plan (cumulative met, annual not). R4 discovered this and now reports own-plan overshoot alongside; the paper text says what the column is.
+- New finding surfaced while writing 6.2: the B20 allocation evaluated under NZ15 is *cheaper* than under B20 because the NZE anchor lowers fossil prices. So ④ mixes carbon stringency with fossil-price collapse. Stated as a caveat; R6 must run the NZ15-with-B20-carbon-price split.
+
+What R4 added.
+- §6.1 investor reading of ①–⑤ with the POSCO affordability ratios (only firm with a verified reference), cost per tonne, the tail composition → instrument mapping, π's dependence on the premium, and the two-sided policy exposure table (Table 5).
+- §6.2 the conditional case for transition, with Table 6 (preparedness): contracted allocation ES₉₀ = 0.79–0.87 × no-transition counterfactual under NZ15 for all four firms; > 1 under B20. "Prepared" defined operationally.
+- §6.3 disclosed-plan benchmark: honestly reported as not computed (gap.csv empty; linear-path generator not run for v2.3), with the interpretation that would apply.
+- §6.4 implications for firms, investors, policy (SMP–LNG decoupling; allocation certainty).
+
+Open for R5–R7.
+1. Run NZ15 with B20 carbon path (or carbon = 0) to separate fuel-price from carbon-price effects in Table 6 — R6 (sensitivity run exists in tmp/research_case_v2_2_sensitivity? check; else E5-only rerun with carbon price scaled).
+2. π at premium 15 %/25 % — R6.
+3. Verify PPA-market statements (Korean direct PPA network charges/levies; Japanese corporate PPA market) with sources — R5.
+4. Consider running the linear disclosed-path benchmark (`src/cap/disclosed_path.py`) for one firm if time allows — R6; else keep §6.3 as is.

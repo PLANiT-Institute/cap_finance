@@ -1,6 +1,6 @@
 # Capital allocation pathways under transition uncertainty: how much, when, and in what form should heavy industry invest to meet a net-zero pathway?
 
-**Working paper · round R3 · 2026-09-12 (KST) · target: Energy Policy**
+**Working paper · round R4 · 2026-09-12 (KST) · target: Energy Policy**
 Jinsu Park (PLANiT Institute)
 
 > Status line (maintained every round): R0 = skeleton, allocation results from the canonical run `runs/v2_3` (r = 2.4 % real, net-trade carbon, structural hydrogen, verified price factors). Sections marked [R1]…[R7] are to be written or rewritten in that round. Every number cites its source file. Nothing here is final.
@@ -222,9 +222,67 @@ Petrochemical tails are electricity; that is why the contract removes 56–64 % 
 
 ES₉₀ falls linearly in the hedged share h for every schedule (Fig. 3, `figures/fig3_contract_grid.png`): for LOTTE · B20, 50,644 → 43,396 → 36,184 → 29,049 → 22,147 at h = 0, 0.25, 0.5, 0.75, 1. The premium is linear in h by construction, so the price of tail removal π is constant along the contract axis and the efficient contract is all-or-nothing (§2.4). The frontier's contract points are therefore the two ends, h = 0 (λ below π) and h = 1 (λ above π); intermediate shares appear only as ties.
 
-## 6. Discussion — what an investor does with this [R4]
+## 6. Discussion — what the allocation pathway is for
 
-[R4.] Funding timing (①); the contract as the cheapest line in the allocation (Δμ/ΔES); when early conversion reduces exposure and when it only relocates it (SMP–LNG linkage; horizon truncation); policy exposure as the non-hedgeable item; comparison with disclosed plans (linear declared-path benchmark, methodology v2.32 §3.5).
+### 6.1 Reading the price tag as an investor
+
+*① How much, when — the funding question.* The allocation fixes the maturity structure of the financing need. For POSCO the construction outlay peaks at 4,777 bn KRW in 2032 under NZ15 and at 3,852 bn in 2043 under B20 (Table 1, Fig. 1); against the latest verified annual EBITDA of 4,230 bn (2025), the peak-year outlay is 0.9–1.1 × EBITDA and the total over the horizon 5.9–6.6 × EBITDA, 71–80 % of one year's revenue (`e5/affordability.csv`; only POSCO has a verified, entity-consistent earnings reference — the other three firms' ratios are deliberately not computed). The stringent pathway does not change *what* POSCO builds; it moves 25 tn KRW of construction eleven years earlier. That is the number a lender prices: the same technology, a decade shorter runway.
+
+*② Expected cost per tonne.* The mean-minimising allocation abates at 85–196 thousand KRW per discounted tCO₂ (`cost_per_tco2_thkrw`): 85–90 for the steel and petrochemical NZ15 cases where the carbon price does most of the work, 120–196 under B20 where it does not. These are conditional on the scenario's central prices and on the net-trade carbon basis.
+
+*③ What the tail is made of — which instrument.* Table 4 tells the treasurer which exposure to hedge. Petrochemical tails are electricity, so a fixed-price procurement contract on the added load removes 56–64 % of ES₉₀ (Table 2). Steel tails under NZ15 are carbon (48–58 %), which a power contract does not touch; the remaining steel tail is a policy exposure and belongs in ④, not in a hedging programme.
+
+*The price of tail removal.* On the evaluated grid π = 0.6–0.9 jeon per won of ES₉₀ (Table 2). Two things follow. First, at the research premium of 8 % the contract is efficient for any risk weight λ above about 0.01, i.e. for any decision-maker who weighs the 90 % tail at all. Second, the number is a property of the premium, not a finding about markets: π scales with the premium, so the reader should replace 8 % with the PPA premium actually offered (in Korea, direct PPAs carry network charges and levies on top of the contract price; in Japan, corporate PPAs are traded in a liberalised retail market) and re-read Table 2. §7 gives π at 15 % and 25 %.
+
+*④ Policy exposure — both directions.* Table 5. Holding one scenario's allocation when the other materialises. Source: `runs/v2_3/run/e5/policy_wedge.csv` (`.c00` variants; cost incl. carbon, evaluated with the realised scenario's prices, allowances and hedge reference; the emission gap is the sum of *annual* overshoots against the realised scenario's path, so it is positive even for the own-scenario plan when the cumulative budget is met by a non-monotone path).
+
+| Firm | Holding the NZ15 allocation in a B20 world: regret (bn) | Holding the B20 allocation in an NZ15 world: cost saving (bn) | … but annual overshoot vs NZ15 path (Mt, vs own-plan overshoot) |
+|---|---|---|---|
+| POSCO | 88,276 − 52,147 = +36,129 | 18,616 − 48,336 = −29,720 | 193.6 vs 105.6 |
+| NSC | 122,303 − 66,621 = +55,682 | 42,704 − 80,602 = −37,898 | 241.6 vs 104.6 |
+| LOTTE | 1,523 − 1,524 = 0 | 978 − 980 = 0 | 5.6 vs 6.4 |
+| MCI | 1,231 − 678 = +553 | 502 − 800 = −298 | 4.2 vs 1.6 |
+
+Read carefully, this table is asymmetric in kind, not just in size. Over-investing (holding the NZ15 allocation when B20 arrives) costs POSCO 36 tn and NSC 56 tn KRW in expected terms — real money, and the reason firms hesitate. Under-investing (holding the B20 allocation when NZ15 arrives) *saves* expected cost, because the NZE-anchored scenario has low fossil prices and the B20 plan burns more fuel; but it leaves an emission overshoot of 88–137 Mt above the firm's own NZ15 plan that no contract can buy back at the modelled carbon prices without violating the cumulative budget. The policy exposure is therefore not one number but a pair: an expected-cost regret in one direction and a compliance gap in the other. For petrochemicals both are small: the conversion is a single dated decision and the two scenarios date it within two years of each other.
+
+*⑤ Flexibility.* The value of re-optimising within the generated menu after prices are known is 46–570 bn for petrochemicals and 291–3,194 bn for NSC (Table 2), a lower bound on option value. It is exactly zero for POSCO because the menu contains one distinct schedule; that is a statement about the menu, not about POSCO's optionality, and it is why the timing ladder was built.
+
+### 6.2 The case for transition, stated conditionally
+
+The paper was asked whether a firm that transitions early is "prepared" against energy cost. The honest answer has three parts, each visible in the tables.
+
+First, *within the price model, earlier equipment does not reduce the tail* (§5.3). Every earlier variant is dominated; the canonical schedule is the earliest budget-binding point. The reason is structural: the transition replaces a coal-and-carbon bill with an electricity-and-hydrogen bill, and in the verified series Korean electricity is the most volatile input because the system marginal price is set by LNG. Electrification relocates exposure; it does not remove it.
+
+Second, *the transition plus fixed-price procurement is the lower-tail position under the stringent scenario, for every firm* (Table 6). Comparing the contracted allocation with the no-transition counterfactual on the same paths, ES₉₀ falls to 79–87 % of the counterfactual under NZ15. Under B20 it does not (104–151 %): with cheap carbon and no shrinking allocation, the incumbent's tail is small and the transition adds electricity exposure to it.
+
+Table 6. ES₉₀ of the allocation relative to the no-transition counterfactual x₀ on the same paths. Source: `paper/cap_pathway/data/preparedness_v2_3.csv` (`es_abs_bnkrw`, `risk_min_risk_bnkrw`, `es_abs_vs_baseline_bnkrw`).
+
+| Firm · scen. | ES₉₀(x₀) | spot allocation / x₀ | contracted allocation / x₀ |
+|---|---|---|---|
+| POSCO · NZ15 | 750,469 | 0.94 | **0.79** |
+| NSC · NZ15 | 734,443 | 1.10 | **0.87** |
+| LOTTE · NZ15 | 26,247 | 1.89 | **0.79** |
+| MCI · NZ15 | 13,141 | 2.23 | **0.81** |
+| POSCO · B20 | 317,582 | 1.60 | 1.38 |
+| NSC · B20 | 319,849 | 1.83 | 1.51 |
+| LOTTE · B20 | 21,305 | 2.38 | 1.04 |
+| MCI · B20 | 9,055 | 2.51 | 1.10 |
+
+Third, therefore, *the case for transition is a case about the policy world, and the case for procurement is a case about the price world.* If the stringent pathway is the world the firm plans for — and the cumulative budget makes it the world the firm must comply with — then the allocation that meets it *and* contracts its added electricity has a lower tail cash cost than standing still, in every firm studied. If the lax world is the planning basis, the transition is a compliance cost with a higher tail, and the only thing that limits the damage is again the contract. In neither world is early equipment by itself a hedge. "Prepared", in this model, means: on the budget-binding schedule, with the added electricity contracted, and with the steel carbon residual recognised as an unhedgeable policy exposure.
+
+Two caveats bound this reading. The no-transition counterfactual violates the budget, so Table 6 compares a compliant allocation with a non-compliant one; it is a statement about cash-cost tails, not a menu of choices. And the NZE anchor lowers fossil prices as it raises carbon prices, so part of the NZ15 result is the fuel price path, not the carbon price; §7 separates them by setting the carbon price to its B20 path within NZ15.
+
+### 6.3 What a disclosed plan would be measured against
+
+The methodology manuscript (v2.32, §3.5, §4.4) defines a model benchmark for a firm's declared net-zero path: the minimum-central-cost schedule that achieves the declared linear emission path with the same technology menu, and the two gaps between the disclosed coordinate and the evaluated set. The canonical run contains no evaluated disclosed plan (`e5/gap.csv` is empty), because no firm's disclosed investment schedule could be mapped to the technology menu with verified resolution, and the linear-path benchmark generator was not run for v2.3. The paper therefore does not report gaps. When it does, the reading of §6.1–6.2 supplies the interpretation: a disclosed plan that lies above the frontier at the same expected cost is, in the words of the original design specification, "energy-price risk the firm is carrying for free" — the risk-gap G_R, positive whenever a cheaper-to-hedge allocation exists at no higher expected cost.
+
+### 6.4 Implications
+
+*For firms.* The allocation decision separates into a schedule decision, which the budget largely dictates, and a procurement decision, which the price model dictates: contract the added electricity if the premium is below the firm's price of tail cost. Treasury should track π, not the PPA share.
+
+*For investors and lenders.* Underwrite the timing (①) and the residual policy exposure (④), not the volatility: the volatility is cheap to remove and the analysis shows by how much. For steel under a stringent pathway, the residual tail is carbon, which argues for instruments that address policy stringency (carbon contracts for difference, allocation certainty) rather than power hedges.
+
+*For policy.* Two levers appear directly in the tables. The electricity price regime: while the system marginal price is LNG-indexed, electrification carries LNG risk into industry and the burden of removing it falls on bilateral contracts; a market design that decouples industrial power prices from the marginal gas plant lowers ES₉₀ for every electrifying firm without a single won of subsidy. And allocation certainty: under NZ15 the steel tail is dominated by the carbon bill on residual emissions net of a shrinking allocation; announcing the allocation path removes a policy exposure the firm cannot hedge in any market.
 
 ## 7. Robustness and limitations [R6]
 
