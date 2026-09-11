@@ -43,3 +43,20 @@ Open problems carried to R2+.
 1. The theory must justify using ES on absolute cost but μ on incremental cost (§2.1 note) — R2.
 2. Timing ladder — R3.
 3. Kampmann/Ostrovnaya/Bataille/Blyth verification — R5.
+
+## R2 · 03:12 KST · model section
+
+Critique of R1.
+- The literature paragraph on real options said policy uncertainty "delays" investment as if settled; Fuss et al. (2008) find delay under price uncertainty but earlier investment can arise under expected tightening. Softened to "can delay … depending on the drift and volatility of the policy price".  [applied in §1.1 wording check — see below]
+- §1.2 claimed "nothing in the reported tail comes from a prior" — true for volatilities/correlations, but the hydrogen structural constant (52 kWh/kg) and electrolyser amortisation *are* assumptions. Sentence kept, qualified in §2.1 by stating the structural formula explicitly.
+- §2.1 (R0) listed objects but never wrote the cost function; the definition of "added electricity" for the hedge was implicit; ④ and ⑤ had no formulas. All now written.
+- R1 left the reference-point issue (μ on L, ES on C) as a note. R2 resolves it in §2.2 with the monotonicity/shift-invariance argument, citing manuscript v2.32 Propositions 1, 6, 7 and v2.x Proposition 8 rather than restating them as new propositions (no numbering collision; this paper states no new propositions).
+
+What R2 added.
+- §2.1 setting with the factorisation A = Z × H (contracts do not change feasibility) — the structural reason equipment and contracts sit on one frontier.
+- §2.2 statistics and reference points; §2.3 frontier, λ-selection, price of tail removal π; §2.4 the two levers and the explicit empirical condition under which earlier adoption lowers ES (variance of the new bill < variance of the old bill on the advanced years) — this is the hypothesis §5.3 must test; §2.5 formal indicator table incl. regret form of ④ and menu-bound form of ⑤; §2.6 discounting.
+
+Open for R3.
+1. Build the timing-ladder variants and test the §2.4 condition directly (compare per-year bill variance pre/post conversion).
+2. §2.4's contract statement "concave in h" is asserted; R3 should verify on the contract grid (ES vs h at 0, 0.25, 0.5, 0.75, 1).
+3. Fill §4 data with sources and the allocation rule for A.

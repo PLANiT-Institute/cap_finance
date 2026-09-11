@@ -1,6 +1,6 @@
 # Capital allocation pathways under transition uncertainty: how much, when, and in what form should heavy industry invest to meet a net-zero pathway?
 
-**Working paper · round R1 · 2026-09-12 (KST) · target: Energy Policy**
+**Working paper · round R2 · 2026-09-12 (KST) · target: Energy Policy**
 Jinsu Park (PLANiT Institute)
 
 > Status line (maintained every round): R0 = skeleton, allocation results from the canonical run `runs/v2_3` (r = 2.4 % real, net-trade carbon, structural hydrogen, verified price factors). Sections marked [R1]…[R7] are to be written or rewritten in that round. Every number cites its source file. Nothing here is final.
@@ -34,7 +34,7 @@ The answer is delivered as a *capital allocation pathway* with a five-line price
 
 Five strands bear on the question; the paper combines pieces that each strand treats separately.
 
-*Investment under climate-policy uncertainty.* The real-options literature established that policy uncertainty delays irreversible abatement investment and that the value of waiting depends on the volatility and mean reversion of the carbon price (Dixit and Pindyck, 1994; Blyth et al., 2007 [확인 필요]; Fuss et al., 2008). Those models optimise the timing of a single representative plant under a stochastic policy price. This paper keeps the policy pathway as a *condition* — two scenarios, no probabilities — and randomises input prices around it; policy stringency enters as indicator ④, the cost of holding one scenario's allocation when the other materialises. The two designs answer different questions: theirs, when to invest given an uncertain carbon price; ours, how to allocate given a pathway the firm has accepted.
+*Investment under climate-policy uncertainty.* The real-options literature established that uncertainty about the carbon price can delay irreversible abatement investment, with the sign and size of the effect depending on the drift, volatility and mean reversion of the policy price (Dixit and Pindyck, 1994; Blyth et al., 2007 [확인 필요]; Fuss et al., 2008). Those models optimise the timing of a single representative plant under a stochastic policy price. This paper keeps the policy pathway as a *condition* — two scenarios, no probabilities — and randomises input prices around it; policy stringency enters as indicator ④, the cost of holding one scenario's allocation when the other materialises. The two designs answer different questions: theirs, when to invest given an uncertain carbon price; ours, how to allocate given a pathway the firm has accepted.
 
 *Portfolio and tail-risk methods in energy investment.* Mean–variance portfolio theory has been applied to generation fuel mixes (Roques, Newbery and Nuttall, 2008), and coherent tail measures — expected shortfall / CVaR (Artzner et al., 1999; Rockafellar and Uryasev, 2002) — to stochastic investment programmes. The frontier used here is of that family, with two differences: the "portfolio" is a discrete set of facility-level schedules and contract terms rather than divisible assets, so the frontier is a finite non-dominated set, not a curve; and both physical choices and contracts are placed on the same frontier, so the price of tail removal is read directly as Δμ/ΔES between adjacent allocations.
 
@@ -52,27 +52,73 @@ Second, the output is the allocation itself, priced. For each firm and scenario 
 
 Third, the paper states where the design cannot yet speak. The generated menu contains no timing variants for steel, so the effect of risk preference on *equipment* timing is tested only through constructed timing-ladder variants (§5.3); the contract premium is an assumption, so the price of tail removal is conditional on it (§5.2); and the sector pathway is a placeholder until the GCAM pathway is received.
 
-## 2. The capital allocation pathway problem [R2 formalises]
+## 2. The capital allocation pathway problem
 
-### 2.1 Objects
+### 2.1 Setting
 
-- Sector pathway (exogenous; KAIST GCAM in the final version, IEA-anchored local scenario in this draft) → firm cumulative Scope-1 budget B_c^s over 2027–2050.
-- Allocation x = (facility, technology, adoption year) schedule + contract terms (PPA share on the electricity the transition *adds*, EPC on construction).
-- Feasible set A_s: allocations that respect the cumulative budget, technology availability years, reinvestment windows and fixed production.
-- Cost C(x, ε): discounted cash cost over 2027–2050 on a price path ε; mean μ(x), expected shortfall ES₉₀(x), and TCaR(x) = q₀.₉ − q₀.₅ of the incremental cost.
-- Reference points. The cost axis is reported *incremental* to the no-transition counterfactual x₀ (so that ② is a transition cost), while ES₉₀ is taken on the allocation's *own* absolute cost (so that it is a level of tail cash cost and is monotone in cost dominance). TCaR is shift-invariant, so its reference point is immaterial. [R2 justifies; the manuscript v2.32 §4.2 gives the properties.]
+A firm c operates facilities f ∈ F_c (blast furnaces, crackers) over years t ∈ T = {2027, …, 2050}. A scenario s supplies, exogenously, (i) a central price path p^s_t for electricity, renewable-procured electricity, coal, gas and carbon, with the hydrogen price derived structurally from electricity (p^H_t = 52 kWh/kg · p^E_t + electrolyser amortisation); (ii) technology availability years; and (iii) a sector emission pathway that is downscaled to a firm cumulative Scope-1 budget B^s_c = Σ_t B^s_{c,t}. In this draft the downscaling is the emission-share rule of the local scenario; in the final version it is the KAIST GCAM pathway. The paper takes B^s_c as given and does not optimise across firms.
 
-### 2.2 The five indicators (pricing the allocation)
+An **allocation** is a pair x = (z, h): a schedule z = {z_{f,k,τ}} ∈ {0,1} of technology k adopted at facility f in year τ, subject to reinvestment windows and build times, and a contract vector h = (h^{PPA}, h^{EPC}) where h^{PPA} ∈ [0,1] is the share of the electricity the transition *adds* that is bought at a fixed price, and h^{EPC} ∈ {0,1} fixes construction cost. Contracts change neither emissions nor budget feasibility, so the feasible set factorises,
 
-| # | Indicator | Definition | Question it answers | Source column |
-|---|---|---|---|---|
-| ① | Aligned capex need | Σ_t K_t(x), peak K_t and its year | how much, when | `e5/metrics_company.csv: capex_total_bnkrw, capex_peak_bnkrw, capex_peak_year`; `e4/annual_capital_ledger.csv` |
-| ② | Expected transition cost | μ(x) − μ(x₀) (incremental to no-transition counterfactual; carbon on net-trade basis) | how much on average | `mean_bnkrw` |
-| ③ | TCaR and decomposition | q₀.₉ − q₀.₅; variance shares by factor | what moves it, by how much | `tcar_bnkrw`, `e5/variance_decomp.csv` |
-| ④ | Policy exposure | cost of the *same* allocation revalued under the other scenario (allocation, prices and allowances of the evaluating scenario) | how much hangs on policy stringency | `e5/policy_wedge.csv` |
-| ⑤ | Flexibility value | expected cost of the fixed allocation minus expected cost of re-optimising within the generated menu after prices are known (lower bound) | what optionality is worth | `e4/flex_value.csv` |
+A_s = Z_s × H,   Z_s = { z : Σ_t E_t(z) ≤ B^s_c, availability, windows, fixed production },
 
-The efficient allocation is the non-dominated set of A_s in (μ, ES₉₀); a decision-maker's λ picks a point on it (μ + λ·ES₉₀). The ratio Δμ/ΔES₉₀ between two adjacent points is the price of removing one won of tail cost.
+and the frontier can be traced schedule by schedule. This factorisation is what lets the paper put equipment and contracts on the same frontier without a joint stochastic programme.
+
+The discounted cash cost of an allocation on a price path ε is
+
+C(x, ε) = Σ_t d_t [ K_t(z)(1 + h^{EPC}π_K) + Σ_j Q_{j,t}(z) · p^s_{j,t} · ε_{j,t}^{(h)} + p^{CO₂,s}_t ε^{CO₂}_t (E_t(z) − A^s_t) + O_t(z) ] − d_T V_T(z),   d_t = (1 + r)^{−(t − t₀)},
+
+where Q_{j,t} are purchased volumes of input j, ε_{j,t} are multiplicative price shocks with E[ε_{j,t}] = 1 and correlated log-innovations, ε^{(h)} denotes that the hedged share of added electricity carries a fixed price (1 + π_E) instead of the shock, A^s_t is free allocation under the stated rule, O_t other operating cost, V_T a terminal proxy, and r a real risk-free rate. Because the shocks are mean-normalised and enter linearly, **E[C(x, ε)] = C(x, 1)**: the expected cost equals the central-price cost (methodology manuscript v2.32, Proposition 7). The mean therefore carries the scenario; the shocks carry only dispersion around it.
+
+### 2.2 Three statistics and their reference points
+
+Let L(x) = C(x) − C(x₀) be the cost incremental to the no-transition counterfactual x₀ (which does not meet the budget; it is a reference, not an option). The paper reports
+
+- μ(x) = E[L(x)] — expected transition cost (indicator ②);
+- TCaR(x) = q₀.₉(L) − q₀.₅(L) — the upper dispersion of the incremental cost (indicator ③);
+- ES₉₀(x) = E[C(x) | C(x) ≥ q₀.₉(C(x))] — expected shortfall of the allocation's *own* absolute cost.
+
+The reference points differ deliberately. TCaR is invariant to adding any constant (v2.32, Proposition 1), so it is the same whether computed on L or on C; it isolates dispersion from level and is unchanged by deterministic accounting choices (terminal value, book write-offs, contract premia). ES is not shift-invariant, and computing it on L would subtract a *random* baseline: since x₀ is exposed to coal and carbon, an allocation that removes that exposure moves *away* from x₀ in every state, and ES(L) would read the removal of exposure as risk — the defect that motivated the current convention (audit finding A1, 2026-09-10). ES on C(x) has the two properties the allocation problem needs: it is monotone (C(x) ≤ C(y) statewise ⇒ ES(x) ≤ ES(y)) and it is coherent (Artzner et al., 1999), so "the allocation lowers tail cash cost" is a well-defined statement, ES₉₀(x) < ES₉₀(x₀), and the sum of firm-level ES bounds the tail of a portfolio that shares the same price paths (subadditivity; methodology v2.x, Proposition 8). Because ES(x) − ES(x₀) mixes a level shift with a dispersion change, the deviation form ES₉₀(x) − E[C(x)] is reported alongside when the question is dispersion rather than level.
+
+### 2.3 Efficient allocation and the price of tail removal
+
+The efficient set is the non-dominated subset of the evaluated allocations,
+
+F_s = { x ∈ A_s : ∄ y ∈ A_s with μ(y) ≤ μ(x), ES₉₀(y) ≤ ES₉₀(x), (μ(y), ES₉₀(y)) ≠ (μ(x), ES₉₀(x)) },
+
+computed after removing allocations that are dominated state by state on the sampled paths (a sampled-dominance filter). A decision-maker with risk weight λ ≥ 0 selects argmin_{x∈F_s} μ(x) + λ·ES₉₀(x). Because ES is monotone, this rule never selects an allocation that is worse in every state; the same rule on TCaR can (v2.32, Proposition 6), which is why TCaR is reported but not used for selection.
+
+Between two adjacent points a, b on F_s with μ(b) > μ(a) and ES(b) < ES(a), the ratio
+
+π(a → b) = [μ(b) − μ(a)] / [ES₉₀(a) − ES₉₀(b)]
+
+is the price of removing one won of tail cost by moving from a to b. It is the object an investor compares with its own λ, or with the cost of hedging the same exposure in a market. In the results the moves along the frontier are of two kinds — a contract added to the same schedule, or a different schedule — and π is reported for each.
+
+### 2.4 When does uncertainty change the allocation?
+
+Two levers move an allocation along the frontier.
+
+*Contracts.* Fixing the price of a share h of added electricity Q^+_t raises the mean by the premium, Δμ = Σ_t d_t h Q^+_t p^E_t π_E, and lowers ES by removing the hedged share's contribution to the upper tail. Since the premium is linear in h and the tail reduction is concave in h, the contract is efficient up to the share at which π(h) = λ. With the research premium used here (π_E = 8 %), π is below 1 jeon per won for every firm (§5.2), so the λ = 1 allocation is fully contracted; the result is conditional on π_E, and §7 reports the premium at which the contract leaves the frontier.
+
+*Timing.* Advancing adoption of technology k by Δτ years changes the mean by the discounted capex brought forward, less the central-price operating difference over the advanced years, and changes the tail by exchanging the incumbent's exposure for the new technology's exposure over those years. Writing σ² for the variance of a year's energy-plus-carbon bill under the two configurations,
+
+earlier adoption lowers ES only if  Var[ bill_new ] < Var[ bill_old ] on the advanced years, i.e. (Q^E σ_E)² + cross terms  <  (Q^{coal} σ_coal)² + (E − A)² σ²_{CO₂} + cross terms.
+
+This is an empirical condition, not a theorem. In Korea the system marginal price is tied to LNG (electricity–LNG log-return correlation 0.905 in the verified series), so σ_E is the largest volatility in the factor set; electrification can therefore *relocate* exposure from coal and carbon to electricity rather than reduce it, unless the added electricity is contracted. The hypothesis "faster transition prepares the firm against energy cost" is thus, within this model, the hypothesis that *transition plus fixed-price procurement* lowers ES, and it is tested on constructed timing variants in §5.3.
+
+### 2.5 The five indicators, formally
+
+| # | Indicator | Definition | Notes |
+|---|---|---|---|
+| ① | Aligned capex need | K(x) = Σ_t K_t(z); peak max_t K_t and its year; construction vs. renewal split | `e5/metrics_company.csv`, `e4/annual_capital_ledger.csv` |
+| ② | Expected transition cost | μ(x) = E[L(x)] = L(x, 1) | equals central-price incremental cost |
+| ③ | TCaR and decomposition | q₀.₉(L) − q₀.₅(L); variance shares from freezing one factor at its central path (hydrogen folded into electricity) | `e5/variance_decomp.csv` |
+| ④ | Policy exposure | W(x; s→s′) = μ_{s′}(x) − min_{y∈A_{s′}} μ_{s′}(y), the regret of holding x when s′ materialises, evaluated with s′'s prices, allowances and hedge reference; plus the budget gap G(x; s′) = Σ_t max(E_t(z) − B^{s′}_{c,t}, 0) | asymmetric by construction; both directions reported |
+| ⑤ | Flexibility value | Φ = μ(x*) − E[ min_{y∈Z_s} L(y, ε) ], the gain from re-optimising within the generated menu after prices are known | perfect-information over a finite menu: a lower bound on option value, not a real-options value (v2.32 §5.4) |
+
+### 2.6 Discounting and the separation of level and risk
+
+The rate r is a real risk-free rate (2.4 %: KTB-10y 4.40 % less ≈ 2 % expected inflation, 2026-09-11). Discounting at a WACC and then penalising the tail with λ·ES would count systematic risk twice; here the mean is the expected cash cost under the physical measure and risk enters once, through ES. The choice moves the level of every number (§7 reports 3.5 % and 5 %) but not the ranking of allocations in the canonical run.
 
 ## 3. Method (pipeline summary; details in the methodology manuscript v2.32 and its v2.x changelog)
 
