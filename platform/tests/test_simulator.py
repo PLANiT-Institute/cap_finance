@@ -126,6 +126,10 @@ def test_no_sampled_dominated_candidate_is_flagged_on_any_frontier():
     for name,v in _versions(_research()).items():
         flags=[k for k in v['candidates'][0] if k.startswith('on_') and k.endswith('_frontier')]
         bad=[(c['plan_id'],f) for c in v['candidates'] if c.get('sampled_statewise_dominated') for f in flags if c.get(f)]
+        if name=='v1':
+            # the preserved 2026-09-05 snapshot carries the documented defect on purpose
+            assert bad==[('P0001.c06','on_mean_tcar_frontier')], f'v1 snapshot changed: {bad[:5]}'
+            continue
         assert not bad, f'{name}: dominated-but-frontier {bad[:5]}'
 
 def test_public_csv_matches_canonical_snapshot():
