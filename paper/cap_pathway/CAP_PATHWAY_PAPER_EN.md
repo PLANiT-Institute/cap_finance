@@ -85,7 +85,7 @@ The efficient set is the non-dominated subset of the evaluated allocations,
 
 F_s = { x ∈ A_s : ∄ y ∈ A_s with μ(y) ≤ μ(x), ES₉₀(y) ≤ ES₉₀(x), (μ(y), ES₉₀(y)) ≠ (μ(x), ES₉₀(x)) },
 
-computed after removing allocations that are dominated state by state on the sampled paths (a sampled-dominance filter). A decision-maker with risk weight λ ≥ 0 selects argmin_{x∈F_s} μ(x) + λ·ES₉₀(x). Because ES is monotone, this rule never selects an allocation that is worse in every state; the same rule on TCaR can (v2.32, Proposition 6), which is why TCaR is reported but not used for selection.
+computed after removing allocations that are dominated state by state on the sampled paths (a sampled-dominance filter). Fig. 6 (`figures/fig6_joint_frontier.png`) shows the plane for two cells: each schedule is a five-point contract line, and only the canonical schedule's line is non-dominated. A decision-maker with risk weight λ ≥ 0 selects argmin_{x∈F_s} μ(x) + λ·ES₉₀(x). Because ES is monotone, this rule never selects an allocation that is worse in every state; the same rule on TCaR can (v2.32, Proposition 6), which is why TCaR is reported but not used for selection.
 
 Between two adjacent points a, b on F_s with μ(b) > μ(a) and ES(b) < ES(a), the ratio
 
@@ -206,7 +206,7 @@ Within this model, then, uncertainty does not pull equipment forward. What it do
 
 The decomposition freezes one factor at its central path and reports 1 − Var(frozen)/Var(full). Hydrogen is folded into electricity because it is derived from it; shares do not sum to one under correlated factors and can be negative when a factor moves against the plan's other costs. Table 4 reports it on the *absolute* cost C(x) — what drives the tail the treasury funds — and on the *incremental* cost L(x) — what drives the dispersion of the transition's cost relative to standing still. Sources: `paper/cap_pathway/data/abs_basis_stats_v2_3.csv` (absolute, computed from the canonical shocks and profiles) and `runs/v2_3/run/e5/variance_decomp.csv` (incremental).
 
-Table 4. Signed variance shares of the mean-minimising allocation (spot power).
+Table 4 and Fig. 4 (`figures/fig4_decomposition.png`). Signed variance shares of the mean-minimising allocation (spot power).
 
 | Firm · scen. | absolute C(x): electricity (+H₂) | coal | carbon | incremental L(x): electricity (+H₂) | coal | carbon |
 |---|---|---|---|---|---|---|
@@ -256,7 +256,7 @@ The paper was asked whether a firm that transitions early is "prepared" against 
 
 First, *within the price model, earlier equipment does not reduce the tail* (§5.3). Every earlier variant is dominated; the canonical schedule is the earliest budget-binding point. The reason is structural: the transition replaces a coal-and-carbon bill with an electricity-and-hydrogen bill, and in the verified series Korean electricity is the most volatile input because the system marginal price is set by LNG. Electrification relocates exposure; it does not remove it.
 
-Table 6. Tail of the allocation relative to the no-transition counterfactual x₀ on the same paths: level form ES₉₀(x)/ES₉₀(x₀) and dispersion form D(x)/D(x₀), D = ES₉₀ − E[C]. Source: `paper/cap_pathway/data/abs_basis_stats_v2_3.csv`.
+Table 6 and Fig. 5a (`figures/fig5_case_for_transition.png`). Tail of the allocation relative to the no-transition counterfactual x₀ on the same paths: level form ES₉₀(x)/ES₉₀(x₀) and dispersion form D(x)/D(x₀), D = ES₉₀ − E[C]. Source: `paper/cap_pathway/data/abs_basis_stats_v2_3.csv`.
 
 | Firm · scen. | ES₉₀(x₀) | D(x₀) | spot: ES ratio | spot: D ratio | contracted: ES ratio | contracted: D ratio |
 |---|---|---|---|---|---|---|
@@ -309,7 +309,7 @@ Rows a–d confirm that the canonical selections do not depend on the discount r
 
 ### 7.3 Separating the carbon price from the fuel price
 
-Table 8. NZ15 allocation vs. no-transition counterfactual when the NZ15 carbon path is replaced while fuel and electricity paths are kept. Contracted allocation (PPA 1.0). Source: `carbon_fuel_split_nz15.csv`.
+Table 8 and Fig. 5b. NZ15 allocation vs. no-transition counterfactual when the NZ15 carbon path is replaced while fuel and electricity paths are kept. Contracted allocation (PPA 1.0). Source: `carbon_fuel_split_nz15.csv`.
 
 | Firm | carbon path | μ(L) | ES₉₀(x) | ES₉₀(x₀) | ES ratio | D ratio |
 |---|---|---|---|---|---|---|
@@ -368,6 +368,10 @@ What the paper cannot yet say is set out in §7.4 and bounds every one of these 
 - Roques, F.A., Newbery, D.M., Nuttall, W.J., 2008. Fuel mix diversification incentives in liberalized electricity markets: a mean–variance portfolio theory approach. *Energy Economics* 30(4), 1831–1849.
 - Vogl, V., Åhman, M., Nilsson, L.J., 2018. Assessment of hydrogen direct reduction for fossil-free steelmaking. *Journal of Cleaner Production* 203, 736–745.
 - Vogl, V., Olsson, O., Nykvist, B., 2021. Phasing out the blast furnace to meet global climate targets. *Joule* 5(10), 2646–2662.
+
+## Figures
+
+Fig. 1 annual construction outlay (①) · Fig. 2 timing ladder · Fig. 3 contract grid · Fig. 4 decomposition on two bases · Fig. 5 tail relative to standing still and the carbon-path split · Fig. 6 the joint frontier. PNG and SVG in `paper/cap_pathway/figures/`; every figure names its source file in its footer.
 
 ## Reproducibility
 

@@ -87,7 +87,7 @@ ES(x) − ES(x₀)는 수준 이동과 산포 변화를 섞으므로, 질문이 
 
 F_s = { x ∈ A_s : μ(y) ≤ μ(x), ES₉₀(y) ≤ ES₉₀(x), (μ(y), ES₉₀(y)) ≠ (μ(x), ES₉₀(x))인 y ∈ A_s가 없음 }
 
-표본 경로 위에서 상태별로 지배되는 배분을 먼저 제거하고(표본 지배 필터) 계산한다. 위험 가중치 λ ≥ 0인 의사결정자는 argmin_{x∈F_s} μ(x) + λ·ES₉₀(x)를 고른다. ES가 단조이므로 이 규칙은 모든 상태에서 더 나쁜 배분을 고르지 않는다. TCaR 위의 같은 규칙은 그럴 수 있어(v2.32 명제 6) TCaR는 보고만 하고 선택에는 쓰지 않는다.
+표본 경로 위에서 상태별로 지배되는 배분을 먼저 제거하고(표본 지배 필터) 계산한다. 그림 6(`figures/fig6_joint_frontier.png`)은 두 셀의 평면을 보인다. 각 일정은 5점짜리 계약 선이고 정본 일정의 선만 비지배다. 위험 가중치 λ ≥ 0인 의사결정자는 argmin_{x∈F_s} μ(x) + λ·ES₉₀(x)를 고른다. ES가 단조이므로 이 규칙은 모든 상태에서 더 나쁜 배분을 고르지 않는다. TCaR 위의 같은 규칙은 그럴 수 있어(v2.32 명제 6) TCaR는 보고만 하고 선택에는 쓰지 않는다.
 
 μ(b) > μ(a), ES(b) < ES(a)인 인접한 두 점 a, b에 대해
 
@@ -208,7 +208,7 @@ CAPEX 총액 = 건설(신규 전환설비) + 유지 설비의 유지·갱신 CAP
 
 분해는 한 요인을 중심경로에 고정하고 1 − Var(고정)/Var(전체)를 보고한다. 수소는 전력에서 파생되므로 전력에 합산한다. 상관된 요인 아래 비중은 1로 합산되지 않으며 어떤 요인이 계획의 다른 비용과 반대로 움직이면 음수가 될 수 있다. 표 4는 *절대* 비용 C(x) — 재무가 감당하는 꼬리를 움직이는 것 — 와 *증분* 비용 L(x) — 가만히 있을 때 대비 전환비용의 산포를 움직이는 것 — 두 기준에서 보고한다. 출처: `paper/cap_pathway/data/abs_basis_stats_v2_3.csv`(절대; 정본 충격·프로필에서 계산), `runs/v2_3/run/e5/variance_decomp.csv`(증분).
 
-표 4. 평균 최소 배분(현물 전력)의 부호 있는 분산 비중.
+표 4·그림 4(`figures/fig4_decomposition.png`). 평균 최소 배분(현물 전력)의 부호 있는 분산 비중.
 
 | 기업 · 시나리오 | 절대 C(x): 전력(+H₂) | 석탄 | 탄소 | 증분 L(x): 전력(+H₂) | 석탄 | 탄소 |
 |---|---|---|---|---|---|---|
@@ -258,7 +258,7 @@ CAPEX 총액 = 건설(신규 전환설비) + 유지 설비의 유지·갱신 CAP
 
 첫째, *가격모형 안에서 설비를 앞당기는 것은 꼬리를 줄이지 않는다*(§5.3). 앞당긴 모든 변형은 지배된다. 정본 일정은 예산이 묶이는 가장 이른 점이다. 이유는 구조적이다. 전환은 석탄·탄소 청구서를 전력·수소 청구서로 바꾸는데, 검증 계열에서 한국 전력은 계통한계가격이 LNG로 정해지기 때문에 가장 변동성이 큰 투입이다. 전기화는 노출을 옮기지 없애지 않는다.
 
-표 6. 같은 경로 위 무전환 반사실 x₀ 대비 배분의 꼬리: 수준형 ES₉₀(x)/ES₉₀(x₀)와 산포형 D(x)/D(x₀), D = ES₉₀ − E[C]. 출처: `paper/cap_pathway/data/abs_basis_stats_v2_3.csv`.
+표 6·그림 5a(`figures/fig5_case_for_transition.png`). 같은 경로 위 무전환 반사실 x₀ 대비 배분의 꼬리: 수준형 ES₉₀(x)/ES₉₀(x₀)와 산포형 D(x)/D(x₀), D = ES₉₀ − E[C]. 출처: `paper/cap_pathway/data/abs_basis_stats_v2_3.csv`.
 
 | 기업 · 시나리오 | ES₉₀(x₀) | D(x₀) | 현물: ES 비율 | 현물: D 비율 | 계약: ES 비율 | 계약: D 비율 |
 |---|---|---|---|---|---|---|
@@ -311,7 +311,7 @@ CAPEX 총액 = 건설(신규 전환설비) + 유지 설비의 유지·갱신 CAP
 
 ### 7.3 탄소가격과 연료가격의 분리
 
-표 8. NZ15 연료·전력 경로를 유지하고 탄소 경로만 바꿨을 때 NZ15 배분 대 무전환 반사실. 계약 배분(PPA 1.0). 출처: `carbon_fuel_split_nz15.csv`.
+표 8·그림 5b. NZ15 연료·전력 경로를 유지하고 탄소 경로만 바꿨을 때 NZ15 배분 대 무전환 반사실. 계약 배분(PPA 1.0). 출처: `carbon_fuel_split_nz15.csv`.
 
 | 기업 | 탄소 경로 | μ(L) | ES₉₀(x) | ES₉₀(x₀) | ES 비율 | D 비율 |
 |---|---|---|---|---|---|---|
@@ -352,6 +352,10 @@ CAPEX 총액 = 건설(신규 전환설비) + 유지 설비의 유지·갱신 CAP
 ## 참고문헌
 
 영문 정본 `CAP_PATHWAY_PAPER_EN.md`의 참고문헌과 같다(Artzner et al. 1999; Bataille 2020; Battiston et al. 2017; Blyth et al. 2007; Bolton and Kacperczyk 2021; Dixit and Pindyck 1994; Engle et al. 2020; Froot, Scharfstein and Stein 1993; Fuss et al. 2008; Layritz et al. 2021; Loulou and Kanudia 1999; Markowitz 1952; Martin et al. 2014; Rissman et al. 2020; Rockafellar and Uryasev 2002; Rockafellar, Uryasev and Zabarankin 2006; Roques, Newbery and Nuttall 2008; Vogl, Åhman and Nilsson 2018; Vogl, Olsson and Nykvist 2021).
+
+## 그림
+
+그림 1 연도별 건설 지출(①) · 그림 2 시점 사다리 · 그림 3 계약 격자 · 그림 4 두 기준의 분해 · 그림 5 무전환 대비 꼬리와 탄소 경로 분리 · 그림 6 결합 경계. PNG·SVG는 `paper/cap_pathway/figures/`에 있고 모든 그림은 각주에 출처 파일을 적는다.
 
 ## 재현
 
